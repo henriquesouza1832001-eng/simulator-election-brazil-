@@ -100,6 +100,9 @@ Resources:
       AccessTokenValidity: 15
       IdTokenValidity: 15
       RefreshTokenValidity: 7
+      RefreshTokenRotation:
+        Feature: ENABLED
+        RetryGracePeriodSeconds: 10
       TokenValidityUnits:
         AccessToken: minutes
         IdToken: minutes
@@ -112,7 +115,6 @@ Resources:
       LogoutURLs: [!Sub 'https://${GameDistribution.DomainName}']
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
-        - ALLOW_REFRESH_TOKEN_AUTH
 
 Outputs:
   GameUrl:

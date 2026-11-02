@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
+import { CookieStorage } from 'aws-amplify/utils';
 import DiplomacyPanel from './DiplomacyPanel';
 import FiscalPanel from './FiscalPanel';
 import './diplomacy.css';
@@ -69,6 +71,8 @@ export default function App() {
         if (!mounted) return;
         setAuthConfig(config);
         if (config.enabled) {
+          // HTTPS is enforced at CloudFront; use secure, same-site cookies rather than localStorage.
+          cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({ secure: true, sameSite: 'lax', path: '/', expires: 7 }));
           Amplify.configure({ Auth: { Cognito: { userPoolId: config.user_pool_id, userPoolClientId: config.client_id,
             loginWith: { oauth: { domain: config.domain, scopes: ['openid', 'email'], redirectSignIn: [window.location.origin],
               redirectSignOut: [window.location.origin], responseType: 'code' } } } } });
