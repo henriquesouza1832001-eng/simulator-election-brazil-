@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Amplify } from 'aws-amplify';
-import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
 import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 import { CookieStorage } from 'aws-amplify/utils';
 import DiplomacyPanel from './DiplomacyPanel';
 import FiscalPanel from './FiscalPanel';
+import CampaignPanel from './CampaignPanel';
+import CareerPanel from './CareerPanel';
+import GovernmentAppointments from './GovernmentAppointments';
+import InauguralAddress from './InauguralAddress';
+import AuthPanel from './AuthPanel';
+import AccountPanel from './AccountPanel';
 import './diplomacy.css';
 
 const fmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
@@ -26,12 +32,120 @@ const indicatorOptions = [
   { key: 'governability', label: 'Governabilidade', unit: '/100', detail: 'Capacidade de formar maioria', tone: 'green' },
   { key: 'integrity', label: 'Integridade', unit: '/100', detail: 'Confiança e transparência', tone: 'blue' },
   { key: 'regional_infrastructure', label: 'Infraestrutura regional', unit: '/100', detail: 'Resiliência de estradas e serviços', tone: 'blue' },
+  { key: 'nominal_gdp_bi', label: 'PIB nominal', unit: 'R$ bi', detail: 'Tamanho nominal da economia no cenário', source: 'fiscal' },
+  { key: 'annual_revenue_bi', label: 'Receita anual', unit: 'R$ bi', detail: 'Arrecadação anual estimada', source: 'fiscal', tone: 'green' },
+  { key: 'annual_primary_spending_bi', label: 'Despesa primária', unit: 'R$ bi', detail: 'Despesa antes dos juros da dívida', source: 'fiscal', tone: 'amber' },
+  { key: 'annual_interest_bi', label: 'Juros anuais', unit: 'R$ bi', detail: 'Custo anual estimado da dívida', source: 'fiscal', tone: 'amber' },
+  { key: 'interest_rate_pct', label: 'Juro médio da dívida', unit: '%', detail: 'Taxa média aplicada ao estoque da dívida', source: 'fiscal', tone: 'amber' },
+  { key: 'population_millions', label: 'População', unit: 'mi', detail: 'População total do cenário', source: 'social' },
+  { key: 'human_development_index', label: 'IDH', unit: '/1', detail: 'Desenvolvimento humano agregado', source: 'social', tone: 'blue' },
+  { key: 'gini_index', label: 'Desigualdade (Gini)', unit: '/1', detail: 'Desigualdade de renda; menor é melhor', source: 'social', tone: 'amber' },
+  { key: 'poverty_rate_pct', label: 'Pobreza', unit: '%', detail: 'Parcela estimada da população em pobreza', source: 'social', tone: 'amber' },
+  { key: 'life_expectancy_years', label: 'Expectativa de vida', unit: 'anos', detail: 'Expectativa de vida ao nascer no cenário', source: 'social' },
+  { key: 'infant_mortality_per_1000', label: 'Mortalidade infantil', unit: '/1.000', detail: 'Óbitos infantis estimados por mil nascidos vivos', source: 'social', tone: 'amber' },
+  { key: 'homicide_rate_per_100k', label: 'Homicídios', unit: '/100 mil', detail: 'Taxa estimada de homicídios', source: 'social', tone: 'amber' },
+  { key: 'sanitation_coverage_pct', label: 'Cobertura de saneamento', unit: '%', detail: 'Cobertura estimada de saneamento', source: 'social' },
+  { key: 'school_completion_pct', label: 'Conclusão escolar', unit: '%', detail: 'Conclusão escolar estimada', source: 'social' },
 ];
+
+const detailedIndicatorGroups = [
+  { title: 'Economia e trabalho', items: [
+    { label: 'Crescimento do PIB', key: 'gdp_growth', unit: '%', source: 'metric', detail: 'Variação anual estimada da atividade econômica.' },
+    { label: 'Inflação', key: 'inflation', unit: '%', source: 'metric', detail: 'Variação anual de preços no cenário.' },
+    { label: 'Desemprego', key: 'unemployment', unit: '%', source: 'metric', detail: 'Parcela estimada da força de trabalho sem ocupação.' },
+  ] },
+  { title: 'Contas públicas', items: [
+    { label: 'Resultado primário', key: 'primary_balance', unit: '% do PIB', source: 'metric', detail: 'Receitas menos despesas antes dos juros.' },
+    { label: 'Resultado nominal', key: 'nominal_result', unit: '% do PIB', source: 'metric', detail: 'Saldo depois dos juros da dívida.' },
+    { label: 'Dívida pública', key: 'debt_gdp', unit: '% do PIB', source: 'metric', detail: 'Estoque da dívida em relação ao tamanho da economia.' },
+    { label: 'Credibilidade fiscal', key: 'fiscal_credibility', unit: '/100', source: 'metric', detail: 'Confiança calculada pelo modelo fiscal do jogo.' },
+    { label: 'Risco-país', key: 'country_risk', unit: 'pontos', source: 'metric', detail: 'Prêmio de risco estimado pelo modelo.' },
+    { label: 'PIB nominal', key: 'nominal_gdp_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Tamanho nominal da economia no cenário; não é uma série oficial.' },
+    { label: 'Receita anual', key: 'annual_revenue_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Arrecadação agregada estimada no livro-caixa fiscal do jogo.' },
+    { label: 'Despesa primária anual', key: 'annual_primary_spending_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Despesas antes dos juros, incluindo itens obrigatórios e discricionários.' },
+    { label: 'Juros anuais da dívida', key: 'annual_interest_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Estimativa anual de juros sobre a dívida pública simulada.' },
+    { label: 'Juro médio da dívida', key: 'interest_rate_pct', unit: '%', source: 'fiscal', detail: 'Taxa média estimada do estoque; não representa diretamente a Selic.' },
+    { label: 'Investimento público anual', key: 'annual_investment_bi', unit: 'R$ bi', source: 'budget', detail: 'Dotação anual simulada para investimentos federais.' },
+  ] },
+  { title: 'Apoio e capacidade de governar', items: [
+    { label: 'Aprovação', key: 'approval', unit: '%', source: 'metric', detail: 'Apoio nacional simulado ao governo.' },
+    { label: 'Governabilidade', key: 'governability', unit: '/100', source: 'metric', detail: 'Capacidade de sustentar decisões e formar maioria.' },
+    { label: 'Apoio no Congresso', key: 'congress_support', unit: '%', source: 'metric', detail: 'Apoio parlamentar agregado no cenário.' },
+    { label: 'Confiança institucional', key: 'institutional_trust', unit: '/100', source: 'metric', detail: 'Confiança geral nas instituições.' },
+    { label: 'Integridade', key: 'integrity', unit: '/100', source: 'metric', detail: 'Indicador simulado de transparência e exposição a escândalos.' },
+  ] },
+  { title: 'Instituições e estabilidade', items: [
+    { label: 'Lealdade militar à Constituição', key: 'military_loyalty', unit: '/100', source: 'institution', detail: 'Relação institucional das Forças Armadas com a ordem constitucional.' },
+    { label: 'Ordem constitucional', key: 'constitutional_order', unit: '/100', source: 'institution', detail: 'Estabilidade das regras e continuidade institucional.' },
+    { label: 'Legitimidade civil', key: 'civilian_legitimacy', unit: '/100', source: 'institution', detail: 'Reconhecimento da autoridade civil no cenário.' },
+    { label: 'Resistência institucional', key: 'institutional_resistance', unit: '/100', source: 'institution', detail: 'Capacidade de instituições conterem rupturas simuladas.' },
+  ] },
+  { title: 'Serviços e investimento', items: [
+    { label: 'Educação', key: 'education', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em educação.' },
+    { label: 'Saúde', key: 'health', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em saúde.' },
+    { label: 'Segurança pública', key: 'security', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em segurança.' },
+    { label: 'Infraestrutura', key: 'infrastructure', unit: '/100', source: 'outcome', detail: 'Entrega agregada de infraestrutura financiada.' },
+    { label: 'Produtividade', key: 'productivity', unit: '/100', source: 'outcome', detail: 'Efeito simulado de investimentos produtivos.' },
+    { label: 'Resiliência rural', key: 'rural_resilience', unit: '/100', source: 'outcome', detail: 'Capacidade de adaptação rural a choques climáticos.' },
+  ] },
+  { title: 'Diplomacia e regiões', items: [
+    { label: 'Influência multilateral', key: 'multilateral_influence', unit: '/100', source: 'diplomacy', detail: 'Presença e influência do país em fóruns internacionais.' },
+    { label: 'Relação média com países', key: 'average_relation', unit: '/100', source: 'diplomacy', detail: 'Média das relações bilaterais cadastradas no cenário.' },
+    { label: 'Apoio regional médio', key: 'support', unit: '%', source: 'regional', detail: 'Média das regiões atualmente representadas na partida.' },
+    { label: 'Atividade regional média', key: 'economic_activity', unit: '/100', source: 'regional', detail: 'Atividade econômica regional relativa no cenário.' },
+    { label: 'Infraestrutura regional', key: 'regional_infrastructure', unit: '/100', source: 'metric', detail: 'Resiliência agregada de estradas e serviços no cenário.' },
+  ] },
+  { title: 'População e qualidade de vida', items: [
+    { label: 'População', key: 'population_millions', unit: 'milhões', source: 'social', detail: 'População total simulada; varia lentamente ao longo dos anos.' },
+    { label: 'IDH', key: 'human_development_index', unit: '/1', source: 'social', detail: 'Índice agregado ligado a educação, saúde e produtividade.' },
+    { label: 'Desigualdade (Gini)', key: 'gini_index', unit: '/1', source: 'social', detail: 'Estimativa agregada; valores menores representam menor desigualdade.' },
+    { label: 'Pobreza', key: 'poverty_rate_pct', unit: '%', source: 'social', detail: 'Estimativa influenciada por crescimento, emprego e educação.' },
+    { label: 'Expectativa de vida', key: 'life_expectancy_years', unit: 'anos', source: 'social', detail: 'Indicador de longo prazo influenciado por saúde e segurança.' },
+    { label: 'Mortalidade infantil', key: 'infant_mortality_per_1000', unit: 'por 1.000', source: 'social', detail: 'Estimativa influenciada pela saúde e pela cobertura de saneamento.' },
+    { label: 'Homicídios', key: 'homicide_rate_per_100k', unit: 'por 100 mil', source: 'social', detail: 'Taxa estimada influenciada por segurança e condições econômicas.' },
+  ] },
+  { title: 'Serviços básicos', items: [
+    { label: 'Cobertura de saneamento', key: 'sanitation_coverage_pct', unit: '%', source: 'social', detail: 'Estimativa de cobertura que melhora gradualmente com infraestrutura.' },
+    { label: 'Conclusão escolar', key: 'school_completion_pct', unit: '%', source: 'social', detail: 'Estimativa que responde lentamente a resultados de educação.' },
+  ] },
+];
+
+function readIndicator(item, state) {
+  if (item.source === 'metric') return state.metrics?.[item.key];
+  if (item.source === 'institution') return state.institutions?.[item.key];
+  if (item.source === 'outcome') return state.budget?.outcomes?.[item.key];
+  if (item.source === 'fiscal') return state.fiscal?.[item.key];
+  if (item.source === 'budget') return state.budget?.[item.key];
+  if (item.source === 'social') return state.social_indicators?.[item.key];
+  if (item.source === 'diplomacy' && item.key === 'multilateral_influence') return state.diplomacy?.multilateral_influence;
+  if (item.source === 'diplomacy' && item.key === 'average_relation') {
+    const relations = Object.values(state.diplomacy?.countries || {}).map((country) => Number(country.relation)).filter(Number.isFinite);
+    return relations.length ? relations.reduce((sum, value) => sum + value, 0) / relations.length : undefined;
+  }
+  if (item.source === 'regional') {
+    const values = Object.values(state.regional_metrics || {}).map((region) => Number(region[item.key])).filter(Number.isFinite);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : undefined;
+  }
+  return undefined;
+}
+
+function indicatorTrend(item, state) {
+  const history = state.indicator_history || [];
+  if (history.length < 2) return null;
+  const baselineIndex = Math.max(0, history.length - 13);
+  const baseline = Number(readIndicator(item, history[baselineIndex]));
+  const current = Number(readIndicator(item, state));
+  if (!Number.isFinite(baseline) || !Number.isFinite(current)) return null;
+  const delta = current - baseline;
+  const unit = item.unit === '%' || item.unit.includes('%') ? ' p.p.' : ` ${item.unit}`;
+  return `${history.length >= 13 ? '12m' : 'desde início'} ${delta > 0 ? '+' : ''}${fmt.format(delta)}${unit}`;
+}
 
 export default function App() {
   const [authConfig, setAuthConfig] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [showAccountPanel, setShowAccountPanel] = useState(false);
   const [state, setState] = useState(null);
   const [measure, setMeasure] = useState('');
   const [preview, setPreview] = useState(null);
@@ -41,10 +155,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Visão geral');
   const [ruptureInfo, setRuptureInfo] = useState(null);
   const [budgetView, setBudgetView] = useState(null);
+  const [budgetSection, setBudgetSection] = useState('Contas públicas');
   const [ministries, setMinistries] = useState([]);
   const [budgetSource, setBudgetSource] = useState('education');
   const [budgetTarget, setBudgetTarget] = useState('logistics');
   const [budgetAmount, setBudgetAmount] = useState('1');
+  const [selectedContractorId, setSelectedContractorId] = useState('consorcio_horizonte');
   const [travelCutPct, setTravelCutPct] = useState(0);
   const [residenceCutPct, setResidenceCutPct] = useState(0);
 
@@ -71,8 +187,8 @@ export default function App() {
         if (!mounted) return;
         setAuthConfig(config);
         if (config.enabled) {
-          Amplify.configure({ Auth: { Cognito: { userPoolId: config.user_pool_id, userPoolClientId: config.client_id,
-            loginWith: { oauth: { domain: config.domain, scopes: ['openid', 'email'], redirectSignIn: [window.location.origin],
+          Amplify.configure({ Auth: { Cognito: { userPoolId: config.user_pool_id, userPoolClientId: config.client_id, loginWith: { email: true,
+            oauth: { domain: config.domain, scopes: ['openid', 'email'], redirectSignIn: [window.location.origin],
               redirectSignOut: [window.location.origin], responseType: 'code' } } } } });
           // Amplify.configure resets its token provider, so select secure cookies afterward.
           cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({ secure: true, sameSite: 'lax', path: '/', expires: 7 }));
@@ -95,7 +211,7 @@ export default function App() {
 
   async function advance(days) {
     setBusy(true); setNotice('');
-    try { const data = await request('/api/game/advance', { method: 'POST', body: JSON.stringify({ days }) }); setState(data.state); setNotice(data.message); }
+    try { const data = await request('/api/game/advance', { method: 'POST', body: JSON.stringify({ days }) }); setState(data.state); if (activeTab === 'Orçamento') setBudgetView(await request('/api/budget')); setNotice(data.message); }
     catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
   async function interpret() {
@@ -122,6 +238,10 @@ export default function App() {
   }
   async function toggleDashboardCard(key) {
     const current = state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key);
+    if (!current.includes(key) && current.length >= 6) {
+      setNotice('O painel inicial aceita até seis cartões. Remova um para escolher outro.');
+      return;
+    }
     const cards = current.includes(key) ? current.filter((item) => item !== key) : [...current, key];
     try { setState(await request('/api/game/dashboard', { method: 'PATCH', body: JSON.stringify({ cards }) })); }
     catch (e) { setNotice(e.message); }
@@ -152,6 +272,23 @@ export default function App() {
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
+  async function startPublicWork(workId) {
+    setBusy(true);
+    try {
+      const data = await request('/api/budget/works/start', { method: 'POST', body: JSON.stringify({ work_id: workId, contractor_id: selectedContractorId }) });
+      setBudgetView(data.budget); setState(data.state);
+      setNotice(`Leilão simulado aberto para ${data.result.project.name}. Custo contratado: R$ ${data.result.project.contract_cost_bi.toFixed(2)} bi; parcela anual aproximada de R$ ${data.result.annual_cost_bi.toFixed(2)} bi.`);
+    } catch (e) { setNotice(e.message); } finally { setBusy(false); }
+  }
+
+  async function resolvePublicWork(projectId, choice) {
+    setBusy(true);
+    try {
+      const data = await request('/api/budget/works/resolve', { method: 'POST', body: JSON.stringify({ project_id: projectId, choice }) });
+      setBudgetView(data.budget); setState(data.state); setNotice(data.result.message);
+    } catch (e) { setNotice(e.message); } finally { setBusy(false); }
+  }
+
   async function submitOperatingBudget() {
     setBusy(true);
     try {
@@ -163,32 +300,81 @@ export default function App() {
   }
 
   if (!authReady || (authUser && !state)) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
-  if (authConfig?.enabled && !authUser) return <main className="auth-screen"><section className="auth-card"><span className="brand-mark">M</span><div className="eyebrow">MANDATO · CONTA DE JOGADOR</div><h1>Uma campanha, sob seu controle.</h1><p>Entre ou crie sua conta para manter suas partidas separadas e privadas.</p><button className="primary-button" onClick={() => signInWithRedirect()}>Entrar ou criar conta <b>→</b></button><small>A autenticação é protegida pelo Amazon Cognito.</small>{notice && <p className="notice">{notice}</p>}</section></main>;
+  if (authConfig?.enabled && !authUser) return <AuthPanel onAuthenticated={setAuthUser} notice={notice} setNotice={setNotice} />;
   if (!state) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
   const m = state.metrics;
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
   const monthsRemaining = Math.max(0, 48 - termMonth);
+  const careerPhase = state.career_overview?.phase;
+  const careerCardLabel = careerPhase === 'campaign' ? 'ELEIÇÃO' : careerPhase === 'office' ? 'MANDATO' : careerPhase === 'transition' ? 'POSSE' : 'CARREIRA';
+  const careerCardValue = careerPhase === 'campaign' ? state.career_overview?.days_until_election : careerPhase === 'transition' ? state.career_overview?.days_until_inauguration : careerPhase === 'office' ? state.career_overview?.term_years : '—';
+  const careerCardSuffix = careerPhase === 'campaign' ? ' dias' : careerPhase === 'transition' ? ' dias' : careerPhase === 'office' ? ' anos' : '';
+  const careerCardNote = careerPhase === 'campaign' ? 'dias até a votação' : careerPhase === 'transition' ? 'dias até a posse' : careerPhase === 'office' ? `campanha abre em ${state.career_overview?.days_until_campaign} dias` : 'escolha o próximo passo';
+  const careerCardProgress = careerPhase === 'campaign' ? Math.max(3, 100 - (state.career_overview?.days_until_election || 0) / 90 * 100) : careerPhase === 'office' ? 100 * Math.min(1, ((state.career_overview?.term_years || 4) * 365 - (state.career_overview?.next_campaign_days || 0)) / ((state.career_overview?.term_years || 4) * 365)) : careerPhase === 'transition' ? 85 : 0;
   const operatingLines = budgetView?.operating?.lines || {};
   const proposedOperatingSavings = (Number(operatingLines.official_travel?.annual_cost_bi || 0) * Number(travelCutPct) / 100)
     + (Number(operatingLines.official_residence?.annual_cost_bi || 0) * Number(residenceCutPct) / 100);
   const currentOperatingSavings = Number(budgetView?.operating?.annual_savings_bi || 0);
   const fiscalReferenceGdp = Number(budgetView?.operating?.nominal_gdp_bi || 15000);
   const proposedPrimaryBalance = Number(m.primary_balance) + ((proposedOperatingSavings - currentOperatingSavings) / fiscalReferenceGdp * 100);
-  const tabs = ['Visão geral', 'Medidas', 'Orçamento', 'Diplomacia', 'Crises', 'Eleição', 'Instituições', 'Agenda', 'Aprendizado'];
-  const dashboardTab = activeTab === 'Visão geral' || activeTab === 'Medidas';
+  const careerMode = Boolean(state.career_overview?.mode);
+  const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.phase === 'office');
+  const tabGroups = [
+    { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
+    { label: 'Governo', items: presidentCareer ? ['Medidas', 'Orçamento', 'Crises'] : [] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Nomeações'] : ['Carreira', 'Eleição', 'Instituições', 'Nomeações'] },
+    { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
+    { label: 'Agenda', items: ['Agenda', 'Aprendizado'] },
+  ].filter((group) => group.items.length);
+  const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || tabGroups[0];
+  const dashboardTab = ['Visão geral', 'Indicadores', 'Medidas'].includes(activeTab);
+  const pageGuidance = {
+    'Visão geral': ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.'],
+    'Indicadores': ['Como está o país?', 'Abra os grupos para acompanhar os dados sem sobrecarregar o painel inicial.'],
+    'Medidas': ['Prepare uma decisão.', 'Descreva a proposta; revise a interpretação e os efeitos antes de aplicar.'],
+    'Orçamento': ['Onde usar os recursos?', 'Escolha entre contas públicas, investimentos e obras. Cada área tem sua própria tela.'],
+    'Diplomacia': ['Relações com o mundo.', 'Planeje visitas e compromissos; deslocamentos consomem dias de calendário.'],
+    'Crises': ['Responder também é governar.', 'Veja o impacto em curso e compare as opções disponíveis.'],
+    'Eleição': ['A disputa também consome tempo.', 'Planeje uma atividade, leia os efeitos e mantenha o governo em funcionamento.'],
+    'Carreira': ['Sua carreira, passo a passo.', 'Escolha um cargo, dispute a eleição e veja as consequências no território e no mandato.'],
+    'Nomeações': ['Quem ocupa os cargos.', 'Escolha ministros e acompanhe indicações ao STF e decisões do Senado.'],
+    'Instituições': ['Regras e estabilidade.', 'Acompanhe as instituições e os limites do cargo.'],
+    'Agenda': ['O que vem pela frente?', 'Compromissos e acontecimentos seguem a data da partida.'],
+    'Aprendizado': ['Memória do jogo.', 'Suas correções ajudam o intérprete; o motor numérico continua explícito.'],
+  }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR DE GOVERNO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>MÊS {termMonth} DE 48 · DIA {state.day_of_mandate} DE 1461 · {(state.office_status || 'incumbent').replaceAll('_', ' ')}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">CENÁRIO FICTÍCIO</span>{authConfig?.enabled && <button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); }}>Sair da conta</button>}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
-    <nav className="tabs">{tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'tab active' : 'tab'} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
+    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR POLÍTICO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.state_code} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">CENÁRIO FICTÍCIO</span>{authConfig?.enabled && <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); }}>Sair</button></>}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">
-      <section className="welcome-row"><div><div className="eyebrow">GABINETE DA PRESIDÊNCIA <span>·</span> CICLO {state.term}</div><h1>O país, em movimento.</h1><p>Decida, acompanhe os efeitos e ajuste o rumo. Um mandato, um dia de cada vez.</p></div><div className="term-card"><span>MANDATO</span><strong>{termMonth}<small> / 48</small></strong><div className="progress"><i style={{ width: `${termMonth / 48 * 100}%` }}/></div><small>{monthsRemaining} meses restantes</small></div></section>
+      <section className="welcome-row"><div><div className="eyebrow">{careerMode ? `${state.career_overview.office_label.toUpperCase()} · ${state.career_overview.municipality.toUpperCase()}/${state.career_overview.state_code}` : `GABINETE DA PRESIDÊNCIA · CICLO ${state.term}`}</div><h1>{pageGuidance[0]}</h1><p>{pageGuidance[1]}</p></div><div className="term-card"><span>{careerMode ? careerCardLabel : 'MANDATO'}</span><strong>{careerMode ? careerCardValue : termMonth}<small>{careerMode ? careerCardSuffix : ' / 48'}</small></strong><div className="progress"><i style={{ width: `${careerMode ? careerCardProgress : termMonth / 48 * 100}%` }}/></div><small>{careerMode ? careerCardNote : `${monthsRemaining} meses restantes`}</small></div></section>
 
-      {dashboardTab && <><div className="indicator-toolbar"><span>SEU PAINEL · {state.dashboard_cards?.length ?? 6} INDICADORES</span><details className="dashboard-customizer"><summary>Escolher indicadores</summary><div>{indicatorOptions.map((option) => <label key={option.key}><input type="checkbox" checked={(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).includes(option.key)} onChange={() => toggleDashboardCard(option.key)} />{option.label}</label>)}</div></details></div><section className="indicator-grid">
-        {(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).map((key) => { const option = indicatorOptions.find((item) => item.key === key); if (!option) return null; const tone = key === 'primary_balance' ? (m.primary_balance < 0 ? 'red' : 'green') : option.tone; return <Metric key={key} label={option.label} value={m[key]} unit={option.unit} tone={tone || ''} detail={option.detail} />; })}
-      </section>
+      {dashboardTab && <>{activeTab === 'Visão geral' && <><div className="indicator-toolbar"><span>SEU PAINEL · ATÉ 6 INDICADORES</span><details className="dashboard-customizer"><summary>Escolher indicadores</summary><div>{indicatorOptions.map((option) => <label key={option.key}><input type="checkbox" checked={(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).includes(option.key)} onChange={() => toggleDashboardCard(option.key)} />{option.label}</label>)}</div></details></div><section className="indicator-grid">
+        {(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).slice(0, 6).map((key) => { const option = indicatorOptions.find((item) => item.key === key); if (!option) return null; const value = readIndicator(option, state); const tone = key === 'primary_balance' ? (m.primary_balance < 0 ? 'red' : 'green') : option.tone; return <Metric key={key} label={option.label} value={value} unit={option.unit} tone={tone || ''} detail={option.detail} />; })}
+      </section></>}
 
-      <div className="main-grid">
+      {activeTab === 'Indicadores' && <section className="all-indicators panel">
+        <div className="panel-heading small"><div><div className="eyebrow">PAINEL COMPLETO</div><h2>Indicadores por assunto</h2><p>Abra um grupo quando quiser consultar os detalhes. Seus cartões principais continuam no topo.</p></div><span className="indicator-count">{detailedIndicatorGroups.reduce((count, group) => count + group.items.length, 0)} INDICADORES</span></div>
+        <div className="indicator-groups">{detailedIndicatorGroups.map((group) => <details className="indicator-group" key={group.title}><summary>{group.title}<span>{group.items.length} itens</span></summary><div>{group.items.map((item) => { const value = readIndicator(item, state); const formatted = Number.isFinite(Number(value)) ? fmt.format(Number(value)) : '—'; const trend = indicatorTrend(item, state); const tone = item.key === 'primary_balance' && Number(value) < 0 ? 'red' : item.key === 'approval' || item.key === 'gdp_growth' || item.key === 'human_development_index' || item.key === 'life_expectancy_years' || item.key === 'sanitation_coverage_pct' || item.key === 'school_completion_pct' ? 'green' : item.key === 'inflation' || item.key === 'debt_gdp' || item.key === 'country_risk' || item.key === 'gini_index' || item.key === 'poverty_rate_pct' || item.key === 'homicide_rate_per_100k' || item.key === 'infant_mortality_per_1000' ? 'amber' : ''; return <article className="indicator-line" key={item.key}><div><b>{item.label}</b><small>{item.detail}{trend && <span className="indicator-trend"> · {trend}</span>}</small></div><strong className={tone}>{formatted}<small>{item.unit}</small></strong></article>; })}</div></details>)}</div>
+        <details className="regional-snapshot"><summary>Comparar as cinco regiões <span>apoio, infraestrutura e atividade</span></summary><div className="regional-card-grid">{Object.entries(state.regional_metrics || {}).map(([key, region]) => <article key={key}><div><b>{key.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())}</b><span>{region.support}% apoio</span></div><i><em style={{ width: `${Math.max(0, Math.min(100, Number(region.infrastructure || 0)))}%` }}/></i><small>Infraestrutura {fmt.format(region.infrastructure)} · atividade {fmt.format(region.economic_activity)}</small><p>{region.priority || 'Prioridade de desenvolvimento definida no cenário.'}</p></article>)}</div><small className="regional-disclaimer">Linhas de base e variações são indicadores simulados; obras concluídas atualizam as regiões atendidas.</small></details>
+        <p className="indicator-footnote">Indicadores sociais, serviços, diplomacia e regiões são estimativas da simulação, não uma série oficial. Consulte as abas temáticas para ver orçamento, projetos e eventos que explicam cada mudança.</p>
+      </section>}
+
+      {activeTab === 'Visão geral' && <div className="overview-grid">
+        <section className="panel today-brief">
+          <div className="eyebrow">PRIORIDADE DE HOJE</div>
+          {state.active_crises?.length ? <><span className="brief-label urgent">CRISE EM ANDAMENTO</span><h2>{state.active_crises[0].title}</h2><p>{state.active_crises[0].description}</p><button className="secondary-button" onClick={() => setActiveTab(careerMode ? 'Carreira' : 'Crises')}>{careerMode ? 'Ver situação da carreira' : 'Ver opções de resposta'} <b>→</b></button></> : state.events?.length ? <><span className="brief-label">{state.events[0].days_until === 0 ? 'ACONTECE HOJE' : `PRÓXIMO EVENTO · ${state.events[0].days_until} DIAS`}</span><h2>{state.events[0].title}</h2><p>{state.events[0].description}</p><button className="secondary-button" onClick={() => setActiveTab('Agenda')}>Abrir agenda <b>→</b></button></> : <><span className="brief-label">SEM URGÊNCIAS</span><h2>{careerMode ? 'Sua carreira segue o calendário.' : 'O governo está em ritmo normal.'}</h2><p>Confira a agenda ou prepare o próximo passo. Os efeitos aparecem antes da eleição e continuam no mandato.</p><button className="secondary-button" onClick={() => setActiveTab('Agenda')}>Ver agenda <b>→</b></button></>}
+          <button className="primary-button" onClick={() => setActiveTab(careerMode ? 'Carreira' : 'Medidas')}>{careerMode ? 'Acompanhar carreira' : 'Preparar uma decisão'} <b>→</b></button>
+        </section>
+        <aside className="overview-side">
+          <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">CAPACIDADE DE GOVERNAR</div><h2>{m.governability}/100</h2></div><button className="icon-button" onClick={() => setActiveTab('Instituições')}>Ver <b>→</b></button></div><div className="bar"><i style={{ width: `${m.governability}%` }}/></div><div className="brief-meta"><span>Base no Congresso</span><b>{m.congress_support}%</b><span>Confiança institucional</span><b>{m.institutional_trust}/100</b></div></section>
+          <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">AGENDA PRÓXIMA</div><h2>O que vem pela frente</h2></div><button className="icon-button" onClick={() => setActiveTab('Agenda')}>Ver <b>→</b></button></div>{state.events?.length ? state.events.slice(0, 2).map((event) => <div className="event" key={event.id}><span className="event-date">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}</span><div><b>{event.title}</b><small>{event.description}</small></div></div>) : <p className="empty-state">Nenhum compromisso próximo.</p>}</section>
+          {state.recent_actions?.length > 0 && <section className="panel compact-panel latest-action"><div className="eyebrow">ÚLTIMA DECISÃO</div><b>{state.recent_actions[0].title}</b><small>{new Date(`${state.recent_actions[0].date}T12:00:00`).toLocaleDateString('pt-BR')} · {state.recent_actions[0].kind}</small></section>}
+        </aside>
+      </div>}
+
+      {activeTab === 'Medidas' && <div className="main-grid">
         <section className="panel measure-panel">
           <div className="panel-heading"><div><div className="eyebrow">CENTRO DE DECISÕES</div><h2>Escreva uma medida</h2><p>Descreva a ideia com suas palavras. O motor calcula os efeitos antes de você confirmar.</p></div><span className="ai-chip"><i/> INTERPRETAÇÃO IA</span></div>
           <label className="field-label" htmlFor="measure">PROPOSTA DO GOVERNO</label>
@@ -203,11 +389,11 @@ export default function App() {
         <aside className="side-column"><section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">ESTABILIDADE</div><h2>Capacidade de governar</h2></div><strong className="score">{m.governability}<small>/100</small></strong></div><div className="bar"><i style={{ width: `${m.governability}%` }}/></div><div className="mini-stats"><div><span>Base no Congresso</span><b>{m.congress_support}%</b></div><div><span>Confiança institucional</span><b>{m.institutional_trust}/100</b></div></div></section>
         <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">AGENDA PRÓXIMA</div><h2>O que vem pela frente</h2></div><button className="icon-button" onClick={() => setActiveTab('Agenda')}>↗</button></div>{state.events?.length ? state.events.slice(0, 3).map((event) => <div className="event" key={event.id}><span className="event-date">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}</span><div><b>{event.title}</b><small>{event.description}</small></div></div>) : <p className="empty-state">Agenda tranquila por enquanto. Avance alguns dias para acompanhar o mandato.</p>}</section>
         <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">REGISTRO</div><h2>Últimas decisões</h2></div></div>{state.recent_actions?.length ? state.recent_actions.slice(0, 3).map((action) => <div className="decision" key={action.id}><span>✓</span><div><b>{action.title}</b><small>{new Date(`${action.date}T12:00:00`).toLocaleDateString('pt-BR')} · {action.kind}</small></div></div>) : <p className="empty-state">Nenhuma medida assinada ainda.</p>}</section></aside>
-      </div></>}
+      </div>}</>}
 
-      {activeTab === 'Agenda' && <section className="panel agenda-page"><div className="eyebrow">CALENDÁRIO DO MANDATO</div><h2>Agenda e acontecimentos</h2><p className="page-description">A linha do tempo acompanha o calendário real da campanha simulada. Avance um dia, uma semana ou um mês.</p>{state.events?.length ? state.events.map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>) : <div className="empty-state">Não há eventos futuros cadastrados. Novos eventos aparecem conforme o conteúdo do jogo crescer.</div>}</section>}
+      {activeTab === 'Agenda' && <section className="panel agenda-page"><div className="eyebrow">CALENDÁRIO DO MANDATO</div><h2>Agenda e acontecimentos</h2><p className="page-description">A linha do tempo acompanha o calendário real da campanha simulada. Avance um dia, uma semana ou um mês.</p>{state.events?.length ? <>{state.events.slice(0, 5).map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>)}{state.events.length > 5 && <details className="agenda-more"><summary>Ver mais {state.events.length - 5} compromisso(s)</summary>{state.events.slice(5).map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>)}</details>}</> : <div className="empty-state">Não há eventos futuros cadastrados. Novos eventos aparecem conforme o conteúdo do jogo crescer.</div>}</section>}
 
-      {activeTab === 'Diplomacia' && <DiplomacyPanel onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
+      {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
       {activeTab === 'Aprendizado' && <section className="panel learning-page"><div className="eyebrow">MEMÓRIA E AGENTE PYTHON</div><h2>O sistema melhora com suas correções</h2><p className="page-description">Quando você corrige uma interpretação, o exemplo fica salvo localmente e pode orientar leituras parecidas. O motor continua calculando os efeitos com regras explícitas.</p><div className="learning-cards"><article><span>INTERPRETAÇÕES CORRIGIDAS</span><strong>{state.learning?.corrections_saved ?? 0}</strong><small>Exemplos guardados no SQLite deste jogo</small></article><article><span>POLÍTICA DO AGENTE</span><strong>Python</strong><small>Treino opcional com estados e efeitos sintéticos</small></article><article><span>IA DE TEXTO</span><strong>Gemini</strong><small>Classifica medidas; não decide os resultados numéricos</small></article></div><div className="learning-note"><b>Treinar a política base</b><code>python -m app.bot.trainer --episodes 3000</code><span>Execute no diretório <code>game/backend</code>. O treino não faz chamadas à API nem consome crédito de IA.</span></div></section>}
       {activeTab === 'Orçamento' && <section className="panel agenda-page">
@@ -215,6 +401,9 @@ export default function App() {
         <h2>Orçamento do governo</h2>
         <p className="page-description">Viagens oficiais e manutenção das residências entram nas despesas do governo. Reduza essas rubricas para melhorar o resultado primário; os valores são estimativas fictícias do simulador.</p>
         {budgetView ? <>
+          <div className="budget-subnav" role="tablist" aria-label="Seções do orçamento">{['Contas públicas', 'Investimentos', 'Obras'].map((section) => <button key={section} role="tab" aria-selected={budgetSection === section} className={budgetSection === section ? 'active' : ''} onClick={() => setBudgetSection(section)}>{section}</button>)}</div>
+          {notice && <div className="notice">{notice}</div>}
+          {budgetSection === 'Contas públicas' && <>
           <FiscalPanel data={budgetView.fiscal} />
           <div className="operating-budget">
             <div className="operating-heading">
@@ -235,7 +424,8 @@ export default function App() {
             <div className="operating-impact"><span>Resultado primário atual <b>{Number(m.primary_balance).toFixed(3)}% do PIB</b></span><span>Após aplicar <b>{Number(proposedPrimaryBalance).toFixed(3)}% do PIB</b></span><small>Estimativa proporcional ao PIB nominal de referência do simulador (R$ {(fiscalReferenceGdp / 1000).toFixed(0)} tri). A trajetória da dívida acumula o efeito ao longo dos dias.</small></div>
             <div className="operating-footer"><small>{budgetView.operating.days_until_review ? `Próxima revisão em ${budgetView.operating.days_until_review} dia(s).` : 'Ajuste disponível agora.'} As rubricas fazem parte da despesa primária anual. Os limites evitam cortar integralmente deslocamentos institucionais ou manutenção essencial.</small><button className="primary-button" disabled={busy || budgetView.operating.days_until_review > 0 || (Number(budgetView.operating.travel_cut_pct) === Number(travelCutPct) && Number(budgetView.operating.residence_cut_pct) === Number(residenceCutPct))} onClick={submitOperatingBudget}>Aplicar cortes</button></div>
           </div>
-          {notice && <div className="notice">{notice}</div>}
+          </>}
+          {budgetSection === 'Investimentos' && <>
           <h3 className="subheading">Carteira de investimentos</h3>
           <p className="page-description">Carteira simplificada em R$ bilhões anuais. O total não cresce: para ampliar uma área, remaneje verba de outra. Resultados chegam após a maturação do projeto.</p>
           <div className="budget-total"><span>Total anual da carteira de investimento</span><strong>R$ {budgetView.annual_investment_bi.toFixed(1)} bi</strong><small>Próxima revisão em {budgetView.days_until_reallocation} dia(s)</small></div>
@@ -244,15 +434,30 @@ export default function App() {
           <h3 className="subheading">Investimentos em execução</h3>
           {budgetView.pipeline.length ? budgetView.pipeline.map((project) => <div className="agenda-event" key={project.id}><div className="agenda-count">EM CURSO<small>{project.completion_date}</small></div><div><h3>{budgetView.areas[project.area]?.label}</h3><p>Reforço de R$ {project.annual_increase_bi.toFixed(1)} bi/ano. Os efeitos aparecem na conclusão simulada.</p></div></div>) : <div className="empty-state">Nenhum investimento novo em maturação.</div>}
           <details className="ministry-roster"><summary>Ver pastas oficiais disponíveis ({ministries.length})</summary><div>{ministries.map((ministry) => <span key={ministry.name}>{ministry.name}</span>)}</div><small>Catálogo baseado no SIORG; estas pastas são fixas no jogo. A carteira de investimentos não cria ministérios.</small></details>
+          </>}
+          {budgetSection === 'Obras' && <section className="works-section">
+            <div className="operating-heading"><div><span className="eyebrow">CARTEIRA NACIONAL · OBRAS SIMULADAS</span><h3>Rodovias, ferrovias, hidrovias e serviços</h3><p>O índice de obras atualiza a projeção de custo dos contratos ativos; a proposta de cada leilão mostra o valor inicial e a parcela anual.</p></div><strong className="operating-saving">R$ {budgetView.works.annual_available_bi.toFixed(2)} bi<small>livres por ano em Transportes e logística</small></strong></div>
+            <div className="works-index"><span>Índice de custo de obras <b>{budgetView.works.price_index.toFixed(3)}×</b></span><span>Carteira anual <b>R$ {budgetView.works.annual_allocation_bi.toFixed(1)} bi</b></span><span>Comprometido <b>R$ {budgetView.works.annual_committed_bi.toFixed(2)} bi/ano</b></span>{budgetView.works.annual_overrun_bi > 0 && <span className="red">Pressão sobre o orçamento <b>+R$ {budgetView.works.annual_overrun_bi.toFixed(2)} bi/ano</b></span>}<small>{budgetView.works.price_note}</small></div>
+            <label className="contractor-picker">Empresa do leilão<select value={selectedContractorId} onChange={(event) => setSelectedContractorId(event.target.value)}>{budgetView.works.contractors.map((company) => <option key={company.id} value={company.id}>{company.name} · custo {company.price_factor.toFixed(2)}× · risco financeiro {Math.round(company.financial_risk * 100)}%</option>)}</select></label>
+            <div className="works-catalog">{budgetView.works.options.map((work) => { const company = budgetView.works.contractors.find((item) => item.id === selectedContractorId) || budgetView.works.contractors[0]; const total = work.quoted_cost_bi * company.price_factor; const annual = total * 365 / work.duration_days; const scale = Math.min(2, total / 20); const canFund = annual <= budgetView.works.annual_available_bi + 1e-9; return <article className="work-card" key={work.id}><div className="work-kind">{work.kind}<span>{work.regions.map((region) => region.replaceAll('_', ' ')).join(' · ')}</span></div><h4>{work.name}</h4><p>{work.description}</p><small className="work-route">{work.route}</small><div className="work-costs"><span>Custo no leilão<strong>R$ {total.toFixed(2)} bi</strong></span><span>Parcela anual aprox.<strong>R$ {annual.toFixed(2)} bi/ano</strong></span><span>Prazo base<strong>{Math.ceil(work.duration_days / 365)} anos</strong></span><span>Risco técnico<strong>{Math.round(work.risk * 100)}%</strong></span></div><small className="contractor-profile">{company.profile} Risco financeiro: {Math.round(company.financial_risk * 100)}%; risco de integridade: {Math.round(company.integrity_risk * 100)}%.</small><div className="work-forecast"><b>Se contratar agora</b><span>Reserva R$ {annual.toFixed(2)} bi/ano da carteira de Transportes.</span><span>Entrega estimada: {new Date(`${work.expected_completion}T12:00:00`).toLocaleDateString('pt-BR')}.</span><span>Na entrega: infraestrutura regional +{(work.effects.infrastructure * scale).toFixed(1)}, atividade +{(work.effects.economic_activity * scale).toFixed(1)} e PIB +{(.08 * scale).toFixed(2)} p.p. estimados.</span><span>Custos podem subir; incidentes podem suspender o cronograma e abrir uma decisão.</span></div><button className="secondary-button" disabled={busy || budgetView.works.days_until_next_award > 0 || !canFund} onClick={() => startPublicWork(work.id)}>{budgetView.works.days_until_next_award > 0 ? `Novo leilão em ${budgetView.works.days_until_next_award} dias` : !canFund ? 'Remaneje verba para Transportes' : 'Abrir leilão simulado'}</button></article>; })}</div>
+            <h4 className="subheading">Obras em execução e histórico</h4>
+            {budgetView.works.projects.length ? <div className="works-projects">{budgetView.works.projects.map((project) => <article className="work-running" key={project.id}><div className="work-running-head"><div><span className="work-kind">{project.kind} · {project.route}</span><h4>{project.name}</h4></div><b className={`work-status ${project.status}`}>{project.status === 'active' ? 'EM EXECUÇÃO' : project.status === 'needs_decision' ? 'AGUARDA DECISÃO' : project.status === 'delivered' ? 'ENTREGUE' : 'CANCELADA'}</b></div><p>{project.description}</p><div className="work-progress"><i style={{ width: `${Math.min(100, project.progress * 100)}%` }}/></div><div className="work-running-meta"><span>{Math.round(project.progress * 100)}% concluída</span><span>Contratada: {project.contractor}</span><span>Estimativa atual: R$ {project.current_cost_bi.toFixed(2)} bi</span><span>Previsão: {project.target_completion}</span></div>{project.issue && <div className="work-issue"><b>{project.issue.title}</b><p>{project.issue.description}</p><div>{project.issue.options.map((option) => <button className="secondary-button" key={option.id} disabled={busy} onClick={() => resolvePublicWork(project.id, option.id)}>{option.label}<small>{option.detail}</small></button>)}</div></div>}{project.resolved_issues?.length > 0 && <small className="work-history">Ocorrências resolvidas: {project.resolved_issues.length} · registradas no histórico simulado.</small>}</article>)}</div> : <div className="empty-state">Nenhuma obra nacional contratada ainda.</div>}
+            <p className="indicator-footnote">Empresas e ocorrências são fictícias. Durante a execução, problemas financeiros ou alertas de integridade podem suspender a obra e exigir uma decisão; atrasos e sobrecustos ficam no histórico.</p>
+          </section>}
         </> : <div className="empty-state">Carregando o orçamento...</div>}
       </section>}
-      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">EVENTOS FICTÍCIOS · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} dias · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}>{option.label}<small>Custo simulado: R$ {option.cost_bi.toFixed(1)} bi</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.slice(0, 8).map((item) => <div className="agenda-event" key={item.id}><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}</section>}
+      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">EVENTOS FICTÍCIOS · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} dias · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {option.cost_bi.toFixed(1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <>{state.simulated_news.slice(0, 3).map((item) => <div className="agenda-event" key={item.id}><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}{state.simulated_news.length > 3 && <details className="agenda-more"><summary>Ver mais {state.simulated_news.length - 3} notícias</summary>{state.simulated_news.slice(3, 12).map((item) => <div className="agenda-event" key={item.id}><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}</details>}</> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
 
-      {activeTab === 'Eleição' && <section className="panel agenda-page"><div className="eyebrow">CALENDÁRIO ELEITORAL FICTÍCIO</div><h2>{state.campaign_active ? 'Campanha aberta; governo em exercício' : 'Mandato e eleição'}</h2><p className="page-description">A campanha não pausa o governo. Você continua tomando decisões e respondendo a eventos até o resultado e, se perder, permanece como presidente em transição até 1º de janeiro.</p><div className="election-summary"><article><span>PRÓXIMA VOTAÇÃO</span><strong>{state.election_date}</strong></article><article><span>SITUAÇÃO NO CARGO</span><strong>{(state.office_status || 'incumbent').replaceAll('_', ' ')}</strong></article><article><span>RESULTADO</span><strong>{state.election?.result === 'lost' ? 'Derrota; transição até a posse' : state.election?.result === 'reelected' ? 'Reeleição; novo mandato na posse' : 'Ainda não apurado'}</strong></article></div><p>O resultado usa apoio, governabilidade, integridade, economia e variação aleatória reproduzível pela semente da campanha. Depois da transição, a carreira continua fora da Presidência.</p></section>}
+      {activeTab === 'Eleição' && <CampaignPanel state={state} request={request} onState={setState} busy={busy} setBusy={setBusy} onNotice={setNotice} />}
+      {activeTab === 'Carreira' && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
       {activeTab === 'Instituições' && <section className="panel agenda-page"><div className="eyebrow">CENÁRIO INSTITUCIONAL FICTÍCIO</div><h2>Instituições e estabilidade</h2><p className="page-description">Indicadores agregados mudam com as decisões. A opção de ruptura é uma mecânica de alto risco, inteiramente abstrata; não há passos operacionais.</p><div className="institution-grid">{Object.entries(state.institutions || {}).map(([key, value]) => <article key={key}><span>{key.replaceAll('_', ' ')}</span><strong>{Math.round(value)}/100</strong><div className="bar"><i style={{ width: `${value}%` }}/></div></article>)}</div><div className="rupture-box"><h3>Ruptura institucional simulada</h3><p>Sucesso: governo de facto, resistência institucional, isolamento e choque econômico. Fracasso: prisão e remoção do cargo. Os resultados são calculados pelo motor e pela semente da partida.</p><button className="secondary-button" onClick={loadRupturePreview}>Ver chance e consequências</button>{ruptureInfo && <div className="rupture-preview"><b>Chance abstrata de sucesso: {ruptureInfo.chance}%</b><p>{ruptureInfo.success}</p><p>{ruptureInfo.failure}</p><button className="danger-button" disabled={busy} onClick={attemptRupture}>Tentar ruptura no cenário</button></div>}</div></section>}
 
+      {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
+
       <footer className="footer"><span>MANDATO · protótipo de simulação</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
     </main>
+    {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} difficulty={state.difficulty} onDifficultyChange={changeDifficulty} busy={busy} setBusy={setBusy} />}
+    {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}
   </div>;
 }

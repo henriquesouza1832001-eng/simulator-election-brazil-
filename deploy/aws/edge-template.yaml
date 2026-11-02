@@ -1,6 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: HTTPS CloudFront edge, private origin rule, and Cognito player accounts for Mandato.
 
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    arch: CloudFront HTTPS -> EC2 origin with a private verification header; Cognito subject scopes player data.
+    must:
+      - Keep the browser app client public with no client secret.
+      - Preserve CloudFront-only origin ingress and the secret origin header.
+      - Auto-confirm registration without marking an unverified email as verified.
+    ref:
+      - at: deploy/aws/README.md
+        has: identity, origin protection, registration tradeoffs, and stack lifecycle
+        scope: same repository
+
 Parameters:
   OriginDomainName:
     Type: String
@@ -57,6 +71,42 @@ Resources:
           CloudFrontDefaultCertificate: true
         IPV6Enabled: true
 
+  GamePreSignUpRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: WritePreSignUpLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/mandato-player-pre-sign-up:*'
+
+  GamePreSignUpFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: mandato-player-pre-sign-up
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt GamePreSignUpRole.Arn
+      Timeout: 5
+      MemorySize: 128
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              # Skip the email confirmation step without falsely marking the
+              # address as verified. Players may verify it later for recovery.
+              event['response']['autoConfirmUser'] = True
+              return event
+
   GameUserPool:
     Type: AWS::Cognito::UserPool
     DeletionPolicy: Retain
@@ -64,7 +114,9 @@ Resources:
     Properties:
       UserPoolName: mandato-player-accounts
       UsernameAttributes: [email]
-      AutoVerifiedAttributes: [email]
+      AutoVerifiedAttributes: []
+      LambdaConfig:
+        PreSignUp: !GetAtt GamePreSignUpFunction.Arn
       AccountRecoverySetting:
         RecoveryMechanisms:
           - Name: verified_email
@@ -115,6 +167,15 @@ Resources:
       LogoutURLs: [!Sub 'https://${GameDistribution.DomainName}']
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
+
+  GamePreSignUpInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GamePreSignUpFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt GameUserPool.Arn
 
 Outputs:
   GameUrl:

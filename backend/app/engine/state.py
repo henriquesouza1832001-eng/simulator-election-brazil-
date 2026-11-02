@@ -1,15 +1,29 @@
 from datetime import date, timedelta
 from typing import Any
 
-from .difficulty import get_difficulty
+from .difficulty import adjust_coalition_probability, get_difficulty
 from .events import ensure_event_state, process_events
 from .politics import election_date, process_election
 from .ministries import INVESTMENT_AREAS
 from .fiscal import advance_fiscal, ensure_fiscal_state
-from .diplomacy import ensure_diplomacy_state
+from .diplomacy import advance_diplomacy, ensure_diplomacy_state
+from .works import advance_works, ensure_works_state
+from .appointments import advance_appointments, ensure_appointments_state
+from .campaign import ensure_campaign_state
+from .communications import ensure_communications_state
+from .politics import campaign_active as is_campaign_active
+from .social import advance_social_indicators, ensure_social_indicators
+from .indicators import record_indicator_snapshot
 
 START_DATE = date(2027, 1, 1)
 TERM_DAYS = 1461
+REGION_BASELINES = {
+    "norte": {"support": 48, "infrastructure": 66, "economic_activity": 74, "priority": "Saneamento, conectividade e logística fluvial"},
+    "nordeste": {"support": 50, "infrastructure": 63, "economic_activity": 78, "priority": "Água, emprego e acesso a serviços"},
+    "centro_oeste": {"support": 54, "infrastructure": 77, "economic_activity": 90, "priority": "Escoamento, armazenagem e proteção ambiental"},
+    "sudeste": {"support": 53, "infrastructure": 82, "economic_activity": 94, "priority": "Mobilidade, habitação e produtividade urbana"},
+    "sul": {"support": 52, "infrastructure": 84, "economic_activity": 87, "priority": "Resiliência climática e indústria"},
+}
 
 
 def new_game() -> dict[str, Any]:
@@ -19,6 +33,8 @@ def new_game() -> dict[str, Any]:
         "dashboard_cards": ["gdp_growth", "inflation", "unemployment", "debt_gdp", "primary_balance", "approval"],
         "day_of_mandate": 1, "date": START_DATE.isoformat(), "regime": "democratic",
         "office_status": "incumbent", "career_status": "active", "election": {}, "rupture_attempts": 0,
+        "communications": {"inauguration": {"required": True, "delivered": False, "legacy_save": False,
+            "date": None, "text": "", "score": None, "rubric": {}}},
         "institutions": {"military_loyalty": 60, "constitutional_order": 65, "civilian_legitimacy": 55, "institutional_resistance": 50},
         "legislative_calendar": {"last_submission": None, "pending_bills": [], "laws_enacted": 0, "laws_failed": 0},
         "executive_calendar": {"last_action": None},
@@ -31,14 +47,14 @@ def new_game() -> dict[str, Any]:
                             "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."},
                             "official_residence": {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
                             "description": "Manutencao, servicos e funcionamento das residencias oficiais."}}}},
-        "regional_metrics": {"sul": {"support": 50, "infrastructure": 85, "economic_activity": 100}},
+        "regional_metrics": {key: dict(value) for key, value in REGION_BASELINES.items()},
         "metrics": {"gdp_growth": 2.1, "inflation": 4.5, "unemployment": 7.2, "debt_gdp": 78.0,
                     "primary_balance": -1.5, "approval": 52.0, "governability": 55, "congress_support": 52,
                     "institutional_trust": 58, "integrity": 70, "regional_infrastructure": 85},
         "events": [
             {"id": "budget-2027", "date": "2027-02-15", "title": "Primeira revisão do orçamento", "description": "A equipe econômica apresenta o quadro fiscal atualizado.", "simulated": True},
             {"id": "congress-100", "date": "2027-04-10", "title": "Balanço dos primeiros cem dias", "description": "Lideranças cobram prioridades e entregas do governo.", "simulated": True},
-            {"id": "midterm-2028", "date": "2028-10-04", "title": "Eleições municipais", "description": "A votação muda o equilíbrio político nos estados e municípios.", "simulated": True},
+            {"id": "municipal-2028", "date": "2028-10-01", "title": "Eleições municipais", "description": "A votação muda o equilíbrio político nos estados e municípios.", "simulated": True},
         ],
     }
     ensure_event_state(state)
@@ -52,8 +68,9 @@ def refresh_calendar_fields(state: dict[str, Any]) -> dict[str, Any]:
     state["month"] = max(1, (current.year - term_start.year) * 12 + current.month - term_start.month + 1)
     state["days_in_term"] = TERM_DAYS
     state["election_date"] = election_date(state).isoformat()
-    state["campaign_active"] = (current.year == election_date(state).year and date(current.year, 7, 1) <= current <= election_date(state)
-                                 and not state.get("election", {}).get("result"))
+    ensure_campaign_state(state)
+    state["campaign_active"] = (is_campaign_active(state, current) if not (state.get("career") or {}).get("mode")
+                                else (state.get("career", {}).get("phase") == "campaign" and current <= election_date(state)))
     ensure_event_state(state)
     state.setdefault("legislative_calendar", {"last_submission": None, "pending_bills": [], "laws_enacted": 0, "laws_failed": 0})
     state.setdefault("executive_calendar", {"last_action": None})
@@ -74,6 +91,16 @@ def refresh_calendar_fields(state: dict[str, Any]) -> dict[str, Any]:
         "description": "Manutenção, serviços e funcionamento das residências oficiais."})
     ensure_fiscal_state(state)
     ensure_diplomacy_state(state)
+    ensure_works_state(state)
+    ensure_appointments_state(state)
+    ensure_communications_state(state)
+    ensure_social_indicators(state)
+    regional = state.setdefault("regional_metrics", {})
+    for key, defaults in REGION_BASELINES.items():
+        regional.setdefault(key, dict(defaults))
+        for metric, value in defaults.items():
+            regional[key].setdefault(metric, value)
+    record_indicator_snapshot(state)
     return state
 
 
@@ -97,11 +124,15 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     volatility = difficulty["economic_volatility"]
     m["inflation"] = round(max(0.5, m["inflation"] + (2.4 - m["inflation"]) * elapsed / 5000 * volatility), 2)
     m["unemployment"] = round(max(2.0, m["unemployment"] + (5.5 - m["unemployment"]) * elapsed / 7000 * volatility), 2)
+    work_messages = advance_works(state, before, after)
+    diplomacy_messages = advance_diplomacy(state, before, after)
     advance_fiscal(state, elapsed, volatility)
-    messages = process_events(state, before, after)
+    appointment_messages = advance_appointments(state, before, after)
+    messages = work_messages + diplomacy_messages + appointment_messages + process_events(state, before, after)
     messages.extend(process_election(state, before, after))
     messages.extend(process_legislation(state, before, after))
     messages.extend(process_investments(state, before, after))
+    advance_social_indicators(state, elapsed)
     event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
     if event_names:
         messages.append("Agenda simulada: " + ", ".join(event_names) + ".")
@@ -120,7 +151,10 @@ def process_legislation(state: dict[str, Any], before: date, after: date) -> lis
         if before < decision_day <= after:
             support = state["metrics"].get("congress_support", 50)
             modifier = -.22 if bill.get("instrument") == "PEC" else -.08 if bill.get("instrument") == "Projeto de Lei Complementar" else 0
-            chance = max(.08, min(.88, .16 + support / 100 * .62 + modifier))
+            base_chance = .16 + support / 100 * .62 + modifier
+            chance = adjust_coalition_probability(
+                base_chance, get_difficulty(state.get("difficulty", "normal"))["coalition_flexibility"]
+            )
             rng = random.Random(f"{state.get('campaign_seed', 203001)}:bill:{bill['id']}")
             if rng.random() < chance:
                 from .rules import apply_effects

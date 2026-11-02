@@ -84,8 +84,9 @@ def primary_spending_bi(state: dict[str, Any]) -> float:
     mandatory = sum(float(line["annual_bi"]) for line in fiscal["mandatory_lines"].values())
     investments = float(budget.get("annual_investment_bi", 100.0))
     operating = _operating_cost_bi(budget.get("operating", {}))
+    works_overrun = float(budget.get("works", {}).get("annual_overrun_bi", 0))
     return max(0.0, mandatory + float(fiscal.get("procurement_bi", 0)) + investments + operating
-               - float(fiscal.get("policy_adjustment_bi", 0)))
+               + works_overrun - float(fiscal.get("policy_adjustment_bi", 0)))
 
 
 def refresh_fiscal_metrics(state: dict[str, Any]) -> dict[str, Any]:

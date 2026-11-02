@@ -4,6 +4,7 @@ dist/
 __pycache__/
 *.py[cod]
 .env
+.gemini.env
 deploy/aws/.origin-secret
 *.sqlite3
 *.db

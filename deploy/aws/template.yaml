@@ -1,5 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Private single-user EC2 host for the Mandato simulator.
+Description: Persistent EC2 game host for Mandato; the public HTTPS edge and player accounts live in a separate stack.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    arch: EC2 + Docker + persistent SQLite; HTTPS and player identity are isolated in the edge stack.
+    must:
+      - Keep application data on the persistent volume across container and instance updates.
+      - Restrict direct origin access; public traffic enters through the CloudFront edge.
+    ref:
+      - at: deploy/aws/README.md
+        has: stack boundaries, origin access, data persistence, and operations
+        scope: same repository
 
 Parameters:
   AllowedClientCidr:

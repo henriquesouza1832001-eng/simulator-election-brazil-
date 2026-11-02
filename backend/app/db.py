@@ -9,6 +9,16 @@ from typing import Any
 _player_id: ContextVar[str] = ContextVar("player_id", default="local")
 
 
+class _ClosingConnection(sqlite3.Connection):
+    """Keep transaction context behavior while always releasing the file handle."""
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 def set_player_id(player_id: str):
     return _player_id.set(player_id)
 
@@ -31,7 +41,7 @@ def database_path() -> Path:
 
 
 def connect() -> sqlite3.Connection:
-    connection = sqlite3.connect(database_path())
+    connection = sqlite3.connect(database_path(), factory=_ClosingConnection)
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -48,6 +58,13 @@ def initialize() -> None:
                 player_id TEXT PRIMARY KEY,
                 state_json TEXT NOT NULL,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS game_archives (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                state_json TEXT NOT NULL,
+                archived_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS actions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,18 +123,53 @@ def save_state(state: dict[str, Any]) -> None:
         )
 
 
-def record_action(date: str, kind: str, title: str, source_text: str,
-                  interpretation: dict[str, Any], effects: list[dict[str, Any]]) -> None:
+def archive_state(state: dict[str, Any], title: str) -> int:
+    """Keep a recoverable snapshot before switching a player to another career."""
     with connect() as db:
-        db.execute(
+        last_action = db.execute("SELECT COALESCE(MAX(id), 0) AS last_id FROM actions WHERE player_id = ?", (current_player_id(),)).fetchone()["last_id"]
+        state.setdefault("action_log_end_id", int(last_action))
+        cursor = db.execute(
+            "INSERT INTO game_archives (player_id, title, state_json) VALUES (?, ?, ?)",
+            (current_player_id(), title[:160], json.dumps(state, ensure_ascii=False)),
+        )
+        # Keep a small rolling set so repeated experiments cannot grow saves forever.
+        db.execute("DELETE FROM game_archives WHERE player_id = ? AND id NOT IN (SELECT id FROM game_archives WHERE player_id = ? ORDER BY id DESC LIMIT 12)",
+                   (current_player_id(), current_player_id()))
+        return int(cursor.lastrowid)
+
+
+def list_archives() -> list[dict[str, Any]]:
+    with connect() as db:
+        rows = db.execute("SELECT id, title, archived_at FROM game_archives WHERE player_id = ? ORDER BY id DESC", (current_player_id(),)).fetchall()
+    return [dict(row) for row in rows]
+
+
+def restore_archive(archive_id: int) -> dict[str, Any] | None:
+    with connect() as db:
+        row = db.execute("SELECT state_json FROM game_archives WHERE id = ? AND player_id = ?", (archive_id, current_player_id())).fetchone()
+    return json.loads(row["state_json"]) if row else None
+
+
+def record_action(date: str, kind: str, title: str, source_text: str,
+                  interpretation: dict[str, Any], effects: list[dict[str, Any]]) -> int:
+    with connect() as db:
+        cursor = db.execute(
             "INSERT INTO actions (date, kind, title, source_text, interpretation_json, effects_json, player_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (date, kind, title, source_text, json.dumps(interpretation, ensure_ascii=False), json.dumps(effects, ensure_ascii=False), current_player_id()),
         )
+        return int(cursor.lastrowid)
 
 
-def recent_actions(limit: int = 10) -> list[dict[str, Any]]:
+def recent_actions(limit: int = 10, after_id: int | None = None, through_id: int | None = None) -> list[dict[str, Any]]:
+    clauses = ["player_id = ?"]
+    values: list[Any] = [current_player_id()]
+    if after_id is not None:
+        clauses.append("id >= ?"); values.append(after_id)
+    if through_id is not None:
+        clauses.append("id <= ?"); values.append(through_id)
+    values.append(limit)
     with connect() as db:
-        rows = db.execute("SELECT id, date, kind, title FROM actions WHERE player_id = ? ORDER BY id DESC LIMIT ?", (current_player_id(), limit)).fetchall()
+        rows = db.execute(f"SELECT id, date, kind, title FROM actions WHERE {' AND '.join(clauses)} ORDER BY id DESC LIMIT ?", values).fetchall()
     return [dict(row) for row in rows]
 
 
