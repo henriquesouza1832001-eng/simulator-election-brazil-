@@ -87,6 +87,8 @@ def initialize() -> None:
             columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
             if "player_id" not in columns:
                 db.execute(f"ALTER TABLE {table} ADD COLUMN player_id TEXT NOT NULL DEFAULT 'local'")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_actions_player_id ON actions(player_id, id DESC)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_corrections_player_id ON interpretation_corrections(player_id, id DESC)")
 
 
 def load_state() -> dict[str, Any] | None:

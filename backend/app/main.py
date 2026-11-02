@@ -56,7 +56,9 @@ async def player_authentication(request: Request, call_next):
         from jwt import PyJWKClient
         issuer = f"https://cognito-idp.{region}.amazonaws.com/{pool_id}"
         jwks = f"{issuer}/.well-known/jwks.json"
-        client = _jwks_clients.setdefault(issuer, PyJWKClient(jwks))
+        client = _jwks_clients.get(issuer)
+        if client is None:
+            client = _jwks_clients[issuer] = PyJWKClient(jwks)
         signing_key = client.get_signing_key_from_jwt(authorization[7:].strip()).key
         claims = jwt.decode(authorization[7:].strip(), signing_key, algorithms=["RS256"], issuer=issuer,
                             options={"verify_aud": False, "require": ["iss", "sub", "exp", "token_use", "client_id"]})
