@@ -16,7 +16,7 @@ the `AllowedClientCidr` parameter in the stack to the new address plus `/32`.
 2. From this directory run:
 
    ```powershell
-   .\deploy.ps1 -Region us-east-1 -InstanceType t3.small
+   .\deploy.ps1 -Region us-east-2 -InstanceType t3.small
    ```
 
 3. Wait for CloudFormation to finish, then open the `GameUrl` stack output.

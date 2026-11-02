@@ -1,5 +1,5 @@
 param(
-    [string]$Region = "us-east-1",
+    [string]$Region = "us-east-2",
     [ValidateSet("t3.micro", "t3.small")]
     [string]$InstanceType = "t3.small",
     [string]$StackName = "mandato-simulator"
