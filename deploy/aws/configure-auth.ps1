@@ -29,13 +29,12 @@ $envContent = @(
     "COGNITO_CLIENT_ID=$($outputs.CognitoClientId)",
     "COGNITO_DOMAIN=$($outputs.CognitoDomain)"
 ) -join "`n"
+$envEncoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($envContent))
 $remoteLines = @(
     "set -euo pipefail",
     "cd /opt/mandato/app",
     "git pull --ff-only origin main",
-    "cat > .env <<'MANDATO_ENV'",
-    $envContent,
-    "MANDATO_ENV",
+    "printf '%s' '$envEncoded' | base64 -d > .env",
     "set -a; source .env; set +a",
     "chmod 600 .env",
     "docker compose up -d --build",
