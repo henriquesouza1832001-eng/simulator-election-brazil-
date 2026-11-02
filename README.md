@@ -1,6 +1,12 @@
 # Mandato — simulador de governo
 
-Protótipo local de um jogo de governo no navegador. React/JSX cuida da interface; FastAPI e Python guardam o estado, calendário, regras e memória de correções. As medidas são fictícias.
+Simulador de governo no navegador. React/JSX cuida da interface; FastAPI e Python guardam estado, calendário, regras e memória de correções. O jogo é fictício.
+
+## Versão publicada
+
+Abra [Mandato](https://d2dpmk0vrt66wn.cloudfront.net). Cadastro e login usam Amazon Cognito; cada conta recebe dados de jogo separados. A aplicação está hospedada em AWS EC2, com HTTPS via CloudFront e banco SQLite persistente.
+
+O domínio CloudFront é temporário e a infraestrutura ainda está em fase de protótipo privado. Backup semanal externo e múltiplas campanhas por conta são próximos passos. Detalhes operacionais em [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
 
 ## Rodar localmente
 
@@ -53,7 +59,7 @@ O modelo de linguagem interpreta o texto e identifica parâmetros; não escolhe 
 2. Implementar eventos noticiosos, grupos sociais e aprovação por segmento.
 3. Adicionar exportação/importação de campanha e tela de histórico.
 4. Gerar episódios sintéticos e comparar políticas do agente com cenários de referência.
-5. Preparar deploy da API no Oracle Cloud e hospedar o front-end como estático.
+5. Criar múltiplas campanhas por conta e ligar a seleção de cargo à progressão eleitoral.
 
 Para treinar a política de referência, estando em `game/backend/`: `python -m app.bot.trainer --episodes 3000`. O arquivo de política sai em `game/data/policy.json` e pode ser usado pelo endpoint de recomendação.
 
@@ -65,4 +71,4 @@ Para indexar uma fonte oficial já revisada como texto, use `python -m app.data.
 
 ## Deploy inicial com Docker
 
-O projeto inclui `compose.yaml`, uma imagem FastAPI e Nginx para servir o JSX e encaminhar `/api` à API. Na VM Oracle, instale Docker Engine e Docker Compose, copie o projeto e crie `backend/.env`; depois rode `docker compose up -d --build`. Libere a porta TCP 80 na lista de segurança da VCN e no firewall da VM. O SQLite fica em volume persistente. Para HTTPS e domínio, coloque Caddy ou Nginx TLS à frente antes de abrir o serviço ao público.
+O projeto inclui `compose.yaml`, uma imagem FastAPI e Nginx. A stack ativa fica em `deploy/aws/`: a stack principal mantém EC2 e volume persistente; a stack edge publica CloudFront HTTPS e Cognito sem recriar a instância. Use `deploy/aws/README.md` para os comandos, e nunca abra diretamente a API.

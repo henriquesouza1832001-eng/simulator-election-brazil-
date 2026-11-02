@@ -24,7 +24,7 @@ Fonte: [PLANALTO — página do jogo, recursos e Diário Oficial v1.32](https://
 ## O que já existe neste protótipo
 
 - Interface React/Vite e API FastAPI em Python, empacotadas em Docker.
-- Hospedagem inicial numa EC2 com SQLite persistente; o acesso atual é via HTTP e lista de IPs permitidos.
+- Hospedagem numa EC2 com SQLite persistente, CloudFront HTTPS e Cognito. O origin exige cabeçalho secreto; o acesso pelo IP retorna 403.
 - Calendário diário e progressão por dias/semanas/meses.
 - Painel configurável com economia, inflação, desemprego, dívida, saldo primário, aprovação e governabilidade.
 - Prévia de medida em linguagem natural, regras de efeito numérico e correção do jogador; Gemini opcional e fallback local.
@@ -36,7 +36,7 @@ Fonte: [PLANALTO — página do jogo, recursos e Diário Oficial v1.32](https://
 
 ## Lacunas principais
 
-1. **Identidade e isolamento:** hoje `game_save` guarda uma única partida; ações e correções também são compartilhadas. Antes de abrir a outros jogadores, contas autenticadas precisam ser vinculadas ao estado, histórico, correções e futuras partidas de cada pessoa.
+1. **Identidade e isolamento:** Cognito, validação de JWT e separação de estado, ações e correções por jogador estão implementados. Falta cada conta guardar múltiplas campanhas nomeadas.
 2. **Carreira jogável:** o grafo de cargos está esboçado, mas falta iniciar campanhas municipais/estaduais/federais, votação, posse, mandato local, perda e retorno, sucessão e nomeações em sistemas diferentes.
 3. **Legislativo:** não há Câmara/Senado com integrantes e bancadas individualizados no motor; apoio agregado substitui negociações, pauta, comissão, emenda e voto nominal.
 4. **Orçamento executável:** há valores de referência e ajustes, mas ainda não uma LOA/fonte por programa, execução mensal, transferências federativas, empenho, contratos e conciliação entre mudança e entrega.
@@ -64,10 +64,9 @@ Fonte: [PLANALTO — página do jogo, recursos e Diário Oficial v1.32](https://
 
 - [x] Inventariar a aplicação e a referência PLANALTO.
 - [x] Preparar saves, ações e correções com `player_id`; backend valida JWT Cognito quando configurado.
-- [ ] Criar o User Pool e configurar domínio HTTPS para habilitar cadastro real.
-- [ ] Publicar por HTTPS antes de ativar o cadastro/login em produção.
-- [ ] Publicar por HTTPS antes de ativar cadastro/login em produção.
-- [ ] Criar uma campanha com identidade e mais de um save por jogador.
+- [x] Criar o User Pool e configurar HTTPS para habilitar cadastro real.
+- [x] Validar token Cognito no backend e filtrar dados pelo identificador verificado do jogador.
+- [ ] Criar várias campanhas por jogador, com nome, cargo e dificuldade configuráveis.
 - [ ] Definir as entidades centrais: jogador, personagem, campanha, cargo, mandato, evento, medida, orçamento e fonte.
 
 ### Vertical slice de carreira
@@ -94,12 +93,12 @@ Fonte: [PLANALTO — página do jogo, recursos e Diário Oficial v1.32](https://
 
 ## Arquitetura de conta e campanha
 
-- Cognito User Pool para cadastro/login; o navegador usa fluxo OIDC authorization code + PKCE, app client público sem segredo. A tela e validação estão preparadas, ainda sem pool criado.
-- HTTPS obrigatório no domínio do jogo antes de redirecionamentos de autenticação e captura de credenciais.
+- Cognito User Pool ativo para cadastro/login; o navegador usa authorization code + PKCE e app client público sem segredo. URL HTTPS atual: `https://d2dpmk0vrt66wn.cloudfront.net`.
+- O frontend usa cookies Secure e SameSite=Lax para tokens; o backend valida JWT em todas as rotas privadas.
 - API valida JWT em toda rota privada. O identificador imutável `sub` vira `player_id`; nunca confiar em um `player_id` enviado pelo navegador.
-- Cada linha de campanha, ação, aprendizado e inventário inclui `player_id`; operações verificam propriedade no servidor.
-- Uma campanha tem modo, personagem, cargo, calendário, estado e trilha de eventos versionada. Novo save cria outra campanha sem alterar as anteriores.
-- Não criar tabela de senha própria nem guardar tokens em `localStorage`. Para o protótipo privado atual, modo local permanece sem contas; modo multiusuário só liga depois do HTTPS + Cognito configurados.
+- O estado, as ações e as correções estão filtrados por `player_id`; o esquema de múltiplas campanhas ainda será construído.
+- A próxima migração deve adicionar modo, personagem, cargo, calendário, estado e trilha de eventos versionada a cada campanha, sem alterar partidas existentes.
+- Não criar tabela de senha própria. A implantação exige conta autenticada; o modo local permanece disponível apenas no desenvolvimento.
 
 ## Decisões de interface
 
