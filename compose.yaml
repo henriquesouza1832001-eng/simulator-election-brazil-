@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_PATH: /data/game.sqlite3
+      FRONTEND_ORIGIN: http://localhost
+    volumes:
+      - game_data:/data
+    expose:
+      - "8000"
+
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
+volumes:
+  game_data:

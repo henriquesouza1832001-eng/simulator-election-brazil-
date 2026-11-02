@@ -1,0 +1,1 @@
+Caricaturas originais de um elenco curto de figuras públicas. Cada imagem terá metadados no catálogo, indicação de sátira e referência pública da pessoa. Não usar a caricatura como retrato documental.

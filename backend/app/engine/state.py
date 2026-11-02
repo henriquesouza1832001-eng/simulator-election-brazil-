@@ -1,0 +1,168 @@
+from datetime import date, timedelta
+from typing import Any
+
+from .difficulty import get_difficulty
+from .events import ensure_event_state, process_events
+from .politics import election_date, process_election
+from .ministries import INVESTMENT_AREAS
+from .fiscal import advance_fiscal, ensure_fiscal_state
+from .diplomacy import ensure_diplomacy_state
+
+START_DATE = date(2027, 1, 1)
+TERM_DAYS = 1461
+
+
+def new_game() -> dict[str, Any]:
+    state = {
+        "term": 1, "term_start": START_DATE.isoformat(), "campaign_seed": 203001,
+        "difficulty": "normal",
+        "dashboard_cards": ["gdp_growth", "inflation", "unemployment", "debt_gdp", "primary_balance", "approval"],
+        "day_of_mandate": 1, "date": START_DATE.isoformat(), "regime": "democratic",
+        "office_status": "incumbent", "career_status": "active", "election": {}, "rupture_attempts": 0,
+        "institutions": {"military_loyalty": 60, "constitutional_order": 65, "civilian_legitimacy": 55, "institutional_resistance": 50},
+        "legislative_calendar": {"last_submission": None, "pending_bills": [], "laws_enacted": 0, "laws_failed": 0},
+        "executive_calendar": {"last_action": None},
+        "budget": {"last_reallocation": None, "annual_investment_bi": 100.0,
+                   "allocations": {key: area["budget"] for key, area in INVESTMENT_AREAS.items()},
+                   "pipeline": [], "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0,
+                     "infrastructure": 50.0, "productivity": 50.0, "rural_resilience": 50.0},
+                    "operating": {"last_review": None, "travel_cut_pct": 0, "residence_cut_pct": 0,
+                        "lines": {"official_travel": {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
+                            "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."},
+                            "official_residence": {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
+                            "description": "Manutencao, servicos e funcionamento das residencias oficiais."}}}},
+        "regional_metrics": {"sul": {"support": 50, "infrastructure": 85, "economic_activity": 100}},
+        "metrics": {"gdp_growth": 2.1, "inflation": 4.5, "unemployment": 7.2, "debt_gdp": 78.0,
+                    "primary_balance": -1.5, "approval": 52.0, "governability": 55, "congress_support": 52,
+                    "institutional_trust": 58, "integrity": 70, "regional_infrastructure": 85},
+        "events": [
+            {"id": "budget-2027", "date": "2027-02-15", "title": "Primeira revisão do orçamento", "description": "A equipe econômica apresenta o quadro fiscal atualizado.", "simulated": True},
+            {"id": "congress-100", "date": "2027-04-10", "title": "Balanço dos primeiros cem dias", "description": "Lideranças cobram prioridades e entregas do governo.", "simulated": True},
+            {"id": "midterm-2028", "date": "2028-10-04", "title": "Eleições municipais", "description": "A votação muda o equilíbrio político nos estados e municípios.", "simulated": True},
+        ],
+    }
+    ensure_event_state(state)
+    return refresh_calendar_fields(state)
+
+
+def refresh_calendar_fields(state: dict[str, Any]) -> dict[str, Any]:
+    current = date.fromisoformat(state["date"])
+    term_start = date.fromisoformat(state.get("term_start", START_DATE.isoformat()))
+    state["day_of_mandate"] = max(1, (current - term_start).days + 1)
+    state["month"] = max(1, (current.year - term_start.year) * 12 + current.month - term_start.month + 1)
+    state["days_in_term"] = TERM_DAYS
+    state["election_date"] = election_date(state).isoformat()
+    state["campaign_active"] = (current.year == election_date(state).year and date(current.year, 7, 1) <= current <= election_date(state)
+                                 and not state.get("election", {}).get("result"))
+    ensure_event_state(state)
+    state.setdefault("legislative_calendar", {"last_submission": None, "pending_bills": [], "laws_enacted": 0, "laws_failed": 0})
+    state.setdefault("executive_calendar", {"last_action": None})
+    state.setdefault("budget", {"last_reallocation": None, "annual_investment_bi": 100.0,
+        "allocations": {key: area["budget"] for key, area in INVESTMENT_AREAS.items()}, "pipeline": [],
+        "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0, "infrastructure": 50.0,
+                     "productivity": 50.0, "rural_resilience": 50.0}})
+    # Migration for existing saves: operating expenses are part of the federal cash
+    # account and the estimates are explicitly game abstractions, not official totals.
+    operating = state["budget"].setdefault("operating", {})
+    operating.setdefault("last_review", None)
+    operating.setdefault("travel_cut_pct", 0)
+    operating.setdefault("residence_cut_pct", 0)
+    lines = operating.setdefault("lines", {})
+    lines.setdefault("official_travel", {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
+        "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."})
+    lines.setdefault("official_residence", {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
+        "description": "Manutenção, serviços e funcionamento das residências oficiais."})
+    ensure_fiscal_state(state)
+    ensure_diplomacy_state(state)
+    return state
+
+
+def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str]:
+    days = max(1, min(int(days), 90))
+    before = date.fromisoformat(state["date"])
+    after = before + timedelta(days=days)
+    next_election = election_date(state)
+    if before < next_election < after:
+        after = next_election
+    transition = state.get("election", {}).get("transition_date")
+    if transition:
+        transition_day = date.fromisoformat(transition)
+        if before < transition_day < after:
+            after = transition_day
+    elapsed = (after - before).days
+    state["date"] = after.isoformat()
+    refresh_calendar_fields(state)
+    m = state["metrics"]
+    difficulty = get_difficulty(state.get("difficulty", "normal"))
+    volatility = difficulty["economic_volatility"]
+    m["inflation"] = round(max(0.5, m["inflation"] + (2.4 - m["inflation"]) * elapsed / 5000 * volatility), 2)
+    m["unemployment"] = round(max(2.0, m["unemployment"] + (5.5 - m["unemployment"]) * elapsed / 7000 * volatility), 2)
+    advance_fiscal(state, elapsed, volatility)
+    messages = process_events(state, before, after)
+    messages.extend(process_election(state, before, after))
+    messages.extend(process_legislation(state, before, after))
+    messages.extend(process_investments(state, before, after))
+    event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
+    if event_names:
+        messages.append("Agenda simulada: " + ", ".join(event_names) + ".")
+    if not messages:
+        messages.append(f"Calendário simulado avançou {elapsed} dia(s).")
+    return refresh_calendar_fields(state), " ".join(messages)
+
+
+def process_legislation(state: dict[str, Any], before: date, after: date) -> list[str]:
+    import random
+    calendar = state.setdefault("legislative_calendar", {"last_submission": None, "pending_bills": [], "laws_enacted": 0, "laws_failed": 0})
+    messages = []
+    remaining = []
+    for bill in calendar.get("pending_bills", []):
+        decision_day = date.fromisoformat(bill["decision_date"])
+        if before < decision_day <= after:
+            support = state["metrics"].get("congress_support", 50)
+            modifier = -.22 if bill.get("instrument") == "PEC" else -.08 if bill.get("instrument") == "Projeto de Lei Complementar" else 0
+            chance = max(.08, min(.88, .16 + support / 100 * .62 + modifier))
+            rng = random.Random(f"{state.get('campaign_seed', 203001)}:bill:{bill['id']}")
+            if rng.random() < chance:
+                from .rules import apply_effects
+                effects = apply_effects(state, bill["interpretation"])
+                calendar["laws_enacted"] = int(calendar.get("laws_enacted", 0)) + 1
+                bill["status"] = "approved"
+                bill["effects"] = effects
+                messages.append(f"Congresso aprovou, na simulação, o projeto: {bill['title']}.")
+            else:
+                calendar["laws_failed"] = int(calendar.get("laws_failed", 0)) + 1
+                bill["status"] = "rejected"
+                messages.append(f"Congresso rejeitou, na simulação, o projeto: {bill['title']}.")
+            state.setdefault("simulated_news", []).insert(0, {"id": bill["id"], "date": decision_day.isoformat(), "title": f"Votação: {bill['title']}", "region": "Nacional", "description": f"Resultado fictício: {bill['status']}.", "simulated": True})
+            state["simulated_news"] = state["simulated_news"][:20]
+        else:
+            remaining.append(bill)
+    calendar["pending_bills"] = remaining
+    return messages
+
+
+def process_investments(state: dict[str, Any], before: date, after: date) -> list[str]:
+    budget = state.setdefault("budget", {"pipeline": [], "outcomes": {}})
+    remaining = []
+    messages = []
+    for project in budget.get("pipeline", []):
+        completion = date.fromisoformat(project["completion_date"])
+        if before < completion <= after:
+            area = INVESTMENT_AREAS[project["area"]]
+            scale = min(2.5, project["annual_increase_bi"] / 5)
+            effects = dict(area["effects"])
+            source_area = INVESTMENT_AREAS.get(project.get("source_area", ""))
+            if source_area:
+                for metric, delta in source_area["effects"].items():
+                    effects[metric] = effects.get(metric, 0) - delta
+            for metric, delta in effects.items():
+                if metric in {"gdp_growth", "approval"}:
+                    updated = state["metrics"].get(metric, 0) + delta * scale
+                    state["metrics"][metric] = round(max(0, min(100, updated)) if metric == "approval" else max(-10, min(20, updated)), 2)
+                else:
+                    budget.setdefault("outcomes", {})[metric] = max(0, min(100, budget.setdefault("outcomes", {}).get(metric, 50) + delta * scale))
+            messages.append(f"Entrega simulada: {area['label']} recebe o reforço e {source_area['label'] if source_area else 'a área de origem'} sente a redução.")
+        else:
+            remaining.append(project)
+    budget["pipeline"] = remaining
+    return messages

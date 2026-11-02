@@ -1,0 +1,305 @@
+{
+  "episodes": 3000,
+  "seed": 41,
+  "best_action_by_state": {
+    "deficit|mid|slow": "fiscal_efficiency",
+    "near|low|fast": "fiscal_efficiency",
+    "surplus|high|fast": "fiscal_efficiency",
+    "deficit|low|slow": "fiscal_efficiency",
+    "surplus|low|slow": "fiscal_efficiency",
+    "surplus|mid|slow": "fiscal_efficiency",
+    "deficit|low|fast": "fiscal_efficiency",
+    "surplus|high|slow": "fiscal_efficiency",
+    "near|low|steady": "business_formalization",
+    "surplus|mid|steady": "fiscal_efficiency",
+    "deficit|high|fast": "fiscal_efficiency",
+    "surplus|mid|fast": "fiscal_efficiency",
+    "near|high|fast": "fiscal_efficiency",
+    "surplus|low|fast": "fiscal_efficiency",
+    "deficit|high|slow": "fiscal_efficiency",
+    "surplus|low|steady": "fiscal_efficiency",
+    "deficit|mid|steady": "fiscal_efficiency",
+    "deficit|mid|fast": "fiscal_efficiency",
+    "deficit|low|steady": "fiscal_efficiency",
+    "near|high|slow": "fiscal_efficiency",
+    "near|high|steady": "fiscal_efficiency",
+    "near|mid|slow": "fiscal_efficiency",
+    "deficit|high|steady": "fiscal_efficiency",
+    "near|mid|fast": "fiscal_efficiency",
+    "near|low|slow": "fiscal_efficiency",
+    "near|mid|steady": "public_investment",
+    "surplus|high|steady": "fiscal_efficiency"
+  },
+  "q_values": {
+    "deficit|mid|slow": {
+      "fiscal_efficiency": 2.021838891122223,
+      "business_formalization": 2.0162916247820926,
+      "public_investment": 1.9400219821214322,
+      "tax_change": 1.7524643258841088,
+      "social_policy": 1.8045901101290767,
+      "security": 1.8855562072830092,
+      "communication": 1.8614023295231081,
+      "other": 1.8106959606125004
+    },
+    "near|low|fast": {
+      "fiscal_efficiency": 2.032494330955927,
+      "business_formalization": 2.0081862101914423,
+      "public_investment": 1.9684879064703495,
+      "tax_change": 1.741082635462803,
+      "social_policy": 1.8582632029961001,
+      "security": 1.8474924376219901,
+      "communication": 1.85598606382022,
+      "other": 1.800118379398553
+    },
+    "surplus|high|fast": {
+      "fiscal_efficiency": 2.024962815607728,
+      "business_formalization": 2.0102041986660413,
+      "public_investment": 2.0005712245967557,
+      "tax_change": 1.7615050688079381,
+      "social_policy": 1.8773213475967407,
+      "security": 1.8773270065602308,
+      "communication": 1.857099070259492,
+      "other": 1.8113403500631413
+    },
+    "deficit|low|slow": {
+      "fiscal_efficiency": 2.027354584425834,
+      "business_formalization": 2.0160592183290804,
+      "public_investment": 1.9410443039164638,
+      "tax_change": 1.7532682160189599,
+      "social_policy": 1.8009843764591171,
+      "security": 1.882642831259432,
+      "communication": 1.8617372329918558,
+      "other": 1.8092231215720307
+    },
+    "surplus|low|slow": {
+      "fiscal_efficiency": 2.0239328753933847,
+      "business_formalization": 2.0165959112721867,
+      "public_investment": 1.9990035671140471,
+      "tax_change": 1.7484607947890736,
+      "social_policy": 1.8689815800068876,
+      "security": 1.8839963986345796,
+      "communication": 1.8580712220319904,
+      "other": 1.808917091593566
+    },
+    "surplus|mid|slow": {
+      "fiscal_efficiency": 2.0290438348713495,
+      "business_formalization": 2.0127147563316643,
+      "public_investment": 2.000325956404196,
+      "tax_change": 1.7400692004091354,
+      "social_policy": 1.8691115289556877,
+      "security": 1.8823035494192175,
+      "communication": 1.8492111921905054,
+      "other": 1.7995502695735892
+    },
+    "deficit|low|fast": {
+      "fiscal_efficiency": 2.018482013180387,
+      "business_formalization": 2.0094985567154424,
+      "public_investment": 1.9243503879945967,
+      "tax_change": 1.7661198269773601,
+      "social_policy": 1.7923277606511832,
+      "security": 1.8852035758739,
+      "communication": 1.8581900616241536,
+      "other": 1.8157609947567726
+    },
+    "surplus|high|slow": {
+      "fiscal_efficiency": 2.0255313858213215,
+      "business_formalization": 2.019155628756648,
+      "public_investment": 2.001135681206001,
+      "tax_change": 1.7546227656672588,
+      "social_policy": 1.8691712955192388,
+      "security": 1.88697442741845,
+      "communication": 1.864460303361976,
+      "other": 1.813004480534021
+    },
+    "near|low|steady": {
+      "fiscal_efficiency": 1.8799530092896373,
+      "business_formalization": 1.964684734547114,
+      "public_investment": 1.8369640322110226,
+      "tax_change": 1.6638176299083725,
+      "social_policy": 1.8209211604649995,
+      "security": 1.7703191891581873,
+      "communication": 1.784014214824602,
+      "other": 1.6623472419750507
+    },
+    "surplus|mid|steady": {
+      "fiscal_efficiency": 2.0268772371934487,
+      "business_formalization": 2.0156733597985577,
+      "public_investment": 1.9982604728023166,
+      "tax_change": 1.7473284346407474,
+      "social_policy": 1.8618609002528397,
+      "security": 1.8805284264563351,
+      "communication": 1.8459406879689757,
+      "other": 1.8069721815322333
+    },
+    "deficit|high|fast": {
+      "fiscal_efficiency": 2.0255382848199885,
+      "business_formalization": 2.0119251268148366,
+      "public_investment": 1.9414779803543116,
+      "tax_change": 1.7542493456629347,
+      "social_policy": 1.8150060036123963,
+      "security": 1.8864660704810592,
+      "communication": 1.8622594016254892,
+      "other": 1.8121164420477234
+    },
+    "surplus|mid|fast": {
+      "fiscal_efficiency": 2.028566484588749,
+      "business_formalization": 2.0138401317046233,
+      "public_investment": 1.9860614641897596,
+      "tax_change": 1.7519088110298187,
+      "social_policy": 1.8684321764411886,
+      "security": 1.8873439012775426,
+      "communication": 1.8614574778514321,
+      "other": 1.8182116006495097
+    },
+    "near|high|fast": {
+      "fiscal_efficiency": 2.0276719398372225,
+      "business_formalization": 2.0184724707277617,
+      "public_investment": 2.003024115990169,
+      "tax_change": 1.7533672411988779,
+      "social_policy": 1.869134389976009,
+      "security": 1.8873685864370482,
+      "communication": 1.8604121539661724,
+      "other": 1.8118038048374063
+    },
+    "surplus|low|fast": {
+      "fiscal_efficiency": 2.027336640619463,
+      "business_formalization": 2.0124019158823883,
+      "public_investment": 2.0006943721386485,
+      "tax_change": 1.755747820906735,
+      "social_policy": 1.8653377716009152,
+      "security": 1.8829712599705222,
+      "communication": 1.8674401487068257,
+      "other": 1.809059335995524
+    },
+    "deficit|high|slow": {
+      "fiscal_efficiency": 2.0186306969066052,
+      "business_formalization": 2.0108187945122733,
+      "public_investment": 1.9428945762204322,
+      "tax_change": 1.7517863253502668,
+      "social_policy": 1.8105401959350098,
+      "security": 1.8862113054344836,
+      "communication": 1.8526525288325753,
+      "other": 1.8128464085524472
+    },
+    "surplus|low|steady": {
+      "fiscal_efficiency": 2.0287139554973312,
+      "business_formalization": 1.98498110260768,
+      "public_investment": 1.9704334384881108,
+      "tax_change": 1.7313816846933856,
+      "social_policy": 1.8386565163727562,
+      "security": 1.8611043183343836,
+      "communication": 1.8323522502058773,
+      "other": 1.7879472437086208
+    },
+    "deficit|mid|steady": {
+      "fiscal_efficiency": 2.024101016003358,
+      "business_formalization": 1.9927998167498615,
+      "public_investment": 1.9210572106521417,
+      "tax_change": 1.740940004179183,
+      "social_policy": 1.7871051497925547,
+      "security": 1.8828872653584494,
+      "communication": 1.856113570714921,
+      "other": 1.812467405269528
+    },
+    "deficit|mid|fast": {
+      "fiscal_efficiency": 2.026085654366506,
+      "business_formalization": 2.0184106473714274,
+      "public_investment": 1.9328359390936372,
+      "tax_change": 1.7504271526450204,
+      "social_policy": 1.7935457057830109,
+      "security": 1.885585348043208,
+      "communication": 1.8593227477201884,
+      "other": 1.810337331349389
+    },
+    "deficit|low|steady": {
+      "fiscal_efficiency": 2.0235834619601594,
+      "business_formalization": 2.009941164423335,
+      "public_investment": 1.9080737740793339,
+      "tax_change": 1.752697189641465,
+      "social_policy": 1.7843008907463083,
+      "security": 1.8814067301733877,
+      "communication": 1.8592091013052734,
+      "other": 1.8052485207576001
+    },
+    "near|high|slow": {
+      "fiscal_efficiency": 2.0256457315476184,
+      "business_formalization": 2.013749821910456,
+      "public_investment": 1.9916284676129234,
+      "tax_change": 1.7494332197138196,
+      "social_policy": 1.8708770234044372,
+      "security": 1.8856253380924146,
+      "communication": 1.8595377735817955,
+      "other": 1.8084721888177218
+    },
+    "near|high|steady": {
+      "fiscal_efficiency": 2.024715255492023,
+      "business_formalization": 2.0050233996379774,
+      "public_investment": 1.9798927480994164,
+      "tax_change": 1.7232468170442887,
+      "social_policy": 1.83683012908671,
+      "security": 1.8657590239668869,
+      "communication": 1.8300984600550232,
+      "other": 1.7811601482087773
+    },
+    "near|mid|slow": {
+      "fiscal_efficiency": 2.0330637575518176,
+      "business_formalization": 2.009160663790394,
+      "public_investment": 1.9934669309757216,
+      "tax_change": 1.7404408615114264,
+      "social_policy": 1.8592019971667488,
+      "security": 1.8765772069537308,
+      "communication": 1.8569431862057235,
+      "other": 1.8073817978664994
+    },
+    "deficit|high|steady": {
+      "fiscal_efficiency": 2.0265463628432667,
+      "business_formalization": 2.016477714891169,
+      "public_investment": 1.952631007362113,
+      "tax_change": 1.7541998081347656,
+      "social_policy": 1.8166623502457215,
+      "security": 1.8903145894485887,
+      "communication": 1.8663636361327902,
+      "other": 1.813664519950903
+    },
+    "near|mid|fast": {
+      "fiscal_efficiency": 2.0274303730531833,
+      "business_formalization": 2.0019170261300476,
+      "public_investment": 1.9865956706152272,
+      "tax_change": 1.745595716216624,
+      "social_policy": 1.8553052788490068,
+      "security": 1.8825313085571824,
+      "communication": 1.8538746130026182,
+      "other": 1.8046886168829865
+    },
+    "near|low|slow": {
+      "fiscal_efficiency": 2.026436973241416,
+      "business_formalization": 2.0161325952665043,
+      "public_investment": 1.9915818485004104,
+      "tax_change": 1.7523226339438698,
+      "social_policy": 1.797521609705022,
+      "security": 1.8639160893488593,
+      "communication": 1.8594611329140314,
+      "other": 1.8038336243726918
+    },
+    "near|mid|steady": {
+      "fiscal_efficiency": 1.8590376227167715,
+      "business_formalization": 1.868724452933273,
+      "public_investment": 1.9027250999880339,
+      "tax_change": 1.5529001480270834,
+      "social_policy": 1.7426671172623251,
+      "security": 1.7033786267755002,
+      "communication": 1.6895631226938281,
+      "other": 1.6371138976666653
+    },
+    "surplus|high|steady": {
+      "fiscal_efficiency": 2.0216658977815305,
+      "business_formalization": 2.0128274155203023,
+      "public_investment": 1.991655703985747,
+      "tax_change": 1.7489877845629478,
+      "social_policy": 1.8640801250314327,
+      "security": 1.8827164683410642,
+      "communication": 1.858107216394344,
+      "other": 1.801773372254712
+    }
+  }
+}
