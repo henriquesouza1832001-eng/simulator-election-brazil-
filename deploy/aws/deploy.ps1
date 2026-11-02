@@ -9,12 +9,17 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $templatePath = Join-Path $PSScriptRoot "template.yaml"
 
-if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
+$awsCommand = (Get-Command aws -ErrorAction SilentlyContinue).Source
+if (-not $awsCommand) {
+    $knownPath = Join-Path $env:ProgramFiles "Amazon\AWSCLIV2\aws.exe"
+    if (Test-Path $knownPath) { $awsCommand = $knownPath }
+}
+if (-not $awsCommand) {
     throw "AWS CLI v2 não está instalado. Instale-o e autentique sua conta antes de executar este script."
 }
 
 try {
-    aws sts get-caller-identity --region $Region | Out-Null
+    & $awsCommand sts get-caller-identity --region $Region | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "AWS CLI sem sessão autenticada." }
 } catch {
     throw "Autentique a AWS CLI nesta máquina antes do deploy. Nenhuma chave deve ser colada no chat. Detalhe: $_"
@@ -32,7 +37,7 @@ Write-Host "Instância: $InstanceType"
 Write-Host "Acesso HTTP permitido somente para: $allowedCidr"
 Write-Host "O jogo será clonado do GitHub durante a inicialização da instância."
 
-aws cloudformation deploy `
+& $awsCommand cloudformation deploy `
     --template-file $templatePath `
     --stack-name $StackName `
     --region $Region `
@@ -41,7 +46,7 @@ aws cloudformation deploy `
     --tags Project=mandato-simulator
 if ($LASTEXITCODE -ne 0) { throw "O deploy do CloudFormation falhou." }
 
-aws cloudformation describe-stacks `
+& $awsCommand cloudformation describe-stacks `
     --stack-name $StackName `
     --region $Region `
     --query "Stacks[0].Outputs" `
