@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private single-user EC2 host for the Mandato simulator.
+
+Parameters:
+  AllowedClientCidr:
+    Type: String
+    Description: Public IPv4 CIDR allowed to open the game, normally your-current-ip/32.
+    AllowedPattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$'
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues:
+      - t3.micro
+      - t3.small
+    Description: t3.small is recommended for the first Docker image build.
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Latest Amazon Linux 2023 x86_64 AMI.
+
+Resources:
+  GameVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.42.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: mandato-game-vpc
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref GameVpc
+      CidrBlock: 10.42.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: mandato-game-public
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref GameVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref GameVpc
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  GameSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow the game only from the configured client IP.
+      VpcId: !Ref GameVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref AllowedClientCidr
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: mandato-game
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  GameInstance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - DefaultRoute
+      - PublicRouteAssociation
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref PublicSubnet
+          GroupSet:
+            - !Ref GameSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 24
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: false
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf update -y
+          dnf install -y docker git curl
+          systemctl enable --now docker
+          mkdir -p /usr/local/lib/docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/download/v2.35.1/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+          ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+          mkdir -p /opt/mandato
+          git clone --depth 1 --branch main https://github.com/henriquesouza1832001-eng/simulator-election-brazil-.git /opt/mandato/app
+          cp /opt/mandato/app/backend/.env.example /opt/mandato/app/backend/.env
+          cd /opt/mandato/app
+          docker compose up -d --build
+          touch /opt/mandato/DEPLOY_READY
+      Tags:
+        - Key: Name
+          Value: mandato-game
+        - Key: Project
+          Value: mandato-simulator
+
+Outputs:
+  GameUrl:
+    Description: Open from the client IP allowed at stack creation.
+    Value: !Sub 'http://${GameInstance.PublicIp}'
+  InstanceId:
+    Value: !Ref GameInstance
+  InstancePublicIp:
+    Value: !GetAtt GameInstance.PublicIp
