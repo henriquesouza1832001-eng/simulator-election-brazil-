@@ -36,13 +36,14 @@ $remoteLines = @(
     "cat > .env <<'MANDATO_ENV'",
     $envContent,
     "MANDATO_ENV",
+    "set -a; source .env; set +a",
     "chmod 600 .env",
     "docker compose up -d --build",
     "for i in `$(seq 1 25); do",
-    "  if curl -fsS http://localhost/api/health; then break; fi",
+    '  if curl -fsS -H "X-Origin-Verify: $ORIGIN_SECRET" http://localhost/api/health; then break; fi',
     "  sleep 2",
     "done",
-    "curl -fsS http://localhost/api/auth/config",
+    'curl -fsS -H "X-Origin-Verify: $ORIGIN_SECRET" http://localhost/api/auth/config',
     "docker compose ps"
 )
 $payload = @{ DocumentName = "AWS-RunShellScript"; InstanceIds = @($instanceId); Parameters = @{ commands = $remoteLines }; Comment = "Ativar HTTPS, autenticacao e isolamento de saves do Mandato" }
