@@ -71,11 +71,11 @@ export default function App() {
         if (!mounted) return;
         setAuthConfig(config);
         if (config.enabled) {
-          // HTTPS is enforced at CloudFront; use secure, same-site cookies rather than localStorage.
-          cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({ secure: true, sameSite: 'lax', path: '/', expires: 7 }));
           Amplify.configure({ Auth: { Cognito: { userPoolId: config.user_pool_id, userPoolClientId: config.client_id,
             loginWith: { oauth: { domain: config.domain, scopes: ['openid', 'email'], redirectSignIn: [window.location.origin],
               redirectSignOut: [window.location.origin], responseType: 'code' } } } } });
+          // Amplify.configure resets its token provider, so select secure cookies afterward.
+          cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({ secure: true, sameSite: 'lax', path: '/', expires: 7 }));
           try { setAuthUser(await getCurrentUser()); } catch { setAuthUser(null); }
         } else setAuthUser({ username: 'local' });
       } catch (e) { if (mounted) setNotice(`Não foi possível carregar a configuração de acesso: ${e.message}`); }
