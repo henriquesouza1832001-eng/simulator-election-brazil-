@@ -1,0 +1,23 @@
+/* Editorial civic-simulator theme: plain surfaces, clear hierarchy, no neon/AI gradients. */
+:root{--bg:#e9e8e1;--panel:#f7f6f0;--panel2:#efeee7;--line:#c9cec7;--muted:#5d6c67;--green:#18764f;--blue:#275e7a;--amber:#956016;--red:#a43d35;color-scheme:light}
+body{background:#e9e8e1;color:#172c27;font-family:'DM Sans',sans-serif}
+.topbar{background:#14372f;border-bottom:1px solid #31574e;color:#f6f6ee}
+.brand,.date-block{color:#f6f6ee}.brand small,.date-block small{color:#b8ccc2}
+.brand-mark{background:#245445;border-color:#71c39b;color:#d9f1e3}
+.tabs{background:#f7f6f0;border-color:#c9cec7}.tab{color:#4e625d}.tab.active{color:#126d49;border-color:#18764f}
+.quiet-button,.advance-link,.icon-button{color:#334e46}.quiet-button{border-color:#789087}.quiet-button b,.advance-link span,.icon-button{color:#18764f}
+.live-dot{color:#d7e9de}.live-dot:before{background:#79d6a5;box-shadow:none}
+.content{color:#172c27}.welcome-row h1,.panel-heading h2,.agenda-page h2,.subheading{color:#172c27}
+.welcome-row p,.panel-heading p,.page-description{color:#596c65}
+.term-card,.panel,.metric,.investment-grid article,.operating-lines article,.cadence-summary,.election-summary article,.institution-grid article{background:#f8f7f1;border-color:#c9cec7;box-shadow:0 1px 2px #16372b0a}
+.panel{background:#f8f7f1}.metric{background:#fffefa}.metric-label{color:#53665f}.metric-value{color:#17382e}.metric-detail,.empty-state{color:#5f706a}
+.measure-panel textarea,.correction textarea,.budget-form select,.budget-form input,.operating-lines select{background:#fffefa;color:#172c27;border-color:#aab9b0}
+.measure-panel textarea::placeholder,.correction textarea::placeholder{color:#78857e}
+.secondary-button{background:#e9eee9;border-color:#aab9b0;color:#263d35}.primary-button{background:#18764f;color:white}.secondary-button:hover,.quiet-button:hover{background:#e1e9e2}
+.preview-card,.operating-budget{background:#eff4ef;border-color:#b5c8ba}.preview-card>p,.operating-lines small,.operating-lines span{color:#53665f}.preview-tags span{color:#315548;border-color:#c3d1c5}.simulation-timing{background:#f5efe1;color:#6f572c}
+.cadence-summary{color:#52655e}.pending-bill{background:#f4f0e5;border-color:#d5c7a2}.pending-bill b{color:#273e35}
+.agenda-event,.event,.decision{border-color:#d2d8d1}.event-date{color:#805619}.event b,.decision b,.agenda-event h3{color:#203a31}.event small,.decision small,.agenda-event p{color:#5d6c67}
+.footer{color:#64736d}.score{color:#18764f}.mini-stats div{color:#586b63}.mini-stats b{color:#263e35}.bar,.progress{background:#d6ddd6}.bar i,.progress i{background:#18764f}
+.dashboard-customizer summary,.field-label,.eyebrow{color:#4d6f60}.dashboard-customizer>div{background:#fffefa;border-color:#c9cec7}.dashboard-customizer label{color:#344b41}
+.auth-screen{background:#e9e8e1;color:#172c27}.auth-card{background:#f8f7f1;border-color:#c9cec7;box-shadow:0 18px 48px #173a2e12}.auth-card h1{color:#172c27}.auth-card p,.auth-card>small{color:#596c65}
+@media(max-width:760px){.topbar{background:#14372f}.tabs{background:#f7f6f0}}

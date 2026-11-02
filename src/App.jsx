@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Amplify } from 'aws-amplify';
+import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
 import DiplomacyPanel from './DiplomacyPanel';
 import FiscalPanel from './FiscalPanel';
 import './diplomacy.css';
@@ -25,6 +27,9 @@ const indicatorOptions = [
 ];
 
 export default function App() {
+  const [authConfig, setAuthConfig] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [state, setState] = useState(null);
   const [measure, setMeasure] = useState('');
   const [preview, setPreview] = useState(null);
@@ -42,13 +47,39 @@ export default function App() {
   const [residenceCutPct, setResidenceCutPct] = useState(0);
 
   async function request(path, options) {
-    const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+    const headers = { 'Content-Type': 'application/json', ...(options?.headers || {}) };
+    if (authConfig?.enabled) {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.accessToken?.toString();
+      if (!token) throw new Error('Sua sessão expirou. Entre novamente.');
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const response = await fetch(path, { ...options, headers });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || 'Falha na solicitação');
     return data;
   }
   async function refresh() { setState(await request('/api/game')); }
-  useEffect(() => { refresh().catch((e) => setNotice(e.message)); }, []);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/auth/config');
+        const config = await response.json();
+        if (!mounted) return;
+        setAuthConfig(config);
+        if (config.enabled) {
+          Amplify.configure({ Auth: { Cognito: { userPoolId: config.user_pool_id, userPoolClientId: config.client_id,
+            loginWith: { oauth: { domain: config.domain, scopes: ['openid', 'email'], redirectSignIn: [window.location.origin],
+              redirectSignOut: [window.location.origin], responseType: 'code' } } } } });
+          try { setAuthUser(await getCurrentUser()); } catch { setAuthUser(null); }
+        } else setAuthUser({ username: 'local' });
+      } catch (e) { if (mounted) setNotice(`Não foi possível carregar a configuração de acesso: ${e.message}`); }
+      finally { if (mounted) setAuthReady(true); }
+    })();
+    return () => { mounted = false; };
+  }, []);
+  useEffect(() => { if (authReady && authUser) refresh().catch((e) => setNotice(e.message)); }, [authReady, authUser]);
   useEffect(() => {
     if (activeTab === 'Orçamento') Promise.all([request('/api/budget'), request('/api/government/ministries')])
       .then(([budget, cabinet]) => { setBudgetView(budget); setMinistries(cabinet.items || []); setTravelCutPct(budget.operating?.travel_cut_pct ?? 0); setResidenceCutPct(budget.operating?.residence_cut_pct ?? 0); })
@@ -127,6 +158,8 @@ export default function App() {
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
+  if (!authReady || (authUser && !state)) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
+  if (authConfig?.enabled && !authUser) return <main className="auth-screen"><section className="auth-card"><span className="brand-mark">M</span><div className="eyebrow">MANDATO · CONTA DE JOGADOR</div><h1>Uma campanha, sob seu controle.</h1><p>Entre ou crie sua conta para manter suas partidas separadas e privadas.</p><button className="primary-button" onClick={() => signInWithRedirect()}>Entrar ou criar conta <b>→</b></button><small>A autenticação é protegida pelo Amazon Cognito.</small>{notice && <p className="notice">{notice}</p>}</section></main>;
   if (!state) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
   const m = state.metrics;
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
@@ -141,7 +174,7 @@ export default function App() {
   const dashboardTab = activeTab === 'Visão geral' || activeTab === 'Medidas';
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR DE GOVERNO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>MÊS {termMonth} DE 48 · DIA {state.day_of_mandate} DE 1461 · {(state.office_status || 'incumbent').replaceAll('_', ' ')}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SIMULAÇÃO LOCAL</span><button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR DE GOVERNO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>MÊS {termMonth} DE 48 · DIA {state.day_of_mandate} DE 1461 · {(state.office_status || 'incumbent').replaceAll('_', ' ')}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SIMULAÇÃO LOCAL</span>{authConfig?.enabled && <button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); }}>Sair da conta</button>}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs">{tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'tab active' : 'tab'} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">

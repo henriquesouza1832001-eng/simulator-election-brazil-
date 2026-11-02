@@ -1,0 +1,110 @@
+# Auditoria funcional do PLANALTO e roteiro do Mandato
+
+Data da leitura do PLANALTO: 2 nov. 2026. O produto de referência é uma sátira política; este projeto reaproveita categorias de sistemas e ritmo, não textos, personagens, arte ou regras proprietárias.
+
+## O que o PLANALTO oferece
+
+| Sistema | Elementos observados |
+| --- | --- |
+| Entrada e campanha | Começar campanha presidencial de 13 semanas ou assumir a Presidência em 2027; convenção, comícios, debates, imprensa e apuração. |
+| Mandato | 48 meses, medidas em texto livre, calendário, decisões executivas, projetos, MPs e PECs. |
+| Legislativo | Câmara com 513 votos individuais, Senado, frentes, coalizões, emendas, cargos, CPIs e pautas. |
+| País | 32 grupos sociais, 27 governadores, aprovação segmentada, inflação, câmbio, dívida, risco-país e reações públicas. |
+| Economia | Orçamento, impostos, previdência, estatais, energia, abastecimento, rodovias, política monetária e investimentos por área/região. |
+| Governo | Nomeações, ministérios, agenda de execução, políticas, obras e continuidade entre governos. |
+| Diplomacia | Visitas bilaterais, acordos, cúpulas e efeitos de posição internacional. |
+| Crises e imprensa | Eventos com escolhas, respostas públicas, figuras que reagem, noticiário e efeitos persistentes. O conteúdo é rotulado como sátira/ficção. |
+| Outros percursos | Político, jornalista, advogado e empresário; a descrição do produto inclui eleições, cobertura jornalística, casos até o STF e empresas em sete setores. |
+| Instituições | STF, nomeações, disputas constitucionais, votação e possibilidade de ruptura no universo ficcional. |
+| Meta-jogo | Ranking, coleção de 120 conquistas, histórico de mandatos e modo multiplayer separado. |
+| Conta | Conta individual, mandatos guardados, sessões/dispositivos e controle de acesso por jogador. |
+
+Fonte: [PLANALTO — página do jogo, recursos e Diário Oficial v1.32](https://planalto.fun/). A página anuncia uma pessoa por cargo, medidas escritas pelo jogador, votos individualizados e reações econômicas e sociais.
+
+## O que já existe neste protótipo
+
+- Interface React/Vite e API FastAPI em Python, empacotadas em Docker.
+- Hospedagem inicial numa EC2 com SQLite persistente; o acesso atual é via HTTP e lista de IPs permitidos.
+- Calendário diário e progressão por dias/semanas/meses.
+- Painel configurável com economia, inflação, desemprego, dívida, saldo primário, aprovação e governabilidade.
+- Prévia de medida em linguagem natural, regras de efeito numérico e correção do jogador; Gemini opcional e fallback local.
+- Economia fiscal simplificada, orçamento e investimento por área, custos de viagens e residência.
+- Diplomacia com visitas e eventos multilaterais.
+- Eventos/crises simulados, memória de ações e calendário legislativo fictício.
+- Dificuldades, instituições, mecânica abstrata de ruptura, calendário eleitoral presidencial e primeira versão de carreira.
+- Importador inicial de candidaturas do TSE, catálogo SIORG e notas sobre proveniência.
+
+## Lacunas principais
+
+1. **Identidade e isolamento:** hoje `game_save` guarda uma única partida; ações e correções também são compartilhadas. Antes de abrir a outros jogadores, contas autenticadas precisam ser vinculadas ao estado, histórico, correções e futuras partidas de cada pessoa.
+2. **Carreira jogável:** o grafo de cargos está esboçado, mas falta iniciar campanhas municipais/estaduais/federais, votação, posse, mandato local, perda e retorno, sucessão e nomeações em sistemas diferentes.
+3. **Legislativo:** não há Câmara/Senado com integrantes e bancadas individualizados no motor; apoio agregado substitui negociações, pauta, comissão, emenda e voto nominal.
+4. **Orçamento executável:** há valores de referência e ajustes, mas ainda não uma LOA/fonte por programa, execução mensal, transferências federativas, empenho, contratos e conciliação entre mudança e entrega.
+5. **Estados e municípios:** popularidade regional existe em protótipo; falta governo estadual/municipal, competências próprias, câmara local, transferências e serviços de cada ente.
+6. **Eleição e campanha:** eleição presidencial é uma abstração. Faltam calendários consistentes para cada cargo, candidatos/partidos, arrecadação, alianças, pesquisa, debate, propaganda, turnos e transição.
+7. **STF e nomeações:** catálogo e sabatina/votos independentes ainda são incompletos. Regras legais precisam de data de referência e fontes.
+8. **Eventos:** aumentar a variedade sem deixar a IA inventar causalidade ou efeitos. Regras determinísticas escolhem o acontecimento e calculam impactos; IA fica na narrativa e explicação, sempre com selo simulado ou fonte histórica.
+9. **Conteúdo/dados:** concluir importadores TSE, Câmara, Senado, SIORG, IBGE, Tesouro e Banco Central; guardar URL, data, licença e cobertura temporal. Retratos públicos e caricaturas ficam em conjuntos separados.
+10. **Experiência:** substituir a sensação de “painel gerado por IA” por uma mesa de governo editorial: manchete/assunto do dia, agenda curta, poucas métricas selecionadas e telas temáticas profundas com explicação e histórico.
+11. **Operação:** domínio e HTTPS, autenticação, cópias automáticas testadas, limite/alerta de custos e recuperação de conta antes de liberar o serviço publicamente.
+
+## Modelo de jogo proposto
+
+- Um relógio diário comum, mas decisões consomem intervalos coerentes: agenda executiva, propostas legislativas, eleições, viagens e negociações têm cadências distintas.
+- O cargo define competências e recursos; o jogador nunca pode executar uma ação fora da alçada. Vereador, prefeito, deputado estadual/federal, senador, governador e presidente têm ciclos e indicadores próprios.
+- Derrota eleitoral muda o caminho, não apaga o personagem: oposição, partido, jornalismo, advocacia, negócios, assessoria ou futura candidatura seguem disponíveis quando fizerem sentido.
+- Campanha e governo coexistem durante eleição. A máquina pública continua funcionando e eventos não pausam porque há debate.
+- Um motor determinístico versionado transforma decisões em efeitos; IA interpreta linguagem e redige contexto. Toda previsão aparece como simulação, não como fato certo.
+- Dificuldade altera parâmetros e eventos de modo explícito. “Realismo puro” usa parâmetros documentados e não promete previsão do mundo real.
+- Eventos têm gatilho, evidência, efeitos, prazo, grupos afetados, contramedidas e semente reproduzível; catástrofes como enchentes mudam serviço, orçamento e trajetória ao longo do tempo.
+
+## Sequência de implementação
+
+### Base imediata
+
+- [x] Inventariar a aplicação e a referência PLANALTO.
+- [x] Preparar saves, ações e correções com `player_id`; backend valida JWT Cognito quando configurado.
+- [ ] Criar o User Pool e configurar domínio HTTPS para habilitar cadastro real.
+- [ ] Publicar por HTTPS antes de ativar o cadastro/login em produção.
+- [ ] Publicar por HTTPS antes de ativar cadastro/login em produção.
+- [ ] Criar uma campanha com identidade e mais de um save por jogador.
+- [ ] Definir as entidades centrais: jogador, personagem, campanha, cargo, mandato, evento, medida, orçamento e fonte.
+
+### Vertical slice de carreira
+
+- [ ] Começar como candidato a vereador num município selecionável, com campanha curta, apuração e posse.
+- [ ] Implementar mandato municipal funcional: orçamento, serviços, câmara, prefeito e eleição seguinte.
+- [ ] Tornar candidatura a outros cargos um percurso real; usar dados eleitorais oficiais como elenco opcional com proveniência.
+- [ ] Adicionar rota alternativa de carreira após derrota e nomeações.
+
+### Governo e país
+
+- [ ] Voto por partido e parlamentares, coalizões, comissões e Senado.
+- [ ] Orçamento detalhado e revisão de gasto com origem, regra, cronograma, entrega e consequência.
+- [ ] Indicadores locais e nacionais de saúde, educação, segurança, infraestrutura, economia e confiança.
+- [ ] Eventos persistentes de clima, saúde, segurança, diplomacia e economia.
+- [ ] Conselho de ministros, órgãos existentes e catálogo de cargos conforme estrutura oficial.
+
+### Conteúdo e qualidade
+
+- [ ] RAG com trechos oficiais datados; exibir fonte/limite de conhecimento.
+- [ ] Avaliações do intérprete e do agente Python com estados sintéticos, métricas e revisão humana.
+- [ ] Retratos caricaturais originais apenas para elenco curto; placeholder fictício para os demais.
+- [ ] Backup semanal fora da instância, teste de restauração, logs, limites de uso e alertas.
+
+## Arquitetura de conta e campanha
+
+- Cognito User Pool para cadastro/login; o navegador usa fluxo OIDC authorization code + PKCE, app client público sem segredo. A tela e validação estão preparadas, ainda sem pool criado.
+- HTTPS obrigatório no domínio do jogo antes de redirecionamentos de autenticação e captura de credenciais.
+- API valida JWT em toda rota privada. O identificador imutável `sub` vira `player_id`; nunca confiar em um `player_id` enviado pelo navegador.
+- Cada linha de campanha, ação, aprendizado e inventário inclui `player_id`; operações verificam propriedade no servidor.
+- Uma campanha tem modo, personagem, cargo, calendário, estado e trilha de eventos versionada. Novo save cria outra campanha sem alterar as anteriores.
+- Não criar tabela de senha própria nem guardar tokens em `localStorage`. Para o protótipo privado atual, modo local permanece sem contas; modo multiusuário só liga depois do HTTPS + Cognito configurados.
+
+## Decisões de interface
+
+- Início: “o que mudou hoje”, calendário, no máximo seis indicadores escolhidos e próxima decisão relevante.
+- Navegação por trabalho: Governo, Território, Economia, Congresso, Diplomacia, Campanha, Instituições e Arquivo.
+- Cada indicador abre composição, evolução, fonte/abstração e alavancas; remover abreviações sem contexto.
+- Medida mostra interpretação, instrumento, competência, custo/financiamento, grupos afetados, incerteza, cronograma e consequência; assinatura exige revisão explícita.
+- Evitar caixas e gradientes repetidos. Tipografia editorial, superfícies claras de hierarquia, cores semânticas consistentes, foco/teclado, celular e contraste.

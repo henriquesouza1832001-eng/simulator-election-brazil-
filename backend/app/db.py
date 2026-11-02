@@ -1,8 +1,24 @@
 import json
 import os
 import sqlite3
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
+
+
+_player_id: ContextVar[str] = ContextVar("player_id", default="local")
+
+
+def set_player_id(player_id: str):
+    return _player_id.set(player_id)
+
+
+def reset_player_id(token) -> None:
+    _player_id.reset(token)
+
+
+def current_player_id() -> str:
+    return _player_id.get()
 
 
 def database_path() -> Path:
@@ -25,6 +41,11 @@ def initialize() -> None:
         db.executescript("""
             CREATE TABLE IF NOT EXISTS game_save (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
+                state_json TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS game_saves (
+                player_id TEXT PRIMARY KEY,
                 state_json TEXT NOT NULL,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
@@ -57,20 +78,29 @@ def initialize() -> None:
                 UNIQUE(document_key, chunk_number)
             );
         """)
+        # Preserve the existing single-player save when moving to player-scoped storage.
+        legacy = db.execute("SELECT state_json FROM game_save WHERE id = 1").fetchone()
+        if legacy:
+            db.execute("INSERT OR IGNORE INTO game_saves (player_id, state_json) VALUES ('local', ?)",
+                       (legacy["state_json"],))
+        for table in ("actions", "interpretation_corrections"):
+            columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+            if "player_id" not in columns:
+                db.execute(f"ALTER TABLE {table} ADD COLUMN player_id TEXT NOT NULL DEFAULT 'local'")
 
 
 def load_state() -> dict[str, Any] | None:
     with connect() as db:
-        row = db.execute("SELECT state_json FROM game_save WHERE id = 1").fetchone()
+        row = db.execute("SELECT state_json FROM game_saves WHERE player_id = ?", (current_player_id(),)).fetchone()
     return json.loads(row["state_json"]) if row else None
 
 
 def save_state(state: dict[str, Any]) -> None:
     with connect() as db:
         db.execute(
-            "INSERT INTO game_save (id, state_json, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP) "
-            "ON CONFLICT(id) DO UPDATE SET state_json=excluded.state_json, updated_at=CURRENT_TIMESTAMP",
-            (json.dumps(state, ensure_ascii=False),),
+            "INSERT INTO game_saves (player_id, state_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) "
+            "ON CONFLICT(player_id) DO UPDATE SET state_json=excluded.state_json, updated_at=CURRENT_TIMESTAMP",
+            (current_player_id(), json.dumps(state, ensure_ascii=False)),
         )
 
 
@@ -78,22 +108,22 @@ def record_action(date: str, kind: str, title: str, source_text: str,
                   interpretation: dict[str, Any], effects: list[dict[str, Any]]) -> None:
     with connect() as db:
         db.execute(
-            "INSERT INTO actions (date, kind, title, source_text, interpretation_json, effects_json) VALUES (?, ?, ?, ?, ?, ?)",
-            (date, kind, title, source_text, json.dumps(interpretation, ensure_ascii=False), json.dumps(effects, ensure_ascii=False)),
+            "INSERT INTO actions (date, kind, title, source_text, interpretation_json, effects_json, player_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (date, kind, title, source_text, json.dumps(interpretation, ensure_ascii=False), json.dumps(effects, ensure_ascii=False), current_player_id()),
         )
 
 
 def recent_actions(limit: int = 10) -> list[dict[str, Any]]:
     with connect() as db:
-        rows = db.execute("SELECT id, date, kind, title FROM actions ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        rows = db.execute("SELECT id, date, kind, title FROM actions WHERE player_id = ? ORDER BY id DESC LIMIT ?", (current_player_id(), limit)).fetchall()
     return [dict(row) for row in rows]
 
 
 def add_correction(original_text: str, corrected_interpretation: str) -> None:
     with connect() as db:
         db.execute(
-            "INSERT INTO interpretation_corrections (original_text, corrected_interpretation) VALUES (?, ?)",
-            (original_text, corrected_interpretation),
+            "INSERT INTO interpretation_corrections (original_text, corrected_interpretation, player_id) VALUES (?, ?, ?)",
+            (original_text, corrected_interpretation, current_player_id()),
         )
 
 
@@ -101,7 +131,7 @@ def useful_corrections(text: str, limit: int = 3) -> list[dict[str, str]]:
     """Small lexical retrieval for examples; later replaceable by local embeddings."""
     words = {w for w in text.lower().split() if len(w) > 4}
     with connect() as db:
-        rows = db.execute("SELECT original_text, corrected_interpretation FROM interpretation_corrections ORDER BY id DESC LIMIT 200").fetchall()
+        rows = db.execute("SELECT original_text, corrected_interpretation FROM interpretation_corrections WHERE player_id = ? ORDER BY id DESC LIMIT 200", (current_player_id(),)).fetchall()
     scored = []
     for row in rows:
         other = {w for w in row["original_text"].lower().split() if len(w) > 4}
@@ -114,5 +144,5 @@ def useful_corrections(text: str, limit: int = 3) -> list[dict[str, str]]:
 
 def correction_count() -> int:
     with connect() as db:
-        row = db.execute("SELECT COUNT(*) AS total FROM interpretation_corrections").fetchone()
+        row = db.execute("SELECT COUNT(*) AS total FROM interpretation_corrections WHERE player_id = ?", (current_player_id(),)).fetchone()
     return int(row["total"])

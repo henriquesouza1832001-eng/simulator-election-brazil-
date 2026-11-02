@@ -5,13 +5,14 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .ai.interpreter import interpret
-from .db import add_correction, connect, correction_count, initialize, load_state, recent_actions, record_action, save_state, useful_corrections
+from .db import add_correction, connect, correction_count, initialize, load_state, recent_actions, record_action, save_state, useful_corrections, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
@@ -27,7 +28,48 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 FISCAL_REFERENCE_GDP_BI = 15000.0
 app = FastAPI(title="Mandato Game API", version="0.1.0")
 origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+_jwks_clients: dict[str, Any] = {}
 app.add_middleware(CORSMiddleware, allow_origins=[origin, "http://127.0.0.1:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+
+@app.middleware("http")
+async def player_authentication(request: Request, call_next):
+    """Use Cognito's immutable subject as the database owner; local mode stays single-player."""
+    if not request.url.path.startswith("/api/") or request.url.path in {"/api/health", "/api/auth/config"} or request.method == "OPTIONS":
+        return await call_next(request)
+    region = os.getenv("COGNITO_REGION", "")
+    pool_id = os.getenv("COGNITO_USER_POOL_ID", "")
+    client_id = os.getenv("COGNITO_CLIENT_ID", "")
+    if not any((region, pool_id, client_id)):
+        token = set_player_id("local")
+        try:
+            return await call_next(request)
+        finally:
+            reset_player_id(token)
+    if not all((region, pool_id, client_id)):
+        return JSONResponse(status_code=503, content={"detail": "Autenticação Cognito incompleta na configuração do servidor."})
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        return JSONResponse(status_code=401, content={"detail": "Entre na sua conta para continuar."})
+    try:
+        import jwt
+        from jwt import PyJWKClient
+        issuer = f"https://cognito-idp.{region}.amazonaws.com/{pool_id}"
+        jwks = f"{issuer}/.well-known/jwks.json"
+        client = _jwks_clients.setdefault(issuer, PyJWKClient(jwks))
+        signing_key = client.get_signing_key_from_jwt(authorization[7:].strip()).key
+        claims = jwt.decode(authorization[7:].strip(), signing_key, algorithms=["RS256"], issuer=issuer,
+                            options={"verify_aud": False, "require": ["iss", "sub", "exp", "token_use", "client_id"]})
+        if claims.get("token_use") != "access" or claims.get("client_id") != client_id:
+            raise ValueError("JWT de acesso não corresponde ao cliente configurado")
+        player_id = str(claims["sub"])
+    except Exception:
+        return JSONResponse(status_code=401, content={"detail": "Sessão inválida ou expirada. Entre novamente."})
+    token = set_player_id(player_id)
+    try:
+        return await call_next(request)
+    finally:
+        reset_player_id(token)
 
 
 class AdvanceRequest(BaseModel):
@@ -122,6 +164,17 @@ def startup() -> None:
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "ai": "gemini" if os.getenv("GEMINI_API_KEY") else "local-fallback"}
+
+
+@app.get("/api/auth/config")
+def auth_config() -> dict[str, Any]:
+    region = os.getenv("COGNITO_REGION", "")
+    pool_id = os.getenv("COGNITO_USER_POOL_ID", "")
+    client_id = os.getenv("COGNITO_CLIENT_ID", "")
+    domain = os.getenv("COGNITO_DOMAIN", "")
+    return {"enabled": bool(region and pool_id and client_id and domain), "region": region,
+            "user_pool_id": pool_id, "client_id": client_id,
+            "domain": domain}
 
 
 @app.get("/api/bot/recommendation")
