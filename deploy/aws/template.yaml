@@ -131,7 +131,8 @@ Resources:
           #!/bin/bash
           set -euxo pipefail
           dnf update -y
-          dnf install -y docker git curl
+          # Amazon Linux 2023 includes curl-minimal; installing curl alongside it conflicts.
+          dnf install -y docker git
           systemctl enable --now docker
           mkdir -p /usr/local/lib/docker/cli-plugins
           curl -fsSL https://github.com/docker/compose/releases/download/v2.35.1/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
