@@ -24,7 +24,7 @@ Os cinco níveis reutilizam as mesmas regras centrais; mudam pressão, margem de
 | Normal | Equilíbrio padrão, consequências graduais e eventos previsíveis. |
 | Difícil | Coalizões menores, oposição mais ativa e choques mais frequentes. |
 | Complicado | Pouca folga fiscal e política; efeitos acumulados pesam mais. |
-| Realismo Puro | Parâmetros calibrados por dados históricos, restrições institucionais explícitas e sem bônus de ajuda. Eventos continuam ficcionais quando ocorrerem dentro da partida. |
+| Realismo Puro | Volatilidade econômica maior e resistência política intermediária. Eventos e resultados continuam fictícios; calibração histórica ainda não está implementada. |
 
 ## Indicadores e impostos
 
@@ -67,4 +67,4 @@ Fotos eleitorais vêm do recurso de fotos do TSE quando necessário e com atribu
 - O TSE cobre candidaturas, eleições, contas, bens declarados, propostas, fotos e dados eleitorais conforme cada conjunto/ano; não entrega uma enciclopédia unificada de políticos.
 - Resultados de eleição e cargos atuais são entidades distintas e precisam de importadores próprios.
 - Dados pessoais sensíveis e endereços serão excluídos do catálogo de jogo. Informações públicas não são automaticamente necessárias para a simulação.
-- Valores do modo Realismo Puro serão rastreáveis e calibrados; enquanto não houver evidência suficiente, serão apresentados como hipótese de jogo, não como previsão real.
+- A calibração histórica do modo Realismo Puro permanece pendente; seus valores são parâmetros do jogo, não previsões nem dados observados.

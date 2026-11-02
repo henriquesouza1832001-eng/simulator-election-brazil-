@@ -5,6 +5,8 @@ stack intact: it owns the persistent SQLite volume and the running game host.
 The separate `mandato-edge-auth` stack adds CloudFront HTTPS, Cognito accounts,
 and a security-group rule for CloudFront's origin-facing network. The web origin
 checks a random shared header so another CloudFront distribution cannot reuse it.
+The templates point back to this guide for their shared deployment rationale and
+the invariants that keep the database and origin protected.
 
 ## First setup
 
@@ -30,9 +32,13 @@ checks a random shared header so another CloudFront distribution cannot reuse it
    .\configure-auth.ps1 -Region us-east-2
    ```
 
-6. Open the `GameUrl` output from `mandato-edge-auth`. The browser's login uses
-   Cognito's authorization-code flow with PKCE. The public app client has no
-   client secret.
+6. Open the `GameUrl` output from `mandato-edge-auth`. The browser uses Cognito
+   SRP authentication for email/password and the app client has no client secret.
+   New accounts are auto-confirmed by a pre-sign-up Lambda without marking the
+   email as verified. Players can optionally verify it in **Conta** to enable
+   password recovery. This tradeoff matches the single-player prototype; enable
+   verified email or an administrator approval flow before opening registration
+   to a public audience.
 
 The random origin secret is saved in the ignored local file `.origin-secret`.
 Keep it in the same trusted deployment workspace for future updates. Never add
@@ -59,3 +65,34 @@ A consistent manual SQLite backup can be made over Session Manager with Python's
 SQLite backup API. The previous deployment stores snapshots under
 `/opt/mandato/backups`. A scheduled copy to a separate S3 bucket with lifecycle
 and restore verification remains a follow-up before inviting other players.
+
+## Gemini text interpretation
+
+The FastAPI server calls Gemini. The key stays on the server and is never sent
+to the browser or stored in Git. If Gemini is unavailable, the API uses the
+local interpreter; deterministic game rules still calculate the effects.
+
+1. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey).
+   Restrict it to the Gemini API when that option is available. Do not put the
+   key in GitHub or send it in chat.
+2. In AWS Console, open **Systems Manager → Parameter Store → Create parameter**.
+   Use `/mandato/production/gemini-api-key` as the name, **SecureString** as the
+   type, **Standard** as the tier, and the default `alias/aws/ssm` encryption
+   key. Standard parameters have no monthly storage charge.
+3. Publish the updated `main` branch, then run this from PowerShell with AWS CLI
+   authenticated to the account:
+
+   ```powershell
+   .\configure-gemini.ps1 -Region us-east-2
+   ```
+
+The script retrieves the parameter on EC2, writes an ignored `.gemini.env` file
+with owner-only permissions, rebuilds only the API container, and does not print
+the key. The `/api/health` route reports whether a key is configured; the first
+measure preview confirms that the Gemini API call works.
+
+The instance already uses AWS's `AmazonSSMManagedInstanceCore` policy, which
+permits the instance to read SSM parameters. That existing policy is broader
+than this Gemini parameter, so keep other secrets out of Parameter Store in
+this account. Before opening the server to other users or workloads, replace
+that broad read permission with a policy scoped to this parameter.
