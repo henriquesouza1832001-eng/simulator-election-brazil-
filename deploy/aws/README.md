@@ -1,31 +1,61 @@
-# AWS EC2 deploy
+# AWS deployment
 
-This stack creates a small EC2 host, an isolated VPC, an encrypted persistent
-root volume, and a security group that allows HTTP only from the public IPv4
-detected on the machine running the script. It does not open SSH; the instance
-has an SSM role for administration from the AWS console.
+The game runs on an encrypted EC2 volume. Keep the original `mandato-simulator`
+stack intact: it owns the persistent SQLite volume and the running game host.
+The separate `mandato-edge-auth` stack adds CloudFront HTTPS, Cognito accounts,
+and a security-group rule for CloudFront's origin-facing network. The web origin
+checks a random shared header so another CloudFront distribution cannot reuse it.
 
-The instance clones the public `main` branch from GitHub and starts the existing
-Docker Compose app. It serves plain HTTP on port 80, so it is intended for
-single-user access behind the IP allowlist. If your public IP changes, update
-the `AllowedClientCidr` parameter in the stack to the new address plus `/32`.
+## First setup
 
-## Deploy
-
-1. Create/activate the AWS account and authenticate AWS CLI v2 locally.
-2. From this directory run:
+1. Authenticate AWS CLI v2 in `us-east-2`.
+2. Deploy the EC2 stack if it does not exist:
 
    ```powershell
    .\deploy.ps1 -Region us-east-2 -InstanceType t3.small
    ```
 
-3. Wait for CloudFormation to finish, then open the `GameUrl` stack output.
-   The first Docker build can take several minutes. If startup fails, inspect
-   `/var/log/cloud-init-output.log` through Systems Manager Session Manager.
+3. Publish the repository's current `main` branch. The game host pulls it during
+   the next update.
+4. Add HTTPS, account login, and the CloudFront-only ingress rule:
 
-The SQLite save is stored in a Docker volume on the encrypted EC2 root EBS
-volume. `DeleteOnTermination` is disabled for that volume; deleting the stack
-does not automatically remove the disk, so delete or snapshot it deliberately.
+   ```powershell
+   .\setup-edge.ps1 -Region us-east-2
+   ```
 
-The project database is not uploaded from the developer machine. The instance
-starts with a fresh game save. Create independent backups after first launch.
+5. Apply the Cognito identifiers and origin secret to the existing host through
+   Systems Manager:
+
+   ```powershell
+   .\configure-auth.ps1 -Region us-east-2
+   ```
+
+6. Open the `GameUrl` output from `mandato-edge-auth`. The browser's login uses
+   Cognito's authorization-code flow with PKCE. The public app client has no
+   client secret.
+
+The random origin secret is saved in the ignored local file `.origin-secret`.
+Keep it in the same trusted deployment workspace for future updates. Never add
+it to GitHub or paste it in chat. The server receives it over Systems Manager;
+the CloudFront origin sends it on every request.
+
+## Player data and operations
+
+Player identity comes from the verified Cognito token `sub`; the API never trusts
+a player ID from the browser. Game state, actions, and learning corrections are
+partitioned by that identity. The database is a Docker volume on the encrypted
+EC2 root disk and remains separate from Cognito. Back up the SQLite file before
+changing either stack. The edge stack retains the Cognito user pool on deletion.
+
+No SSH port is open. Manage the instance through Session Manager. The original
+stack's ingress still contains the creator's IPv4 allowlist; the app's origin
+header rejects direct requests after `configure-auth.ps1` runs. The added
+CloudFront ingress allows HTTPS visitors to reach the site without opening the
+origin to arbitrary networks.
+
+## Backups
+
+A consistent manual SQLite backup can be made over Session Manager with Python's
+SQLite backup API. The previous deployment stores snapshots under
+`/opt/mandato/backups`. A scheduled copy to a separate S3 bucket with lifecycle
+and restore verification remains a follow-up before inviting other players.

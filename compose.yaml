@@ -9,6 +9,10 @@ services:
     environment:
       DATABASE_PATH: /data/game.sqlite3
       FRONTEND_ORIGIN: http://localhost
+      COGNITO_REGION: ${COGNITO_REGION:-}
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID:-}
+      COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:-}
+      COGNITO_DOMAIN: ${COGNITO_DOMAIN:-}
     volumes:
       - game_data:/data
     expose:
@@ -21,6 +25,9 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    environment:
+      ORIGIN_SECRET: ${ORIGIN_SECRET:-}
+      NGINX_ENVSUBST_FILTER: ^ORIGIN_SECRET$
     ports:
       - "80:80"
 

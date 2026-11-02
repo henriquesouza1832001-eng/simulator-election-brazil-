@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: HTTPS CloudFront edge, private origin rule, and Cognito player accounts for Mandato.
+
+Parameters:
+  OriginDomainName:
+    Type: String
+    Description: Existing EC2 public DNS name; traffic is allowed only through CloudFront.
+  OriginSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+  OriginFacingPrefixListId:
+    Type: String
+    Description: AWS-managed CloudFront origin-facing prefix list in this region.
+  OriginSharedSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 48
+
+Resources:
+  CloudFrontOriginIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref OriginSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourcePrefixListId: !Ref OriginFacingPrefixListId
+      Description: HTTP origin traffic from CloudFront only.
+
+  GameDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: HTTPS front door for Mandato simulator
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: MandatoEc2Origin
+            DomainName: !Ref OriginDomainName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols: [TLSv1.2]
+            OriginCustomHeaders:
+              - HeaderName: X-Origin-Verify
+                HeaderValue: !Ref OriginSharedSecret
+        DefaultCacheBehavior:
+          TargetOriginId: MandatoEc2Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        IPV6Enabled: true
+
+  GameUserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: mandato-player-accounts
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+
+  GameUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'mandato-${AWS::AccountId}'
+      UserPoolId: !Ref GameUserPool
+
+  GameUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: mandato-browser
+      UserPoolId: !Ref GameUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 15
+      IdTokenValidity: 15
+      RefreshTokenValidity: 7
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: [!Sub 'https://${GameDistribution.DomainName}']
+      LogoutURLs: [!Sub 'https://${GameDistribution.DomainName}']
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+Outputs:
+  GameUrl:
+    Description: HTTPS URL for Mandato.
+    Value: !Sub 'https://${GameDistribution.DomainName}'
+  CloudFrontDomain:
+    Value: !GetAtt GameDistribution.DomainName
+  CognitoRegion:
+    Value: !Ref AWS::Region
+  CognitoUserPoolId:
+    Value: !Ref GameUserPool
+  CognitoClientId:
+    Value: !Ref GameUserPoolClient
+  CognitoDomain:
+    Value: !Sub 'mandato-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com'
