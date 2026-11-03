@@ -1,0 +1,47 @@
+/* A consistent minimum keeps the dense game screens legible at normal zoom. */
+body { font-size: 14px; line-height: 1.5; }
+small { font-size: 12px !important; line-height: 1.45 !important; }
+.eyebrow,
+.metric-label,
+.metric-detail,
+.metric-footnote,
+.term-card > span,
+.term-card > small,
+.date-block small,
+.live-dot,
+.advance-link,
+.career-tags,
+.career-office-preview span,
+.career-countdown span,
+.career-fund span,
+.career-area-card span,
+.career-poll > span,
+.career-result-box > div > span,
+.indicator-group > summary span,
+.work-kind,
+.work-route,
+.work-status,
+.work-running-meta,
+.work-history,
+.work-forecast,
+.works-index > span,
+.contractor-picker,
+[class$="-note"],
+[class$="-detail"],
+[class$="-meta"],
+[class$="-status"] {
+  font-size: 12px !important;
+  line-height: 1.45;
+}
+.eyebrow { font-size: 11px !important; letter-spacing: .08em; }
+.work-card p,
+.work-running p,
+.work-costs span,
+.work-issue button small,
+.regional-card-grid article p,
+.regional-card-grid article small,
+.regional-disclaimer,
+.operating-lines small,
+.operating-lines span,
+.operating-footer small,
+.indicator-line > span { font-size: 12px !important; line-height: 1.5; }
