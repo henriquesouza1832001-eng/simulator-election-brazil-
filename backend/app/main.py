@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .ai.interpreter import interpret
-from .db import add_correction, archive_state, connect, correction_count, initialize, list_archives, load_state, recent_actions, record_action, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
+from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, list_archives, load_state, recent_actions, record_action, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
@@ -41,7 +41,7 @@ app.add_middleware(CORSMiddleware, allow_origins=[origin, "http://127.0.0.1:5173
 @app.middleware("http")
 async def player_authentication(request: Request, call_next):
     """Use Cognito's immutable subject as the database owner; local mode stays single-player."""
-    if not request.url.path.startswith("/api/") or request.url.path in {"/api/health", "/api/auth/config"} or request.method == "OPTIONS":
+    if not request.url.path.startswith("/api/") or request.url.path in {"/api/health", "/api/auth/config", "/api/guest/session"} or request.method == "OPTIONS":
         return await call_next(request)
     region = os.getenv("COGNITO_REGION", "")
     pool_id = os.getenv("COGNITO_USER_POOL_ID", "")
@@ -58,6 +58,17 @@ async def player_authentication(request: Request, call_next):
     if not all((region, pool_id, client_id)):
         return JSONResponse(status_code=503, content={"detail": "Autenticação Cognito incompleta na configuração do servidor."})
     authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        guest_owner = guest_player_id(request.cookies.get("mandato_guest"))
+        if guest_owner:
+            token = set_player_id(guest_owner)
+            try:
+                blocked = _inauguration_gate(request)
+                if blocked:
+                    return blocked
+                return await call_next(request)
+            finally:
+                reset_player_id(token)
     if not authorization.lower().startswith("bearer "):
         return JSONResponse(status_code=401, content={"detail": "Entre na sua conta para continuar."})
     try:
@@ -268,6 +279,19 @@ def auth_config() -> dict[str, Any]:
     return {"enabled": bool(region and pool_id and client_id and domain), "region": region,
             "user_pool_id": pool_id, "client_id": client_id,
             "domain": domain}
+
+
+@app.post("/api/guest/session")
+def start_guest_session(request: Request) -> JSONResponse:
+    token = request.cookies.get("mandato_guest")
+    existing_player = guest_player_id(token)
+    response = JSONResponse({"status": "ok", "guest": True, "resumed": bool(existing_player)})
+    if existing_player is None:
+        token, _ = create_guest_session()
+        response.set_cookie("mandato_guest", token, max_age=365 * 24 * 60 * 60,
+                            httponly=True, secure=bool(os.getenv("COGNITO_USER_POOL_ID")),
+                            samesite="lax", path="/")
+    return response
 
 
 @app.get("/api/bot/recommendation")

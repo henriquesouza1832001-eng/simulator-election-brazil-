@@ -11,6 +11,7 @@ import GovernmentAppointments from './GovernmentAppointments';
 import InauguralAddress from './InauguralAddress';
 import AuthPanel from './AuthPanel';
 import AccountPanel from './AccountPanel';
+import WelcomePanel from './WelcomePanel';
 import './diplomacy.css';
 
 const fmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
@@ -145,6 +146,7 @@ export default function App() {
   const [authConfig, setAuthConfig] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showAccountPanel, setShowAccountPanel] = useState(false);
   const [state, setState] = useState(null);
   const [measure, setMeasure] = useState('');
@@ -166,18 +168,28 @@ export default function App() {
 
   async function request(path, options) {
     const headers = { 'Content-Type': 'application/json', ...(options?.headers || {}) };
-    if (authConfig?.enabled) {
+    if (authConfig?.enabled && authUser && !authUser.isGuest) {
       const session = await fetchAuthSession();
       const token = session.tokens?.accessToken?.toString();
       if (!token) throw new Error('Sua sessão expirou. Entre novamente.');
       headers.Authorization = `Bearer ${token}`;
     }
-    const response = await fetch(path, { ...options, headers });
+    const response = await fetch(path, { ...options, headers, credentials: 'same-origin' });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || 'Falha na solicitação');
     return data;
   }
   async function refresh() { setState(await request('/api/game')); }
+  async function startGuest() {
+    setBusy(true); setNotice('');
+    try {
+      const response = await fetch('/api/guest/session', { method: 'POST', credentials: 'same-origin' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Não foi possível iniciar a partida.');
+      setAuthUser({ username: 'guest', isGuest: true });
+    } catch (error) { setNotice(error.message || 'Não foi possível iniciar a partida.'); }
+    finally { setBusy(false); }
+  }
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -300,7 +312,10 @@ export default function App() {
   }
 
   if (!authReady || (authUser && !state)) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
-  if (authConfig?.enabled && !authUser) return <AuthPanel onAuthenticated={setAuthUser} notice={notice} setNotice={setNotice} />;
+  if (authConfig?.enabled && !authUser) return showAuthPanel
+    ? <AuthPanel onAuthenticated={(user) => { setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />
+    : <WelcomePanel onGuest={startGuest} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} busy={busy} notice={notice} />;
+  if (authConfig?.enabled && authUser?.isGuest && showAuthPanel) return <AuthPanel onAuthenticated={(user) => { setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />;
   if (!state) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
   const m = state.metrics;
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
@@ -344,7 +359,7 @@ export default function App() {
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR POLÍTICO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.state_code} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">CENÁRIO FICTÍCIO</span>{authConfig?.enabled && <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); }}>Sair</button></>}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR POLÍTICO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.state_code} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">

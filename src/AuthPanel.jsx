@@ -19,7 +19,7 @@ const messages = {
   challenge: { title: 'Confirme o acesso', subtitle: 'Digite o código de segurança solicitado pela sua conta.' },
 };
 
-export default function AuthPanel({ onAuthenticated, notice, setNotice }) {
+export default function AuthPanel({ onAuthenticated, onCancel, notice, setNotice }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,6 +113,7 @@ export default function AuthPanel({ onAuthenticated, notice, setNotice }) {
   const heading = messages[mode];
 
   return <main className="auth-screen"><section className="auth-card">
+    {onCancel && <button className="auth-dismiss" type="button" onClick={onCancel} aria-label="Voltar ao jogo">×</button>}
     <span className="brand-mark">M</span>
     <div className="eyebrow">MANDATO · CONTA DO JOGADOR</div>
     <h1>{heading.title}</h1>

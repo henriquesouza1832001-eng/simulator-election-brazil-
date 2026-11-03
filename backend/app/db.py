@@ -1,7 +1,10 @@
+import hashlib
 import json
 import os
+import secrets
 import sqlite3
 from contextvars import ContextVar
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +34,29 @@ def current_player_id() -> str:
     return _player_id.get()
 
 
+def create_guest_session() -> tuple[str, str]:
+    """Create a high-entropy browser session without requiring a player account."""
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    player_id = f"guest:{token_hash}"
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")
+    with connect() as db:
+        db.execute("DELETE FROM guest_sessions WHERE expires_at <= CURRENT_TIMESTAMP")
+        db.execute("INSERT INTO guest_sessions (token_hash, player_id, expires_at) VALUES (?, ?, ?)",
+                   (token_hash, player_id, expires_at))
+    return token, player_id
+
+
+def guest_player_id(token: str | None) -> str | None:
+    if not token:
+        return None
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    with connect() as db:
+        row = db.execute("SELECT player_id FROM guest_sessions WHERE token_hash = ? AND expires_at > CURRENT_TIMESTAMP",
+                         (token_hash,)).fetchone()
+    return str(row["player_id"]) if row else None
+
+
 def database_path() -> Path:
     configured = os.getenv("DATABASE_PATH", "./data/game.sqlite3")
     path = Path(configured)
@@ -58,6 +84,11 @@ def initialize() -> None:
                 player_id TEXT PRIMARY KEY,
                 state_json TEXT NOT NULL,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS guest_sessions (
+                token_hash TEXT PRIMARY KEY,
+                player_id TEXT NOT NULL UNIQUE,
+                expires_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS game_archives (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
