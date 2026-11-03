@@ -435,10 +435,16 @@ def political_career_options(fresh: bool = False) -> dict[str, Any]:
 def geographic_municipalities(
     state_code: str = Query(default="", max_length=2),
     q: str = Query(default="", max_length=80),
+    ibge_code: str = Query(default="", max_length=7),
     limit: int = Query(default=20, ge=1, le=50),
 ) -> dict[str, Any]:
     if state_code and state_code.upper() not in {item[0] for item in STATES}:
         raise HTTPException(status_code=422, detail="Escolha uma unidade da federação válida.")
+    if ibge_code:
+        if not re.fullmatch(r"\d{7}", ibge_code):
+            raise HTTPException(status_code=422, detail="Use a seven-digit IBGE municipality code.")
+        municipality = get_municipality(ibge_code)
+        return {"items": [municipality] if municipality else [], "catalog": catalog_metadata()}
     return {"items": municipality_options(state_code, q, limit), "catalog": catalog_metadata()}
 
 

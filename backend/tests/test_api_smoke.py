@@ -102,6 +102,16 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(cities.json()["catalog"]["count"], 5571)
         self.assertEqual(cities.json()["catalog"]["reference_date"], "2026-07-01")
         self.assertEqual(cities.json()["items"][0]["ibge_code"], "3550308")
+        economic = cities.json()["items"][0]["economic_profile"]
+        self.assertEqual(economic["gdp_reference_year"], 2023)
+        self.assertEqual(economic["sector_reference_year"], 2021)
+        self.assertEqual(economic["leading_sector_2021"], "services")
+        by_code = self.client.get("/api/geography/municipalities", params={"ibge_code": "3550308"})
+        self.assertEqual(by_code.status_code, 200, by_code.text)
+        self.assertEqual(by_code.json()["items"][0]["name"], "São Paulo")
+        missing_profile = self.client.get("/api/geography/municipalities", params={"ibge_code": "5101837"})
+        self.assertEqual(missing_profile.status_code, 200, missing_profile.text)
+        self.assertFalse(missing_profile.json()["items"][0]["economic_series_available"])
         self.assertEqual(canonical_issue_ids("servicos"), ("saude", "educacao"))
 
         campaign_topics = self.client.get("/api/game").json()["campaign_overview"]["issue_options"]

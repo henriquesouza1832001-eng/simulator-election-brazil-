@@ -68,6 +68,8 @@ def build_catalog(year: int, retrieved_at: str | None = None) -> dict:
         if previous.get("electorate_count"):
             municipality["electorate_count"] = int(previous["electorate_count"])
             municipality["electorate_reference_year"] = int(previous["electorate_reference_year"])
+        if previous.get("economic_profile"):
+            municipality["economic_profile"] = previous["economic_profile"]
         municipalities.append(municipality)
 
     municipalities.sort(key=lambda item: (item["state_code"], item["name"].casefold(), item["ibge_code"]))
@@ -88,12 +90,12 @@ def build_catalog(year: int, retrieved_at: str | None = None) -> dict:
         "municipality_count": len(municipalities),
     }
     for key, value in previous_catalog.get("metadata", {}).items():
-        if key.startswith("electorate_") and key != "electorate_retrieved_at":
+        if (key.startswith("electorate_") and key != "electorate_retrieved_at") or key.startswith("economic_"):
             metadata[key] = value
     if any(item.get("electorate_count") for item in municipalities):
         metadata["electorate_retrieved_at"] = previous_catalog.get("metadata", {}).get("electorate_retrieved_at")
     return {
-        "schema_version": 2 if metadata.get("electorate_source") else 1,
+        "schema_version": 3 if metadata.get("economic_source") else 2 if metadata.get("electorate_source") else 1,
         "metadata": metadata,
         "municipalities": municipalities,
     }

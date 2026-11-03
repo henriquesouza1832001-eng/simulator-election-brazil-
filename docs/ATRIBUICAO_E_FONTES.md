@@ -10,7 +10,7 @@ O conjunto **Candidatos - 2024** identifica o TSE/AGEL como fonte, informa licen
 
 O catálogo municipal registra código, nome, UF e região pela API de Localidades do IBGE. A população usa as estimativas municipais da tabela SIDRA 6579, variável 9324; o ano de referência é guardado por registro e a data populacional é 1º de julho do respectivo ano. A importação atual usa 2026 e cobre 5.571 municípios. As URLs e a nota de licença acompanham o arquivo `backend/app/data/municipalities.json`; a API consultada não declara licença por registro, então o jogo preserva atribuição e proveniência.
 
-Porte e multiplicador de alcance são regras fictícias do simulador derivadas da população, não uma classificação oficial do IBGE nem uma previsão eleitoral. Eleitorado, perfil econômico, IDHM e temas-âncora não estão incluídos nesta fatia.
+Porte e multiplicador de alcance sao regras ficticias do simulador, nao uma classificacao oficial do IBGE nem uma previsao eleitoral. O catalogo tambem mostra perfil economico municipal, com PIB e PIB por pessoa de 2023 e composicao setorial de 2021 quando comparavel. Ausencias e limites estao em [PERFIL_ECONOMICO_MUNICIPAL.md](PERFIL_ECONOMICO_MUNICIPAL.md). Eleitorado, IDHM e temas-ancora nao estao incluidos como preferencias locais.
 
 - [IBGE SIDRA, tabela 6579, vari?vel 9324](https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2026/variaveis/9324?localidades=N6%5Ball%5D)
 - [IBGE API de Localidades](https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome)

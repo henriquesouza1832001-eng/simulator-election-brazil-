@@ -71,6 +71,12 @@ def _profile(item: dict[str, Any]) -> dict[str, Any]:
         next(multiplier for threshold, multiplier in ELECTORATE_REACH_BANDS if electorate_count <= threshold)
         if electorate_count else population_reach_multiplier
     )
+    economic = item.get("economic_profile")
+    if economic is not None:
+        economic = {
+            **economic,
+            "source_url": _catalog()["metadata"].get("economic_dataset_url"),
+        }
     return {
         "ibge_code": str(item["ibge_code"]),
         "name": item["name"],
@@ -88,6 +94,9 @@ def _profile(item: dict[str, Any]) -> dict[str, Any]:
         "electorate_share_of_national": round(electorate_count / national_electorate_total, 8)
         if electorate_count and national_electorate_total else None,
         "electorate_source_url": _catalog()["metadata"].get("electorate_dataset_url"),
+        "economic_profile": economic,
+        "economic_series_available": economic is not None,
+        "economic_source_url": _catalog()["metadata"].get("economic_dataset_url"),
         "city_size": size_key,
         "city_size_label": size_label,
         "municipal_campaign_reach_multiplier": reach_multiplier,
@@ -167,5 +176,9 @@ def catalog_metadata() -> dict[str, Any]:
         "electorate_source": metadata.get("electorate_source"),
         "electorate_source_url": metadata.get("electorate_dataset_url"),
         "electorate_reference_year": metadata.get("electorate_reference_year"),
+        "economic_source": metadata.get("economic_source"),
+        "economic_source_url": metadata.get("economic_dataset_url"),
+        "economic_gdp_reference_year": metadata.get("economic_gdp_reference_year"),
+        "economic_sector_reference_year": metadata.get("economic_sector_reference_year"),
         "count": len(_catalog()["municipalities"]),
     }

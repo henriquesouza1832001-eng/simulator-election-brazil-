@@ -4,49 +4,77 @@ import './municipality-picker.css';
 const population = new Intl.NumberFormat('pt-BR');
 const electorate = new Intl.NumberFormat('pt-BR');
 const multiplier = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
+const billions = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
+const sectorNames = {
+  agriculture: 'Agropecuária',
+  industry: 'Indústria',
+  services: 'Serviços privados',
+  public_services: 'Serviços públicos',
+};
+const percent = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 });
 
 export default function MunicipalityPicker({ request, stateCode, value = '', selectedId = '', onSelect, label = 'Município', required = true, disabled = false }) {
   const [query, setQuery] = useState(value);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [referenceYear, setReferenceYear] = useState(null);
-  const [electorateYear, setElectorateYear] = useState(null);
-  const [reachMultiplier, setReachMultiplier] = useState(null);
-  const [electorateSource, setElectorateSource] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [economicSeriesAvailable, setEconomicSeriesAvailable] = useState(null);
   const requestRef = useRef(request);
   requestRef.current = request;
 
   useEffect(() => { setQuery(value); }, [value]);
+
   useEffect(() => {
     let active = true;
     const term = query.trim();
-    if (term.length < 2) {
+    if (!selectedId && term.length < 2) {
       setItems([]);
       setLoading(false);
       return () => { active = false; };
     }
+
     setLoading(true);
     const timer = setTimeout(() => {
-      const params = new URLSearchParams({ state_code: stateCode, q: term, limit: '12' });
+      const params = selectedId
+        ? new URLSearchParams({ ibge_code: selectedId, limit: '1' })
+        : new URLSearchParams({ state_code: stateCode, q: term, limit: '12' });
       requestRef.current(`/api/geography/municipalities?${params.toString()}`)
-        .then((data) => { if (active) setItems(data.items || []); })
-        .catch(() => { if (active) setItems([]); })
+        .then((data) => {
+          if (!active) return;
+          setItems(selectedId ? [] : data.items || []);
+          if (selectedId) {
+            const item = data.items?.[0];
+            setProfile(item || null);
+            setEconomicSeriesAvailable(item?.economic_series_available ?? false);
+          }
+        })
+        .catch(() => {
+          if (!active) return;
+          setItems([]);
+          if (selectedId) {
+            setProfile(null);
+            setEconomicSeriesAvailable(false);
+          }
+        })
         .finally(() => { if (active) setLoading(false); });
-    }, 220);
+    }, selectedId ? 0 : 220);
     return () => { active = false; clearTimeout(timer); };
-  }, [stateCode, query]);
+  }, [stateCode, query, selectedId]);
 
   function choose(item) {
     setQuery(item.name);
-    setReferenceYear(item.population_reference_year);
-    setElectorateYear(item.electorate_reference_year || null);
-    setReachMultiplier(item.municipal_campaign_reach_multiplier || null);
-    setElectorateSource(item.electorate_source_url || null);
+    setProfile(item);
+    setEconomicSeriesAvailable(item.economic_series_available ?? false);
     setItems([]);
     setOpen(false);
     onSelect({ id: item.ibge_code, name: item.name, profile: item });
   }
+
+  const economic = profile?.economic_profile;
+  const leadingSector = economic?.leading_sector_2021;
+  const leadingShare = leadingSector ? economic?.sector_shares_2021?.[leadingSector] : null;
 
   return <div className="municipality-picker">
     <label>{label}
@@ -57,10 +85,8 @@ export default function MunicipalityPicker({ request, stateCode, value = '', sel
           const next = event.target.value;
           setQuery(next);
           setOpen(true);
-          setReferenceYear(null);
-          setElectorateYear(null);
-          setReachMultiplier(null);
-          setElectorateSource(null);
+          setProfile(null);
+          setEconomicSeriesAvailable(null);
           onSelect({ id: '', name: next, profile: null });
         }}
         onFocus={() => setOpen(true)}
@@ -83,7 +109,18 @@ export default function MunicipalityPicker({ request, stateCode, value = '', sel
         </button>)
           : <span className="municipality-result-note">Nenhum município encontrado nesta UF.</span>}
     </div>}
-    {selectedId && <small className="municipality-selection">Código IBGE {selectedId} · população estimada em {referenceYear || 2026}{electorateYear ? <> · eleitorado TSE {electorateYear}{electorateSource && <> · <a href={electorateSource} target="_blank" rel="noreferrer">fonte CC BY ↗</a></>}</> : ''}</small>}
-    {selectedId && electorateYear && reachMultiplier && <small className="municipality-selection">Alcance local estimado ×{multiplier.format(reachMultiplier)} conforme o tamanho do eleitorado.</small>}
+    {selectedId && profile && <small className="municipality-selection">Código IBGE {selectedId} · população estimada em {profile.population_reference_year || 2026}{profile.electorate_reference_year ? <> · eleitorado TSE {profile.electorate_reference_year}{profile.electorate_source_url && <> · <a href={profile.electorate_source_url} target="_blank" rel="noreferrer">fonte CC BY ↗</a></>}</> : ''}</small>}
+    {selectedId && profile?.electorate_reference_year && profile?.municipal_campaign_reach_multiplier && <small className="municipality-selection">Alcance local estimado ×{multiplier.format(profile.municipal_campaign_reach_multiplier)} conforme o tamanho do eleitorado.</small>}
+    {selectedId && profile && <details className="municipality-economic" aria-label="Contexto econ?mico municipal">
+      <summary>{economic?.gdp_per_capita_brl != null ? <>IBGE ? PIB por pessoa {money.format(economic.gdp_per_capita_brl)} ({economic.gdp_reference_year}){leadingSector ? ` ? ${sectorNames[leadingSector]}` : ""}</> : economicSeriesAvailable ? "Perfil econ?mico do IBGE" : "PIB municipal sem registro nesta s?rie IBGE"}</summary>
+      <div className="municipality-economic-details">
+      {economic?.gdp_per_capita_brl != null && <span>PIB por pessoa: {money.format(economic.gdp_per_capita_brl)} ({economic.gdp_reference_year})</span>}
+      {economic?.gdp_billion_brl != null && <span>PIB municipal: R$ {billions.format(economic.gdp_billion_brl)} bi ({economic.gdp_reference_year})</span>}
+      {leadingSector && <span>Maior setor no valor adicionado: {sectorNames[leadingSector] || leadingSector} ({percent.format(leadingShare || 0)}, {economic.sector_reference_year})</span>}
+      {economic?.sector_profile_status === 'not_comparable' && <span>Composição setorial sem percentuais comparáveis na base de {economic.sector_reference_year}.</span>}
+      {economic && !leadingSector && economic.sector_profile_status !== 'not_comparable' && <span>Composição setorial não disponível nesta série.</span>}
+      {!economicSeriesAvailable && <span>O IBGE não tem registro de PIB disponível para esta cidade nesta série.</span>}
+      {profile.economic_source_url && <a href={profile.economic_source_url} target="_blank" rel="noreferrer">Consultar série e notas metodológicas do IBGE ↗</a>}
+      </div></details>}
   </div>;
 }

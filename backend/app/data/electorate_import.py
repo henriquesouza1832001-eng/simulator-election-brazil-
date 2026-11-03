@@ -139,7 +139,7 @@ def import_electorate(zip_path: Path) -> dict[str, Any]:
         item["electorate_count"] = totals[str(item["ibge_code"])]
         item["electorate_reference_year"] = 2026
 
-    catalog["schema_version"] = 2
+    catalog["schema_version"] = 3 if catalog.get("metadata", {}).get("economic_source") else 2
     catalog["metadata"].update({
         "electorate_source": TSE_SOURCE,
         "electorate_source_url": TSE_SOURCE_URL,
