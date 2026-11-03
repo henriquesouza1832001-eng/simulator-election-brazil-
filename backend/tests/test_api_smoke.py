@@ -11,8 +11,10 @@ from fastapi.testclient import TestClient
 
 from app.db import load_state, reset_player_id, save_state, set_player_id
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
+from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.issues import canonical_issue_ids
 from app.main import app
+from app.engine.state import new_game
 
 
 INAUGURAL_ADDRESS = (
@@ -176,6 +178,29 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertGreater(adjust_coalition_probability(.55, easy["coalition_flexibility"]), .55)
         self.assertLess(adjust_coalition_probability(.55, hard["coalition_flexibility"]), .55)
         self.assertLess(election_margin(0, 0, hard["opposition_pressure"]), election_margin(0, 0, normal["opposition_pressure"]))
+
+    def test_minister_profiles_shift_presidential_campaign_group_support(self) -> None:
+        state = new_game()
+        baseline = dict(state["campaign"]["group_support"])
+        overview = appointments_overview(state)
+        ministry = overview["cabinet"][0]
+        self.assertTrue(all(item["political_profile"]["simulated"] for item in ministry["candidates"]))
+        self.assertIn("rural", {item["key"] for item in overview["campaign_groups"]})
+        recreated = appointments_overview(new_game())["cabinet"][0]
+        self.assertEqual(ministry["candidates"][0]["political_profile"], recreated["candidates"][0]["political_profile"])
+
+        first = ministry["candidates"][0]
+        result = appoint_minister(state, ministry["id"], first["id"])
+        for group, change in first["political_profile"]["group_effects"].items():
+            self.assertAlmostEqual(state["campaign"]["group_support"][group], baseline[group] + change)
+        self.assertTrue(result["campaign_group_changes"])
+
+        state["date"] = "2027-01-08"
+        second = ministry["candidates"][1]
+        appoint_minister(state, ministry["id"], second["id"])
+        for group in baseline:
+            expected = baseline[group] + second["political_profile"]["group_effects"].get(group, 0)
+            self.assertAlmostEqual(state["campaign"]["group_support"][group], expected)
 
     def test_public_work_and_diplomatic_trip_use_the_shared_budget_and_calendar(self) -> None:
         self.deliver_inaugural_address()

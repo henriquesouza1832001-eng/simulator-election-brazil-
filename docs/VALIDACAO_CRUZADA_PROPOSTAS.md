@@ -1,6 +1,6 @@
 # Validação cruzada das propostas de geografia, narrativa e aprendizado
 
-Status: primeira fatia de geografia e temas canônicos implementada e verificável localmente; personagens, autoaprendizado e mandatos locais completos continuam pendentes. Esta revisão compara as propostas com o código existente e organiza a sequência de trabalho. Não requer deploy.
+Status: geografia municipal validada, perfil do jogador e perfis políticos fictícios de ministros implementados; a indicação ministerial já altera o apoio dos grupos na próxima campanha presidencial. Personagens persistentes, autoaprendizado e mandatos locais completos continuam pendentes. Revisado em 2 nov. 2026 após conferir código e implantação.
 
 ## Estado verificado no repositório
 
@@ -9,7 +9,7 @@ Status: primeira fatia de geografia e temas canônicos implementada e verificáv
 | Geografia | Catálogo versionado dos 5.571 municípios, com código IBGE, nome, UF e estimativa populacional de 2026; `career.py` grava `municipality_id`, expõe o perfil e associa atividades municipais ao local escolhido. | Eleitorado estimado do TSE, perfil econômico, IDHM e temas-âncora ainda não foram importados. Cargos estaduais/federais ainda não fazem visitas cidade a cidade; orçamentos, câmaras e serviços locais também faltam. |
 | Personagens | A ficha do jogador fica dentro do save. `appointments.py` cria perfis de candidatos a vagas. | Não há entidade persistente `Character`, ID próprio, histórico de aparições ou ligação a eventos; personagens de nomeações são gerados para aquela etapa. |
 | Temas | `issues.py` define IDs e rótulos compartilhados por `career.py` e `campaign.py`; a campanha oferece saúde e educação separadas, preservando `servicos` como alias de saves antigos. | Grupos afetados, termos e rubricas ainda variam por contexto. A geografia ainda não atribui âncoras temáticas porque faltam fontes comparáveis de perfil econômico e IDHM. |
-| Espectro | A ficha do jogador tem um rótulo de espectro e há efeitos iniciais por espectro/família. | Não há vetor ideológico multidimensional aplicado a personagens, grupos e nomeações. |
+| Espectro e nomeações | A ficha do jogador usa cinco posições e efeitos explícitos por espectro/origem familiar. Candidatos ministeriais fictícios também recebem esses dois campos; nomeá-los desloca em poucos décimos o apoio de grupos na campanha presidencial. | O traço produtivista ainda não foi incluído; seus efeitos precisam ser definidos nos dois modos antes de entrar na ficha. Eixos econômicos, sociais e territoriais do personagem continuam descritivos; não há elenco persistente nem atribuição ideológica aos indicados ao STF. O cálculo de grupos dos dois modos ainda usa catálogos diferentes e precisa de consolidação posterior. |
 | Interpretação | Gemini e fallback local classificam medidas; correções do jogador são guardadas por jogador e recuperadas lexicalmente. A tabela `actions` conserva propostas aplicadas. | Não há log de todas as prévias, conjunto de avaliação separado nem classificador local de texto. A saída Gemini inclui `fiscal_cost_bi`, que hoje é usada na previsão e na aplicação; portanto, o limite entre interpretação e cálculo ainda não está integralmente garantido. |
 | RAG | `rag.py` ingere e recupera trechos com URL, licença e data; `tse_import.py` guarda proveniência de candidaturas. | `event_evidence_brief()` não tem consumidor no fluxo atual; RAG ainda não fundamenta textos narrativos. O importador TSE não fornece um cadastro de municípios. |
 | Saves | Cada jogador tem uma partida ativa e até 12 arquivos recuperáveis. | `game_saves` tem uma linha por jogador; arquivos são snapshots, não várias campanhas ativas nomeadas. |
@@ -64,14 +64,15 @@ O requisito continua aberto: `game_saves.player_id` é único e `game_archives` 
 
 1. **Contrato e compatibilidade, fatia inicial entregue:** centralizar IDs de temas, registrar os campos geográficos e preservar leitura de saves antigos. A validação do custo fiscal fornecido pela interpretação continua pendente antes de treinar qualquer classificador.
 2. **Malha municipal, fatia 1 entregue:** importar códigos IBGE, nomes, UF, região e população estimada de 2026 para os 5.571 municípios. `geography.py` documenta faixas de porte e o multiplicador de alcance como mecânica do jogo; ainda não há âncoras temáticas, eleitorado do TSE, IDHM ou perfil econômico.
-3. **Campanhas nomeadas:** migrar de uma linha ativa por jogador para partidas identificadas por `campaign_id`, preservando o save e arquivos atuais. Esse passo permite testar percursos em paralelo sem perder a partida.
-4. **Localidade na carreira, fatia inicial entregue:** aceitar `municipality_id`, expor dados no resumo, validar município e UF, e anexar localidade às ações municipais. Nomes antigos são resolvidos somente quando correspondem sem ambiguidade; visitas em outros municípios para cargos estaduais/federais seguem pendentes.
-5. **Log e avaliador de interpretação:** registrar todas as prévias de medidas e correções confirmadas. Criar o treino lexical offline sem ligá-lo ao fluxo de jogo.
-6. **Personagens persistentes e espectro:** criar IDs, papéis, histórico, origem opcional e vetores ideológicos; ligar personagens a eventos e disputas após os contratos anteriores estarem estáveis.
-7. **Pontuação municipal e narrativa:** usar saliência municipal na pertinência do discurso e nos efeitos locais. Integrar RAG à narrativa apenas depois de definir a avaliação narrativa separada e exibição de fontes/limites.
-8. **Mandatos subnacionais e Legislativo:** criar orçamento/serviços/câmaras por ente; depois ligar partidos, bancadas, comissões, coalizões e votos nominais. Não inferir voto legislativo apenas do rótulo ideológico.
+3. **Localidade na carreira, fatia inicial entregue:** aceitar `municipality_id`, expor dados no resumo, validar município e UF, e anexar localidade às ações municipais. Nomes antigos são resolvidos somente quando correspondem sem ambiguidade; visitas em outros municípios para cargos estaduais/federais seguem pendentes.
+4. **Perfis ministeriais, primeira fatia entregue:** candidatos fictícios recebem espectro e origem familiar de forma reproduzível; uma nomeação altera o apoio dos grupos na campanha presidencial. A escala é pequena e não afeta aprovação nacional nem o STF.
+5. **Campanhas nomeadas:** migrar de uma linha ativa por jogador para partidas identificadas por `campaign_id`, preservando o save e arquivos atuais. Esse passo permite testar percursos em paralelo sem perder a partida.
+6. **Log e avaliador de interpretação:** registrar todas as prévias de medidas e correções confirmadas. Criar o treino lexical offline sem ligá-lo ao fluxo de jogo.
+7. **Personagens persistentes e espectro:** criar IDs, papéis, histórico, origem opcional e vetores ideológicos; ligar personagens a eventos e disputas após os contratos anteriores estarem estáveis.
+8. **Pontuação municipal e narrativa:** usar saliência municipal na pertinência do discurso e nos efeitos locais. Integrar RAG à narrativa apenas depois de definir a avaliação narrativa separada e exibição de fontes/limites.
+9. **Mandatos subnacionais e Legislativo:** criar orçamento/serviços/câmaras por ente; depois ligar partidos, bancadas, comissões, coalizões e votos nominais. Não inferir voto legislativo apenas do rótulo ideológico.
 
-Cada fatia termina com regra determinística, estado persistido, endpoint, interface focada e atualização dos documentos. Testes unitários e avaliações sintéticas são critérios de aceite para essas fatias; este documento não executa nem substitui esses testes.
+Cada fatia termina com regra determinística, estado persistido, endpoint, interface focada e atualização dos documentos. Testes unitários e avaliações sintéticas são critérios de aceite para essas fatias.
 
 ## Uso de referências públicas
 

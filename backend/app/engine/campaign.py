@@ -37,6 +37,7 @@ GROUP_LABELS = {
     "juventude": "Jovens",
     "profissionais_seguranca": "Profissionais de segurança",
     "servidores": "Servidores públicos",
+    "rural": "População rural",
 }
 
 ACTIVITIES = {

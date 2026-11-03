@@ -11,11 +11,31 @@ from typing import Any
 
 from .ministries import MINISTRIES
 from .difficulty import adjust_coalition_probability, get_difficulty
+from .career import FAMILY_GROUP_EFFECTS, SPECTRUM_GROUP_EFFECTS
+from .campaign import GROUP_LABELS, ensure_campaign_state, refresh_support
 
 FIRST_NAMES = ["Ana", "Beatriz", "Caio", "Daniel", "Elisa", "Felipe", "Gabriela", "João", "Lívia", "Marcos", "Nádia", "Otávio", "Paula", "Rafael", "Sofia", "Tiago"]
 LAST_NAMES = ["Andrade", "Barbosa", "Campos", "Duarte", "Ferraz", "Gomes", "Lacerda", "Menezes", "Nogueira", "Prado", "Queiroz", "Ramos", "Siqueira", "Tavares", "Vasconcelos"]
 BACKGROUNDS = ["gestão pública", "universidade e pesquisa", "governo estadual", "administração municipal", "setor produtivo", "carreira técnica"]
 LEGAL_SPECIALTIES = ["Direito constitucional", "Direito público", "Direito penal", "Direitos humanos", "Direito econômico", "Processo civil"]
+POLITICAL_SPECTRA = ["esquerda", "centro_esquerda", "centro", "centro_direita", "direita"]
+FAMILY_BACKGROUNDS = list(FAMILY_GROUP_EFFECTS)
+SPECTRUM_LABELS = {
+    "esquerda": "Esquerda", "centro_esquerda": "Centro-esquerda", "centro": "Centro",
+    "centro_direita": "Centro-direita", "direita": "Direita",
+}
+FAMILY_LABELS = {
+    "trabalhadora": "Família trabalhadora", "classe_media": "Classe média",
+    "empreendedora": "Pequeno negócio", "rural": "Origem rural",
+    "servidora_publica": "Serviço público", "politica": "Família ligada à política",
+    "educadora": "Educação e cuidado", "oficios": "Ofícios e comércio",
+    "lideranca_comunitaria": "Liderança comunitária",
+}
+CAREER_TO_CAMPAIGN_GROUP = {
+    "trabalhadores": "trabalhadores", "empreendedores": "pequenos_negocios",
+    "familias": "familias", "servidores": "servidores", "jovens": "juventude", "rural": "rural",
+}
+CABINET_AFFINITY_SCALE = 0.22
 
 
 def _clamp(value: float) -> float:
@@ -24,6 +44,57 @@ def _clamp(value: float) -> float:
 
 def _safe_id(text: str) -> str:
     return "".join(ch.lower() if ch.isalnum() else "-" for ch in text).strip("-")
+
+
+def _political_profile(state: dict[str, Any], candidate_id: str) -> dict[str, Any]:
+    rng = random.Random(f"{state.get('campaign_seed', 203001)}:{candidate_id}:political-profile")
+    spectrum = rng.choice(POLITICAL_SPECTRA)
+    family = rng.choice(FAMILY_BACKGROUNDS)
+    raw_effects = dict(SPECTRUM_GROUP_EFFECTS[spectrum])
+    for group, amount in FAMILY_GROUP_EFFECTS[family].items():
+        raw_effects[group] = raw_effects.get(group, 0.0) + amount
+    effects = {}
+    for group, amount in raw_effects.items():
+        campaign_group = CAREER_TO_CAMPAIGN_GROUP[group]
+        scaled = round(max(-0.75, min(0.75, amount * CABINET_AFFINITY_SCALE)), 2)
+        if scaled:
+            effects[campaign_group] = scaled
+    return {
+        "spectrum": spectrum,
+        "spectrum_label": SPECTRUM_LABELS[spectrum],
+        "family_background": family,
+        "family_label": FAMILY_LABELS[family],
+        "group_effects": effects,
+        "simulated": True,
+    }
+
+
+def _ensure_political_profile(state: dict[str, Any], candidate: dict[str, Any]) -> None:
+    if not isinstance(candidate.get("political_profile"), dict):
+        candidate["political_profile"] = _political_profile(state, str(candidate.get("id", "candidate")))
+
+
+def _apply_candidate_group_effects(state: dict[str, Any], previous: dict[str, Any] | None,
+                                   candidate: dict[str, Any]) -> dict[str, dict[str, float]]:
+    campaign = ensure_campaign_state(state)
+    support = campaign["group_support"]
+    changes: dict[str, dict[str, float]] = {}
+    for person, direction in ((previous, -1), (candidate, 1)):
+        if not person:
+            continue
+        profile = person.get("political_profile") or {}
+        for group, amount in profile.get("group_effects", {}).items():
+            if group not in GROUP_LABELS:
+                continue
+            before = float(support.get(group, 50.0))
+            after = max(0.0, min(100.0, before + direction * float(amount)))
+            support[group] = round(after, 2)
+            delta = round(after - before, 2)
+            if delta:
+                changes.setdefault(group, {"label": GROUP_LABELS[group], "change": 0.0})
+                changes[group]["change"] = round(changes[group]["change"] + delta, 2)
+    refresh_support(campaign)
+    return changes
 
 
 def ensure_appointments_state(state: dict[str, Any]) -> dict[str, Any]:
@@ -36,16 +107,23 @@ def ensure_appointments_state(state: dict[str, Any]) -> dict[str, Any]:
             candidates = []
             for index in range(5):
                 name = f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}"
-                candidates.append({
+                candidate = {
                     "id": f"{slug}-candidate-{index + 1}", "name": name,
                     "background": rng.choice(BACKGROUNDS), "experience_years": rng.randint(8, 32),
                     "technical_fit": rng.randint(48, 94), "coalition_support": rng.randint(35, 92),
                     "integrity": rng.randint(55, 97), "management": rng.randint(45, 92),
                     "risk": rng.randint(3, 34), "simulated": True,
-                })
+                }
+                _ensure_political_profile(state, candidate)
+                candidates.append(candidate)
             cabinet[slug] = {"name": ministry, "minister": None, "candidates": candidates}
         appointments["cabinet"] = cabinet
         appointments["last_cabinet_action"] = None
+    for slot in appointments["cabinet"].values():
+        for candidate in slot.get("candidates", []):
+            _ensure_political_profile(state, candidate)
+        if isinstance(slot.get("minister"), dict):
+            _ensure_political_profile(state, slot["minister"])
     judiciary = appointments.setdefault("judiciary", {})
     if "seats" not in judiciary:
         seats = [{"id": f"seat-{index + 1}", "status": "occupied", "label": f"Cadeira {index + 1}"} for index in range(10)]
@@ -84,6 +162,7 @@ def _judge_candidates(state: dict[str, Any], seat_id: str) -> list[dict[str, Any
 
 def appointments_overview(state: dict[str, Any]) -> dict[str, Any]:
     data = ensure_appointments_state(state)
+    campaign = ensure_campaign_state(state)
     cabinet = [{"id": key, "name": value["name"], "minister": value.get("minister"), "candidates": value["candidates"]}
                for key, value in data["cabinet"].items()]
     judiciary = data["judiciary"]
@@ -101,6 +180,8 @@ def appointments_overview(state: dict[str, Any]) -> dict[str, Any]:
         "cabinet": cabinet,
         "last_cabinet_action": data.get("last_cabinet_action"),
         "cabinet_days_until_action": _cooldown_days(state["date"], data.get("last_cabinet_action"), 7),
+        "campaign_groups": [{"key": key, "label": GROUP_LABELS[key], "support": round(value, 1)}
+                            for key, value in campaign["group_support"].items()],
         "judiciary": {"seats": judiciary["seats"], "vacant": vacant, "candidates": candidates,
                       "pending": pending, "confirmed": list(reversed(judiciary["confirmed"][-5:])),
                       "rejected": list(reversed(judiciary["rejected"][-5:]))},
@@ -135,6 +216,7 @@ def appoint_minister(state: dict[str, Any], ministry_id: str, candidate_id: str)
     previous = slot.get("minister")
     slot["minister"] = {**candidate, "appointed_on": state["date"]}
     data["last_cabinet_action"] = state["date"]
+    group_changes = _apply_candidate_group_effects(state, previous, slot["minister"])
     state.setdefault("cabinet_history", []).append({"date": state["date"], "ministry": slot["name"], "candidate": candidate["name"],
                                                      "previous": previous.get("name") if previous else None, "simulated": True})
     state["cabinet_history"] = state["cabinet_history"][-100:]
@@ -148,6 +230,7 @@ def appoint_minister(state: dict[str, Any], ministry_id: str, candidate_id: str)
     metrics["institutional_trust"] = _clamp(trust_base + (avg_integrity - 50) * .08)
     return {"ministry": slot["name"], "appointed": slot["minister"], "replaced": previous, "cabinet_size": len(occupied),
             "average_coalition": round(avg_coalition, 1), "average_integrity": round(avg_integrity, 1),
+            "campaign_group_changes": group_changes,
             "summary": f"{candidate['name']} foi nomeado(a) para {slot['name']}. A escolha afeta a coordenação política e a confiança institucional de forma gradual."}
 
 
