@@ -48,7 +48,7 @@ if ($Disable) {
         "test -x /opt/mandato/app/deploy/aws/auto-deploy-check.sh",
         "install -m 0644 /opt/mandato/app/deploy/aws/mandato-auto-deploy.service /etc/systemd/system/mandato-auto-deploy.service",
         "install -m 0644 /opt/mandato/app/deploy/aws/mandato-auto-deploy.timer /etc/systemd/system/mandato-auto-deploy.timer",
-        "install -d -m 0700 /var/lib/mandato"
+        "install -d -m 0700 /var/lib/mandato /var/lib/mandato/docker"
     )
     if ($ResetBaseline) {
         $commands += @(
