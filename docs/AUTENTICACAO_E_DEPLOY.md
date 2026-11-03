@@ -5,6 +5,7 @@
 - URL HTTPS: `https://d2dpmk0vrt66wn.cloudfront.net`.
 - Versão em produção: commit `6bcfe36304a5d2a0a0e575bba9e1b23897d72caa`, publicado via Systems Manager após backup consistente do SQLite em `/opt/mandato/backups/predeploy-1ef5e76e955f2ade55d0124c4b713fbfea360e0c.sqlite3`. API e web ficaram em execução; o endpoint público `/api/health` respondeu HTTP 200.
 - O CloudFront entrega o bundle `index-yTsf2tIe.js`, com os rótulos `MOTOR LOCAL` e `GEMINI CONFIGURADO`. O estado atual de produção é `local-fallback`; não há chave Gemini configurada no servidor.
+- O backup externo semanal ainda não está ativo. O preview da stack separada `mandato-weekly-backups` foi validado sem alterar recursos; bucket e associação só entram quando essa stack for executada.
 - CloudFront termina TLS e encaminha ao EC2 por HTTP com segredo de origem. A porta 80 do EC2 aceita tráfego do CloudFront; o Nginx bloqueia requisições sem o cabeçalho secreto. O IP antigo responde 403.
 - Amazon Cognito User Pool ativo. Cadastro por e-mail verificado e login pelo fluxo OAuth authorization code + PKCE, sem segredo no cliente público.
 - A API valida a assinatura/issuer/expiração do access token e exige `token_use=access` e o `client_id` configurado. O `sub` verificado identifica o jogador; não é aceito um identificador escolhido pelo navegador.
@@ -21,7 +22,7 @@ A role ainda não está conectada: a validação do commit publicado passou, mas
 Para concluir a configuração uma vez, autentique o AWS CLI e o GitHub CLI na conta correta e execute `./deploy/aws/setup-github-deploy.ps1` no PowerShell. O helper valida o repositório e a OIDC, cria/atualiza a stack CloudFormation `mandato-github-deploy`, restringe a role ao branch `main` e à instância do jogo, grava o ARN como `AWS_DEPLOY_ROLE_ARN` e dispara um deploy. Depois disso, pushes relevantes publicam automaticamente.
 ## Limites que ainda faltam antes de abrir amplamente
 
-1. Aplicar a configuração de backup semanal S3 em `deploy/aws/template.yaml` e validar um envio e uma restauração reais. A cópia manual pré-deploy fica no mesmo volume e não substitui o backup externo.
+1. Aplicar a stack separada de backup semanal S3 com `deploy/aws/backup-stack.ps1`, validar um envio e uma restauração reais. A cópia manual pré-deploy fica no mesmo volume e não substitui o backup externo.
 2. Configurar alarmes de custo e de falha, política de retenção de logs e limite de tentativas de autenticação.
 3. Considerar MFA e recuperação de conta, testar cadastro, confirmação de e-mail, troca de senha e encerramento global de sessão.
 4. Substituir o domínio CloudFront aleatório por domínio próprio somente se a experiência exigir um endereço permanente e memorável.

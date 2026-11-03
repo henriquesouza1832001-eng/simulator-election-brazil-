@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Weekly private SQLite backups for the existing Mandato EC2 host; does not update the game instance.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    arch: Existing EC2 instance profile + private versioned S3 bucket + SSM State Manager schedule.
+    must:
+      - Never create or modify the game EC2 instance.
+      - Keep backup objects private, encrypted, versioned, and limited to the weekly/ prefix.
+      - Preserve the 90-day recovery window and keep a failed upload on the host.
+    ref:
+      - at: README.md
+        has: backup cadence, restore, and operating limits
+        scope: same repository
+
+Parameters:
+  InstanceId:
+    Type: String
+    Description: Existing game EC2 instance ID.
+    AllowedPattern: '^i-[0-9a-f]+$'
+  InstanceRoleName:
+    Type: String
+    Description: Existing EC2 instance-profile role to grant access to this backup bucket.
+    AllowedPattern: '^[A-Za-z0-9+=,.@_-]{1,64}$'
+
+Resources:
+  GameBackupBucket:
+    Type: AWS::S3::Bucket
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Off-host recovery copies for the persistent SQLite game database.
+        must:
+          - Keep all public access blocked, TLS enforced, default encryption, and versioning enabled.
+          - Keep the current backup window at 90 days unless the restore runbook changes with it.
+        mutable: change-with-constraints
+        mutability:
+          BucketEncryption: must-never-change
+          PublicAccessBlockConfiguration: must-never-change
+          VersioningConfiguration: must-never-change
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire weekly recovery copies after 90 days
+            Status: Enabled
+            Prefix: weekly/
+            ExpirationInDays: 90
+            NoncurrentVersionExpirationInDays: 7
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: Remove expired weekly backup markers
+            Status: Enabled
+            Prefix: weekly/
+            ExpiredObjectDeleteMarker: true
+
+  GameBackupBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Rejects plaintext access even if a later identity policy is misconfigured.
+        must:
+          - Deny insecure transport for the bucket and all its objects.
+    Properties:
+      Bucket: !Ref GameBackupBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt GameBackupBucket.Arn
+              - !Sub '${GameBackupBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+
+  GameBackupPolicy:
+    Type: AWS::IAM::Policy
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Allows the existing host to upload and restore its snapshots under one S3 prefix only.
+        must:
+          - Do not grant access to other buckets or prefixes.
+          - Do not expose instance-role credentials inside the game containers.
+    Properties:
+      PolicyName: !Sub '${AWS::StackName}-weekly-game-backup'
+      Roles:
+        - !Ref InstanceRoleName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ReadBucketRegion
+            Effect: Allow
+            Action: s3:GetBucketLocation
+            Resource: !GetAtt GameBackupBucket.Arn
+          - Sid: ListWeeklyRecoveryObjects
+            Effect: Allow
+            Action: s3:ListBucket
+            Resource: !GetAtt GameBackupBucket.Arn
+            Condition:
+              StringLike:
+                s3:prefix:
+                  - weekly/
+                  - weekly/*
+          - Sid: ListMultipartUploadsForWeeklyPrefix
+            Effect: Allow
+            Action: s3:ListBucketMultipartUploads
+            Resource: !GetAtt GameBackupBucket.Arn
+            Condition:
+              StringLike:
+                s3:prefix: weekly/*
+          - Sid: ReadWriteWeeklySnapshots
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:AbortMultipartUpload
+              - s3:ListMultipartUploadParts
+            Resource: !Sub '${GameBackupBucket.Arn}/weekly/*'
+
+  WeeklyDatabaseBackup:
+    Type: AWS::SSM::Association
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Runs a consistent SQLite backup every Sunday and retains local recovery data if S3 upload fails.
+        must:
+          - Target only the existing game instance and upload only under s3://GameBackupBucket/weekly/.
+          - Do not run an immediate database copy when the association is created or updated.
+    Properties:
+      ApplyOnlyAtCronInterval: true
+      AssociationName: !Sub '${AWS::StackName}-weekly-database-backup'
+      Name: AWS-RunShellScript
+      ScheduleExpression: cron(0 13 ? * SUN *)
+      Targets:
+        - Key: InstanceIds
+          Values:
+            - !Ref InstanceId
+      Parameters:
+        commands:
+          - set -euo pipefail
+          - APP_DIR=/opt/mandato/app
+          - BACKUP_DIR=/opt/mandato/backups/weekly
+          - mkdir -p "$BACKUP_DIR"
+          - chmod 700 "$BACKUP_DIR"
+          - API_CONTAINER="$(cd "$APP_DIR" && docker compose ps -q api)"
+          - test -n "$API_CONTAINER"
+          - docker exec "$API_CONTAINER" python -c 'import sqlite3 as q; s=q.connect("file:/data/game.sqlite3?mode=ro",uri=True); assert {"game_save","game_saves","game_campaigns"}<={r[0] for r in s.execute("select name from sqlite_master")}; s.close()'
+          - BACKUP_NAME="game-$(date -u +%Y%m%dT%H%M%SZ).sqlite3"
+          - BACKUP_FILE="$BACKUP_DIR/$BACKUP_NAME"
+          - docker exec "$API_CONTAINER" rm -f /tmp/mandato-weekly.sqlite3
+          - docker exec "$API_CONTAINER" python -c 'import sqlite3 as q; s=q.connect("file:/data/game.sqlite3?mode=ro",uri=True); d=q.connect("/tmp/mandato-weekly.sqlite3"); s.backup(d); assert d.execute("pragma integrity_check").fetchone()[0]=="ok"; d.close(); s.close()'
+          - docker cp "$API_CONTAINER:/tmp/mandato-weekly.sqlite3" "$BACKUP_FILE"
+          - chmod 600 "$BACKUP_FILE"
+          - test -s "$BACKUP_FILE"
+          - docker exec "$API_CONTAINER" rm -f /tmp/mandato-weekly.sqlite3
+          - !Sub 'aws s3 cp "$BACKUP_FILE" "s3://${GameBackupBucket}/weekly/$BACKUP_NAME" --region ${AWS::Region} --only-show-errors --sse AES256'
+          - find "$BACKUP_DIR" -maxdepth 1 -type f -name 'game-*.sqlite3' -mtime +35 -delete
+
+Outputs:
+  WeeklyBackupBucket:
+    Description: Private S3 bucket holding the 90-day weekly database recovery window.
+    Value: !Ref GameBackupBucket
+  WeeklyBackupScheduleUtc:
+    Description: SSM association schedule; 13:00 UTC is 10:00 in Brasília.
+    Value: Every Sunday at 13:00 UTC
+  GameInstanceId:
+    Description: Existing EC2 game instance targeted by the schedule; this stack does not create it.
+    Value: !Ref InstanceId

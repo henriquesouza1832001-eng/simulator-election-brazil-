@@ -5,8 +5,9 @@ stack intact: it owns the persistent SQLite volume and the running game host.
 The separate `mandato-edge-auth` stack adds CloudFront HTTPS, Cognito accounts,
 and a security-group rule for CloudFront's origin-facing network. The web origin
 checks a random shared header so another CloudFront distribution cannot reuse it.
-The templates point back to this guide for their shared deployment rationale and
-the invariants that keep the database and origin protected.
+The optional `mandato-weekly-backups` stack attaches scoped S3 access to the
+existing instance role and adds a scheduled SSM association; it never modifies
+the EC2 resource. Each template documents its deployment boundary here.
 
 ## First setup
 
@@ -61,12 +62,30 @@ origin to arbitrary networks.
 
 ## Backups
 
-A consistent SQLite snapshot now runs every Sunday at 13:00 UTC (10:00 in
+Weekly recovery lives in the separate `mandato-weekly-backups` CloudFormation
+stack. It deliberately does not update the main `mandato-simulator` stack:
+CloudFormation reports the main stack's EC2 `UserData` as a conditional
+replacement, so keep backup resources separate from the persistent game host.
+
+Preview the new stack before applying it:
+
+```powershell
+.\backup-stack.ps1 -Region us-east-2 -PreviewOnly
+```
+
+The script resolves the existing EC2 instance and role from
+`mandato-simulator`, validates the backup template, and creates a change set.
+It refuses any plan containing an EC2 instance change. Review the printed
+resource plan; run the same command without `-PreviewOnly` to create the backup
+bucket and schedule.
+
+A consistent SQLite snapshot then runs every Sunday at 13:00 UTC (10:00 in
 Brasília) through Systems Manager State Manager. It uses Python's SQLite backup
-API from the API container, verifies the core save tables and `PRAGMA integrity_check`, saves the upload
-temporarily under `/opt/mandato/backups/weekly`, and sends it to the private S3
-bucket created by `template.yaml`. A failed upload leaves its local copy for
-recovery; successful runs prune local copies older than 35 days.
+API from the API container, verifies the core save tables and `PRAGMA
+integrity_check`, saves the upload temporarily under
+`/opt/mandato/backups/weekly`, and sends it to the private S3 bucket. A failed
+upload leaves its local copy for recovery; successful runs prune local copies
+older than 35 days.
 
 The bucket blocks public access, enforces TLS, uses S3-managed server-side
 encryption, and has versioning. S3 Lifecycle expires weekly snapshots after 90
@@ -76,11 +95,9 @@ objects only under `weekly/`; the application container receives no AWS
 credentials. The bucket is retained if the stack is deleted, so delete it only
 after intentionally transferring or removing its backups.
 
-To activate the schedule in the existing stack, authenticate AWS CLI v2 and run
-`.\deploy\aws\update-stack.ps1 -Region us-east-2`. This updates the existing
-`mandato-simulator` CloudFormation stack with the checked-in template while
-preserving its current parameter values; it does not replace the game instance.
-The first upload occurs at the next scheduled Sunday run.
+The first automatic upload occurs at the next scheduled Sunday run. Run the
+SSM association once manually after deployment to verify the upload before
+relying on the weekly schedule.
 
 To restore from Session Manager, list available files with
 `aws s3 ls s3://<bucket-from-CloudFormation-output>/weekly/ --region us-east-2`,
