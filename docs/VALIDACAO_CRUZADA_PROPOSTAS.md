@@ -1,14 +1,14 @@
 # Validação cruzada das propostas de geografia, narrativa e aprendizado
 
-Status: decisões de arquitetura registradas; implementação ainda pendente. Esta revisão compara as propostas com o código existente e organiza a primeira sequência de trabalho. Não requer deploy.
+Status: primeira fatia de geografia e temas canônicos implementada e verificável localmente; personagens, autoaprendizado e mandatos locais completos continuam pendentes. Esta revisão compara as propostas com o código existente e organiza a sequência de trabalho. Não requer deploy.
 
 ## Estado verificado no repositório
 
 | Área | O que já existe | O que falta |
 | --- | --- | --- |
-| Geografia | `career.py` guarda UF e nome do município digitado. O importador TSE também guarda município como texto. | Não há catálogo municipal, código IBGE nem dados municipais; ações de campanha não recebem localidade. |
+| Geografia | Catálogo versionado dos 5.571 municípios, com código IBGE, nome, UF e estimativa populacional de 2026; `career.py` grava `municipality_id`, expõe o perfil e associa atividades municipais ao local escolhido. | Eleitorado estimado do TSE, perfil econômico, IDHM e temas-âncora ainda não foram importados. Cargos estaduais/federais ainda não fazem visitas cidade a cidade; orçamentos, câmaras e serviços locais também faltam. |
 | Personagens | A ficha do jogador fica dentro do save. `appointments.py` cria perfis de candidatos a vagas. | Não há entidade persistente `Character`, ID próprio, histórico de aparições ou ligação a eventos; personagens de nomeações são gerados para aquela etapa. |
-| Temas | `career.py` e `campaign.py` têm catálogos próprios de temas e grupos, com vocabulário e rubricas diferentes. | Não há taxonomia canônica que permita reutilizar temas municipais, de campanha, de grupos e de eventos sem mapeamentos ad hoc. |
+| Temas | `issues.py` define IDs e rótulos compartilhados por `career.py` e `campaign.py`; a campanha oferece saúde e educação separadas, preservando `servicos` como alias de saves antigos. | Grupos afetados, termos e rubricas ainda variam por contexto. A geografia ainda não atribui âncoras temáticas porque faltam fontes comparáveis de perfil econômico e IDHM. |
 | Espectro | A ficha do jogador tem um rótulo de espectro e há efeitos iniciais por espectro/família. | Não há vetor ideológico multidimensional aplicado a personagens, grupos e nomeações. |
 | Interpretação | Gemini e fallback local classificam medidas; correções do jogador são guardadas por jogador e recuperadas lexicalmente. A tabela `actions` conserva propostas aplicadas. | Não há log de todas as prévias, conjunto de avaliação separado nem classificador local de texto. A saída Gemini inclui `fiscal_cost_bi`, que hoje é usada na previsão e na aplicação; portanto, o limite entre interpretação e cálculo ainda não está integralmente garantido. |
 | RAG | `rag.py` ingere e recupera trechos com URL, licença e data; `tse_import.py` guarda proveniência de candidaturas. | `event_evidence_brief()` não tem consumidor no fluxo atual; RAG ainda não fundamenta textos narrativos. O importador TSE não fornece um cadastro de municípios. |
@@ -23,7 +23,7 @@ Status: decisões de arquitetura registradas; implementação ainda pendente. Es
 - `Character.home_municipality_id` será opcional. Jornalistas nacionais, figuras institucionais e personagens sem vínculo local podem não ter cidade de origem.
 - A candidatura terá sua própria `municipality_id` quando o cargo for municipal; atividades e eventos guardarão o município onde ocorreram. Origem do personagem não será usada como local automático da atividade.
 - Saves antigos manterão o nome livre como campo legado. A migração só associará um código quando a correspondência for inequívoca; nomes ambíguos ficam sem vínculo até escolha explícita.
-- A primeira base terá capitais e uma amostra municipal representativa, com fonte, data de referência e licença por campo. Cobertura nacional virá por importação incremental.
+- O catálogo inicial já contém todos os municípios e a população estimada de 2026, com origem e data de referência registradas. Porte e alcance de campanha são parâmetros fictícios documentados; ampliar fontes municipais e temas-âncora virá depois.
 
 ### 2. Temas compartilham IDs; saliência e ideologia não compartilham escala
 
@@ -55,10 +55,10 @@ O requisito continua aberto: `game_saves.player_id` é único e `game_archives` 
 
 ## Sequência de implementação recomendada
 
-1. **Contrato e migração compatível:** centralizar IDs de temas, registrar os campos geográficos e manter leitura de saves antigos; documentar o limite IA/motor e corrigir a validação de `fiscal_cost_bi` antes do treino.
-2. **Malha municipal, fatia 1:** criar `geography.py`, catálogo inicial com códigos IBGE, nomes, UF, capital e proveniência. Acrescentar saliência temática determinística somente para campos cuja fonte e regra estejam documentadas.
+1. **Contrato e compatibilidade, fatia inicial entregue:** centralizar IDs de temas, registrar os campos geográficos e preservar leitura de saves antigos. A validação do custo fiscal fornecido pela interpretação continua pendente antes de treinar qualquer classificador.
+2. **Malha municipal, fatia 1 entregue:** importar códigos IBGE, nomes, UF, região e população estimada de 2026 para os 5.571 municípios. `geography.py` documenta faixas de porte e o multiplicador de alcance como mecânica do jogo; ainda não há âncoras temáticas, eleitorado do TSE, IDHM ou perfil econômico.
 3. **Campanhas nomeadas:** migrar de uma linha ativa por jogador para partidas identificadas por `campaign_id`, preservando o save e arquivos atuais. Esse passo permite testar percursos em paralelo sem perder a partida.
-4. **Localidade na carreira:** aceitar `municipality_id`, expor dados municipais no resumo e anexar localidade às atividades. Manter compatibilidade explícita com nomes legados.
+4. **Localidade na carreira, fatia inicial entregue:** aceitar `municipality_id`, expor dados no resumo, validar município e UF, e anexar localidade às ações municipais. Nomes antigos são resolvidos somente quando correspondem sem ambiguidade; visitas em outros municípios para cargos estaduais/federais seguem pendentes.
 5. **Log e avaliador de interpretação:** registrar todas as prévias de medidas e correções confirmadas. Criar o treino lexical offline sem ligá-lo ao fluxo de jogo.
 6. **Personagens persistentes e espectro:** criar IDs, papéis, histórico, origem opcional e vetores ideológicos; ligar personagens a eventos e disputas após os contratos anteriores estarem estáveis.
 7. **Pontuação municipal e narrativa:** usar saliência municipal na pertinência do discurso e nos efeitos locais. Integrar RAG à narrativa apenas depois de definir a avaliação narrativa separada e exibição de fontes/limites.

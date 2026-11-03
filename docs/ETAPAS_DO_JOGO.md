@@ -9,6 +9,10 @@
 - **Esta entrega:** a visão geral mostra seis cartões e uma prioridade diária; a aba completa agrupa os indicadores em seções recolhíveis e inclui população, IDH, Gini, pobreza, expectativa de vida, mortalidade infantil, homicídios, saneamento e conclusão escolar.
 - **Esta entrega:** os novos indicadores sociais têm linhas de base simuladas e evoluem gradualmente com crescimento, desemprego e entregas acumuladas de educação, saúde, segurança e infraestrutura.
 - **Esta entrega:** o orçamento foi separado em contas públicas, investimentos e obras, evitando carregar todas as decisões numa rolagem única.
+- **Fatia municipal entregue:** catálogo versionado com 5.571 municípios, códigos IBGE e estimativas populacionais de 2026; campanha exige escolher uma cidade válida e mostra fonte, data, porte e a regra simulada de alcance.
+- **Fatia de temas entregue:** campanha presidencial e carreira usam IDs compartilhados para saúde e educação, mantendo `servicos` como alias compatível com partidas anteriores.
+- **Ainda parcial:** eleitorado municipal, perfil econômico, IDHM e temas-âncora não estão importados; estados e União ainda não têm agenda de campanha cidade a cidade.
+- **Ainda parcial:** eleitores municipais, perfil econ?mico, IDHM e temas-?ncora n?o est?o importados; estados e Uni?o ainda n?o t?m agenda de campanha cidade a cidade.
 - **Esta entrega:** primeira regra de campanha presidencial: janela de 90 dias, uma atividade a cada sete dias, custo fora do Tesouro, texto com rubrica explicável, apoio regional e efeito no cálculo eleitoral; atividade também avança o calendário do governo.
 - **Ainda parcial:** a previsão de medida usa coeficientes amplos por categoria; ainda não explica a curva mês a mês nem aplica uma trajetória específica por instrumento.
 - **Agora implementado em versão inicial:** catálogo de seis obras simuladas — rodovias, ferrovia, hidrovias, porto e saneamento — com leilão, parcela anual, previsão de entrega e preço registrado na contratação.
@@ -37,7 +41,7 @@
 
 ### 0. Geografia, personagens e interpretação local
 
-Antes de expandir a carreira municipal, consolidar IDs de município/tema, compatibilidade com saves atuais, campanhas nomeadas e a separação entre logs de interpretação e avaliação narrativa. A [validação cruzada das três propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) contém os contratos e critérios de aceite; começar pelo catálogo municipal, depois pelo local das ações de carreira.
+Catálogo municipal e temas canônicos já têm primeira implementação e testes. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, depois ligar visitas territoriais aos cargos estaduais/federais. Campanhas nomeadas e a separação entre logs de interpretação e avaliação narrativa continuam como frentes próprias. A [validação cruzada das três propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
 
 ### 1. Indicadores e explicação das decisões
 

@@ -7,6 +7,7 @@ from typing import Any
 
 from .politics import campaign_active, election_date
 from .electoral_integrity import campaign_conduct_preview, resolve_campaign_conduct
+from .issues import ISSUE_LABELS, canonical_issue_ids, issue_label
 
 
 REGIONS = {
@@ -18,11 +19,14 @@ REGIONS = {
 }
 
 ISSUES = {
-    "economia": {"label": "Economia e custo de vida", "groups": ["trabalhadores", "pequenos_negocios", "classe_media"]},
-    "seguranca": {"label": "Segurança pública", "groups": ["familias", "juventude", "profissionais_seguranca"]},
-    "servicos": {"label": "Saúde e educação", "groups": ["familias", "servidores", "juventude"]},
-    "trabalho": {"label": "Emprego e renda", "groups": ["trabalhadores", "pequenos_negocios", "juventude"]},
-    "integridade": {"label": "Transparência e integridade", "groups": ["classe_media", "juventude", "servidores"]},
+    "economia": {"label": ISSUE_LABELS["economia"], "groups": ["trabalhadores", "pequenos_negocios", "classe_media"]},
+    "seguranca": {"label": ISSUE_LABELS["seguranca"], "groups": ["familias", "juventude", "profissionais_seguranca"]},
+    "saude": {"label": ISSUE_LABELS["saude"], "groups": ["familias", "servidores"]},
+    "educacao": {"label": ISSUE_LABELS["educacao"], "groups": ["familias", "servidores", "juventude"]},
+    # Old presidential campaign saves can still submit this combined topic.
+    "servicos": {"label": issue_label("servicos"), "groups": ["familias", "servidores", "juventude"]},
+    "trabalho": {"label": ISSUE_LABELS["trabalho"], "groups": ["trabalhadores", "pequenos_negocios", "juventude"]},
+    "integridade": {"label": ISSUE_LABELS["integridade"], "groups": ["classe_media", "juventude", "servidores"]},
 }
 
 GROUP_LABELS = {
@@ -43,11 +47,13 @@ ACTIVITIES = {
 }
 
 TOPIC_TERMS = {
-    "economia": {"preço", "precos", "inflação", "inflacao", "renda", "imposto", "credito", "crédito", "custo", "economia", "salário", "salario", "conta", "dívida", "divida"},
-    "seguranca": {"segurança", "seguranca", "crime", "polícia", "policia", "investigação", "investigacao", "violência", "violencia", "vítima", "vitima", "facção", "faccao"},
-    "servicos": {"saúde", "saude", "hospital", "médico", "medico", "escola", "educação", "educacao", "professor", "atendimento", "vacina"},
-    "trabalho": {"emprego", "trabalho", "trabalhador", "salário", "salario", "qualificação", "qualificacao", "pequeno negócio", "pequeno negocio", "empresa", "renda"},
-    "integridade": {"transparência", "transparencia", "auditoria", "contrato", "publicar", "controle", "corrupção", "corrupcao", "investigar", "prestação de contas", "prestacao de contas"},
+    "economia": {"preco", "precos", "inflacao", "renda", "imposto", "credito", "custo", "economia", "salario", "conta", "divida"},
+    "seguranca": {"seguranca", "crime", "policia", "investigacao", "violencia", "vitima", "faccao"},
+    "saude": {"saude", "hospital", "medico", "posto", "atendimento", "vacina"},
+    "educacao": {"escola", "educacao", "professor", "aluno", "universidade", "creche"},
+    "servicos": {"saude", "hospital", "medico", "escola", "educacao", "professor", "atendimento", "vacina"},
+    "trabalho": {"emprego", "trabalho", "trabalhador", "salario", "qualificacao", "pequeno negocio", "empresa", "renda"},
+    "integridade": {"transparencia", "auditoria", "contrato", "publicar", "controle", "corrupcao", "investigar", "prestacao de contas"},
 }
 
 CONCRETE_TERMS = {"prazo", "publicar", "metas", "fiscalizar", "auditoria", "equipe", "orçamento", "orcamento", "proposta", "entregar", "investigar", "plano", "medir", "relatório", "relatorio", "financiar", "treinar", "construir", "ampliar", "reduzir"}
@@ -127,7 +133,7 @@ def campaign_overview(state: dict[str, Any]) -> dict[str, Any]:
         "activities": list(reversed(campaign["activities"][-8:])),
         "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_bi": item["cost_bi"]} for key, item in ACTIVITIES.items()],
         "region_options": [{"key": key, "label": item["label"]} for key, item in REGIONS.items()],
-        "issue_options": [{"key": key, "label": item["label"]} for key, item in ISSUES.items()],
+        "issue_options": [{"key": key, "label": item["label"]} for key, item in ISSUES.items() if key != "servicos"],
         "rules": {"weekly_action_limit": 1, "government_keeps_running": True, "election_is_simulated": True},
         "conduct_preview": campaign_conduct_preview(state, campaign),
     }
@@ -196,6 +202,7 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
         "date": today.isoformat(), "type": activity_type, "label": activity["label"],
         "region": region, "region_label": REGIONS[region]["label"],
         "issue": issue, "issue_label": ISSUES[issue]["label"],
+        "canonical_issue_ids": list(canonical_issue_ids(issue)),
         "message": message.strip(), "score": score, "rubric": rubric,
         "support_change": round((regional_delta + conduct_result["immediate_support_delta"]) * REGIONS[region]["weight"], 2),
         "regional_change": round(regional_delta + conduct_result["immediate_support_delta"], 2), "groups_affected": [GROUP_LABELS[key] for key in affected],
@@ -213,4 +220,4 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
 def campaign_config() -> dict[str, Any]:
     return {"activities": [{"key": key, "label": item["label"], "days": item["days"], "cost_bi": item["cost_bi"]} for key, item in ACTIVITIES.items()],
             "regions": [{"key": key, "label": item["label"]} for key, item in REGIONS.items()],
-            "issues": [{"key": key, "label": item["label"]} for key, item in ISSUES.items()]}
+            "issues": [{"key": key, "label": item["label"]} for key, item in ISSUES.items() if key != "servicos"]}

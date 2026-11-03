@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from app.db import load_state, reset_player_id, save_state, set_player_id
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
+from app.engine.issues import canonical_issue_ids
 from app.main import app
 
 
@@ -84,6 +85,26 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(len(career["offices"]), 7)
         self.assertIn("works", self.client.get("/api/budget").json())
 
+        cities = self.client.get("/api/geography/municipalities", params={"state_code": "SP", "q": "sao paulo"})
+        self.assertEqual(cities.status_code, 200, cities.text)
+        self.assertEqual(cities.json()["catalog"]["count"], 5571)
+        self.assertEqual(cities.json()["catalog"]["reference_date"], "2026-07-01")
+        self.assertEqual(cities.json()["items"][0]["ibge_code"], "3550308")
+        self.assertEqual(canonical_issue_ids("servicos"), ("saude", "educacao"))
+
+        campaign_topics = self.client.get("/api/game").json()["campaign_overview"]["issue_options"]
+        campaign_topic_ids = {item["key"] for item in campaign_topics}
+        self.assertTrue({"saude", "educacao"}.issubset(campaign_topic_ids))
+        self.assertNotIn("servicos", campaign_topic_ids)
+
+    def test_municipality_code_must_match_candidate_state(self) -> None:
+        response = self.client.post("/api/career/start", json={
+            "office": "prefeito", "state_code": "MG", "municipality": "",
+            "municipality_id": "3550308", "party": "Partido da RenovaÃ§Ã£o",
+            "ideology": "Centro", "candidate_name": "Candidatura de teste",
+        })
+        self.assertEqual(response.status_code, 422)
+
     def test_measure_preview_failure_is_a_controlled_gateway_error(self) -> None:
         with patch("app.main.interpret", new=AsyncMock(side_effect=RuntimeError("model unavailable"))):
             response = self.client.post("/api/measures/preview", json={"text": "Revisar compras públicas para reduzir desperdício."})
@@ -102,6 +123,8 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         overview = response.json()["state"]["career_overview"]
         self.assertEqual(overview["phase"], "pre_campaign")
+        self.assertEqual(overview["municipality_id"], "3550308")
+        self.assertEqual(overview["municipality_profile"]["population_reference_year"], 2026)
         self.assertEqual(overview["election_date"], "2028-10-01")
         self.assertEqual(overview["campaign_start_date"], "2028-07-03")
         self.assertFalse(overview["inaugural_address"]["required"])
@@ -114,6 +137,8 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(started.status_code, 200, started.text)
 
         overview = started.json()["state"]["career_overview"]
+        self.assertEqual(overview["municipality_id"], "3106200")
+        self.assertEqual(overview["municipality_profile"]["city_size"], "metropole")
         while not overview["campaign_active"]:
             days = min(90, max(1, overview["days_until_campaign"]))
             advanced = self.client.post("/api/game/advance", json={"days": days})
@@ -126,7 +151,10 @@ class ApiSmokeTests(unittest.TestCase):
         })
         self.assertEqual(action.status_code, 200, action.text)
         self.assertGreater(action.json()["result"]["score"], 0)
-        self.assertEqual(action.json()["state"]["career_overview"]["activities"][0]["type"], "comicio")
+        activity = action.json()["state"]["career_overview"]["activities"][0]
+        self.assertEqual(activity["type"], "comicio")
+        self.assertEqual(activity["municipality_id"], "3106200")
+        self.assertEqual(activity["city_reach_multiplier"], 0.7)
 
         election = self.client.post("/api/game/advance", json={"days": 90})
         self.assertEqual(election.status_code, 200, election.text)

@@ -13,6 +13,8 @@ from typing import Any
 
 from .communications import ensure_communications_state
 from .electoral_integrity import campaign_conduct_preview, resolve_campaign_conduct, settle_campaign_conduct
+from .geography import get_municipality, resolve_municipality
+from .issues import ISSUE_LABELS
 
 
 OFFICES: dict[str, dict[str, Any]] = {
@@ -56,12 +58,12 @@ FAMILY_GROUP_EFFECTS = {
     "politica": {"servidores": .3, "empreendedores": .3},
 }
 ISSUES = {
-    "economia": {"label": "Emprego e custo de vida", "terms": {"emprego", "renda", "preço", "preco", "inflação", "inflacao", "empresa", "trabalho", "salário", "salario"}, "groups": ["trabalhadores", "empreendedores"]},
-    "saude": {"label": "Saúde", "terms": {"saúde", "saude", "hospital", "posto", "médico", "medico", "vacina", "atendimento"}, "groups": ["familias", "servidores"]},
-    "educacao": {"label": "Educação", "terms": {"escola", "educação", "educacao", "professor", "aluno", "creche", "universidade"}, "groups": ["familias", "jovens", "servidores"]},
-    "seguranca": {"label": "Segurança", "terms": {"segurança", "seguranca", "crime", "polícia", "policia", "investigar", "violência", "violencia"}, "groups": ["familias", "empreendedores"]},
-    "mobilidade": {"label": "Transporte e mobilidade", "terms": {"ônibus", "onibus", "transporte", "estrada", "trânsito", "transito", "mobilidade", "ferrovia"}, "groups": ["trabalhadores", "rural"]},
-    "integridade": {"label": "Transparência", "terms": {"transparência", "transparencia", "auditoria", "contrato", "publicar", "fiscalizar", "prestação", "prestacao"}, "groups": ["jovens", "servidores"]},
+    "economia": {"label": ISSUE_LABELS["economia"], "terms": {"emprego", "renda", "preço", "preco", "inflação", "inflacao", "empresa", "trabalho", "salário", "salario"}, "groups": ["trabalhadores", "empreendedores"]},
+    "saude": {"label": ISSUE_LABELS["saude"], "terms": {"saúde", "saude", "hospital", "posto", "médico", "medico", "vacina", "atendimento"}, "groups": ["familias", "servidores"]},
+    "educacao": {"label": ISSUE_LABELS["educacao"], "terms": {"escola", "educação", "educacao", "professor", "aluno", "creche", "universidade"}, "groups": ["familias", "jovens", "servidores"]},
+    "seguranca": {"label": ISSUE_LABELS["seguranca"], "terms": {"segurança", "seguranca", "crime", "polícia", "policia", "investigar", "violência", "violencia"}, "groups": ["familias", "empreendedores"]},
+    "mobilidade": {"label": ISSUE_LABELS["mobilidade"], "terms": {"ônibus", "onibus", "transporte", "estrada", "trânsito", "transito", "mobilidade", "ferrovia"}, "groups": ["trabalhadores", "rural"]},
+    "integridade": {"label": ISSUE_LABELS["integridade"], "terms": {"transparência", "transparencia", "auditoria", "contrato", "publicar", "fiscalizar", "prestação", "prestacao"}, "groups": ["jovens", "servidores"]},
 }
 ACTIVITIES = {
     "comicio": {"label": "Comício", "days": 2, "cost": 0.045, "reach": 1.35, "channel": "presencial"},
@@ -145,13 +147,25 @@ def career_options(as_of: date | None = None) -> dict[str, Any]:
 
 def start_career(state: dict[str, Any], office: str, state_code: str, municipality: str,
                  party: str, ideology: str, candidate_name: str,
-                 character: dict[str, Any] | None = None) -> dict[str, Any]:
+                 character: dict[str, Any] | None = None,
+                 municipality_id: str | None = None) -> dict[str, Any]:
     if office not in OFFICES:
         raise ValueError("Escolha um cargo eletivo disponível.")
     if state_code not in STATE_NAMES:
         raise ValueError("Escolha uma unidade da federação válida.")
-    if not municipality.strip():
+    if not municipality.strip() and not municipality_id:
         raise ValueError("Informe o município da candidatura.")
+    municipality_profile = get_municipality(municipality_id) if municipality_id else None
+    if municipality_id and not municipality_profile:
+        raise ValueError("O código IBGE do município não existe no catálogo carregado.")
+    if municipality_profile and municipality_profile["state_code"] != state_code:
+        raise ValueError("O município escolhido não pertence ao estado da candidatura.")
+    if municipality_profile:
+        municipality = municipality_profile["name"]
+    else:
+        municipality_profile = resolve_municipality(state_code, municipality)
+        municipality_id = municipality_profile["ibge_code"] if municipality_profile else None
+    municipality = municipality.strip()
     today = date.fromisoformat(state["date"])
     role = OFFICES[office]
     character = character or {}
@@ -171,7 +185,8 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
             raise ValueError("Conclua o mandato ou a transição atual antes de iniciar outra candidatura.")
         previous_history.append({
             "office": previous.get("office_label", previous.get("office", "Cargo")),
-            "municipality": previous.get("municipality", ""), "state_code": previous.get("state_code", ""),
+            "municipality": previous.get("municipality", ""), "municipality_id": previous.get("municipality_id"),
+            "state_code": previous.get("state_code", ""),
             "result": previous.get("result"), "vote_share": previous.get("vote_share"),
             "term_years": previous.get("term_years", 0), "reputation": round(previous_reputation, 1),
             "date": state["date"], "simulated": True,
@@ -199,14 +214,17 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "phase": phase, "candidate_name": candidate_name.strip() or "Candidatura do jogador", "party": party.strip() or "Partido da Renovação",
         "ideology": ideology, "state_code": state_code, "state_name": STATE_NAMES[state_code],
         "character": character,
-        "macroregion": STATE_REGIONS[state_code], "municipality": municipality.strip(), "electorate": role["electorate"],
+        "macroregion": STATE_REGIONS[state_code], "municipality": municipality,
+        "municipality_id": municipality_id,
+        "municipality_profile": municipality_profile,
+        "electorate": role["electorate"],
         "powers": list(role["powers"]), "term_years": role["term_years"], "election_date": election_day.isoformat(),
         "inauguration_date": inauguration.isoformat(), "term_end": term_end.isoformat(),
         "campaign_start": campaign_start.isoformat(), "campaign_fund_mi": role["fund_mi"], "spent_mi": 0.0,
         "poll_support": initial_poll, "local_support": local_strength, "state_support": initial_poll,
         "national_support": initial_poll, "momentum": 0.0, "fatigue": 0,
         "history": previous_history[-20:], "reputation": round(previous_reputation, 1),
-        "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + municipality)),
+        "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + (municipality_id or municipality))),
         "group_support": group_support, "last_action_date": None, "activities": [],
         "conduct": {"attempts": 0, "detected": 0, "election_penalty": 0.0, "history": []},
         "result": None, "vote_share": None, "opponent_share": 50.0, "appointments": [], "governance": None,
@@ -222,7 +240,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
     election_context = f"a campanha abre em {campaign_start.strftime('%d/%m/%Y')}" if phase == "pre_campaign" else "a campanha eleitoral começou"
     state.setdefault("simulated_news", []).insert(0, {
         "id": f"career-start-{today.isoformat()}", "date": today.isoformat(), "title": f"Campanha simulada: {role['label']}",
-        "region": STATE_NAMES[state_code], "description": f"{candidate_name or 'Candidatura do jogador'} prepara a disputa em {municipality.strip()}/{state_code}; {election_context}.", "simulated": True,
+        "region": STATE_NAMES[state_code], "description": f"{candidate_name or 'Candidatura do jogador'} prepara a disputa em {municipality}/{state_code}; {election_context}.", "simulated": True,
     })
     state["simulated_news"] = state["simulated_news"][:20]
     return state
@@ -255,6 +273,12 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     career = state.get("career")
     if not career or not career.get("mode"):
         return None
+    municipality_profile = career.get("municipality_profile")
+    if municipality_profile is None:
+        municipality_profile = resolve_municipality(career.get("state_code", ""), career.get("municipality", ""))
+        if municipality_profile:
+            career["municipality_id"] = municipality_profile["ibge_code"]
+            career["municipality_profile"] = municipality_profile
     today = date.fromisoformat(state["date"])
     election_day = date.fromisoformat(career["election_date"])
     campaign_start = election_day - timedelta(days=90)
@@ -280,6 +304,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "phase": career["phase"], "candidate_name": career["candidate_name"], "party": career["party"], "ideology": career["ideology"],
         "character": career.get("character", {}),
         "state_code": career["state_code"], "state_name": career["state_name"], "municipality": career["municipality"],
+        "municipality_id": career.get("municipality_id"), "municipality_profile": municipality_profile,
         "electorate": career["electorate"], "powers": career["powers"], "election_date": career["election_date"],
         "inauguration_date": career["inauguration_date"], "term_end": career["term_end"], "term_years": career["term_years"],
         "days_until_election": max(0, (election_day - today).days),
@@ -402,6 +427,16 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         rubric["bônus de proposta técnica"] = 3
     quality = (score - 55) / 45
     reach = activity["reach"] + (.08 if "combativa" in traits else 0)
+    municipality_profile = career.get("municipality_profile")
+    if municipality_profile is None:
+        municipality_profile = resolve_municipality(career["state_code"], career.get("municipality", ""))
+        if municipality_profile:
+            career["municipality_id"] = municipality_profile["ibge_code"]
+            career["municipality_profile"] = municipality_profile
+    city_reach_multiplier = 1.0
+    if career["scope"] == "municipal" and municipality_profile:
+        city_reach_multiplier = float(municipality_profile["municipal_campaign_reach_multiplier"])
+    reach *= city_reach_multiplier
     local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1) + (.15 if "carismatica" in traits else 0)))
     state_delta = local_delta * (0.4 if career["scope"] == "municipal" else 0.72)
     career["local_support"] = _clamp(career["local_support"] + local_delta)
@@ -452,6 +487,9 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     record = {
         "id": f"career-{state['date']}-{len(career['activities']) + 1}", "date": state["date"], "type": activity_type,
         "label": activity["label"], "channel": activity["channel"], "issue": issue, "issue_label": ISSUES[issue]["label"],
+        "municipality_id": career.get("municipality_id") if career["scope"] == "municipal" else None,
+        "municipality_name": career.get("municipality") if career["scope"] == "municipal" else None,
+        "city_reach_multiplier": city_reach_multiplier,
         "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
         "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
         "days_cost": activity["days"], "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,

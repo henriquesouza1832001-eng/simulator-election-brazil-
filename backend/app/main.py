@@ -19,7 +19,8 @@ from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
 from .engine.politics import rupture_preview, attempt_rupture
 from .engine.campaign import campaign_overview, perform_campaign_action
-from .engine.career import career_options, career_overview, perform_career_action, perform_governance_action, start_career
+from .engine.career import STATES, career_options, career_overview, perform_career_action, perform_governance_action, start_career
+from .engine.geography import catalog_metadata, municipality_options
 from .engine.appointments import appointments_overview, appoint_minister, nominate_judge
 from .engine.communications import require_inaugural_address, submit_inaugural_address
 from .engine.ministries import ministry_catalog, INVESTMENT_AREAS
@@ -196,7 +197,8 @@ class CampaignActionRequest(BaseModel):
 class CareerStartRequest(BaseModel):
     office: str = Field(min_length=3, max_length=40)
     state_code: str = Field(min_length=2, max_length=2)
-    municipality: str = Field(min_length=2, max_length=80)
+    municipality: str = Field(default="", max_length=80)
+    municipality_id: str | None = Field(default=None, pattern=r"^\d{7}$")
     party: str = Field(min_length=2, max_length=80)
     ideology: str = Field(min_length=2, max_length=40)
     candidate_name: str = Field(default="", max_length=80)
@@ -346,6 +348,17 @@ def political_career_options(fresh: bool = False) -> dict[str, Any]:
     return career_options(as_of)
 
 
+@app.get("/api/geography/municipalities")
+def geographic_municipalities(
+    state_code: str = Query(default="", max_length=2),
+    q: str = Query(default="", max_length=80),
+    limit: int = Query(default=20, ge=1, le=50),
+) -> dict[str, Any]:
+    if state_code and state_code.upper() not in {item[0] for item in STATES}:
+        raise HTTPException(status_code=422, detail="Escolha uma unidade da federação válida.")
+    return {"items": municipality_options(state_code, q, limit), "catalog": catalog_metadata()}
+
+
 @app.get("/api/game/archives")
 def game_archives() -> dict[str, Any]:
     return {"items": list_archives()}
@@ -381,7 +394,8 @@ def begin_political_career(request: CareerStartRequest) -> dict[str, Any]:
             state["career"] = {}
         character = request.character.model_dump()
         start_career(state, request.office, request.state_code.upper(), request.municipality,
-                     request.party, request.ideology, request.candidate_name or character["name"], character)
+                     request.party, request.ideology, request.candidate_name or character["name"], character,
+                     request.municipality_id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if archive_current:

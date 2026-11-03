@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import MunicipalityPicker from './MunicipalityPicker';
 
 const difficultyOptions = [
   ['tranquilo', 'Tranquilo'], ['normal', 'Normal'], ['dificil', 'Difícil'],
@@ -49,7 +50,8 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const [mode, setMode] = useState('');
   const [office, setOffice] = useState('vereador');
   const [stateCode, setStateCode] = useState('SP');
-  const [municipality, setMunicipality] = useState('São Paulo');
+  const [municipality, setMunicipality] = useState('');
+  const [municipalityId, setMunicipalityId] = useState('');
   const [party, setParty] = useState('');
   const [ideology, setIdeology] = useState('Centro');
   const [character, setCharacter] = useState(blankCharacter);
@@ -99,7 +101,7 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
     try {
       const data = await request('/api/career/start', {
         method: 'POST',
-        body: JSON.stringify({ office, state_code: stateCode, municipality, party, ideology, candidate_name: character.name, character, difficulty, new_game: true }),
+        body: JSON.stringify({ office, state_code: stateCode, municipality, municipality_id: municipalityId, party, ideology, candidate_name: character.name, character, difficulty, new_game: true }),
       });
       onState(data.state);
       onContinue();
@@ -183,14 +185,14 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
         {!catalog ? <p>Carregando cargos e estados…</p> : <>
           <div className="career-start-fields">
             <label>Cargo<select value={office} onChange={(event) => setOffice(event.target.value)}>{catalog.offices.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
-            <label>Estado<select value={stateCode} onChange={(event) => setStateCode(event.target.value)}>{catalog.states.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</select></label>
-            <label>Cidade da campanha<input value={municipality} onChange={(event) => setMunicipality(event.target.value)} minLength={2} maxLength={80} required placeholder="Município base" /><small>Para cargos municipais, define o local da candidatura.</small></label>
+            <label>Estado<select value={stateCode} onChange={(event) => { setStateCode(event.target.value); setMunicipality(''); setMunicipalityId(''); }}>{catalog.states.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</select></label>
+            <MunicipalityPicker request={request} stateCode={stateCode} value={municipality} selectedId={municipalityId} onSelect={(item) => { setMunicipality(item.name); setMunicipalityId(item.id); }} label="Cidade da campanha" />
             <label>Partido simulado<select value={party} onChange={(event) => setParty(event.target.value)}>{catalog.parties.map((item) => <option key={item}>{item}</option>)}</select></label>
             <label>Posicionamento do partido<select value={ideology} onChange={(event) => setIdeology(event.target.value)}>{catalog.ideologies.map((item) => <option key={item}>{item}</option>)}</select></label>
           </div>
           {chosenOffice && <div className="career-start-preview"><b>{chosenOffice.label} · mandato de {chosenOffice.term_years} anos</b><span>{chosenOffice.powers.join(' · ')}</span>{preview && <small>Eleição prevista: {new Date(`${preview.election_date}T12:00:00`).toLocaleDateString('pt-BR')} · campanha abre em {new Date(`${preview.campaign_start}T12:00:00`).toLocaleDateString('pt-BR')} · posse prevista em {new Date(`${preview.inauguration_date}T12:00:00`).toLocaleDateString('pt-BR')}</small>}</div>}
           {characterFields}
-          <button className="primary-button" disabled={busy || !municipality.trim() || character.name.trim().length < 2}>Criar personagem e iniciar campanha <b>→</b></button>
+          <button className="primary-button" disabled={busy || !municipalityId || character.name.trim().length < 2}>Criar personagem e iniciar campanha <b>→</b></button>
         </>}
       </form>}
 
