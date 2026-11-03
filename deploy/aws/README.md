@@ -116,17 +116,22 @@ OIDC; no AWS access key is stored in the repository.
 
 One-time account setup:
 
-1. In CloudFormation (`us-east-2`), create a stack from
-   `deploy/aws/github-actions-role.yaml`. The repository's immutable GitHub
-   owner/repository IDs and the current EC2 instance ID are prefilled. If the
-   IAM OIDC provider for `token.actions.githubusercontent.com` already exists,
-   set `ExistingOidcProviderArn` to its ARN; otherwise leave it blank.
-2. Copy the stack output `GitHubDeployRoleArn`.
-3. In GitHub, open **Settings → Secrets and variables → Actions → Variables**
-   and create `AWS_DEPLOY_ROLE_ARN` with that output. It is an ARN, not a
-   secret credential.
-4. Re-run the latest **Build and deploy Mandato** workflow, or push the next
-   change to `main`. The workflow can also be started manually from **Actions**.
+Run this one-time setup from an authenticated local shell with AWS CLI v2 and
+GitHub CLI:
+
+```powershell
+.\deploy\aws\setup-github-deploy.ps1 -Region us-east-2
+```
+
+The script finds the current EC2 instance in `mandato-simulator`, reuses the
+GitHub OIDC provider if one already exists, creates or updates the restricted
+CloudFormation role, stores its ARN in the repository variable
+`AWS_DEPLOY_ROLE_ARN`, and dispatches the first deployment. Use
+`-SkipDispatch` to configure the connection without deploying immediately.
+The script never sends AWS keys to GitHub; the ARN is an identifier, not a
+credential. To perform the steps manually instead, create a stack from
+`deploy/aws/github-actions-role.yaml`, copy its `GitHubDeployRoleArn` output,
+and add it under **Settings → Secrets and variables → Actions → Variables**.
 
 The role trusts only this repository's `main` ref. Its policy can send the
 `AWS-RunShellScript` document only to the Mandato EC2 instance and read that
