@@ -3,7 +3,8 @@
 ## Situação publicada — 3 nov. 2026
 
 - URL HTTPS: `https://d2dpmk0vrt66wn.cloudfront.net`.
-- Versão em produção: commit `8d9effba7a0a10af03e97ae652081507a31823ce`, publicado via Systems Manager após backup consistente do SQLite em `/opt/mandato/backups/predeploy-1ef5e76e955f2ade55d0124c4b713fbfea360e0c.sqlite3`. API e web ficaram em execução; o endpoint público `/api/health` respondeu HTTP 200.
+- Versão em produção: commit `6bcfe36304a5d2a0a0e575bba9e1b23897d72caa`, publicado via Systems Manager após backup consistente do SQLite em `/opt/mandato/backups/predeploy-1ef5e76e955f2ade55d0124c4b713fbfea360e0c.sqlite3`. API e web ficaram em execução; o endpoint público `/api/health` respondeu HTTP 200.
+- O CloudFront entrega o bundle `index-yTsf2tIe.js`, com os rótulos `MOTOR LOCAL` e `GEMINI CONFIGURADO`. O estado atual de produção é `local-fallback`; não há chave Gemini configurada no servidor.
 - CloudFront termina TLS e encaminha ao EC2 por HTTP com segredo de origem. A porta 80 do EC2 aceita tráfego do CloudFront; o Nginx bloqueia requisições sem o cabeçalho secreto. O IP antigo responde 403.
 - Amazon Cognito User Pool ativo. Cadastro por e-mail verificado e login pelo fluxo OAuth authorization code + PKCE, sem segredo no cliente público.
 - A API valida a assinatura/issuer/expiração do access token e exige `token_use=access` e o `client_id` configurado. O `sub` verificado identifica o jogador; não é aceito um identificador escolhido pelo navegador.
