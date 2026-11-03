@@ -35,6 +35,10 @@
 
 ## Próximas entregas, em ordem
 
+### 0. Geografia, personagens e interpretação local
+
+Antes de expandir a carreira municipal, consolidar IDs de município/tema, compatibilidade com saves atuais, campanhas nomeadas e a separação entre logs de interpretação e avaliação narrativa. A [validação cruzada das três propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) contém os contratos e critérios de aceite; começar pelo catálogo municipal, depois pelo local das ações de carreira.
+
 ### 1. Indicadores e explicação das decisões
 
 - Manter um catálogo único no motor com nome, unidade, grupo, fonte, explicação e histórico de cada indicador.

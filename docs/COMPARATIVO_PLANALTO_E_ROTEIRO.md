@@ -83,6 +83,8 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 10. **Experiência:** substituir a sensação de “painel gerado por IA” por uma mesa de governo editorial: manchete/assunto do dia, agenda curta, poucas métricas selecionadas e telas temáticas profundas com explicação e histórico.
 11. **Operação:** domínio e HTTPS, autenticação, cópias automáticas testadas, limite/alerta de custos e recuperação de conta antes de liberar o serviço publicamente.
 
+12. **Geografia, personagens e aprendizagem:** três propostas foram revisadas em conjunto. As decisões de IDs municipais, temas canônicos, vetores ideológicos, logs de interpretação/narrativa e ordem de implementação estão em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md). A primeira fatia recomendada é o catálogo municipal; campanhas nomeadas e validação do custo extraído pela IA são dependências explícitas.
+
 ## Modelo de jogo proposto
 
 - Um relógio diário comum, mas decisões consomem intervalos coerentes: agenda executiva, propostas legislativas, eleições, viagens e negociações têm cadências distintas.

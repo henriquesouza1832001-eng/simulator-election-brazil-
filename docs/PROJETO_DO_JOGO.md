@@ -42,11 +42,13 @@ Dados eleitorais são fatos de uma eleição, não cadastro completo de quem ocu
 ## Eventos e RAG
 
 1. Um motor de regras determina se uma situação ocorre e seus efeitos de jogo, usando cargo, território, estado, alianças, dificuldade, orçamento e histórico.
-2. O recuperador procura fatos e documentos oficiais pertinentes (TSE, Câmara, Senado, governos, legislação e estatísticas públicas) com fonte e data.
-3. A IA escreve o texto e as opções em JSON, citando os trechos usados. Ela não inventa placares nem altera indicadores diretamente.
-4. A notícia recebe um rótulo explícito: registro público, dado histórico ou ficção do jogo. Uma crise aleatória pode ser fictícia, mas não será apresentada como notícia real.
+2. Quando conectado ao fluxo, o recuperador procura documentos pertinentes e devolve trechos com fonte, licença e data para apoiar uma explicação ou narrativa.
+3. A IA pode redigir a camada textual dentro do contexto e dos resultados já definidos pelo motor; não determina se o evento ocorre nem altera os números do jogo. A regra canônica está em [`SISTEMAS_E_REGRAS.md`](SISTEMAS_E_REGRAS.md).
+4. Cada notícia recebe um rótulo explícito: registro público, dado histórico ou ficção do jogo. Uma crise aleatória pode ser fictícia, mas não será apresentada como notícia real.
 
-Oracle hospeda o backend, banco e índice de busca. Para uma pessoa, começar com SQLite para jogo e busca textual é simples; a camada vetorial poderá usar Qdrant ou pgvector quando o volume documental justificar. RAG não é treinamento de modelo: recupera trechos antes de cada geração. As correções do jogador viram exemplos de interpretação; elas não reescrevem as regras econômicas.
+**Estado atual:** o RAG é uma busca lexical local com proveniência. O pacote de evidências existe, mas ainda não é consumido por um gerador narrativo; a conexão e a avaliação de narrativa são trabalho futuro, detalhado em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md).
+
+Oracle hospeda o backend, banco e índice de busca. Para uma pessoa, SQLite para jogo e busca textual é suficiente; a camada vetorial poderá usar Qdrant ou pgvector quando o volume documental justificar. RAG não é treinamento de modelo: recupera trechos para dar contexto. Correções confirmadas podem compor a avaliação e o treino da interpretação, sem reescrever as regras do motor.
 
 ## Retratos
 

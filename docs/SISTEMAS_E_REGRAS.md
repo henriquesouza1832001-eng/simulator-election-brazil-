@@ -66,9 +66,10 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 ### Medidas, leis e decisões
 
 - A interpretação de texto sugere tipo e intenção; o motor valida alçada, prazo, custo e regra antes de aplicar efeitos.
+- **Fronteira canônica IA/motor:** o motor Python valida ações, altera o estado e calcula custos, probabilidades, efeitos e resultados. A IA classifica intenção, sugere rótulos e redige explicações; números do texto do jogador só entram após validação no servidor contra a proposta original. Saída numérica do modelo nunca é, por si só, uma regra ou um efeito. Ver pendência concreta de `fiscal_cost_bi` em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md).
 - Medidas executivas têm intervalo de agenda. Projetos têm prazo e votação simulada; o envio não é aprovação.
 - A tela apresenta custo/financiamento, grupos afetados, prazo, incerteza, efeitos agora e consequências em meses futuros.
-- Toda decisão é registrada com data, parâmetros, resultado e origem. IA pode redigir ou classificar texto, mas não altera números do jogo.
+- Toda decisão é registrada com data, parâmetros, resultado e origem. Prévia não aplicada e correção humana também devem ter registros próprios para avaliação do interpretador.
 
 ### Orçamento, serviços e obras
 
@@ -83,7 +84,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 - Regras do motor decidem gatilho, efeitos, duração, grupos afetados e semente. IA escreve narrativa/opções dentro desse resultado.
 - Cada item exibe um selo: **simulado**, **histórico com fonte**, ou **dado público importado**.
 - Uma inundação ou crise precisa alterar serviços, logística, orçamento e indicadores ao longo do tempo; não pode ser apenas uma escolha textual isolada.
-- RAG recupera documentos com fonte e data. Não é treinamento: serve contexto; exemplos corrigidos ajudam a interpretar textos parecidos.
+- RAG recupera documentos com fonte e data. Não é treinamento: serve contexto. Correções confirmadas ajudam a avaliar e treinar interpretação; avaliação de narrativa fica em tarefa e dados separados. A integração do RAG ao fluxo narrativo ainda está pendente.
 
 ### Integridade eleitoral
 

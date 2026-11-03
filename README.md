@@ -49,7 +49,7 @@ O painel inicial limita a vista a seis indicadores escolhidos. Indicadores detal
 
 Copie `backend/.env.example` para `backend/.env` e adicione `GEMINI_API_KEY`. A chave fica apenas no backend. `GEMINI_MODEL` pode selecionar o modelo. Sem chave, a interpretação local oferece uma leitura básica. Se o provedor falhar, a API usa o fallback; exceções inesperadas retornam erro controlado.
 
-O modelo organiza a intenção e a categoria da proposta. Os efeitos numéricos são calculados pelo motor Python, que ignora previsões numéricas enviadas pelo navegador. Correções do jogador ficam no SQLite e são recuperadas lexicalmente para propostas parecidas; isso é memória de exemplos, não treinamento automático do modelo.
+O Gemini sugere intenção, categoria e outros campos para a prévia; as correções do jogador ficam no SQLite e são recuperadas lexicalmente, sem treinamento automático. A regra de arquitetura é que somente o motor Python valida ações e calcula efeitos. A validação atual do custo fiscal extraído ainda precisa ser fechada antes de qualquer treinamento local; veja a [fronteira IA/motor e a validação cruzada](docs/VALIDACAO_CRUZADA_PROPOSTAS.md).
 
 ## Testes e build
 
