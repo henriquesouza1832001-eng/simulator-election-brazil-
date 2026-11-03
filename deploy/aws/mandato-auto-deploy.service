@@ -1,0 +1,17 @@
+[Unit]
+Description=Check GitHub Actions and update Mandato from main
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/mandato/app/deploy/aws/auto-deploy-check.sh
+User=root
+Group=root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/opt/mandato /run/lock /var/lib/mandato
+StateDirectory=mandato
+TimeoutStartSec=20min

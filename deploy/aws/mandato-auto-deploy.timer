@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for a CI-approved Mandato update every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+RandomizedDelaySec=30s
+Unit=mandato-auto-deploy.service
+
+[Install]
+WantedBy=timers.target

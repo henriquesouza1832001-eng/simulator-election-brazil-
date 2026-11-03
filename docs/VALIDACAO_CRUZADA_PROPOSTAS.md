@@ -17,6 +17,15 @@ Status: geografia municipal validada, perfil do jogador e perfis políticos fict
 
 ## Decisões de contrato
 
+### Dados públicos, personagens reais e sátira
+
+O catálogo público pode identificar candidaturas e partidos com fonte, ano,
+data de consulta e licença. A narrativa inventada deve usar personagens
+fictícios; não atribuir falas, crimes ou escândalos simulados a pessoas reais.
+Fotos e caricaturas exigem proveniência e direitos verificados por arquivo.
+O aviso de sátira não substitui essas verificações. O contrato completo e as
+fontes oficiais ficam em [`DADOS_PUBLICOS_E_SATIRA.md`](DADOS_PUBLICOS_E_SATIRA.md).
+
 ### 1. Cidade, personagem e local da ação são campos diferentes
 
 - `municipality_id` será o código IBGE de sete dígitos, armazenado como texto para preservar o formato e servir de chave estável.

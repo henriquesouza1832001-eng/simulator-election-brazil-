@@ -15,11 +15,11 @@
 
 ## Deploy automático via GitHub Actions
 
-O workflow `aws-deploy.yml` faz build e roda a suíte do backend em cada atualização relevante na `main`. Para publicar, o GitHub assume por OIDC a role `mandato-github-deploy` e envia o script de deploy para uma instância EC2 específica via Systems Manager; não há chaves AWS permanentes no GitHub.
+O workflow `aws-deploy.yml` faz build e roda a suíte do backend em cada atualização relevante na `main`. Como a conta AWS bloqueia por SCP a leitura do provedor OIDC, a publicação usa um timer no próprio EC2: a cada cinco minutos ele consulta a API pública do GitHub e só chama o script de deploy se o workflow daquele SHA terminou com sucesso. Não há chave AWS no GitHub nem permissão nova na role da aplicação.
 
-A role ainda não está conectada: a validação do commit publicado passou, mas o job de deploy foi pulado porque a variável de repositório `AWS_DEPLOY_ROLE_ARN` não existe. A tentativa de configuração pela CLI foi bloqueada pela SCP da AWS Organizations ao consultar o provedor IAM OIDC; a role e a stack CloudFormation ainda não existem. Até essa permissão ser liberada, publique com `deploy/aws/remote-deploy.sh` via SSM. O repositório já tem o subject OIDC imutável habilitado.
+O timer é instalado por `deploy/aws/install-auto-deploy.ps1` via Systems Manager. Ele preserva um marcador do último commit verificado e recusa deploy depois de reescrita da branch. A rota OIDC permanece preparada como alternativa, mas a role e a variável `AWS_DEPLOY_ROLE_ARN` não existem porque a SCP as impede de ser configuradas.
 
-Para concluir a configuração uma vez, autentique o AWS CLI e o GitHub CLI na conta correta e execute `./deploy/aws/setup-github-deploy.ps1` no PowerShell. O helper valida o repositório e a OIDC, cria/atualiza a stack CloudFormation `mandato-github-deploy`, restringe a role ao branch `main` e à instância do jogo, grava o ARN como `AWS_DEPLOY_ROLE_ARN` e dispara um deploy. Depois disso, pushes relevantes publicam automaticamente.
+Depois de a SCP ser alterada pelo administrador da organização, a configuração direta poderá ser concluída com `deploy/aws/setup-github-deploy.ps1`. Até lá, pushes relevantes são publicados pelo timer, sem credenciais AWS persistentes. O deploy manual por SSM continua disponível para recuperação operacional.
 ## Limites que ainda faltam antes de abrir amplamente
 
 1. Aplicar a stack separada de backup semanal S3 com `deploy/aws/backup-stack.ps1`, validar um envio e uma restauração reais. A cópia manual pré-deploy fica no mesmo volume e não substitui o backup externo.

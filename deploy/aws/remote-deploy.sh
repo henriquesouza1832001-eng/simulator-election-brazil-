@@ -4,6 +4,11 @@ set -Eeuo pipefail
 requested_sha="${1:?Expected commit SHA is required}"
 app_dir="/opt/mandato/app"
 backup_dir="/opt/mandato/backups"
+mkdir -p /run/lock
+if [[ "${MANDATO_DEPLOY_LOCK_HELD:-0}" != "1" ]]; then
+  exec 9>/run/lock/mandato-deploy.lock
+  flock 9
+fi
 previous_sha="$(git -C "$app_dir" rev-parse HEAD)"
 deployment_started=0
 
@@ -19,9 +24,21 @@ rollback() {
 trap rollback ERR
 
 git -C "$app_dir" fetch --prune origin main
-deployed_sha="$(git -C "$app_dir" rev-parse origin/main)"
-echo "Requested commit: ${requested_sha}"
-echo "Deploying latest main: ${deployed_sha}"
+main_sha="$(git -C "$app_dir" rev-parse origin/main)"
+if ! git -C "$app_dir" cat-file -e "${requested_sha}^{commit}"; then
+  echo "Requested commit is not available locally: ${requested_sha}" >&2
+  exit 1
+fi
+if [[ "$requested_sha" != "$main_sha" ]]; then
+  echo "Skipping ${requested_sha}: main is now ${main_sha}; deploy only after that commit passes CI."
+  exit 0
+fi
+deployed_sha="$requested_sha"
+echo "CI-approved commit: ${deployed_sha}"
+if [[ "$previous_sha" == "$deployed_sha" ]]; then
+  echo "Game host is already at ${deployed_sha}; no deployment needed."
+  exit 0
+fi
 
 mkdir -p "$backup_dir"
 api_container="$(cd "$app_dir" && docker compose ps -q api)"

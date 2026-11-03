@@ -125,13 +125,29 @@ charges.
 ## Automatic GitHub deployment
 
 `.github/workflows/aws-deploy.yml` builds the browser app and runs the existing
-API checks on changes to game code. On `main`, it deploys through Systems
-Manager Run Command, creates a consistent SQLite backup on the host, rebuilds
-the Docker Compose services, checks the API, and restores the previous code if
-the health check fails. GitHub Actions receives temporary AWS credentials via
-OIDC; no AWS access key is stored in the repository.
+API checks on changes to game code. On `main`, the game host checks the exact
+commit's public GitHub Actions result every five minutes. It deploys only after
+that run succeeds, creates a consistent SQLite backup, rebuilds the Docker
+Compose services, checks the API, and restores the previous code if the health
+check fails. The timer does not need AWS credentials on GitHub or additional
+permissions on the EC2 role.
 
-One-time account setup:
+The current AWS Organizations policy explicitly denies reading GitHub's IAM
+OIDC provider. Until that account-level rule is changed, direct GitHub-to-AWS
+OIDC cannot be activated. Configure the pull-based fallback once, after the
+current code is on the host:
+
+```powershell
+.\deploy\aws\install-auto-deploy.ps1 -Region us-east-2
+```
+
+The first run records the currently deployed commit as its baseline. Later
+documentation-only commits are recorded without rebuilding. A force-push to
+`main` stops the timer and requires operator review. Check the host log with
+`journalctl -u mandato-auto-deploy.service`. Disable it with
+`.\deploy\aws\install-auto-deploy.ps1 -Disable`.
+
+When the SCP permits OIDC, configure direct GitHub-to-AWS deployment:
 
 Run this one-time setup from an authenticated local shell with AWS CLI v2 and
 GitHub CLI:
