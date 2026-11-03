@@ -20,7 +20,7 @@ from app.db import (
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.career import _is_explicit_promise, advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
-from app.engine.fiscal import fiscal_overview
+from app.engine.fiscal import advance_fiscal, fiscal_overview
 from app.engine.geography import get_municipality, get_state_population
 from app.engine.issues import canonical_issue_ids
 from app.engine.rules import apply_effects, forecast
@@ -837,6 +837,21 @@ class ApiSmokeTests(unittest.TestCase):
         renewed = annual_state["career"]["governance"]
         self.assertEqual(renewed["budget_mi"], 100000.0)
         self.assertEqual(renewed["investment_commitment_mi"], 0.0)
+
+    def test_official_travel_and_residence_costs_follow_simulated_inflation(self) -> None:
+        state = new_game()
+        state["metrics"]["inflation"] = 5.0
+        initial_lines = state["budget"]["operating"]["lines"]
+        self.assertEqual(initial_lines["official_travel"]["annual_cost_bi"], 2.4)
+        self.assertEqual(initial_lines["official_residence"]["annual_cost_bi"], 0.6)
+
+        advance_fiscal(state, 365)
+        lines = state["budget"]["operating"]["lines"]
+        self.assertAlmostEqual(lines["official_travel"]["annual_cost_bi"], 2.52)
+        self.assertAlmostEqual(lines["official_residence"]["annual_cost_bi"], 0.63)
+        overview = fiscal_overview(state)
+        travel_spending = next(item["annual_bi"] for item in overview["primary_spending"] if item["key"] == "official_travel")
+        self.assertAlmostEqual(travel_spending, 2.52)
 
     def test_difficulty_profiles_change_game_parameters(self) -> None:
         easy = get_difficulty("tranquilo")

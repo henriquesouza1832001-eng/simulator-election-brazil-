@@ -206,6 +206,11 @@ def advance_fiscal(state: dict[str, Any], elapsed_days: int, volatility: float =
     for line in fiscal["mandatory_lines"].values():
         line["annual_bi"] *= expense_factor
     fiscal["procurement_bi"] = float(fiscal["procurement_bi"]) * expense_factor
+    operating_lines = state.get("budget", {}).get("operating", {}).get("lines", {})
+    for line_key in ("official_travel", "official_residence"):
+        line = operating_lines.get(line_key)
+        if line is not None:
+            line["annual_cost_bi"] = max(0.0, float(line.get("annual_cost_bi", 0)) * expense_factor)
 
     refresh_fiscal_metrics(state)
     annual_primary_deficit = float(fiscal["annual_primary_spending_bi"]) - float(fiscal["annual_revenue_bi"])

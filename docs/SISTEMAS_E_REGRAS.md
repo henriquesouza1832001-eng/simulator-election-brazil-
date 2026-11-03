@@ -78,6 +78,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 
 - Toda despesa tem uma fonte e pertence a um orçamento do ente correspondente.
 - Remanejamentos identificam área de origem e destino; custos de moradia, viagens, investimento e obras entram na conta do governo.
+- Viagens oficiais e residência/manutenção são despesas primárias recorrentes. Cortes geram economia anual; o corte de viagens também reduz a verba disponível para missões. O custo nominal acompanha a inflação do cenário.
 - Obras mantêm modalidade, região, custo na contratação, correção de preços, fonte, cronograma, execução física, risco e manutenção.
 - Eventos podem atrasar contratos, reduzir entrega, expor irregularidade ou exigir decisão; impactos persistem no tempo e no histórico.
 - O jogador não cria ministérios por decisão de interface. A estrutura de ministérios vem de catálogo oficial datado e limites legais.
