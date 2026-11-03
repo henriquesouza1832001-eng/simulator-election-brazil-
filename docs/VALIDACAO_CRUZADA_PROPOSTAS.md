@@ -58,7 +58,7 @@ O motor Python é a autoridade para validar ações, alterar o estado e calcular
 
 ### 6. Várias campanhas por conta
 
-**Primeira fatia implementada:** `game_campaigns` guarda várias partidas por `player_id`, com ID, nome, cargo/modo, dificuldade, data e estado. A interface lista e abre uma partida; uma partida nova recebe ID separado e não substitui as outras. O servidor valida a propriedade do ID recebido no cabeçalho antes de ler o save, e o histórico de ações usa também `campaign_id`. O save antigo é migrado para `default`; exports, exclusão e restauração externa ficam para etapas posteriores.
+**Primeira fatia implementada:** `game_campaigns` guarda várias partidas por `player_id`, com ID, nome, cargo/modo, dificuldade, data e estado. A interface lista e abre uma partida; uma partida nova recebe ID separado e não substitui as outras. O servidor valida a propriedade do ID recebido no cabeçalho antes de ler o save, e o histórico de ações usa também `campaign_id`. O save antigo é migrado para `default`; exportação e transferência autônoma continuam pendentes. A restauração operacional via S3 está definida na stack AWS, aguardando um ciclo real.
 
 ## Sequência de implementação recomendada
 

@@ -86,6 +86,7 @@ Catálogo municipal e temas canônicos já têm primeira implementação. A pró
 - **Entregue na 0.1:** guia curto na seleção da partida e tutorial reabrível no jogo, com navegação pelas telas disponíveis para aquele cargo.
 - Criar elenco de retratos/caricaturas originais e fichas de personagens fictícios; dados e imagens de figuras públicas terão fonte e contexto.
 - Expandir as campanhas nomeadas atuais com exportação e recuperação de saves. Cadastro não confirma o e-mail; sem verificar o endereço na área Conta, o Cognito não consegue enviar recuperação de senha.
+- **Parcialmente entregue:** CloudFormation agenda snapshot SQLite semanal no S3 com retenção de 90 dias e script de restauração protegido. Falta aplicar a atualização na AWS e validar um ciclo real de backup e restauração.
 
 ## Ciclo de implementação
 

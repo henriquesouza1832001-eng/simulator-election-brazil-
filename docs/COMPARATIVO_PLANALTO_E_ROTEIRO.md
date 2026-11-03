@@ -129,6 +129,7 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 - [ ] Avaliações do intérprete e do agente Python com estados sintéticos, métricas e revisão humana.
 - [ ] Retratos caricaturais originais apenas para elenco curto; placeholder fictício para os demais.
 - [ ] Backup semanal fora da instância, teste de restauração, logs, limites de uso e alertas.
+- A stack e o roteiro de recuperação já estão versionados; este item fica pendente até a atualização AWS executar um envio e uma restauração reais.
 
 ## Arquitetura de conta e campanha
 

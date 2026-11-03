@@ -61,12 +61,49 @@ origin to arbitrary networks.
 
 ## Backups
 
-A consistent manual SQLite backup can be made over Session Manager with Python's
-SQLite backup API. The previous deployment stores snapshots under
-`/opt/mandato/backups`. A scheduled copy to a separate S3 bucket with lifecycle
-and restore verification remains a follow-up before inviting other players.
-The automatic deploy keeps the 30 newest pre-deploy snapshots on the same
-encrypted EC2 volume; that protects deployments but is not an off-host backup.
+A consistent SQLite snapshot now runs every Sunday at 13:00 UTC (10:00 in
+Brasília) through Systems Manager State Manager. It uses Python's SQLite backup
+API from the API container, checks `PRAGMA integrity_check`, saves the upload
+temporarily under `/opt/mandato/backups/weekly`, and sends it to the private S3
+bucket created by `template.yaml`. A failed upload leaves its local copy for
+recovery; successful runs prune local copies older than 35 days.
+
+The bucket blocks public access, enforces TLS, uses S3-managed server-side
+encryption, and has versioning. S3 Lifecycle expires weekly snapshots after 90
+days, then removes noncurrent versions and expired delete markers; incomplete
+multipart uploads are aborted after seven days. The EC2 role can read and write
+objects only under `weekly/`; the application container receives no AWS
+credentials. The bucket is retained if the stack is deleted, so delete it only
+after intentionally transferring or removing its backups.
+
+To activate the schedule in the existing stack, authenticate AWS CLI v2 and run
+`.\deploy\aws\update-stack.ps1 -Region us-east-2`. This updates the existing
+`mandato-simulator` CloudFormation stack with the checked-in template while
+preserving its current parameter values; it does not replace the game instance.
+The first upload occurs at the next scheduled Sunday run.
+
+To restore from Session Manager, list available files with
+`aws s3 ls s3://<bucket-from-CloudFormation-output>/weekly/ --region us-east-2`,
+then run:
+
+```bash
+sudo bash /opt/mandato/app/deploy/aws/restore-weekly-backup.sh \
+  s3://<bucket-from-CloudFormation-output>/weekly/game-<timestamp>.sqlite3
+```
+
+The script checks the selected database, makes a consistent pre-restore copy,
+stops the API only for the replacement, and restarts it afterward. Keep the
+pre-restore file until the game has loaded correctly. This same S3 object can be
+downloaded before moving the game to a different host.
+
+The automatic deploy also keeps the 30 newest pre-deploy snapshots on the same
+encrypted EC2 volume; those protect code updates but are not off-host backups.
+The S3 cost depends mainly on the database size and the 90-day retained volume,
+plus one upload request per week. Check actual storage and request charges in
+AWS Billing; the [S3 pricing page](https://aws.amazon.com/s3/pricing/) lists the
+current pricing dimensions. The weekly snapshots remain in S3 Standard for
+immediate recovery, without Glacier retrieval delays or lifecycle transition
+charges.
 
 ## Automatic GitHub deployment
 

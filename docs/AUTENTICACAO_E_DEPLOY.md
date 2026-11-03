@@ -12,7 +12,7 @@
 
 ## Limites que ainda faltam antes de abrir amplamente
 
-1. Configurar cópia automática semanal para armazenamento fora da EC2 e testar restauração. A cópia manual pré-deploy está no mesmo volume e não substitui backup externo.
+1. Aplicar a configuração de backup semanal S3 em `deploy/aws/template.yaml` e validar um envio e uma restauração reais. A cópia manual pré-deploy fica no mesmo volume e não substitui o backup externo.
 2. Configurar alarmes de custo e de falha, política de retenção de logs e limite de tentativas de autenticação.
 3. Considerar MFA e recuperação de conta, testar cadastro, confirmação de e-mail, troca de senha e encerramento global de sessão.
 4. Substituir o domínio CloudFront aleatório por domínio próprio somente se a experiência exigir um endereço permanente e memorável.
