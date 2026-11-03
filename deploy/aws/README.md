@@ -146,6 +146,9 @@ documentation-only commits are recorded without rebuilding. A force-push to
 `main` stops the timer and requires operator review. Check the host log with
 `journalctl -u mandato-auto-deploy.service`. Disable it with
 `.\deploy\aws\install-auto-deploy.ps1 -Disable`.
+If the saved checkpoint is invalid, recover it from the currently running
+release with `.\deploy\aws\install-auto-deploy.ps1 -ResetBaseline`; the next
+check then waits for CI on the latest `main` SHA before publishing.
 
 When the SCP permits OIDC, configure direct GitHub-to-AWS deployment:
 

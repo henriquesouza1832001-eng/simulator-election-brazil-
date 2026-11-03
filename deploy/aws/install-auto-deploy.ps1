@@ -2,7 +2,8 @@ param(
     [string]$Region = "us-east-2",
     [string]$StackName = "mandato-simulator",
     [string]$InstanceId,
-    [switch]$Disable
+    [switch]$Disable,
+    [switch]$ResetBaseline
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,19 +30,34 @@ if (-not $InstanceId) {
     }
 }
 
+if ($Disable -and $ResetBaseline) { throw "Choose either -Disable or -ResetBaseline, not both." }
+
 if ($Disable) {
     $commands = @(
         "sudo systemctl disable --now mandato-auto-deploy.timer",
         "sudo systemctl is-active mandato-auto-deploy.timer || true"
     )
 } else {
+    $baselineCommand = if ($ResetBaseline) {
+        "git -C /opt/mandato/app rev-parse HEAD > /var/lib/mandato/auto-deploy-last-checked; chmod 600 /var/lib/mandato/auto-deploy-last-checked"
+    } else {
+        "if [ ! -s /var/lib/mandato/auto-deploy-last-checked ]; then git -C /opt/mandato/app rev-parse HEAD > /var/lib/mandato/auto-deploy-last-checked; chmod 600 /var/lib/mandato/auto-deploy-last-checked; fi"
+    }
     $commands = @(
         "set -euo pipefail",
         "test -x /opt/mandato/app/deploy/aws/auto-deploy-check.sh",
         "install -m 0644 /opt/mandato/app/deploy/aws/mandato-auto-deploy.service /etc/systemd/system/mandato-auto-deploy.service",
         "install -m 0644 /opt/mandato/app/deploy/aws/mandato-auto-deploy.timer /etc/systemd/system/mandato-auto-deploy.timer",
-        "install -d -m 0700 /var/lib/mandato",
-        "if [ ! -s /var/lib/mandato/auto-deploy-last-checked ]; then git -C /opt/mandato/app rev-parse HEAD > /var/lib/mandato/auto-deploy-last-checked; chmod 600 /var/lib/mandato/auto-deploy-last-checked; fi",
+        "install -d -m 0700 /var/lib/mandato"
+    )
+    if ($ResetBaseline) {
+        $commands += @(
+            "systemctl stop mandato-auto-deploy.timer || true",
+            "systemctl stop mandato-auto-deploy.service || true"
+        )
+    }
+    $commands += @(
+        $baselineCommand,
         "systemctl daemon-reload",
         "systemctl enable --now mandato-auto-deploy.timer",
         "systemctl is-enabled mandato-auto-deploy.timer",
@@ -53,7 +69,7 @@ $inputPath = Join-Path $env:TEMP ("mandato-auto-deploy-" + [guid]::NewGuid().ToS
 $payload = @{
     DocumentName = "AWS-RunShellScript"
     InstanceIds = @($InstanceId)
-    Comment = if ($Disable) { "Disable Mandato automatic deployment timer" } else { "Install Mandato CI-gated automatic deployment timer" }
+    Comment = if ($Disable) { "Disable Mandato automatic deployment timer" } elseif ($ResetBaseline) { "Reset Mandato auto-deploy baseline to the running host commit" } else { "Install Mandato CI-gated automatic deployment timer" }
     Parameters = @{ commands = $commands }
 } | ConvertTo-Json -Depth 6 -Compress
 [System.IO.File]::WriteAllText($inputPath, $payload, [System.Text.UTF8Encoding]::new($false))
@@ -69,7 +85,11 @@ try {
     if ($status.Trim() -ne "Success") {
         throw "Host configuration ended with status '$($status.Trim())'. Read its details with AWS Systems Manager Run Command."
     }
-    Write-Host "Automatic deployment timer is enabled and active on $InstanceId."
+    if ($ResetBaseline) {
+        Write-Host "Automatic deployment timer is enabled and active; its baseline now matches the running host on $InstanceId."
+    } else {
+        Write-Host "Automatic deployment timer is enabled and active on $InstanceId."
+    }
 } finally {
     Remove-Item -LiteralPath $inputPath -Force -ErrorAction SilentlyContinue
 }
