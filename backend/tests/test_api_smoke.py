@@ -277,6 +277,7 @@ class ApiSmokeTests(unittest.TestCase):
             self.assertEqual(advanced.status_code, 200, advanced.text)
             overview = advanced.json()["state"]["career_overview"]
 
+        action_date = date.fromisoformat(self.client.get("/api/game").json()["date"])
         action = self.client.post("/api/career/action", json={
             "activity_type": "comicio", "issue": "educacao",
             "municipality_id": "3106200",
@@ -284,6 +285,8 @@ class ApiSmokeTests(unittest.TestCase):
         })
         self.assertEqual(action.status_code, 200, action.text)
         self.assertGreater(action.json()["result"]["score"], 0)
+        self.assertEqual(action.json()["result"]["days_cost"], 2)
+        self.assertEqual(date.fromisoformat(action.json()["state"]["date"]), action_date + timedelta(days=2))
         activity = action.json()["state"]["career_overview"]["activities"][0]
         self.assertEqual(activity["type"], "comicio")
         self.assertEqual(activity["municipality_id"], "3106200")
@@ -327,7 +330,25 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(activity["municipality_id"], "3106200")
         self.assertEqual(activity["municipality_name"], "Belo Horizonte")
         self.assertEqual(activity["municipality_state_code"], "MG")
+        self.assertEqual(activity["travel_days"], 0)
+        self.assertEqual(activity["days_cost"], 2)
         self.assertEqual(career_overview(governor_state)["campaign_city_support"][0]["municipality_id"], "3106200")
+
+        governor_state["date"] = "2030-07-15"
+        traveled = perform_career_action(
+            governor_state, "comicio", "mobilidade", message, municipality_id="3170206",
+        )
+        self.assertEqual(traveled["days_cost"], 3)
+        self.assertEqual(traveled["activity"]["travel_days"], 1)
+        self.assertEqual(traveled["activity"]["travel_from_municipality_id"], "3106200")
+        self.assertEqual(career_overview(governor_state)["campaign_team_location"]["municipality_id"], "3170206")
+
+        governor_state["date"] = "2030-07-22"
+        remote = perform_career_action(
+            governor_state, "rede_vitrine", "mobilidade", message, municipality_id="3170206",
+        )
+        self.assertEqual(remote["activity"]["travel_days"], 0)
+        self.assertEqual(remote["days_cost"], 1)
 
         president_state = new_game()
         president_state["date"] = "2030-07-08"
@@ -337,6 +358,8 @@ class ApiSmokeTests(unittest.TestCase):
         )["activity"]
         self.assertEqual(national_activity["municipality_name"], "São Paulo")
         self.assertEqual(national_activity["municipality_state_code"], "SP")
+        self.assertEqual(national_activity["travel_days"], 2)
+        self.assertEqual(national_activity["days_cost"], 4)
 
     def test_municipal_campaign_cannot_leave_its_electoral_city(self) -> None:
         state = new_game()

@@ -40,6 +40,14 @@ STATES = [
 ]
 STATE_NAMES = {code: name for code, name, _ in STATES}
 STATE_REGIONS = {code: region for code, _, region in STATES}
+STATE_CAPITALS = {
+    "AC": "1200401", "AL": "2704302", "AP": "1600303", "AM": "1302603", "BA": "2927408",
+    "CE": "2304400", "DF": "5300108", "ES": "3205309", "GO": "5208707", "MA": "2111300",
+    "MT": "5103403", "MS": "5002704", "MG": "3106200", "PA": "1501402", "PB": "2507507",
+    "PR": "4106902", "PE": "2611606", "PI": "2211001", "RJ": "3304557", "RN": "2408102",
+    "RS": "4314902", "RO": "1100205", "RR": "1400100", "SC": "4205407", "SP": "3550308",
+    "SE": "2800308", "TO": "1721000",
+}
 GROUPS = {
     "trabalhadores": "Trabalhadores", "empreendedores": "Pequenos negócios", "familias": "Famílias",
     "servidores": "Servidores públicos", "jovens": "Jovens", "rural": "População rural",
@@ -102,6 +110,7 @@ ACTIVITIES = {
     "rede_vitrine": {"label": "Vitrine · vídeo e imagem", "days": 1, "cost": 0.018, "reach": 0.92, "channel": "video_curto", "audience": ["jovens", "empreendedores"], "viral": .28},
     "rede_praca": {"label": "Praça · debate público", "days": 1, "cost": 0.016, "reach": 0.82, "channel": "rede_publica", "audience": ["jovens", "servidores"], "viral": .32},
 }
+TRAVEL_ACTIVITIES = {"comicio", "porta_a_porta"}
 APPOINTED_PATHS = {
     "ministro": {"label": "Ministro(a) de Estado", "requires": ["presidente"], "description": "Nomeação presidencial e apoio político; não é cargo eletivo."},
     "stf_indicado": {"label": "Indicação ao STF", "requires": ["presidente"], "description": "Indicação presidencial seguida de sabatina e votação no Senado; não é cargo eletivo."},
@@ -305,6 +314,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "national_support": initial_poll, "momentum": 0.0, "fatigue": 0,
         "history": previous_history[-20:], "reputation": round(previous_reputation, 1),
         "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + (municipality_id or municipality))),
+        "campaign_team_municipality_id": municipality_id if role["scope"] == "municipal" else municipality_id or STATE_CAPITALS[state_code],
         "group_support": group_support, "last_action_date": None, "activities": [],
         "conduct": {"attempts": 0, "detected": 0, "election_penalty": 0.0, "history": []},
         "result": None, "vote_share": None, "opponent_share": 50.0, "appointments": [], "governance": None,
@@ -332,6 +342,15 @@ def _campaign(state: dict[str, Any]) -> dict[str, Any]:
     if not career.get("mode"):
         raise ValueError("Esta partida ainda não iniciou uma carreira política.")
     return career
+
+
+def _campaign_team_location_id(career: dict[str, Any]) -> str | None:
+    current = career.get("campaign_team_municipality_id")
+    if current:
+        return str(current)
+    if career.get("scope") == "municipal":
+        return career.get("municipality_id")
+    return STATE_CAPITALS.get(career.get("state_code", ""))
 
 
 def is_career_governing(career: dict[str, Any], today: date) -> bool:
@@ -378,6 +397,8 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         if municipality_profile:
             career["municipality_id"] = municipality_profile["ibge_code"]
             career["municipality_profile"] = municipality_profile
+    team_city_id = _campaign_team_location_id(career)
+    team_city_profile = get_municipality(team_city_id) if team_city_id else None
     today = date.fromisoformat(state["date"])
     election_day = date.fromisoformat(career["election_date"])
     campaign_start = election_day - timedelta(days=90)
@@ -427,6 +448,10 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "state_code": career["state_code"], "state_name": career["state_name"], "municipality": career["municipality"],
         "campaign_territory": career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career["state_name"]),
         "municipality_id": career.get("municipality_id"), "municipality_profile": municipality_profile,
+        "campaign_team_location": ({
+            "municipality_id": team_city_profile["ibge_code"], "name": team_city_profile["name"],
+            "state_code": team_city_profile["state_code"], "macroregion": team_city_profile["macroregion"],
+        } if team_city_profile else None),
         "electorate": career["electorate"], "powers": career["powers"], "election_date": career["election_date"],
         "inauguration_date": career["inauguration_date"], "term_end": career["term_end"], "term_years": career["term_years"],
         "days_until_election": max(0, (election_day - today).days),
@@ -447,7 +472,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "activities": list(reversed(career["activities"][-10:])),
         "campaign_city_support": campaign_city_support,
         "debate_prompts": {key: career_debate_prompt(career, key) for key in ISSUES},
-        "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": round(item["cost"] * (.9 if "gestora" in (career.get("character") or {}).get("traits", []) else 1.0), 4)} for key, item in ACTIVITIES.items()],
+        "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "requires_travel": key in TRAVEL_ACTIVITIES, "cost_mi": round(item["cost"] * (.9 if "gestora" in (career.get("character") or {}).get("traits", []) else 1.0), 4)} for key, item in ACTIVITIES.items()],
         "issue_options": [{"key": key, "label": value["label"]} for key, value in ISSUES.items()],
         "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and governing} for key, value in APPOINTED_PATHS.items()],
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
@@ -636,6 +661,17 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         ))
         if target_municipality else None
     )
+    travel_from = None
+    travel_days = 0
+    if activity_type in TRAVEL_ACTIVITIES and target_municipality:
+        source_city_id = _campaign_team_location_id(career)
+        travel_from = get_municipality(source_city_id) if source_city_id else None
+        if travel_from and travel_from["ibge_code"] != target_municipality["ibge_code"]:
+            if travel_from["state_code"] == target_municipality["state_code"] or travel_from["macroregion"] == target_municipality["macroregion"]:
+                travel_days = 1
+            else:
+                travel_days = 2
+    days_cost = activity["days"] + travel_days
     traits = (career.get("character") or {}).get("traits", [])
     action_cost = activity["cost"] * (.9 if "gestora" in traits else 1.0)
     if career["campaign_fund_mi"] < action_cost:
@@ -734,26 +770,35 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     career["campaign_fund_mi"] = round(career["campaign_fund_mi"] - action_cost, 4)
     career["spent_mi"] = round(career["spent_mi"] + action_cost, 4)
     career["last_action_date"] = state["date"]
+    if activity_type in TRAVEL_ACTIVITIES and target_municipality:
+        career["campaign_team_municipality_id"] = target_municipality["ibge_code"]
     record = {
         "id": f"career-{state['date']}-{len(career['activities']) + 1}", "date": state["date"], "type": activity_type,
         "label": activity["label"], "channel": activity["channel"], "issue": issue, "issue_label": ISSUES[issue]["label"],
         "municipality_id": target_municipality["ibge_code"] if target_municipality else None,
         "municipality_name": target_municipality["name"] if target_municipality else None,
         "municipality_state_code": target_municipality["state_code"] if target_municipality else None,
+        "municipality_macroregion": target_municipality["macroregion"] if target_municipality else None,
         "municipality_support": target_city_support,
+        "travel_days": travel_days,
+        "travel_from_municipality_id": travel_from["ibge_code"] if travel_from else None,
+        "travel_from_municipality_name": travel_from["name"] if travel_from else None,
         "city_reach_multiplier": city_reach_multiplier,
         "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
         "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
-        "days_cost": activity["days"], "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,
+        "days_cost": days_cost, "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,
         "social_result": social_result, "debate": debate_result, "conduct": conduct_result,
         "character_effects": [f"{trait}: efeito aplicado nesta ação" for trait in traits],
     }
     career["activities"].append(record)
     career["activities"] = career["activities"][-60:]
-    return {"activity": record, "score": score, "rubric": rubric, "days_cost": activity["days"], "poll_support": career["poll_support"],
+    result_message = "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."
+    if travel_days:
+        result_message += f" O deslocamento de {travel_from['name']} até {target_municipality['name']} consumiu mais {travel_days} dia(s)."
+    return {"activity": record, "score": score, "rubric": rubric, "days_cost": days_cost, "poll_support": career["poll_support"],
             "local_support": career["local_support"], "state_support": career["state_support"], "campaign_fund_mi": career["campaign_fund_mi"],
             "municipality_support": target_city_support,
-            "social_result": social_result, "debate": debate_result, "forecast": _forecast(career, score), "message": "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."}
+            "social_result": social_result, "debate": debate_result, "forecast": _forecast(career, score), "message": result_message}
 
 
 def _forecast(career: dict[str, Any], score: int) -> list[dict[str, Any]]:
