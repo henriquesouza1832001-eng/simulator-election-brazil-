@@ -876,10 +876,11 @@ def political_governance_action(request: CareerGovernanceRequest) -> dict[str, A
         result = perform_governance_action(state, request.action, request.issue)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    state, calendar_message = advance_state(state, result["days_cost"])
     save_state(state)
     record_action(action_date, "mandato", result["action"]["title"], request.issue,
                   {"action": request.action}, [{"summary": result["summary"], "cost_mi": result["action"]["cost_mi"], "status": result["action"]["status"]}])
-    return {"state": public_state(state), "result": result}
+    return {"state": public_state(state), "result": result, "calendar_message": calendar_message}
 
 
 @app.post("/api/events/{event_id}/respond")

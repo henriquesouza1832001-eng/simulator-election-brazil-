@@ -31,7 +31,8 @@
 - **Agora implementado:** entrada Cognito por e-mail e senha, cadastro sem etapa de confirmação, recuperação de senha quando o e-mail está verificado e confirmação opcional de e-mail dentro do jogo. Senhas não passam pelo backend do simulador.
 - **Ainda parcial:** esta carteira usa custos de jogo e não substitui projeto executivo, cronograma físico-financeiro por lote ou dados reais de execução.
 - **Ainda parcial:** viagem diplomática tem deslocamento, custo e duração aproximados; ainda falta uma animação de rota entre países e uma agenda completa de reuniões durante a missão.
-- **Ainda parcial:** os mandatos de vereador, prefeito, deputado, senador e governador têm ações genéricas; faltam orçamento, poderes, serviços e calendário legislativo específicos de cada ente.
+- **Fatia de mandato entregue:** prefeitos, governadores e presidentes têm programas diferentes, limitados às atribuições simuladas do cargo. Cada programa mostra custo e prazo antes da decisão, afeta um indicador ao ser concluído e o custo nominal acumula a inflação simulada a cada virada de ano. A reserva é uma abstração própria da carreira, não reproduz a LOA.
+- **Ainda parcial:** os mandatos legislativos ainda usam ações comuns de proposta, fiscalização e audiência; faltam orçamento por ente, calendário de comissões e votações, articulação nominal e conexão do gasto executivo com a conta macroeconômica.
 - **Ainda parcial:** a pré-campanha aguarda o início da janela oficial; faltam ações de organização partidária antes dela, magnitude real dos distritos, pesquisas por candidato, propaganda, arrecadação detalhada e debates em vários turnos.
 - **Ainda parcial:** nomeações e STF usam personagens fictícios e parâmetros agregados; ainda faltam convites para a carreira do jogador e trilhas de decisão separadas para cada instituição.
 - **Ainda parcial:** eventos têm sorteio reproduzível por partida, peso regional e sazonal, memória de adiamentos e impactos no tempo; falta ampliar o catálogo de eventos empresariais, climáticos e políticos e ligar promessas de campanha e investigações a eventos de retorno.
@@ -95,7 +96,7 @@ Cada etapa será entregue como uma fatia pequena: modelo de dados, regra determi
 ## Ordem prática a partir da base atual
 
 1. Fechar o primeiro ciclo eleitoral até posse, pronunciamento obrigatório, mandato, prestação de contas, nova eleição e continuidade após vitória ou derrota.
-2. Dar regras e orçamento separados aos mandatos municipais, estaduais e federais; limitar cada ação às competências do cargo.
+2. Integrar a execução dos programas ao orçamento anual e aos indicadores do jogo; depois detalhar calendário, orçamento e votação dos cargos legislativos por esfera.
 3. Melhorar a tela de campanha com calendário, pesquisa, imprensa, debate e conversão de votos para cada tipo de eleição.
 4. Aprofundar orçamento e obras: execução mensal, manutenção, companhias persistentes, licitações e risco climático regional.
 5. Expandir eventos e memória da partida, conectando causas antigas a novas crises e compromissos vencidos.

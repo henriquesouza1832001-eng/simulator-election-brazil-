@@ -92,10 +92,22 @@ APPOINTED_PATHS = {
 }
 LEGISLATIVE_OFFICES = {"vereador", "deputado_estadual", "deputado_federal", "senador"}
 SERVICE_AREAS = {
-    "education": {"label": "Educação e escolas", "outcome": "education", "effect": 5.0},
-    "health": {"label": "Saúde e atendimento", "outcome": "health", "effect": 5.0},
-    "security": {"label": "Segurança pública", "outcome": "security", "effect": 4.0},
-    "mobility": {"label": "Transporte e mobilidade", "outcome": "mobility", "effect": 4.0},
+    "education": {"label": "Educação básica", "outcome": "education", "effect": 5.0, "days": 180},
+    "health": {"label": "Saúde e atendimento", "outcome": "health", "effect": 5.0, "days": 120},
+    "security": {"label": "Segurança pública", "outcome": "security", "effect": 4.0, "days": 120},
+    "mobility": {"label": "Transporte e mobilidade", "outcome": "mobility", "effect": 4.0, "days": 240},
+    "sanitation": {"label": "Saneamento básico", "outcome": "sanitation", "effect": 4.0, "days": 300},
+    "infrastructure": {"label": "Infraestrutura e obras", "outcome": "infrastructure", "effect": 3.5, "days": 365},
+}
+EXECUTIVE_SERVICE_ACCESS = {
+    "prefeito": {"education", "health", "mobility", "sanitation"},
+    "governador": {"education", "health", "security", "mobility", "sanitation", "infrastructure"},
+    "presidente": set(SERVICE_AREAS),
+}
+EXECUTIVE_SERVICE_BASE_COSTS = {
+    "prefeito": {"education": 18.0, "health": 22.0, "mobility": 14.0, "sanitation": 20.0},
+    "governador": {"education": 400.0, "health": 500.0, "security": 380.0, "mobility": 650.0, "sanitation": 470.0, "infrastructure": 900.0},
+    "presidente": {"education": 4500.0, "health": 6500.0, "security": 5000.0, "mobility": 8500.0, "sanitation": 6000.0, "infrastructure": 12000.0},
 }
 LEGISLATIVE_ACTIONS = [
     {"key": "proposal", "label": "Apresentar proposta de lei", "capital": 18, "days": 60, "summary": "A proposta entra em tramitação e enfrenta uma votação simulada."},
@@ -338,16 +350,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     wait = max(0, 7 - (today - date.fromisoformat(last_action)).days) if last_action else 0
     role = OFFICES[career["office"]]
     governance = career.get("governance") or {}
-    executive_costs = {"prefeito": 22.0, "governador": 800.0, "presidente": 3200.0}
-    if career["office"] in LEGISLATIVE_OFFICES:
-        governance_actions = [dict(item) for item in LEGISLATIVE_ACTIONS]
-    elif career["office"] in executive_costs:
-        governance_actions = [{"key": f"service_{key}", "label": area["label"], "cost_mi": executive_costs[career["office"]], "days": 1,
-                              "summary": f"Inicia um programa com entrega prevista em cerca de quatro meses."} for key, area in SERVICE_AREAS.items()]
-        governance_actions += [{"key": "public_report", "label": "Publicar prestação de contas", "cost_mi": 0, "days": 1,
-                                "summary": "Expõe metas, execução financeira e resultados para fiscalização pública."}]
-    else:
-        governance_actions = []
+    governance_actions = governance_actions_for(career, governance)
     governance_wait = max(0, 30 - (today - date.fromisoformat(governance.get("last_action_date", today.isoformat()))).days) if governance.get("last_action_date") else 0
     in_campaign = career["phase"] == "campaign" and campaign_start <= today <= election_day
     next_campaign = max(0, (campaign_start - today).days) if career["phase"] in {"office", "pre_campaign"} else 0
@@ -383,6 +386,9 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
         "governance_actions": governance_actions, "governance_wait_days": governance_wait,
         "governance_budget_mi": round(float(governance.get("budget_mi", 0)), 1),
+        "governance_annual_budget_mi": round(float(governance.get("annual_budget_mi", 0)), 1),
+        "governance_budget_price_index": round(float(governance.get("budget_price_index", 1.0)), 3),
+        "governance_budget_year": int(governance.get("budget_year", today.year)),
         "political_capital": round(float(governance.get("political_capital", 0)), 1),
         "rules": {"campaign_window_days": 90, "activity_cooldown_days": 7, "election_and_vote_simulated": True, "government_keeps_running": True},
         "conduct_preview": campaign_conduct_preview(state, career),
@@ -421,15 +427,17 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
             summary = "Audiência concluída. Apoio de servidores, confiança e apoio local subiram um pouco; os efeitos são registrados na carreira simulada."
         cost = 0.0
     else:
-        prefix, _, area_key = action.partition("_")
-        if prefix == "service" and area_key in SERVICE_AREAS:
+        selected = next((item for item in governance_actions_for(career, governance) if item["key"] == action), None)
+        if selected and action.startswith("service_"):
+            area_key = selected["area"]
             area = SERVICE_AREAS[area_key]
-            cost = {"prefeito": 22.0, "governador": 800.0, "presidente": 3200.0}.get(career["office"], 0.0)
+            cost = selected["cost_mi"]
             if governance.get("budget_mi", 0) < cost:
                 raise ValueError("A reserva anual desta agenda não cobre o programa. Reavalie o orçamento ou aguarde o próximo ano.")
             governance["budget_mi"] = round(governance["budget_mi"] - cost, 1)
-            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "effect": area["effect"], "due_date": (date.fromisoformat(state["date"]) + timedelta(days=120)).isoformat(), "status": "in_progress", "simulated": True})
-            summary = f"Programa de {area['label'].lower()} iniciado. Custo reservado: R$ {cost:,.1f} milhões. A entrega chega em aproximadamente 120 dias se não houver atraso."
+            due_date = date.fromisoformat(state["date"]) + timedelta(days=area["days"])
+            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "effect": area["effect"], "cost_mi": cost, "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
+            summary = f"Programa de {area['label'].lower()} iniciado. Custo reservado: R$ {cost:,.1f} milhões; entrega prevista para {due_date.strftime('%d/%m/%Y')} se não houver atraso."
         elif action == "public_report":
             cost = 0.0
             governance["trust"] = _clamp(governance.get("trust", 50) + 2.0)
@@ -443,14 +451,27 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
              "summary": summary, "cost_mi": cost, "status": "active", "simulated": True}
     governance.setdefault("actions", []).append(entry)
     governance["actions"] = governance["actions"][-50:]
-    return {"action": entry, "summary": summary, "governance": governance}
+    return {"action": entry, "summary": summary, "governance": governance, "days_cost": 1}
 
 
-def governance_actions_for(career: dict[str, Any]) -> list[dict[str, Any]]:
+def governance_actions_for(career: dict[str, Any], governance: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     if career["office"] in LEGISLATIVE_OFFICES:
-        return LEGISLATIVE_ACTIONS
-    if career["office"] in {"prefeito", "governador", "presidente"}:
-        return [{"key": f"service_{key}", "label": value["label"]} for key, value in SERVICE_AREAS.items()] + [{"key": "public_report", "label": "Publicar prestação de contas"}]
+        return [dict(item) for item in LEGISLATIVE_ACTIONS]
+    office = career["office"]
+    if office in EXECUTIVE_SERVICE_ACCESS:
+        index = float((governance or career.get("governance") or {}).get("budget_price_index", 1.0))
+        actions = []
+        for area_key in SERVICE_AREAS:
+            if area_key not in EXECUTIVE_SERVICE_ACCESS[office]:
+                continue
+            area = SERVICE_AREAS[area_key]
+            base_cost = EXECUTIVE_SERVICE_BASE_COSTS[office][area_key]
+            actions.append({"key": f"service_{area_key}", "area": area_key, "label": area["label"],
+                            "cost_mi": round(base_cost * index, 1), "days": area["days"],
+                            "summary": f"Entrega prevista em {area['days']} dias; o efeito aparece no indicador de {area['label'].lower()} ao concluir."})
+        actions.append({"key": "public_report", "label": "Publicar prestação de contas", "cost_mi": 0.0, "days": 1,
+                        "summary": "Expõe metas, execução financeira e resultados para fiscalização pública."})
+        return actions
     return []
 
 
@@ -666,7 +687,9 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         annual_budget = executive_funds.get(career["office"], 0.0)
         career["governance"] = {"budget_mi": annual_budget, "annual_budget_mi": annual_budget,
                                 "budget_year": date.fromisoformat(transition_date).year, "trust": 50.0, "delivery": 0.0,
-                                "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0, "mobility": 50.0}}
+                                "budget_price_index": 1.0, "political_capital": 50.0, "actions": [], "pipeline": [],
+                                "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0, "mobility": 50.0,
+                                             "sanitation": 50.0, "infrastructure": 50.0}}
         state["office_status"] = "elected_official"
         state["career_status"] = "in_office"
         state["term_start"] = transition_date
@@ -693,10 +716,16 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         if after.year > budget_year:
             annual = float(governance.get("annual_budget_mi", 0))
             governance["budget_mi"] = round(min(annual, float(governance.get("budget_mi", 0)) + annual), 1)
+            price_index = float(governance.get("budget_price_index", 1.0))
+            inflation_pct = float(state.get("metrics", {}).get("inflation", 4.5))
+            annual_price_change = min(0.25, max(0.0, inflation_pct / 100.0))
+            for _ in range(after.year - budget_year):
+                price_index *= 1.0 + annual_price_change
+            governance["budget_price_index"] = round(price_index, 4)
             governance["budget_year"] = after.year
             if career["office"] in LEGISLATIVE_OFFICES:
                 governance["political_capital"] = min(100.0, float(governance.get("political_capital", 50)) + 25.0)
-            messages.append("O novo ano do mandato começou; a reserva anual simulada foi atualizada.")
+            messages.append(f"O novo ano começou: a reserva anual simulada foi atualizada e o custo-base dos programas subiu {annual_price_change * 100:.1f}% pela inflação do cenário.")
         remaining = []
         for item in governance.get("pipeline", []):
             due = date.fromisoformat(item["due_date"])

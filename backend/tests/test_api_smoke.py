@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -16,6 +17,7 @@ from app.db import (
 )
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
+from app.engine.career import advance_career, governance_actions_for, perform_governance_action
 from app.engine.issues import canonical_issue_ids
 from app.main import app
 from app.engine.state import new_game
@@ -230,6 +232,47 @@ class ApiSmokeTests(unittest.TestCase):
         result = election.json()["state"]["career_overview"]
         self.assertIn(result["result"], {"won", "lost"})
         self.assertIn(result["phase"], {"transition", "outgoing", "opposition"})
+
+    def test_executive_mandate_actions_follow_scope_and_inflation(self) -> None:
+        career = {
+            "mode": True, "phase": "office", "office": "prefeito", "scope": "municipal",
+            "group_support": {}, "governance": {
+                "budget_mi": 350.0, "annual_budget_mi": 350.0, "budget_year": 2027,
+                "budget_price_index": 1.0, "trust": 50.0, "delivery": 0.0,
+                "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {},
+            },
+        }
+        actions = governance_actions_for(career, career["governance"])
+        action_keys = {item["key"] for item in actions}
+        self.assertIn("service_sanitation", action_keys)
+        self.assertNotIn("service_security", action_keys)
+
+        state = {"date": "2027-06-01", "career": career}
+        with self.assertRaises(ValueError):
+            perform_governance_action(state, "service_security")
+        result = perform_governance_action(state, "service_education")
+        self.assertEqual(result["days_cost"], 1)
+        self.assertEqual(result["action"]["cost_mi"], 18.0)
+        self.assertEqual(career["governance"]["budget_mi"], 332.0)
+        self.assertEqual(career["governance"]["pipeline"][0]["kind"], "service")
+
+        annual_state = {
+            "metrics": {"inflation": 5.0},
+            "career": {
+                "mode": True, "phase": "office", "office": "prefeito",
+                "election_date": "2028-10-01", "term_end": "2031-12-31",
+                "governance": {"budget_mi": 100.0, "annual_budget_mi": 350.0,
+                               "budget_year": 2027, "trust": 50.0, "delivery": 0.0,
+                               "political_capital": 50.0, "pipeline": [], "actions": []},
+            },
+        }
+        advance_career(annual_state, date(2027, 12, 31), date(2028, 1, 1))
+        annual_governance = annual_state["career"]["governance"]
+        self.assertEqual(annual_governance["budget_mi"], 350.0)
+        self.assertAlmostEqual(annual_governance["budget_price_index"], 1.05)
+        adjusted_cost = next(item["cost_mi"] for item in governance_actions_for(annual_state["career"], annual_governance)
+                             if item["key"] == "service_education")
+        self.assertEqual(adjusted_cost, 18.9)
 
     def test_difficulty_profiles_change_game_parameters(self) -> None:
         easy = get_difficulty("tranquilo")
