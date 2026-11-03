@@ -1119,10 +1119,12 @@ def governance_actions_for(career: dict[str, Any], governance: dict[str, Any] | 
         index = float(active_governance.get("budget_price_index", 1.0))
         population_basis = _executive_population_basis(career)
         cost_basis = (
-            f"Populacao IBGE {population_basis['reference_year']}: {population_basis['population']:,} pessoas; "
-            f"base de {population_basis['reference_population']:,} e precos x{index:.3f}."
+            f"População IBGE {population_basis['reference_year']}: "
+            f"{_format_population_count(population_basis['population'])} habitantes; "
+            f"referência do parâmetro: {_format_population_count(population_basis['reference_population'])} habitantes; "
+            f"índice de preços acumulado ×{index:.3f}."
             if office in EXECUTIVE_BUDGET_BASELINES else
-            f"Escala federal do jogo; precos x{index:.3f}."
+            f"Escala federal do jogo; índice de preços acumulado ×{index:.3f}."
         )
         actions = []
         for area_key in SERVICE_AREAS:
@@ -1169,6 +1171,10 @@ def _executive_annual_budget_mi(career: dict[str, Any], price_index: float = 1.0
         return 0.0
     basis = _executive_population_basis(career)
     return round(float(baseline["annual_budget_mi"]) * basis["scale"] * price_index, 1)
+
+
+def _format_population_count(value: int) -> str:
+    return f"{value:,}".replace(",", ".")
 
 
 def _ensure_scaled_governance_budget(career: dict[str, Any], governance: dict[str, Any]) -> None:

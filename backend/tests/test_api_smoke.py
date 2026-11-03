@@ -711,6 +711,7 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(result["action"]["cost_mi"], scaled_cost)
         self.assertEqual(career["governance"]["budget_mi"], round(annual_reserve - scaled_cost, 1))
         self.assertIn("IBGE 2026", result["action"]["cost_basis"])
+        self.assertIn(f"{municipality_population:,}".replace(",", "."), result["action"]["cost_basis"])
         self.assertEqual(career["governance"]["pipeline"][0]["kind"], "service")
         self.assertEqual(career["governance"]["pipeline"][0]["territory"], "Belo Horizonte · MG")
         career["election_date"] = "2028-10-01"
