@@ -1293,14 +1293,32 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     quality = (score - 55) / 45
     reach = activity["reach"] + (.08 if "combativa" in traits else 0)
     city_reach_multiplier = 1.0
+    electorate_share_of_state = None
+    electorate_share_of_national = None
     if target_municipality:
         city_reach_multiplier = float(target_municipality["municipal_campaign_reach_multiplier"])
+        electorate_share_of_state = target_municipality.get("electorate_share_of_state")
+        electorate_share_of_national = target_municipality.get("electorate_share_of_national")
     reach *= city_reach_multiplier
     local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1) + (.15 if "carismatica" in traits else 0)))
-    state_delta = local_delta * (0.4 if career["scope"] == "municipal" else 0.72)
+    # A city visit changes support locally. Its contribution to a larger
+    # electorate is weighted by that city's share of the relevant electorate.
+    # Municipal races are entirely inside their selected municipality.
+    state_weight = 1.0 if not target_municipality or career["scope"] == "municipal" else float(electorate_share_of_state or 1.0)
+    state_delta = local_delta * (0.4 if career["scope"] == "municipal" else 0.72) * state_weight
+    national_delta = (
+        local_delta * float(electorate_share_of_national)
+        if target_municipality and electorate_share_of_national is not None
+        else state_delta * 0.25
+    )
+    poll_territory_delta = (
+        local_delta if career["scope"] == "municipal"
+        else national_delta if career["office"] == "presidente" and target_municipality
+        else state_delta
+    )
     career["local_support"] = _clamp(career["local_support"] + local_delta)
     career["state_support"] = _clamp(career["state_support"] + state_delta)
-    career["national_support"] = _clamp(career["national_support"] + state_delta * 0.25)
+    career["national_support"] = _clamp(career["national_support"] + national_delta)
     group_delta = quality * reach * 0.65 + (.15 if "conciliadora" in traits else 0) + (.2 if "comunitaria" in traits else 0)
     for group in ISSUES[issue]["groups"]:
         career["group_support"][group] = _clamp(career["group_support"][group] + group_delta)
@@ -1315,7 +1333,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         career["reputation"] = _clamp(float(career.get("reputation", 50)) - 2.0)
     for group in ISSUES[issue]["groups"]:
         career["group_support"][group] = _clamp(career["group_support"][group] + conduct_delta * .35)
-    career["poll_support"] = round(_clamp(career["poll_support"] + state_delta * 0.42 + group_delta * 0.24), 2)
+    career["poll_support"] = round(_clamp(career["poll_support"] + poll_territory_delta * 0.42 + group_delta * 0.24), 2)
     social_result = None
     if activity.get("audience"):
         rng = random.Random(f"{career.get('seed', 1)}:{state['date']}:{len(career['activities'])}:social")
@@ -1365,12 +1383,19 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         "municipality_state_code": target_municipality["state_code"] if target_municipality else None,
         "municipality_macroregion": target_municipality["macroregion"] if target_municipality else None,
         "municipality_support": target_city_support,
+        "electorate_share_of_state": electorate_share_of_state,
+        "electorate_share_of_national": electorate_share_of_national,
+        "territorial_weight": round(state_weight, 8),
+        "municipality_change": round(target_city_support - target_city_support_before, 2)
+        if target_city_support is not None else None,
         "travel_days": travel_days,
         "travel_from_municipality_id": travel_from["ibge_code"] if travel_from else None,
         "travel_from_municipality_name": travel_from["name"] if travel_from else None,
         "city_reach_multiplier": city_reach_multiplier,
         "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
-        "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
+        "state_change": round(state_delta + conduct_delta * .55, 2),
+        "national_change": round(national_delta, 4),
+        "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
         "days_cost": days_cost, "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,
         "social_result": social_result, "debate": debate_result, "conduct": conduct_result,
         "campaign_promise_id": campaign_promise.get("id") if campaign_promise and campaign_promise.get("id") else None,

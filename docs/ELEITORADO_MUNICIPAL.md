@@ -29,3 +29,9 @@ O porte municipal continua baseado na população residente. O alcance eleitoral
 | Acima de 700 mil | 0,70× |
 
 Essas faixas são regras explícitas de equilíbrio do jogo, não estimativas oficiais de impacto eleitoral. Se o catálogo ainda não tiver eleitorado, o motor mantém as faixas de alcance anteriores, baseadas na população.
+
+## Peso fora do município
+
+Uma atividade local mantém seu efeito completo no apoio simulado daquela cidade. Em uma disputa estadual ou federal por UF, a contribuição à projeção da UF é ponderada pela fração de eleitores aptos daquela cidade no estado. Para a Presidência, a projeção nacional usa a fração no eleitorado brasileiro; a projeção estadual continua disponível como indicador territorial. Campanhas municipais não diluem a ação pela população do estado: o município é todo o território da disputa.
+
+As frações são recalculadas a partir da contagem municipal do TSE e registradas junto da atividade. Os pontos de apoio resultantes são regras transparentes do simulador, não previsões de voto nem estimativas de impacto de uma campanha real. Quando não houver contagem eleitoral na versão do catálogo, o motor mantém o peso amplo anterior.

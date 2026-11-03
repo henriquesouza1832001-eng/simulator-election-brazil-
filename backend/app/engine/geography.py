@@ -65,6 +65,8 @@ def _profile(item: dict[str, Any]) -> dict[str, Any]:
     )
     electorate_count = int(item["electorate_count"]) if item.get("electorate_count") else None
     regional_electorate_total = _regional_electorate_totals().get(item["region_code"], 0)
+    state_electorate_total = _state_electorate_totals().get(item["state_code"], 0)
+    national_electorate_total = _national_electorate_total()
     reach_multiplier = (
         next(multiplier for threshold, multiplier in ELECTORATE_REACH_BANDS if electorate_count <= threshold)
         if electorate_count else population_reach_multiplier
@@ -81,6 +83,10 @@ def _profile(item: dict[str, Any]) -> dict[str, Any]:
         "electorate_reference_year": int(item["electorate_reference_year"]) if electorate_count else None,
         "electorate_share_of_macroregion": round(electorate_count / regional_electorate_total, 8)
         if electorate_count and regional_electorate_total else None,
+        "electorate_share_of_state": round(electorate_count / state_electorate_total, 8)
+        if electorate_count and state_electorate_total else None,
+        "electorate_share_of_national": round(electorate_count / national_electorate_total, 8)
+        if electorate_count and national_electorate_total else None,
         "electorate_source_url": _catalog()["metadata"].get("electorate_dataset_url"),
         "city_size": size_key,
         "city_size_label": size_label,
@@ -100,6 +106,22 @@ def _regional_electorate_totals() -> dict[str, int]:
             region_code = municipality["region_code"]
             totals[region_code] = totals.get(region_code, 0) + int(electorate_count)
     return totals
+
+
+@lru_cache(maxsize=1)
+def _state_electorate_totals() -> dict[str, int]:
+    totals: dict[str, int] = {}
+    for municipality in _catalog()["municipalities"]:
+        electorate_count = municipality.get("electorate_count")
+        if electorate_count:
+            state_code = municipality["state_code"]
+            totals[state_code] = totals.get(state_code, 0) + int(electorate_count)
+    return totals
+
+
+@lru_cache(maxsize=1)
+def _national_electorate_total() -> int:
+    return sum(_state_electorate_totals().values())
 
 
 def get_municipality(ibge_code: str | int) -> dict[str, Any] | None:
