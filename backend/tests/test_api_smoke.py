@@ -665,6 +665,49 @@ class ApiSmokeTests(unittest.TestCase):
                              if item["key"] == "service_education")
         self.assertEqual(adjusted_cost, 18.9)
 
+    def test_public_report_snapshots_realized_simulation_records_by_period(self) -> None:
+        state = new_game()
+        state["date"] = "2027-06-20"
+        start_career(state, "prefeito", "MG", "Belo Horizonte", "Partido da Renovação", "Centro",
+                     "Candidatura de teste", municipality_id="3106200")
+        career = state["career"]
+        career.update({"phase": "office", "office_start": "2027-01-05", "term_end": "2030-12-31",
+                       "election_date": "2028-10-01"})
+        career["governance"] = {
+                "budget_mi": 300.0, "annual_budget_mi": 350.0, "budget_year": 2027,
+                "budget_price_index": 1.0, "trust": 50.0, "delivery": 0.0,
+                "political_capital": 50.0,
+                "actions": [{"id": "office-2027-06-15-1", "date": "2027-06-15",
+                             "action": "service_education", "cost_mi": 50.0, "status": "active"}],
+                "pipeline": [{"id": "service-2027-06-15-1", "kind": "service", "area": "education",
+                              "title": "Educação", "effect": 4.0, "cost_mi": 50.0,
+                              "started_at": "2027-06-15", "due_date": "2027-07-01",
+                              "status": "in_progress", "simulated": True}],
+                "outcomes": {"education": 54.0},
+        }
+
+        first_result = perform_governance_action(state, "public_report")
+        first_report = first_result["public_report"]
+        self.assertEqual(first_report["period_start"], "2027-01-05")
+        self.assertEqual(first_report["period_end"], "2027-06-20")
+        self.assertEqual(first_report["programs_reserved_mi"], 50.0)
+        self.assertEqual(first_report["programs_started"], 1)
+        self.assertEqual(first_report["programs_completed"], 0)
+        self.assertEqual(first_report["programs_in_progress"], 1)
+        self.assertTrue(first_report["simulated"])
+
+        state["date"] = "2027-07-01"
+        advance_career(state, date(2027, 6, 20), date(2027, 7, 1))
+        self.assertEqual(state["career"]["governance"]["actions"][-1]["completed_at"], "2027-07-01")
+        state["date"] = "2027-07-20"
+        second_result = perform_governance_action(state, "public_report")
+        second_report = second_result["public_report"]
+        self.assertEqual(second_report["period_start"], "2027-06-21")
+        self.assertEqual(second_report["programs_reserved_mi"], 0.0)
+        self.assertEqual(second_report["programs_completed"], 1)
+        self.assertEqual(len(state["career"]["governance"]["public_reports"]), 2)
+        self.assertEqual(len(career_overview(state)["public_reports"]), 2)
+
     def test_presidential_programs_share_the_federal_investment_appropriation(self) -> None:
         state = new_game()
         state["date"] = "2027-06-01"

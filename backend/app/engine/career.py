@@ -719,6 +719,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "issue_options": [{"key": key, "label": value["label"]} for key, value in ISSUES.items()],
         "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and governing} for key, value in APPOINTED_PATHS.items()],
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
+        "public_reports": list(reversed((governance.get("public_reports") or [])[-8:])),
         "governance_actions": governance_actions, "governance_wait_days": governance_wait,
         "governance_territory": governance_territory,
         "governance_budget_mi": governance_budget_mi,
@@ -752,6 +753,7 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
     if last and (date.fromisoformat(state["date"]) - date.fromisoformat(last)).days < 30:
         wait = 30 - (date.fromisoformat(state["date"]) - date.fromisoformat(last)).days
         raise ValueError(f"A agenda do cargo foi usada. A próxima decisão abre em {wait} dia(s).")
+    public_report = None
     if career["office"] in LEGISLATIVE_OFFICES:
         selected = next((item for item in LEGISLATIVE_ACTIONS if item["key"] == action), None)
         if not selected:
@@ -787,22 +789,89 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
                 )
             due_date = date.fromisoformat(state["date"]) + timedelta(days=area["days"])
             territory = governance_territory_for(career)
-            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "territory": territory["name"], "territory_scope": territory["scope"], "municipality_id": territory.get("municipality_id"), "effect": area["effect"], "cost_mi": cost, "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
+            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "territory": territory["name"], "territory_scope": territory["scope"], "municipality_id": territory.get("municipality_id"), "effect": area["effect"], "cost_mi": cost, "started_at": state["date"], "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
             summary = f"Programa de {area['label'].lower()} iniciado para {territory['name']}. Custo reservado: R$ {cost:,.1f} milhões; entrega prevista para {due_date.strftime('%d/%m/%Y')} se não houver atraso."
         elif action == "public_report":
             cost = 0.0
+            public_report = _publish_governance_report(state, career, governance)
             governance["trust"] = _clamp(governance.get("trust", 50) + 2.0)
             career["group_support"]["jovens"] = _clamp(career["group_support"].get("jovens", 45) + 1.0)
-            summary = "Prestação de contas publicada na simulação. Transparência e confiança sobem; os números serão cobrados nas próximas decisões."
+            summary = (f"Prestação de contas simulada publicada para {public_report['period_start']} a {public_report['period_end']}: "
+                       f"R$ {public_report['programs_reserved_mi']:.1f} milhões reservados, "
+                       f"{public_report['programs_completed']} programa(s) concluído(s) e "
+                       f"{public_report['programs_in_progress']} em andamento.")
         else:
             raise ValueError("Esta ação não pertence às atribuições executivas deste cargo.")
     governance["last_action_date"] = state["date"]
     entry = {"id": f"office-{state['date']}-{len(governance.get('actions', [])) + 1}", "date": state["date"], "action": action,
              "title": issue.strip()[:100] or next((item["label"] for item in governance_actions_for(career) if item["key"] == action), action.replace("_", " ").title()),
              "summary": summary, "cost_mi": cost, "status": "active", "simulated": True}
+    if public_report:
+        entry["report_id"] = public_report["id"]
     governance.setdefault("actions", []).append(entry)
     governance["actions"] = governance["actions"][-50:]
-    return {"action": entry, "summary": summary, "governance": governance, "days_cost": 1}
+    return {"action": entry, "summary": summary, "governance": governance,
+            "public_report": public_report, "days_cost": 1}
+
+
+def _publish_governance_report(state: dict[str, Any], career: dict[str, Any],
+                               governance: dict[str, Any]) -> dict[str, Any]:
+    """Save an auditable, simulated snapshot of this executive's recorded work."""
+    today = date.fromisoformat(state["date"])
+    previous_report_date = governance.get("last_public_report_date")
+    period_start = (
+        date.fromisoformat(previous_report_date) + timedelta(days=1)
+        if previous_report_date
+        else date.fromisoformat(career.get("office_start") or career.get("inauguration_date") or state["date"])
+    )
+    if period_start > today:
+        period_start = today
+    period_start_label = period_start.strftime("%Y-%m-%d")
+    period_end_label = today.isoformat()
+    actions = governance.get("actions", [])
+    period_actions = [
+        item for item in actions
+        if item.get("date") and period_start_label <= item["date"] <= period_end_label
+        and item.get("action") != "public_report"
+    ]
+    completed = [
+        item for item in actions
+        if item.get("kind") == "service" and item.get("status") == "delivered"
+        and period_start_label <= item.get("completed_at", "") <= period_end_label
+    ]
+    current_programs = [item for item in governance.get("pipeline", []) if item.get("kind") == "service"]
+    territory = governance_territory_for(career)
+    annual_budget = float(governance.get("annual_budget_mi", governance.get("budget_mi", 0)))
+    budget_available = float(governance.get("budget_mi", 0))
+    if career.get("office") == "presidente":
+        committed = _presidential_investment_commitment_mi(governance)
+        committed_label = "Dotação federal comprometida neste ano"
+    else:
+        committed = sum(float(item.get("cost_mi", 0)) for item in current_programs)
+        committed_label = "Custo previsto dos programas em andamento"
+    report = {
+        "id": f"report-{today.isoformat()}-{len(governance.get('public_reports', [])) + 1}",
+        "date": today.isoformat(),
+        "period_start": period_start_label,
+        "period_end": period_end_label,
+        "office": career.get("office_label", career.get("office", "")),
+        "territory": territory["name"],
+        "annual_budget_mi": round(annual_budget, 1),
+        "budget_available_mi": round(budget_available, 1),
+        "budget_committed_mi": round(committed, 1),
+        "budget_committed_label": committed_label,
+        "programs_reserved_mi": round(sum(float(item.get("cost_mi", 0)) for item in period_actions
+                                           if str(item.get("action", "")).startswith("service_")), 1),
+        "programs_started": sum(1 for item in period_actions if str(item.get("action", "")).startswith("service_")),
+        "programs_completed": len(completed),
+        "programs_in_progress": len(current_programs),
+        "outcomes": {key: round(float(value), 1) for key, value in (governance.get("outcomes") or {}).items()},
+        "simulated": True,
+    }
+    governance.setdefault("public_reports", []).append(report)
+    governance["public_reports"] = governance["public_reports"][-12:]
+    governance["last_public_report_date"] = today.isoformat()
+    return report
 
 
 def governance_actions_for(career: dict[str, Any], governance: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -1390,6 +1459,7 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
                 governance["delivery"] = float(governance.get("delivery", 0)) + 1
                 governance["trust"] = _clamp(governance.get("trust", 50) + 1.5)
                 item["status"] = "delivered"
+                item["completed_at"] = due.isoformat()
                 governance.setdefault("actions", []).append(item)
                 territory = item.get("territory") or governance_territory_for(career)["name"]
                 messages.append(f"Entrega simulada concluída: {item['title']} em {territory}. O indicador de serviço sobe para {outcomes[area['outcome']]:.1f}.")
