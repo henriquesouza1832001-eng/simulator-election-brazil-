@@ -72,6 +72,17 @@ small { font-size: 13px !important; line-height: 1.5 !important; }
 }
 .game-setup-screen small { font-size: 13px !important; }
 
+/* Legacy panels used many 9–11 px captions; keep all supporting copy legible. */
+.app-shell .panel :is(p, label, summary, li, span, small) {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+.app-shell :is(button, .tab, .advance-link, .quiet-button) {
+  font-size: 14px !important;
+  min-height: 40px;
+}
+.app-shell button.primary-button { min-height: 44px; }
+
 /* Expanded indicator groups should size to their own contents, not their row. */
 .all-indicators .indicator-groups {
   align-items: start;
