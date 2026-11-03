@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .ai.interpreter import DEFAULT_MODEL, PROMPT_VERSION, interpret
-from .db import add_correction, archive_state, campaign_exists, campaign_name, connect, correction_count, create_guest_session, current_campaign_id, guest_player_id, initialize, interpretation_count, list_archives, list_campaigns, load_interpretation, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_campaign_id, reset_campaign_id, set_player_id, reset_player_id
+from .db import add_correction, archive_state, campaign_exists, campaign_name, connect, correction_count, create_guest_session, current_campaign_id, current_player_id, guest_player_id, initialize, interpretation_count, list_archives, list_campaigns, load_interpretation, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_campaign_id, reset_campaign_id, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
@@ -1032,7 +1032,7 @@ def train_interpreter_candidate() -> dict[str, Any]:
     """Evaluate reviewed labels for this player and store validated offline candidates."""
     from .ai.trainer import train
 
-    report = train()
+    report = train(player_id=current_player_id())
     player_report = report["reports"][0] if report["reports"] else None
     fields = {}
     if player_report:

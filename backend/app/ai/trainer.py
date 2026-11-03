@@ -21,13 +21,20 @@ from .local_interpreter import ALGORITHM, evaluate_field
 TRAINABLE_FIELDS = ("category", "instrument")
 
 
-def load_reviewed_examples() -> dict[str, list[dict[str, Any]]]:
+def load_reviewed_examples(player_id: str | None = None) -> dict[str, list[dict[str, Any]]]:
     initialize()
     with connect() as db:
-        rows = db.execute(
-            "SELECT player_id, original_text, labels_json FROM interpretation_corrections "
-            "WHERE labels_json IS NOT NULL ORDER BY id"
-        ).fetchall()
+        if player_id is None:
+            rows = db.execute(
+                "SELECT player_id, original_text, labels_json FROM interpretation_corrections "
+                "WHERE labels_json IS NOT NULL ORDER BY id"
+            ).fetchall()
+        else:
+            rows = db.execute(
+                "SELECT player_id, original_text, labels_json FROM interpretation_corrections "
+                "WHERE labels_json IS NOT NULL AND player_id = ? ORDER BY id",
+                (player_id,),
+            ).fetchall()
 
     per_player: dict[str, dict[str, dict[str, Any]]] = {}
     for row in rows:
@@ -83,8 +90,8 @@ def _write_candidate(output_dir: Path, player_hash: str, field: str,
     return str(path)
 
 
-def train(output_dir: Path | None = None) -> dict[str, Any]:
-    examples_by_player = load_reviewed_examples()
+def train(output_dir: Path | None = None, *, player_id: str | None = None) -> dict[str, Any]:
+    examples_by_player = load_reviewed_examples(player_id)
     destination = output_dir or Path(os.getenv(
         "INTERPRETER_MODEL_DIR", str(database_path().parent / "interpreter_models")
     ))

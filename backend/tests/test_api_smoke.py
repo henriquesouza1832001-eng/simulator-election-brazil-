@@ -152,6 +152,15 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(examples[0]["labels"], {
             "category": "public_investment", "instrument": "Ato do Executivo",
         })
+        with connect() as db:
+            db.execute(
+                "INSERT INTO interpretation_corrections (original_text, corrected_interpretation, labels_json, player_id) "
+                "VALUES (?, ?, ?, ?)",
+                ("Outro jogador revisou esta proposta de imposto", "Correção privada",
+                 json.dumps({"category": "tax_change"}), "aaa-other-player"),
+            )
+        self.assertEqual(set(load_reviewed_examples()), {"local", "aaa-other-player"})
+        self.assertEqual(set(load_reviewed_examples("local")), {"local"})
         retrieved = useful_corrections(proposal)
         self.assertEqual(len(retrieved), 1)
         self.assertEqual(retrieved[0]["corrected_labels"], examples[0]["labels"])
@@ -161,6 +170,7 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertFalse(evaluation.json()["live_interpreter_changed"])
         self.assertFalse(evaluation.json()["fields"]["category"]["ready"])
         self.assertEqual(evaluation.json()["reviewed_proposals"], 1)
+        self.assertEqual(evaluation.json()["fields"]["category"]["classes"], {"public_investment": 1})
 
         invalid = self.client.post("/api/learning/corrections", json={
             "original_text": proposal,
