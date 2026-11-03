@@ -366,6 +366,15 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     wait = max(0, 7 - (today - date.fromisoformat(last_action)).days) if last_action else 0
     role = OFFICES[career["office"]]
     governance = career.get("governance") or {}
+    governance_budget_mi = round(float(governance.get("budget_mi", 0)), 1)
+    governance_annual_budget_mi = round(float(governance.get("annual_budget_mi", 0)), 1)
+    governance_budget_source = "career_reserve"
+    governance_investment_commitment_mi = round(float(governance.get("investment_commitment_mi", 0)), 1)
+    if career.get("office") == "presidente" and governance:
+        governance_annual_budget_mi = round(_presidential_investment_cap_mi(state), 1)
+        governance_investment_commitment_mi = round(_presidential_investment_commitment_mi(governance), 1)
+        governance_budget_mi = round(max(0.0, governance_annual_budget_mi - governance_investment_commitment_mi), 1)
+        governance_budget_source = "federal_investment"
     governance_actions = governance_actions_for(career, governance)
     governance_territory = governance_territory_for(career)
     governance_wait = max(0, 30 - (today - date.fromisoformat(governance.get("last_action_date", today.isoformat()))).days) if governance.get("last_action_date") else 0
@@ -404,8 +413,10 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
         "governance_actions": governance_actions, "governance_wait_days": governance_wait,
         "governance_territory": governance_territory,
-        "governance_budget_mi": round(float(governance.get("budget_mi", 0)), 1),
-        "governance_annual_budget_mi": round(float(governance.get("annual_budget_mi", 0)), 1),
+        "governance_budget_mi": governance_budget_mi,
+        "governance_annual_budget_mi": governance_annual_budget_mi,
+        "governance_budget_source": governance_budget_source,
+        "governance_investment_commitment_mi": governance_investment_commitment_mi,
         "governance_budget_price_index": round(float(governance.get("budget_price_index", 1.0)), 3),
         "governance_budget_year": int(governance.get("budget_year", today.year)),
         "political_capital": round(float(governance.get("political_capital", 0)), 1),
@@ -421,6 +432,13 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
     if career["phase"] != "office":
         raise ValueError("Você precisa estar empossado para tomar decisões neste cargo.")
     governance = career.setdefault("governance", {"budget_mi": 0.0, "trust": 50.0, "delivery": 0.0, "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {}})
+    if career["office"] == "presidente":
+        annual_investment_mi = _presidential_investment_cap_mi(state)
+        committed_mi = _presidential_investment_commitment_mi(governance)
+        governance["annual_budget_mi"] = annual_investment_mi
+        governance["investment_commitment_mi"] = round(committed_mi, 1)
+        governance["budget_source"] = "federal_investment"
+        governance["budget_mi"] = round(max(0.0, annual_investment_mi - committed_mi), 1)
     last = governance.get("last_action_date")
     if last and (date.fromisoformat(state["date"]) - date.fromisoformat(last)).days < 30:
         wait = 30 - (date.fromisoformat(state["date"]) - date.fromisoformat(last)).days
@@ -454,6 +472,10 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
             if governance.get("budget_mi", 0) < cost:
                 raise ValueError("A reserva anual desta agenda não cobre o programa. Reavalie o orçamento ou aguarde o próximo ano.")
             governance["budget_mi"] = round(governance["budget_mi"] - cost, 1)
+            if career["office"] == "presidente":
+                governance["investment_commitment_mi"] = round(
+                    _presidential_investment_commitment_mi(governance) + cost, 1
+                )
             due_date = date.fromisoformat(state["date"]) + timedelta(days=area["days"])
             territory = governance_territory_for(career)
             governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "territory": territory["name"], "territory_scope": territory["scope"], "municipality_id": territory.get("municipality_id"), "effect": area["effect"], "cost_mi": cost, "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
@@ -505,6 +527,21 @@ def governance_territory_for(career: dict[str, Any]) -> dict[str, Any]:
     if office == "presidente":
         return {"scope": "País", "name": "Brasil"}
     return {"scope": "Representação legislativa", "name": career.get("municipality") or career.get("state_name") or "Brasil"}
+
+
+def _presidential_investment_cap_mi(state: dict[str, Any]) -> float:
+    """Presidential programs use the existing federal investment appropriation."""
+    return max(0.0, float((state.get("budget") or {}).get("annual_investment_bi", 100.0)) * 1000)
+
+
+def _presidential_investment_commitment_mi(governance: dict[str, Any]) -> float:
+    committed = governance.get("investment_commitment_mi")
+    if committed is not None:
+        return max(0.0, float(committed))
+    # Derive the committed amount when opening a save from the previous version.
+    annual = float(governance.get("annual_budget_mi", governance.get("budget_mi", 0)))
+    available = float(governance.get("budget_mi", annual))
+    return max(0.0, annual - available)
 
 
 def career_debate_prompt(career: dict[str, Any], issue: str) -> dict[str, str]:
@@ -757,11 +794,14 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         next_election_year = date.fromisoformat(transition_date).year + career["term_years"] - 1
         reelection_day = _regular_election_day(career["office"], date.fromisoformat(career["election_date"]), next_election_year)
         career["election_date"] = reelection_day.isoformat()
-        executive_funds = {"prefeito": 350.0, "governador": 12000.0, "presidente": 100000.0}
-        annual_budget = executive_funds.get(career["office"], 0.0)
+        executive_funds = {"prefeito": 350.0, "governador": 12000.0}
+        annual_budget = (_presidential_investment_cap_mi(state) if career["office"] == "presidente"
+                         else executive_funds.get(career["office"], 0.0))
         career["governance"] = {"budget_mi": annual_budget, "annual_budget_mi": annual_budget,
                                 "budget_year": date.fromisoformat(transition_date).year, "trust": 50.0, "delivery": 0.0,
                                 "budget_price_index": 1.0, "political_capital": 50.0, "actions": [], "pipeline": [],
+                                "budget_source": "federal_investment" if career["office"] == "presidente" else "career_reserve",
+                                "investment_commitment_mi": 0.0,
                                 "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0, "mobility": 50.0,
                                              "sanitation": 50.0, "infrastructure": 50.0}}
         state["office_status"] = "elected_official"
@@ -788,8 +828,15 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
     if career.get("phase") == "office" and governance:
         budget_year = int(governance.get("budget_year", before.year))
         if after.year > budget_year:
-            annual = float(governance.get("annual_budget_mi", 0))
-            governance["budget_mi"] = round(min(annual, float(governance.get("budget_mi", 0)) + annual), 1)
+            if career["office"] == "presidente":
+                annual = _presidential_investment_cap_mi(state)
+                governance["investment_commitment_mi"] = 0.0
+                governance["budget_source"] = "federal_investment"
+                governance["budget_mi"] = round(annual, 1)
+                governance["annual_budget_mi"] = round(annual, 1)
+            else:
+                annual = float(governance.get("annual_budget_mi", 0))
+                governance["budget_mi"] = round(min(annual, float(governance.get("budget_mi", 0)) + annual), 1)
             price_index = float(governance.get("budget_price_index", 1.0))
             inflation_pct = float(state.get("metrics", {}).get("inflation", 4.5))
             annual_price_change = min(0.25, max(0.0, inflation_pct / 100.0))
@@ -799,7 +846,8 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
             governance["budget_year"] = after.year
             if career["office"] in LEGISLATIVE_OFFICES:
                 governance["political_capital"] = min(100.0, float(governance.get("political_capital", 50)) + 25.0)
-            messages.append(f"O novo ano começou: a reserva anual simulada foi atualizada e o custo-base dos programas subiu {annual_price_change * 100:.1f}% pela inflação do cenário.")
+            reserve_name = "a dotação federal de investimentos" if career["office"] == "presidente" else "a reserva anual simulada"
+            messages.append(f"O novo ano começou: {reserve_name} foi atualizada e o custo-base dos programas subiu {annual_price_change * 100:.1f}% pela inflação do cenário.")
         remaining = []
         for item in governance.get("pipeline", []):
             due = date.fromisoformat(item["due_date"])

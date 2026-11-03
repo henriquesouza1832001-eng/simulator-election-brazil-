@@ -133,6 +133,21 @@ def fiscal_overview(state: dict[str, Any]) -> dict[str, Any]:
         {"key": "official_travel", "label": "Viagens oficiais", "annual_bi": float(lines.get("official_travel", {}).get("annual_cost_bi", 0)) * (1 - travel_cut / 100)},
         {"key": "official_residence", "label": "Residencias oficiais", "annual_bi": float(lines.get("official_residence", {}).get("annual_cost_bi", 0)) * (1 - residence_cut / 100)},
     ])
+    executive_investment = None
+    career = state.get("career") or {}
+    governance = career.get("governance") or {}
+    if career.get("office") == "presidente" and governance and state.get("office_status") == "elected_official":
+        annual_cap_bi = float(budget.get("annual_investment_bi", 100.0))
+        legacy_annual_mi = float(governance.get("annual_budget_mi", annual_cap_bi * 1000))
+        legacy_available_mi = float(governance.get("budget_mi", legacy_annual_mi))
+        committed_mi = max(0.0, float(governance.get("investment_commitment_mi", legacy_annual_mi - legacy_available_mi)))
+        executive_investment = {
+            "annual_cap_bi": annual_cap_bi,
+            "committed_bi": committed_mi / 1000,
+            "available_bi": max(0.0, annual_cap_bi * 1000 - committed_mi) / 1000,
+            "overcommitted_bi": max(0.0, committed_mi - annual_cap_bi * 1000) / 1000,
+            "simulated": True,
+        }
     return {"currency": "R$ bi por ano", "nominal_gdp_bi": float(fiscal["nominal_gdp_bi"]),
             "revenue": [{"key": key, "label": line["label"], "annual_bi": float(line["annual_bi"])} for key, line in fiscal["revenue_lines"].items()],
             "primary_spending": primary_spending, "annual_revenue_bi": float(fiscal["annual_revenue_bi"]),
@@ -147,7 +162,9 @@ def fiscal_overview(state: dict[str, Any]) -> dict[str, Any]:
             "debt_pct_gdp": float(state["metrics"]["debt_gdp"]),
             "fiscal_credibility": float(state["metrics"]["fiscal_credibility"]),
             "country_risk": float(state["metrics"]["country_risk"]),
-            "note": "Estimativas simplificadas do simulador; nao sao execucao oficial do orcamento."}
+            "executive_investment": executive_investment,
+            "note": "Estimativas simplificadas do simulador; nao sao execucao oficial do orcamento."
+                    + (" Programas presidenciais comprometidos estao incluidos na rubrica Investimentos e nao sao somados novamente." if executive_investment else "")}
 
 
 def record_policy_balance_delta(state: dict[str, Any], delta_pct_gdp: float) -> None:

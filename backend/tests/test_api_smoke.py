@@ -18,6 +18,7 @@ from app.db import (
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.career import advance_career, governance_actions_for, perform_governance_action
+from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
 from app.main import app
 from app.engine.state import new_game
@@ -296,6 +297,55 @@ class ApiSmokeTests(unittest.TestCase):
         adjusted_cost = next(item["cost_mi"] for item in governance_actions_for(annual_state["career"], annual_governance)
                              if item["key"] == "service_education")
         self.assertEqual(adjusted_cost, 18.9)
+
+    def test_presidential_programs_share_the_federal_investment_appropriation(self) -> None:
+        state = new_game()
+        state["date"] = "2027-06-01"
+        state["office_status"] = "elected_official"
+        state["budget"]["annual_investment_bi"] = 72.5
+        state["career"] = {
+            "mode": True, "phase": "office", "office": "presidente", "scope": "federal",
+            "state_code": "DF", "state_name": "Distrito Federal",
+            "governance": {"budget_mi": 100000.0, "annual_budget_mi": 100000.0,
+                           "budget_year": 2027, "budget_price_index": 1.0, "trust": 50.0,
+                           "delivery": 0.0, "political_capital": 50.0, "actions": [],
+                           "pipeline": [], "outcomes": {"education": 50.0}},
+        }
+
+        action = perform_governance_action(state, "service_education")
+        governance = state["career"]["governance"]
+        self.assertEqual(action["action"]["cost_mi"], 4500.0)
+        self.assertEqual(governance["annual_budget_mi"], 72500.0)
+        self.assertEqual(governance["budget_mi"], 68000.0)
+        self.assertEqual(governance["investment_commitment_mi"], 4500.0)
+
+        state["date"] = "2027-07-02"
+        state["budget"]["annual_investment_bi"] = 60.0
+        health_action = perform_governance_action(state, "service_health")
+        self.assertEqual(health_action["action"]["cost_mi"], 6500.0)
+        self.assertEqual(governance["annual_budget_mi"], 60000.0)
+        self.assertEqual(governance["budget_mi"], 49000.0)
+        self.assertEqual(governance["investment_commitment_mi"], 11000.0)
+
+        fiscal = fiscal_overview(state)
+        investment = next(item for item in fiscal["primary_spending"] if item["key"] == "investment")
+        self.assertEqual(investment["annual_bi"], 60.0)
+        self.assertAlmostEqual(fiscal["executive_investment"]["committed_bi"], 11.0)
+        self.assertAlmostEqual(fiscal["executive_investment"]["available_bi"], 49.0)
+        self.assertAlmostEqual(sum(item["annual_bi"] for item in fiscal["primary_spending"]), fiscal["annual_primary_spending_bi"])
+
+        annual_state = new_game()
+        annual_state["career"] = {
+            "mode": True, "phase": "office", "office": "presidente", "scope": "federal",
+            "election_date": "2028-10-01", "term_end": "2031-01-04",
+            "governance": {"budget_mi": 20000.0, "annual_budget_mi": 72500.0,
+                           "budget_year": 2027, "budget_price_index": 1.0,
+                           "investment_commitment_mi": 52500.0, "pipeline": [], "actions": []},
+        }
+        advance_career(annual_state, date(2027, 12, 31), date(2028, 1, 1))
+        renewed = annual_state["career"]["governance"]
+        self.assertEqual(renewed["budget_mi"], 100000.0)
+        self.assertEqual(renewed["investment_commitment_mi"], 0.0)
 
     def test_difficulty_profiles_change_game_parameters(self) -> None:
         easy = get_difficulty("tranquilo")
