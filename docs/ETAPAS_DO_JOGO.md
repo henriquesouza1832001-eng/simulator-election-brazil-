@@ -50,7 +50,7 @@ Catálogo municipal, seleção do local de campanha e temas canônicos já têm 
 
 - Manter um catálogo único no motor com nome, unidade, grupo, fonte, explicação e histórico de cada indicador.
 - Distinguir valor observado no cenário, estimativa do jogo e dado importado com fonte/data.
-- Expandir a prévia de ação para mostrar efeito imediato e estimativas de 1, 3 e 12 meses, com incerteza e condições. A mesma trajetória deverá ser aplicada pelo motor ao avançar o calendário.
+- **Primeira fatia entregue:** a prévia de medida mostra o delta direto que o motor aplicará, além de um cenário isolado em 3, 6 e 12 meses. Projetos exibem zero efeito antes da votação simulada e deixam explícito que os valores seguintes dependem de aprovação; não se inventa probabilidade. Cada horizonte repete o impacto uma vez, sem somá-lo mês a mês. Ainda falta simular acúmulo, encerramento de políticas e efeitos indiretos no calendário.
 - Mostrar por que o resultado mudou: medidas, eventos, preços, juros, coalizão ou execução de orçamento.
 
 ### 2. Orçamento e obras nacionais

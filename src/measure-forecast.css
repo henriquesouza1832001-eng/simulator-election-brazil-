@@ -1,0 +1,24 @@
+.measure-forecast{margin:16px 0;border:1px solid #263b32;border-radius:8px;background:#0b1512;padding:13px}
+.measure-forecast-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.measure-forecast-heading h4{margin:5px 0;font:600 14px Manrope,sans-serif;color:#e6f0eb}
+.measure-forecast-heading>span{font-size:11px;color:#aebdb5}
+.measure-impact-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}
+.measure-impact-summary article{display:grid;gap:5px;padding:9px;border:1px solid #263b32;border-radius:6px;background:#101d18}
+.measure-impact-summary article>span,.measure-impact-summary article>small{color:#aebdb5;font-size:11px;line-height:1.35}
+.measure-impact-summary article>b{color:#f0f5f2;font:600 13px Manrope,sans-serif}
+.measure-impact-summary article>b small{font:400 10px 'DM Sans',sans-serif;color:#aebdb5}
+.measure-forecast-details{margin-top:10px;border-top:1px solid #263b32;padding-top:9px}
+.measure-forecast-details summary{cursor:pointer;color:#a9d7bd;font-size:12px;font-weight:600}
+.measure-timeline{display:grid;gap:7px;margin-top:10px}
+.measure-timeline>article{padding:9px;border:1px solid #263b32;border-radius:6px;background:#0f1916}
+.measure-timeline>article.conditional{border-color:#67552d;background:#1b1912}
+.measure-stage-heading{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.measure-stage-heading>b{color:#eaf2ed;font-size:12px;white-space:nowrap}
+.measure-stage-heading>span{color:#afc0b7;font-size:11px;line-height:1.4;text-align:right}
+.measure-stage-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}
+.measure-stage-metrics>div{display:grid;gap:3px}
+.measure-stage-metrics span{color:#9aaca3;font-size:10px}
+.measure-stage-metrics b{color:#e9f2ed;font:600 12px Manrope,sans-serif}
+.measure-stage-metrics b small{color:#9aaca3;font:400 10px 'DM Sans',sans-serif}
+.measure-forecast-notes{display:grid;gap:4px;margin:9px 0 0;padding-left:18px;color:#aab9b1;font-size:10px;line-height:1.4}
+@media(max-width:620px){.measure-forecast{padding:11px}.measure-impact-summary{grid-template-columns:1fr}.measure-stage-heading{align-items:flex-start;flex-direction:column;gap:3px}.measure-stage-heading>span{text-align:left}.measure-stage-metrics{grid-template-columns:1fr 1fr}.measure-stage-metrics>div:last-child{grid-column:1/-1}}

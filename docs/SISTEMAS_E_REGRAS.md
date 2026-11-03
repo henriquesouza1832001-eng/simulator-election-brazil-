@@ -70,6 +70,8 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 - **Fronteira canônica IA/motor:** o motor Python valida ações, altera o estado e calcula custos, probabilidades, efeitos e resultados. A IA classifica intenção, sugere rótulos e redige explicações; valores fiscais são extraídos no servidor do texto original e a aplicação recupera a prévia registrada do jogador pelo ID. Saída numérica do modelo ou do navegador nunca é, por si só, regra ou efeito. A extração atual exige valor monetário explícito e não estima um orçamento ausente; veja [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md).
 - Medidas executivas têm intervalo de agenda. Projetos têm prazo e votação simulada; o envio não é aprovação.
 - A tela apresenta custo/financiamento, grupos afetados, prazo, incerteza, efeitos agora e consequências em meses futuros.
+- A prévia compara os indicadores atuais com o delta direto da regra e mostra cenários isolados em 3, 6 e 12 meses. Ato executivo tem efeito na assinatura; projeto de lei fica sem efeito até a votação simulada e, depois, o cenário é condicional à aprovação. Não há probabilidade legislativa nesta versão.
+- O horizonte repete o delta inicial, sem acumulá-lo mês a mês. A trajetória não simula expiração nem efeitos indiretos; eventos e novas decisões podem mudar os valores reais.
 - Toda decisão é registrada com data, parâmetros, resultado e origem. Prévia não aplicada e correção humana também têm registros próprios por jogador; saída automática não é rótulo de treino e avaliação de narrativa fica separada.
 
 ### Orçamento, serviços e obras

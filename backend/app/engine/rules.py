@@ -14,33 +14,93 @@ RULES: dict[str, dict[str, Any]] = {
 }
 
 
-def forecast(state: dict[str, Any], interpretation: dict[str, Any]) -> list[dict[str, str]]:
+def _measure_result(state: dict[str, Any], interpretation: dict[str, Any]) -> dict[str, float]:
+    """Return the exact one-time metric changes that apply_effects will record."""
     rule = RULES.get(interpretation.get("category", "other"), RULES["other"])
-    duration = interpretation.get("duration_days") or 365
-    factor = min(1.0, max(0.2, duration / 365))
-    fiscal = rule["fiscal"] * factor
-    gdp = rule["gdp"] * factor
-    approval = rule["approval"]
-    if interpretation.get("fiscal_cost_bi", 0) > 0:
-        fiscal -= min(0.25, interpretation["fiscal_cost_bi"] / 1000)
-    return [
-        {"label": "Saldo fiscal anual", "value": f"{fiscal:+.2f} p.p. do PIB", "tone": "green" if fiscal >= 0 else "red"},
-        {"label": "Crescimento do PIB", "value": f"{gdp:+.2f} p.p.", "tone": "green" if gdp >= 0 else "amber"},
-        {"label": "Aprovação", "value": f"{approval:+.1f} p.p.", "tone": "green" if approval >= 0 else "red"},
-    ]
+    metrics = state.get("metrics", {})
+    balance = float(metrics.get("primary_balance", 0))
+    growth = float(metrics.get("gdp_growth", 0))
+    approval = float(metrics.get("approval", 0))
+    cost = max(0.0, float(interpretation.get("fiscal_cost_bi", 0) or 0))
+    return {
+        "primary_balance": round(balance + rule["fiscal"] * 0.12 - min(0.1, cost / 10000), 2),
+        "gdp_growth": round(growth + rule["gdp"] * 0.15, 2),
+        "approval": round(min(100, max(0, approval + rule["approval"])), 1),
+    }
 
+
+def forecast(state: dict[str, Any], interpretation: dict[str, Any]) -> dict[str, Any]:
+    """Project the isolated direct result by horizon; do not invent passage odds."""
+    from datetime import date, timedelta
+
+    baseline = {
+        "primary_balance": float(state.get("metrics", {}).get("primary_balance", 0)),
+        "gdp_growth": float(state.get("metrics", {}).get("gdp_growth", 0)),
+        "approval": float(state.get("metrics", {}).get("approval", 0)),
+    }
+    result = _measure_result(state, interpretation)
+    names = {
+        "primary_balance": ("Resultado primário", "p.p. do PIB"),
+        "gdp_growth": ("Crescimento do PIB", "p.p."),
+        "approval": ("Aprovação", "p.p."),
+    }
+    metric_rows = lambda values: [
+        {"key": key, "label": names[key][0], "unit": names[key][1],
+         "before": baseline[key], "after": values[key],
+         "delta": round(values[key] - baseline[key], 2 if key != "approval" else 1)}
+        for key in names
+    ]
+    instrument = str(interpretation.get("instrument", "")).strip().lower()
+    legal_days = {
+        "projeto de lei": 90,
+        "projeto de lei complementar": 150,
+        "pec": 150,
+    }
+    decision_days = legal_days.get(instrument, 0)
+    try:
+        today = date.fromisoformat(state.get("date", date.today().isoformat()))
+    except (TypeError, ValueError):
+        today = date.today()
+    decision_date = (today + timedelta(days=decision_days)).isoformat() if decision_days else None
+
+    timeline = []
+    for day, label in [(0, "Agora"), (90, "Em 3 meses"), (180, "Em 6 meses"), (365, "Em 12 meses")]:
+        pending = decision_days > day
+        conditional = decision_days > 0 and not pending
+        projected = baseline if pending else result
+        if decision_days == 0:
+            status = "Efeito direto se assinar agora" if day == 0 else "Impacto inicial mantido, isolando outros eventos"
+        elif pending:
+            status = f"Em tramitação; votação simulada prevista para {decision_date}"
+        else:
+            status = "Se aprovada; se rejeitada, permanece sem este efeito"
+        timeline.append({
+            "day": day,
+            "label": label,
+            "status": status,
+            "conditional_on_approval": conditional,
+            "metrics": metric_rows(projected),
+        })
+
+    return {
+        "impact_if_applied": metric_rows(result),
+        "timeline": timeline,
+        "notes": [
+            "Projeção isolada desta decisão: eventos, economia e novas medidas podem alterar os indicadores.",
+            "O impacto é registrado uma vez; os horizontes não somam o mesmo ganho a cada mês.",
+            "A tramitação não recebe probabilidade de aprovação nesta versão.",
+        ],
+    }
 
 def apply_effects(state: dict[str, Any], interpretation: dict[str, Any]) -> list[dict[str, Any]]:
     ensure_fiscal_state(state)
     rule = RULES.get(interpretation.get("category", "other"), RULES["other"])
     m = state["metrics"]
     previous_primary_balance = float(m["primary_balance"])
-    # Fiscal and growth forecasts are annualized; state changes by a small fraction at adoption.
-    m["primary_balance"] = round(m["primary_balance"] + rule["fiscal"] * 0.12, 2)
-    m["gdp_growth"] = round(m["gdp_growth"] + rule["gdp"] * 0.15, 2)
-    m["approval"] = round(min(100, max(0, m["approval"] + rule["approval"])), 1)
+    projected = _measure_result(state, interpretation)
+    m["primary_balance"] = projected["primary_balance"]
+    m["gdp_growth"] = projected["gdp_growth"]
+    m["approval"] = projected["approval"]
     m["governability"] = int(min(100, max(0, m["governability"] + (1 if interpretation.get("instrument") == "Ato do Executivo" else 0))))
-    if interpretation.get("fiscal_cost_bi", 0) > 0:
-        m["primary_balance"] = round(m["primary_balance"] - min(0.1, interpretation["fiscal_cost_bi"] / 10000), 2)
     record_policy_balance_delta(state, float(m["primary_balance"]) - previous_primary_balance)
     return [{"label": rule["label"], "fiscal_delta": rule["fiscal"], "gdp_delta": rule["gdp"], "approval_delta": rule["approval"]}]

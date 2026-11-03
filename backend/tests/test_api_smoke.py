@@ -22,6 +22,7 @@ from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
 from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
+from app.engine.rules import apply_effects, forecast
 from app.main import app, require_presidential_authority
 from app.engine.state import advance_state, new_game
 
@@ -122,6 +123,25 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json()["detail"], "A interpretação não pôde ser gerada. Tente novamente.")
 
+    def test_measure_forecast_matches_applied_delta_and_marks_legislative_uncertainty(self) -> None:
+        state = new_game()
+        interpretation = {
+            "category": "security", "instrument": "Ato do Executivo", "fiscal_cost_bi": 20,
+        }
+        preview = forecast(state, interpretation)
+        apply_effects(state, interpretation)
+        self.assertEqual(preview["impact_if_applied"][0]["after"], state["metrics"]["primary_balance"])
+        self.assertEqual(preview["impact_if_applied"][1]["after"], state["metrics"]["gdp_growth"])
+        self.assertEqual(preview["impact_if_applied"][2]["after"], state["metrics"]["approval"])
+        self.assertEqual(preview["timeline"][0]["metrics"][0]["after"], state["metrics"]["primary_balance"])
+
+        bill = forecast(new_game(), {
+            "category": "public_investment", "instrument": "Projeto de Lei", "fiscal_cost_bi": 0,
+        })
+        self.assertEqual(bill["timeline"][0]["metrics"][1]["delta"], 0)
+        self.assertTrue(bill["timeline"][1]["conditional_on_approval"])
+        self.assertIn("Se aprovada", bill["timeline"][1]["status"])
+        self.assertEqual(bill["timeline"][2]["metrics"][1]["delta"], 0.02)
     def test_structured_interpretation_correction_is_saved_for_offline_training(self) -> None:
         proposal = "Ampliar a rede de saneamento com investimento público planejado."
         preview = self.client.post("/api/measures/preview", json={"text": proposal})
