@@ -21,9 +21,30 @@ MANDATORY_LINES = {
 }
 
 
+def _ensure_operating_price_lines(state: dict[str, Any]) -> dict[str, Any]:
+    operating = state.setdefault("budget", {}).setdefault("operating", {})
+    operating.setdefault("last_review", None)
+    operating.setdefault("travel_cut_pct", 0)
+    operating.setdefault("residence_cut_pct", 0)
+    lines = operating.setdefault("lines", {})
+    defaults = {
+        "official_travel": {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
+                            "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."},
+        "official_residence": {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
+                                "description": "Manutencao, servicos e funcionamento das residencias oficiais."},
+    }
+    for key, default in defaults.items():
+        line = lines.setdefault(key, dict(default))
+        current = max(0.0, float(line.get("annual_cost_bi", default["annual_cost_bi"])))
+        base = max(0.01, float(line.setdefault("base_annual_cost_bi", current)))
+        line.setdefault("price_index", max(0.01, current / base))
+    return lines
+
+
 def ensure_fiscal_state(state: dict[str, Any]) -> dict[str, Any]:
     """Initialize/migrate the cash ledger while preserving the saved primary balance."""
     fiscal = state.setdefault("fiscal", {})
+    _ensure_operating_price_lines(state)
     if fiscal.get("initialized"):
         return fiscal
 
@@ -206,11 +227,15 @@ def advance_fiscal(state: dict[str, Any], elapsed_days: int, volatility: float =
     for line in fiscal["mandatory_lines"].values():
         line["annual_bi"] *= expense_factor
     fiscal["procurement_bi"] = float(fiscal["procurement_bi"]) * expense_factor
-    operating_lines = state.get("budget", {}).get("operating", {}).get("lines", {})
+    operating_lines = _ensure_operating_price_lines(state)
     for line_key in ("official_travel", "official_residence"):
         line = operating_lines.get(line_key)
         if line is not None:
-            line["annual_cost_bi"] = max(0.0, float(line.get("annual_cost_bi", 0)) * expense_factor)
+            line["price_index"] = max(0.01, float(line.get("price_index", 1.0)) * expense_factor)
+            line["annual_cost_bi"] = max(
+                0.0,
+                float(line.get("base_annual_cost_bi", line.get("annual_cost_bi", 0))) * line["price_index"],
+            )
 
     refresh_fiscal_metrics(state)
     annual_primary_deficit = float(fiscal["annual_primary_spending_bi"]) - float(fiscal["annual_revenue_bi"])

@@ -20,6 +20,7 @@ from app.db import (
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.career import _is_explicit_promise, advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
+from app.engine.diplomacy import attend_international_event, diplomacy_overview, visit_country
 from app.engine.fiscal import advance_fiscal, fiscal_overview
 from app.engine.geography import get_municipality, get_state_population
 from app.engine.issues import canonical_issue_ids
@@ -852,6 +853,22 @@ class ApiSmokeTests(unittest.TestCase):
         overview = fiscal_overview(state)
         travel_spending = next(item["annual_bi"] for item in overview["primary_spending"] if item["key"] == "official_travel")
         self.assertAlmostEqual(travel_spending, 2.52)
+        diplomacy = diplomacy_overview(state)
+        argentina = next(item for item in diplomacy["countries"] if item["code"] == "ARG")
+        self.assertEqual(argentina["base_travel_cost_bi"], 0.045)
+        self.assertEqual(argentina["travel_cost_bi"], 0.0473)
+        trip = visit_country(state, "ARG", "trade")
+        self.assertEqual(trip["cost_bi"], 0.0473)
+        self.assertEqual(state["budget"]["operating"]["spent_by_year"]["2027"], 0.0473)
+
+        event_state = new_game()
+        event_state["date"] = "2027-03-01"
+        event_line = event_state["budget"]["operating"]["lines"]["official_travel"]
+        event_line.update({"price_index": 1.05, "annual_cost_bi": 2.52})
+        event_preview = next(item for item in diplomacy_overview(event_state)["events"] if item["id"] == "mercosur-eu-2027")
+        self.assertEqual(event_preview["cost_bi"], 0.084)
+        event_result = attend_international_event(event_state, "mercosur-eu-2027")
+        self.assertEqual(event_result["cost_bi"], 0.084)
 
         daily_state = new_game()
         daily_state["metrics"]["inflation"] = 5.0

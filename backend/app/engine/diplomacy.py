@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+from .fiscal import ensure_fiscal_state
+
 COUNTRIES: dict[str, dict[str, Any]] = {
     "ARG": {"name": "Argentina", "region": "America do Sul", "relation": 62, "trade_weight": 6, "travel_cost_bi": .045, "focus": "comercio e energia"},
     "CHL": {"name": "Chile", "region": "America do Sul", "relation": 61, "trade_weight": 4, "travel_cost_bi": .05, "focus": "mineracao e energia limpa"},
@@ -40,6 +42,7 @@ INTERNATIONAL_EVENTS = [
 
 
 def ensure_diplomacy_state(state: dict[str, Any]) -> dict[str, Any]:
+    ensure_fiscal_state(state)
     diplomacy = state.setdefault("diplomacy", {})
     saved = diplomacy.setdefault("countries", {})
     for code, country in COUNTRIES.items():
@@ -63,8 +66,17 @@ def _days_until_visit(state: dict[str, Any], diplomacy: dict[str, Any]) -> int:
 def diplomacy_overview(state: dict[str, Any]) -> dict[str, Any]:
     diplomacy = ensure_diplomacy_state(state)
     today = date.fromisoformat(state["date"])
-    countries = [{"code": code, **config, "trip_days": _country_trip_days(config), **diplomacy["countries"][code]} for code, config in COUNTRIES.items()]
-    events = [{**event, "days_until": (date.fromisoformat(event["date"]) - today).days,
+    travel_price_index = _travel_price_index(state)
+    countries = [{"code": code, **config,
+                  "base_travel_cost_bi": config["travel_cost_bi"],
+                  "travel_cost_bi": round(config["travel_cost_bi"] * travel_price_index, 4),
+                  "travel_price_index": round(travel_price_index, 4),
+                  "trip_days": _country_trip_days(config), **diplomacy["countries"][code]}
+                 for code, config in COUNTRIES.items()]
+    events = [{**event, "base_cost_bi": event["cost_bi"],
+               "cost_bi": round(float(event["cost_bi"]) * travel_price_index, 4),
+               "travel_price_index": round(travel_price_index, 4),
+               "days_until": (date.fromisoformat(event["date"]) - today).days,
                "trip_days": _event_trip_days(event, (date.fromisoformat(event["date"]) - today).days),
                "outbound_days": _event_outbound_days(event)}
               for event in diplomacy["events"] if event.get("status") == "upcoming"
@@ -152,6 +164,16 @@ def _spend_travel(state: dict[str, Any], amount_bi: float) -> None:
     # Travel is charged against the annual operating line already in primary spending.
 
 
+def _travel_price_index(state: dict[str, Any]) -> float:
+    line = state["budget"]["operating"]["lines"]["official_travel"]
+    base = max(0.01, float(line.get("base_annual_cost_bi", 2.4)))
+    return max(0.01, float(line.get("price_index", float(line.get("annual_cost_bi", base)) / base)))
+
+
+def _indexed_travel_cost(state: dict[str, Any], base_cost_bi: float) -> float:
+    return round(float(base_cost_bi) * _travel_price_index(state), 4)
+
+
 def _begin_trip(state: dict[str, Any], destination: str, destination_code: str | None,
                 trip_days: int, cost_bi: float, trip_type: str, agenda: str,
                 event_id: str | None = None, outbound_days: int = 1,
@@ -194,7 +216,7 @@ def visit_country(state: dict[str, Any], country_code: str, agenda: str) -> dict
     if last and (today - date.fromisoformat(last)).days < 180:
         raise ValueError("Esta visita bilateral ocorreu nos ultimos seis meses.")
     config = COUNTRIES[code]
-    cost = float(config["travel_cost_bi"])
+    cost = _indexed_travel_cost(state, float(config["travel_cost_bi"]))
     trip = _begin_trip(state, config["name"], code, _country_trip_days(config), cost, "bilateral", AGENDAS[agenda],
                        outbound_days=_country_outbound_days(config), return_days=_country_outbound_days(config))
     diplomacy["visit_log"].insert(0, {"id": trip["id"], "date": today.isoformat(), "country": config["name"], "code": code,
@@ -223,11 +245,12 @@ def attend_international_event(state: dict[str, Any], event_id: str) -> dict[str
     if today > event_date or today + timedelta(days=_event_outbound_days(event)) > event_date:
         event["status"] = "missed"
         raise ValueError("Nao ha dias suficientes para chegar ao evento; ele foi perdido nesta simulacao.")
-    trip = _begin_trip(state, event["place"], None, trip_days, float(event["cost_bi"]), "multilateral", event["kind"], event_id,
+    cost = _indexed_travel_cost(state, float(event["cost_bi"]))
+    trip = _begin_trip(state, event["place"], None, trip_days, cost, "multilateral", event["kind"], event_id,
                        outbound_days=_event_outbound_days(event), return_days=_event_return_days(event))
     event["status"] = "traveling"
     event["trip_id"] = trip["id"]
-    return {"event": event["name"], "cost_bi": event["cost_bi"], "duration_days": trip_days,
+    return {"event": event["name"], "cost_bi": cost, "duration_days": trip_days,
             "arrival_date": trip["arrival_date"],
             "message": f"Viagem simulada para {event['name']} iniciada. A chegada esta prevista para {trip['arrival_date']}."}
 
