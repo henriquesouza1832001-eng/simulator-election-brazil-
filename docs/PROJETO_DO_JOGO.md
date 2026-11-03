@@ -14,6 +14,12 @@ Um simulador de carreira política e governo brasileiro, jogável no navegador e
 
 O primeiro ciclo pode ser uma campanha municipal seguida do mandato conquistado. Para quem prefere começar no Planalto, o jogo também poderá oferecer cenário de governo pronto.
 
+### Fora do 0.1: modo opcional de legado
+
+Uma camada de RPG de vida pública pode virar uma expansão separada depois que campanha e governo estiverem estáveis. Ela permitiria acompanhar uma trajetória por papéis — por exemplo, político, jornalista, advogado ou empresário — com progressão pessoal, relações e acontecimentos narrativos próprios. Seria opcional, com campanha e saves separados, sem exigir que todo jogador use mecânicas de RPG para governar.
+
+Esta ideia fica no backlog: não deve ampliar o menu nem o escopo de implementação do 0.1. Primeiro, entregar um ciclo político coeso, jogável e claro, da escolha de cargo à eleição e ao mandato. Depois, validar se há interesse e desenhar a progressão narrativa sem misturá-la aos indicadores e regras do simulador principal.
+
 ## Dificuldade
 
 Os cinco níveis reutilizam as mesmas regras centrais; mudam pressão, margem de erro, recursos e frequência de eventos. Assim, um evento não se contradiz entre modos.
