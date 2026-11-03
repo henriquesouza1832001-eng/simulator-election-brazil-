@@ -9,8 +9,11 @@ param(
 $ErrorActionPreference = "Stop"
 $awsCommand = (Get-Command aws -ErrorAction SilentlyContinue).Source
 if (-not $awsCommand) {
-    $knownPath = Join-Path $env:ProgramFiles "Amazon\AWSCLIV2\aws.exe"
-    if (Test-Path $knownPath) { $awsCommand = $knownPath }
+    $knownPaths = @(
+        (Join-Path $env:ProgramFiles "Amazon\AWSCLIV2\aws.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Amazon\AWSCLIV2\aws.exe")
+    )
+    $awsCommand = $knownPaths | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 }
 if (-not $awsCommand) {
     throw "AWS CLI v2 não está instalado. Instale e autentique a CLI antes de configurar o deploy."

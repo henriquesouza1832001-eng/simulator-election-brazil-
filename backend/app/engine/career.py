@@ -1284,9 +1284,10 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
         continuity = "Voc\u00ea segue na oposi\u00e7\u00e3o; a carreira pode continuar com outra disputa ou uma indica\u00e7\u00e3o pol\u00edtica."
     if runoff_results and not any(item.get("is_player") for item in runoff_results):
         return f"Resultado final simulado: sua candidatura ficou fora do segundo turno com {vote_share:.1f}% no primeiro turno. {electoral_summary} {continuity}"
+    result_label = "vit\u00f3ria" if won else "derrota"
     if runoff_results:
-        return f"Resultado eleitoral simulado no segundo turno: {'vit\u00f3ria' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
-    return f"Resultado eleitoral simulado: {'vit\u00f3ria' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
+        return f"Resultado eleitoral simulado no segundo turno: {result_label} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
+    return f"Resultado eleitoral simulado: {result_label} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
 
 
 def advance_career(state: dict[str, Any], before: date, after: date) -> list[str]:
