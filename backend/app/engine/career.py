@@ -16,7 +16,7 @@ from typing import Any
 
 from .communications import ensure_communications_state
 from .electoral_integrity import campaign_conduct_preview, resolve_campaign_conduct, settle_campaign_conduct
-from .geography import get_municipality, resolve_municipality
+from .geography import get_municipality, get_state_population, resolve_municipality
 from .issues import ISSUE_LABELS
 
 
@@ -152,6 +152,10 @@ EXECUTIVE_SERVICE_BASE_COSTS = {
     "prefeito": {"education": 18.0, "health": 22.0, "mobility": 14.0, "sanitation": 20.0, "employment": 16.0},
     "governador": {"education": 400.0, "health": 500.0, "security": 380.0, "mobility": 650.0, "sanitation": 470.0, "infrastructure": 900.0, "employment": 350.0},
     "presidente": {"education": 4500.0, "health": 6500.0, "security": 5000.0, "mobility": 8500.0, "sanitation": 6000.0, "infrastructure": 12000.0, "employment": 4200.0},
+}
+EXECUTIVE_BUDGET_BASELINES = {
+    "prefeito": {"population": 100_000, "annual_budget_mi": 350.0},
+    "governador": {"population": 5_000_000, "annual_budget_mi": 12_000.0},
 }
 PROMISE_OUTCOMES = {
     "economia": "employment", "saude": "health", "educacao": "education",
@@ -850,6 +854,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     opponents = _ensure_opponents(career)
     role = OFFICES[career["office"]]
     governance = career.get("governance") or {}
+    _ensure_scaled_governance_budget(career, governance)
     governance_budget_mi = round(float(governance.get("budget_mi", 0)), 1)
     governance_annual_budget_mi = round(float(governance.get("annual_budget_mi", 0)), 1)
     governance_budget_source = "career_reserve"
@@ -970,6 +975,7 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
     if not is_career_governing(career, date.fromisoformat(state["date"])):
         raise ValueError("Você precisa estar empossado para tomar decisões neste cargo.")
     governance = career.setdefault("governance", {"budget_mi": 0.0, "trust": 50.0, "delivery": 0.0, "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {}})
+    _ensure_scaled_governance_budget(career, governance)
     if career["office"] == "presidente":
         annual_investment_mi = _presidential_investment_cap_mi(state)
         committed_mi = _presidential_investment_commitment_mi(governance)
@@ -982,6 +988,7 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
         wait = 30 - (date.fromisoformat(state["date"]) - date.fromisoformat(last)).days
         raise ValueError(f"A agenda do cargo foi usada. A próxima decisão abre em {wait} dia(s).")
     public_report = None
+    selected = None
     if career["office"] in LEGISLATIVE_OFFICES:
         selected = next((item for item in LEGISLATIVE_ACTIONS if item["key"] == action), None)
         if not selected:
@@ -1017,7 +1024,7 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
                 )
             due_date = date.fromisoformat(state["date"]) + timedelta(days=area["days"])
             territory = governance_territory_for(career)
-            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "territory": territory["name"], "territory_scope": territory["scope"], "municipality_id": territory.get("municipality_id"), "effect": area["effect"], "cost_mi": cost, "started_at": state["date"], "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
+            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "territory": territory["name"], "territory_scope": territory["scope"], "municipality_id": territory.get("municipality_id"), "effect": area["effect"], "cost_mi": cost, "cost_basis": selected.get("cost_basis"), "started_at": state["date"], "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
             summary = f"Programa de {area['label'].lower()} iniciado para {territory['name']}. Custo reservado: R$ {cost:,.1f} milhões; entrega prevista para {due_date.strftime('%d/%m/%Y')} se não houver atraso."
         elif action == "public_report":
             cost = 0.0
@@ -1033,7 +1040,8 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
     governance["last_action_date"] = state["date"]
     entry = {"id": f"office-{state['date']}-{len(governance.get('actions', [])) + 1}", "date": state["date"], "action": action,
              "title": issue.strip()[:100] or next((item["label"] for item in governance_actions_for(career) if item["key"] == action), action.replace("_", " ").title()),
-             "summary": summary, "cost_mi": cost, "status": "active", "simulated": True}
+             "summary": summary, "cost_mi": cost, "cost_basis": selected.get("cost_basis") if selected else None,
+             "status": "active", "simulated": True}
     if public_report:
         entry["report_id"] = public_report["id"]
     governance.setdefault("actions", []).append(entry)
@@ -1107,20 +1115,78 @@ def governance_actions_for(career: dict[str, Any], governance: dict[str, Any] | 
         return [dict(item) for item in LEGISLATIVE_ACTIONS]
     office = career["office"]
     if office in EXECUTIVE_SERVICE_ACCESS:
-        index = float((governance or career.get("governance") or {}).get("budget_price_index", 1.0))
+        active_governance = governance or career.get("governance") or {}
+        index = float(active_governance.get("budget_price_index", 1.0))
+        population_basis = _executive_population_basis(career)
+        cost_basis = (
+            f"Populacao IBGE {population_basis['reference_year']}: {population_basis['population']:,} pessoas; "
+            f"base de {population_basis['reference_population']:,} e precos x{index:.3f}."
+            if office in EXECUTIVE_BUDGET_BASELINES else
+            f"Escala federal do jogo; precos x{index:.3f}."
+        )
         actions = []
         for area_key in SERVICE_AREAS:
             if area_key not in EXECUTIVE_SERVICE_ACCESS[office]:
                 continue
             area = SERVICE_AREAS[area_key]
             base_cost = EXECUTIVE_SERVICE_BASE_COSTS[office][area_key]
+            scale = population_basis["scale"] if office in EXECUTIVE_BUDGET_BASELINES else 1.0
             actions.append({"key": f"service_{area_key}", "area": area_key, "label": area["label"],
-                            "cost_mi": round(base_cost * index, 1), "days": area["days"],
+                            "cost_mi": round(base_cost * scale * index, 1), "cost_basis": cost_basis, "days": area["days"],
                             "summary": f"Entrega prevista em {area['days']} dias; o efeito aparece no indicador de {area['label'].lower()} ao concluir."})
         actions.append({"key": "public_report", "label": "Publicar prestação de contas", "cost_mi": 0.0, "days": 1,
                         "summary": "Expõe metas, execução financeira e resultados para fiscalização pública."})
         return actions
     return []
+
+
+def _executive_population_basis(career: dict[str, Any]) -> dict[str, Any]:
+    office = career.get("office")
+    baseline = EXECUTIVE_BUDGET_BASELINES.get(office)
+    if not baseline:
+        return {"population": 0, "reference_population": 0, "scale": 1.0, "reference_year": None}
+    if office == "prefeito":
+        profile = career.get("municipality_profile")
+        if not profile and career.get("municipality_id"):
+            profile = get_municipality(career["municipality_id"])
+        population = int((profile or {}).get("population_estimate", 0))
+        reference_year = int((profile or {}).get("population_reference_year", 2026))
+    else:
+        population = get_state_population(career.get("state_code", ""))
+        reference_year = 2026
+    population = population or int(baseline["population"])
+    return {
+        "population": population,
+        "reference_population": int(baseline["population"]),
+        "scale": population / int(baseline["population"]),
+        "reference_year": reference_year,
+    }
+
+
+def _executive_annual_budget_mi(career: dict[str, Any], price_index: float = 1.0) -> float:
+    baseline = EXECUTIVE_BUDGET_BASELINES.get(career.get("office"))
+    if not baseline:
+        return 0.0
+    basis = _executive_population_basis(career)
+    return round(float(baseline["annual_budget_mi"]) * basis["scale"] * price_index, 1)
+
+
+def _ensure_scaled_governance_budget(career: dict[str, Any], governance: dict[str, Any]) -> None:
+    if career.get("office") not in EXECUTIVE_BUDGET_BASELINES or governance.get("budget_scale_version") == 1:
+        return
+    price_index = max(0.01, float(governance.get("budget_price_index", 1.0)))
+    old_annual = float(governance.get("annual_budget_mi", EXECUTIVE_BUDGET_BASELINES[career["office"]]["annual_budget_mi"]))
+    old_available = max(0.0, float(governance.get("budget_mi", old_annual)))
+    remaining_share = min(1.0, old_available / old_annual) if old_annual > 0 else 1.0
+    annual = _executive_annual_budget_mi(career, price_index)
+    basis = _executive_population_basis(career)
+    governance.update({
+        "annual_budget_mi": annual,
+        "budget_mi": round(annual * remaining_share, 1),
+        "budget_population": basis["population"],
+        "budget_population_reference_year": basis["reference_year"],
+        "budget_scale_version": 1,
+    })
 
 
 def governance_territory_for(career: dict[str, Any]) -> dict[str, Any]:
@@ -1647,13 +1713,16 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         next_election_year = date.fromisoformat(transition_date).year + career["term_years"] - 1
         reelection_day = _regular_election_day(career["office"], date.fromisoformat(career["election_date"]), next_election_year)
         career["election_date"] = reelection_day.isoformat()
-        executive_funds = {"prefeito": 350.0, "governador": 12000.0}
         annual_budget = (_presidential_investment_cap_mi(state) if career["office"] == "presidente"
-                         else executive_funds.get(career["office"], 0.0))
+                         else _executive_annual_budget_mi(career) if career["office"] in EXECUTIVE_BUDGET_BASELINES else 0.0)
+        population_basis = _executive_population_basis(career)
         career["governance"] = {"budget_mi": annual_budget, "annual_budget_mi": annual_budget,
                                 "budget_year": date.fromisoformat(transition_date).year, "trust": 50.0, "delivery": 0.0,
                                 "budget_price_index": 1.0, "political_capital": 50.0, "actions": [], "pipeline": [],
                                 "budget_source": "federal_investment" if career["office"] == "presidente" else "career_reserve",
+                                "budget_scale_version": 1 if career["office"] in EXECUTIVE_BUDGET_BASELINES else 0,
+                                "budget_population": population_basis["population"] if career["office"] in EXECUTIVE_BUDGET_BASELINES else None,
+                                "budget_population_reference_year": population_basis["reference_year"] if career["office"] in EXECUTIVE_BUDGET_BASELINES else None,
                                 "investment_commitment_mi": 0.0,
                                 "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0, "mobility": 50.0,
                                              "sanitation": 50.0, "infrastructure": 50.0, "employment": 50.0}}
@@ -1679,24 +1748,33 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         state["career_status"] = "opposition"
         messages.append("A transição simulada foi concluída. Você deixa o cargo e segue na oposição; o histórico do mandato permanece salvo.")
     governance = career.get("governance") or {}
+    _ensure_scaled_governance_budget(career, governance)
     if is_career_governing(career, after) and governance:
         budget_year = int(governance.get("budget_year", before.year))
         if after.year > budget_year:
-            if career["office"] == "presidente":
-                annual = _presidential_investment_cap_mi(state)
-                governance["investment_commitment_mi"] = 0.0
-                governance["budget_source"] = "federal_investment"
-                governance["budget_mi"] = round(annual, 1)
-                governance["annual_budget_mi"] = round(annual, 1)
-            else:
-                annual = float(governance.get("annual_budget_mi", 0))
-                governance["budget_mi"] = round(min(annual, float(governance.get("budget_mi", 0)) + annual), 1)
             price_index = float(governance.get("budget_price_index", 1.0))
             inflation_pct = float(state.get("metrics", {}).get("inflation", 4.5))
             annual_price_change = min(0.25, max(0.0, inflation_pct / 100.0))
             for _ in range(after.year - budget_year):
                 price_index *= 1.0 + annual_price_change
             governance["budget_price_index"] = round(price_index, 4)
+            if career["office"] == "presidente":
+                annual = _presidential_investment_cap_mi(state)
+                governance["investment_commitment_mi"] = 0.0
+                governance["budget_source"] = "federal_investment"
+                governance["budget_mi"] = round(annual, 1)
+                governance["annual_budget_mi"] = round(annual, 1)
+            elif career["office"] in EXECUTIVE_BUDGET_BASELINES:
+                annual = _executive_annual_budget_mi(career, price_index)
+                basis = _executive_population_basis(career)
+                governance["budget_mi"] = annual
+                governance["annual_budget_mi"] = annual
+                governance["budget_population"] = basis["population"]
+                governance["budget_population_reference_year"] = basis["reference_year"]
+            else:
+                annual = float(governance.get("annual_budget_mi", 0))
+                governance["budget_mi"] = round(min(annual, float(governance.get("budget_mi", 0)) + annual), 1)
+            governance["budget_scale_version"] = 1 if career["office"] in EXECUTIVE_BUDGET_BASELINES else governance.get("budget_scale_version", 0)
             governance["budget_year"] = after.year
             if career["office"] in LEGISLATIVE_OFFICES:
                 governance["political_capital"] = min(100.0, float(governance.get("political_capital", 50)) + 25.0)

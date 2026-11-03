@@ -133,6 +133,20 @@ def _national_electorate_total() -> int:
     return sum(_state_electorate_totals().values())
 
 
+@lru_cache(maxsize=1)
+def _state_population_totals() -> dict[str, int]:
+    totals: dict[str, int] = {}
+    for municipality in _catalog()["municipalities"]:
+        code = municipality["state_code"]
+        totals[code] = totals.get(code, 0) + int(municipality["population_estimate"])
+    return totals
+
+
+def get_state_population(state_code: str) -> int:
+    """Return the sum of current municipal IBGE estimates for a state."""
+    return _state_population_totals().get(state_code.upper().strip(), 0)
+
+
 def get_municipality(ibge_code: str | int) -> dict[str, Any] | None:
     item = _by_code().get(str(ibge_code))
     return _profile(item) if item else None

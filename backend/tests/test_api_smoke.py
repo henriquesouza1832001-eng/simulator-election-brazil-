@@ -21,6 +21,7 @@ from app.engine.difficulty import adjust_coalition_probability, election_margin,
 from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.career import _is_explicit_promise, advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
 from app.engine.fiscal import fiscal_overview
+from app.engine.geography import get_municipality, get_state_population
 from app.engine.issues import canonical_issue_ids
 from app.engine.rules import apply_effects, forecast
 from app.main import app, require_presidential_authority
@@ -684,13 +685,16 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertTrue(career_overview(state)["governing"])
 
     def test_executive_mandate_actions_follow_scope_and_inflation(self) -> None:
+        municipality_population = get_municipality("3106200")["population_estimate"]
+        population_scale = municipality_population / 100_000
+        annual_reserve = 350.0 * population_scale
         career = {
             "mode": True, "phase": "office", "office": "prefeito", "scope": "municipal",
             "municipality": "Belo Horizonte", "municipality_id": "3106200", "state_name": "Minas Gerais", "state_code": "MG",
             "group_support": {}, "governance": {
-                "budget_mi": 350.0, "annual_budget_mi": 350.0, "budget_year": 2027,
+                "budget_mi": annual_reserve, "annual_budget_mi": annual_reserve, "budget_year": 2027,
                 "budget_price_index": 1.0, "trust": 50.0, "delivery": 0.0,
-                "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {},
+                "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {}, "budget_scale_version": 1,
             },
         }
         actions = governance_actions_for(career, career["governance"])
@@ -703,8 +707,10 @@ class ApiSmokeTests(unittest.TestCase):
             perform_governance_action(state, "service_security")
         result = perform_governance_action(state, "service_education")
         self.assertEqual(result["days_cost"], 1)
-        self.assertEqual(result["action"]["cost_mi"], 18.0)
-        self.assertEqual(career["governance"]["budget_mi"], 332.0)
+        scaled_cost = round(18.0 * population_scale, 1)
+        self.assertEqual(result["action"]["cost_mi"], scaled_cost)
+        self.assertEqual(career["governance"]["budget_mi"], round(annual_reserve - scaled_cost, 1))
+        self.assertIn("IBGE 2026", result["action"]["cost_basis"])
         self.assertEqual(career["governance"]["pipeline"][0]["kind"], "service")
         self.assertEqual(career["governance"]["pipeline"][0]["territory"], "Belo Horizonte · MG")
         career["election_date"] = "2028-10-01"
@@ -726,11 +732,18 @@ class ApiSmokeTests(unittest.TestCase):
         }
         advance_career(annual_state, date(2027, 12, 31), date(2028, 1, 1))
         annual_governance = annual_state["career"]["governance"]
-        self.assertEqual(annual_governance["budget_mi"], 350.0)
+        self.assertEqual(annual_governance["budget_mi"], 367.5)
         self.assertAlmostEqual(annual_governance["budget_price_index"], 1.05)
         adjusted_cost = next(item["cost_mi"] for item in governance_actions_for(annual_state["career"], annual_governance)
                              if item["key"] == "service_education")
         self.assertEqual(adjusted_cost, 18.9)
+
+        state_population = get_state_population("MG")
+        governor = {"office": "governador", "state_code": "MG"}
+        state_scale = state_population / 5_000_000
+        state_cost = next(item["cost_mi"] for item in governance_actions_for(governor, {"budget_price_index": 1.0})
+                          if item["key"] == "service_health")
+        self.assertEqual(state_cost, round(500.0 * state_scale, 1))
 
     def test_public_report_snapshots_realized_simulation_records_by_period(self) -> None:
         state = new_game()
