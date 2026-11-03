@@ -226,7 +226,8 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
     groups = campaign["group_support"]
     reach_multiplier = float(target_municipality["municipal_campaign_reach_multiplier"]) if target_municipality else 1.0
     local_delta = quality * 0.75 * activity["reach"] * reach_multiplier + (0.12 if activity_type == "comicio" else 0.04)
-    regional_delta = local_delta * 0.18 if target_municipality else local_delta
+    electorate_share = float(target_municipality.get("electorate_share_of_macroregion") or 0.0) if target_municipality else 0.0
+    regional_delta = local_delta * electorate_share if target_municipality else local_delta
     city_support = campaign["municipality_support"]
     city_id = target_municipality["ibge_code"] if target_municipality else None
     if target_municipality:
@@ -259,6 +260,7 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
         "municipality_state_code": target_municipality["state_code"] if target_municipality else None,
         "electorate_count": target_municipality.get("electorate_count") if target_municipality else None,
         "electorate_reference_year": target_municipality.get("electorate_reference_year") if target_municipality else None,
+        "electorate_share_of_macroregion": electorate_share if target_municipality else None,
         "municipal_reach_multiplier": reach_multiplier if target_municipality else None,
         "municipality_support": round(city_support[city_id], 1) if target_municipality else None,
         "issue": issue, "issue_label": ISSUES[issue]["label"],
