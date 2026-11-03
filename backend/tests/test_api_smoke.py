@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
+from fastapi import HTTPException
 
 from app.db import (
     archive_state, connect, list_archives, load_state, recent_actions, record_action,
@@ -18,10 +19,10 @@ from app.db import (
 )
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
-from app.engine.career import advance_career, governance_actions_for, perform_governance_action
+from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_governance_action, resolve_career_election, start_career
 from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
-from app.main import app
+from app.main import app, require_presidential_authority
 from app.engine.state import new_game
 
 
@@ -307,6 +308,69 @@ class ApiSmokeTests(unittest.TestCase):
         result = election.json()["state"]["career_overview"]
         self.assertIn(result["result"], {"won", "lost"})
         self.assertIn(result["phase"], {"transition", "outgoing", "opposition"})
+
+    def test_incumbent_keeps_governing_through_term_end_after_election(self) -> None:
+        state = new_game()
+        state["date"] = "2030-09-01"
+        start_career(state, "presidente", "DF", "", "Partido da Renovação", "Centro", "Presidência de teste")
+        career = state["career"]
+        career["phase"] = "campaign"
+        career["office_start"] = "2027-01-05"
+        career["term_end"] = "2031-01-04"
+        career["election_date"] = "2030-10-06"
+        career["poll_support"] = 0.0
+        career["governance"] = {
+            "budget_mi": 100000.0, "annual_budget_mi": 100000.0,
+            "investment_commitment_mi": 0.0, "budget_year": 2030,
+            "budget_price_index": 1.0, "trust": 50.0, "delivery": 0.0,
+            "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {},
+        }
+        overview = career_overview(state)
+        self.assertTrue(overview["campaign_active"])
+        self.assertTrue(overview["governing"])
+        require_presidential_authority(state, "Ação federal de teste")
+        perform_governance_action(state, "public_report")
+
+        state["date"] = "2030-10-06"
+        resolve_career_election(state, date(2030, 10, 6))
+        self.assertEqual(career["result"], "lost")
+        self.assertEqual(career["phase"], "outgoing")
+        self.assertEqual(career["transition_date"], "2031-01-05")
+
+        overview = career_overview(state)
+        self.assertTrue(overview["governing"])
+        self.assertTrue(overview["governance_actions"])
+        perform_governance_action(state, "public_report")
+
+        state["date"] = "2031-01-04"
+        self.assertTrue(career_overview(state)["governing"])
+        perform_governance_action(state, "public_report")
+        state["date"] = "2031-01-05"
+        self.assertFalse(career_overview(state)["governing"])
+        self.assertFalse(is_career_governing(career, date(2031, 1, 5)))
+        with self.assertRaises(HTTPException) as error:
+            require_presidential_authority(state, "Ação federal de teste")
+        self.assertEqual(error.exception.status_code, 403)
+        with self.assertRaises(ValueError):
+            perform_governance_action(state, "public_report")
+
+        advance_career(state, date(2031, 1, 4), date(2031, 1, 5))
+        self.assertEqual(career["phase"], "opposition")
+
+    def test_reelected_incumbent_remains_in_office_until_next_inauguration(self) -> None:
+        state = new_game()
+        state["date"] = "2030-10-06"
+        start_career(state, "presidente", "DF", "", "Partido da Renovação", "Centro", "Presidência de teste")
+        career = state["career"]
+        career.update({
+            "phase": "campaign", "office_start": "2027-01-05", "term_end": "2031-01-04",
+            "election_date": "2030-10-06", "poll_support": 100.0,
+        })
+        resolve_career_election(state, date(2030, 10, 6))
+        self.assertEqual(career["result"], "won")
+        self.assertEqual(career["phase"], "transition")
+        self.assertEqual(career["transition_date"], "2031-01-05")
+        self.assertTrue(career_overview(state)["governing"])
 
     def test_executive_mandate_actions_follow_scope_and_inflation(self) -> None:
         career = {

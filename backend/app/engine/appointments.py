@@ -11,7 +11,7 @@ from typing import Any
 
 from .ministries import MINISTRIES
 from .difficulty import adjust_coalition_probability, get_difficulty
-from .career import FAMILY_GROUP_EFFECTS, SPECTRUM_GROUP_EFFECTS
+from .career import FAMILY_GROUP_EFFECTS, SPECTRUM_GROUP_EFFECTS, is_career_governing
 from .campaign import GROUP_LABELS, ensure_campaign_state, refresh_support
 
 FIRST_NAMES = ["Ana", "Beatriz", "Caio", "Daniel", "Elisa", "Felipe", "Gabriela", "João", "Lívia", "Marcos", "Nádia", "Otávio", "Paula", "Rafael", "Sofia", "Tiago"]
@@ -191,7 +191,7 @@ def appointments_overview(state: dict[str, Any]) -> dict[str, Any]:
 def _is_president_in_office(state: dict[str, Any]) -> bool:
     career = state.get("career") or {}
     if career.get("mode"):
-        return career.get("office") == "presidente" and career.get("phase") == "office"
+        return career.get("office") == "presidente" and is_career_governing(career, date.fromisoformat(state["date"]))
     return state.get("office_status") not in {"former_president", "detained_after_failed_rupture", "former_official"}
 
 

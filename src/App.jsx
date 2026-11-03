@@ -363,7 +363,7 @@ export default function App() {
   const careerCardValue = careerPhase === 'campaign' ? state.career_overview?.days_until_election : careerPhase === 'transition' ? state.career_overview?.days_until_inauguration : careerPhase === 'office' ? state.career_overview?.term_years : '—';
   const careerCardSuffix = careerPhase === 'campaign' ? ' dias' : careerPhase === 'transition' ? ' dias' : careerPhase === 'office' ? ' anos' : '';
   const careerCardNote = careerPhase === 'campaign' ? 'dias até a votação' : careerPhase === 'transition' ? 'dias até a posse' : careerPhase === 'office' ? `campanha abre em ${state.career_overview?.days_until_campaign} dias` : 'escolha o próximo passo';
-  const careerCardProgress = careerPhase === 'campaign' ? Math.max(3, 100 - (state.career_overview?.days_until_election || 0) / 90 * 100) : careerPhase === 'office' ? 100 * Math.min(1, ((state.career_overview?.term_years || 4) * 365 - (state.career_overview?.next_campaign_days || 0)) / ((state.career_overview?.term_years || 4) * 365)) : careerPhase === 'transition' ? 85 : 0;
+  const careerCardProgress = careerPhase === 'campaign' ? Math.max(3, 100 - (state.career_overview?.days_until_election || 0) / 90 * 100) : state.career_overview?.governing ? 100 * Math.min(1, ((state.career_overview?.term_years || 4) * 365 - (state.career_overview?.next_campaign_days || 0)) / ((state.career_overview?.term_years || 4) * 365)) : careerPhase === 'transition' ? 85 : 0;
   const operatingLines = budgetView?.operating?.lines || {};
   const proposedOperatingSavings = (Number(operatingLines.official_travel?.annual_cost_bi || 0) * Number(travelCutPct) / 100)
     + (Number(operatingLines.official_residence?.annual_cost_bi || 0) * Number(residenceCutPct) / 100);
@@ -372,7 +372,7 @@ export default function App() {
   const proposedPrimaryBalance = Number(m.primary_balance) + ((proposedOperatingSavings - currentOperatingSavings) / fiscalReferenceGdp * 100);
   const careerMode = Boolean(state.career_overview?.mode);
   const playerCharacter = state.player_character || state.career_overview?.character || null;
-  const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.phase === 'office');
+  const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.governing);
   const tabGroups = [
     { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
     { label: 'Governo', items: presidentCareer ? ['Medidas', 'Orçamento', 'Crises'] : [] },

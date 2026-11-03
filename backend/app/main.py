@@ -21,7 +21,7 @@ from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
 from .engine.politics import rupture_preview, attempt_rupture
 from .engine.campaign import campaign_overview, perform_campaign_action
-from .engine.career import STATES, career_options, career_overview, perform_career_action, perform_governance_action, start_career, validate_party_name
+from .engine.career import STATES, career_options, career_overview, is_career_governing, perform_career_action, perform_governance_action, start_career, validate_party_name
 from .engine.geography import catalog_metadata, get_municipality, municipality_options
 from .engine.appointments import appointments_overview, appoint_minister, nominate_judge
 from .engine.communications import require_inaugural_address, submit_inaugural_address
@@ -345,7 +345,8 @@ def game_state() -> dict[str, Any]:
 
 def require_presidential_authority(state: dict[str, Any], action: str) -> None:
     career = state.get("career") or {}
-    if career.get("mode") and (career.get("office") != "presidente" or career.get("phase") != "office"):
+    today = date.fromisoformat(state["date"])
+    if career.get("mode") and (career.get("office") != "presidente" or not is_career_governing(career, today)):
         raise HTTPException(status_code=403, detail=f"{action} exige estar no exercício da Presidência nesta partida.")
 
 

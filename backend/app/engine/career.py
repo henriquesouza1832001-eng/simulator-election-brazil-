@@ -333,6 +333,18 @@ def _campaign(state: dict[str, Any]) -> dict[str, Any]:
     return career
 
 
+def is_career_governing(career: dict[str, Any], today: date) -> bool:
+    """Whether this character still holds the elected office on this date."""
+    phase = career.get("phase")
+    if phase in {"office", "campaign"} and (phase == "office" or career.get("office_start")):
+        term_end = career.get("term_end")
+        return not term_end or today <= date.fromisoformat(term_end)
+    if phase in {"outgoing", "transition"} and career.get("office_start"):
+        term_end = career.get("term_end")
+        return bool(term_end) and today <= date.fromisoformat(term_end)
+    return False
+
+
 def _speech_score(issue: str, message: str) -> tuple[int, dict[str, int]]:
     normalized = _norm(message)
     words = re.findall(r"[\w'-]+", normalized)
@@ -375,7 +387,8 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         governance_investment_commitment_mi = round(_presidential_investment_commitment_mi(governance), 1)
         governance_budget_mi = round(max(0.0, governance_annual_budget_mi - governance_investment_commitment_mi), 1)
         governance_budget_source = "federal_investment"
-    governance_actions = governance_actions_for(career, governance)
+    governing = is_career_governing(career, today)
+    governance_actions = governance_actions_for(career, governance) if governing else []
     governance_territory = governance_territory_for(career)
     governance_wait = max(0, 30 - (today - date.fromisoformat(governance.get("last_action_date", today.isoformat()))).days) if governance.get("last_action_date") else 0
     in_campaign = career["phase"] == "campaign" and campaign_start <= today <= election_day
@@ -383,6 +396,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     return {
         "mode": True, "office": career["office"], "office_label": career["office_label"], "scope": career["scope"],
         "phase": career["phase"], "candidate_name": career["candidate_name"], "party": career["party"], "ideology": career["ideology"],
+        "governing": governing,
         "party_alignment_gap": career.get("party_alignment_gap", 0),
         "character": career.get("character", {}),
         "state_code": career["state_code"], "state_name": career["state_name"], "municipality": career["municipality"],
@@ -409,7 +423,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "debate_prompts": {key: career_debate_prompt(career, key) for key in ISSUES},
         "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": round(item["cost"] * (.9 if "gestora" in (career.get("character") or {}).get("traits", []) else 1.0), 4)} for key, item in ACTIVITIES.items()],
         "issue_options": [{"key": key, "label": value["label"]} for key, value in ISSUES.items()],
-        "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and career["phase"] == "office"} for key, value in APPOINTED_PATHS.items()],
+        "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and governing} for key, value in APPOINTED_PATHS.items()],
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
         "governance_actions": governance_actions, "governance_wait_days": governance_wait,
         "governance_territory": governance_territory,
@@ -420,7 +434,8 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "governance_budget_price_index": round(float(governance.get("budget_price_index", 1.0)), 3),
         "governance_budget_year": int(governance.get("budget_year", today.year)),
         "political_capital": round(float(governance.get("political_capital", 0)), 1),
-        "rules": {"campaign_window_days": 90, "activity_cooldown_days": 7, "election_and_vote_simulated": True, "government_keeps_running": True},
+        "rules": {"campaign_window_days": 90, "activity_cooldown_days": 7, "election_and_vote_simulated": True,
+                  "government_keeps_running": True, "player_governs_until_term_end": governing},
         "conduct_preview": campaign_conduct_preview(state, career),
         "inaugural_address": ensure_communications_state(state)["inauguration"],
         "notice": "Candidatos, partidos, pesquisas e resultados desta carreira são gerados para a simulação.",
@@ -429,7 +444,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
 
 def perform_governance_action(state: dict[str, Any], action: str, service: str = "", issue: str = "") -> dict[str, Any]:
     career = _campaign(state)
-    if career["phase"] != "office":
+    if not is_career_governing(career, date.fromisoformat(state["date"])):
         raise ValueError("Você precisa estar empossado para tomar decisões neste cargo.")
     governance = career.setdefault("governance", {"budget_mi": 0.0, "trust": 50.0, "delivery": 0.0, "political_capital": 50.0, "actions": [], "pipeline": [], "outcomes": {}})
     if career["office"] == "presidente":
@@ -753,7 +768,7 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     career["phase"] = "transition" if won else "outgoing" if has_current_mandate else "opposition"
     state["office_status"] = "elected_transition" if won else "incumbent_caretaker" if has_current_mandate else "opposition_candidate"
     state["career_status"] = "transition" if won else "outgoing" if has_current_mandate else "opposition"
-    transition = election_day + timedelta(days=60)
+    transition = _inauguration_date(career["office"], election_day)
     career["inauguration_date"] = transition.isoformat()
     career["transition_date"] = transition.isoformat()
     state.setdefault("simulated_news", []).insert(0, {
@@ -763,7 +778,16 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     })
     state["simulated_news"] = state["simulated_news"][:20]
     electoral_summary = (f"Sua legenda obteve {electoral_result['party_seats']} de {electoral_result['district_magnitude']} cadeiras simuladas." if electoral_result else "")
-    return f"Resultado eleitoral simulado: {'vitória' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} " + (f"A posse simulada está marcada para {transition.strftime('%d/%m/%Y')}." if won else "Você segue na oposição; a carreira pode continuar com outra disputa ou uma indicação política.")
+    term_end_label = date.fromisoformat(career["term_end"]).strftime("%d/%m/%Y") if career.get("term_end") else "o fim do mandato atual"
+    if won and has_current_mandate:
+        continuity = f"A nova posse simulada está marcada para {transition.strftime('%d/%m/%Y')}; o mandato atual segue até {term_end_label}."
+    elif won:
+        continuity = f"A posse simulada está marcada para {transition.strftime('%d/%m/%Y')}."
+    elif has_current_mandate:
+        continuity = f"Você permanece no cargo até {term_end_label} e depois segue na oposição."
+    else:
+        continuity = "Você segue na oposição; a carreira pode continuar com outra disputa ou uma indicação política."
+    return f"Resultado eleitoral simulado: {'vitória' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
 
 
 def advance_career(state: dict[str, Any], before: date, after: date) -> list[str]:
@@ -814,18 +838,18 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         territory = career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career.get("state_name", career.get("state_code", "")))
         messages.append(f"Posse simulada: você assume o cargo de {career['office_label']} em {territory}.")
         messages.append("O primeiro pronunciamento de posse precisa ser registrado antes de novas decisões.")
-    if career["phase"] == "office" and after.isoformat() >= career.get("term_end", "9999-12-31"):
+    if career["phase"] == "office" and after.isoformat() > career.get("term_end", "9999-12-31"):
         career["phase"] = "term_complete"
         state["office_status"] = "former_official"
         state["career_status"] = "term_complete"
         messages.append("O mandato simulado terminou. Seu histórico e as próximas opções de carreira continuam disponíveis.")
-    if career["phase"] == "outgoing" and after.isoformat() >= career.get("term_end", "9999-12-31"):
+    if career["phase"] == "outgoing" and after.isoformat() > career.get("term_end", "9999-12-31"):
         career["phase"] = "opposition"
         state["office_status"] = "former_official"
         state["career_status"] = "opposition"
         messages.append("A transição simulada foi concluída. Você deixa o cargo e segue na oposição; o histórico do mandato permanece salvo.")
     governance = career.get("governance") or {}
-    if career.get("phase") == "office" and governance:
+    if is_career_governing(career, after) and governance:
         budget_year = int(governance.get("budget_year", before.year))
         if after.year > budget_year:
             if career["office"] == "presidente":
