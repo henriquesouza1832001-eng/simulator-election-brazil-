@@ -262,13 +262,14 @@ Resources:
           - chmod 700 "$BACKUP_DIR"
           - API_CONTAINER="$(cd "$APP_DIR" && docker compose ps -q api)"
           - test -n "$API_CONTAINER"
+          - docker exec "$API_CONTAINER" python -c 'import sqlite3 as q; s=q.connect("file:/data/game.sqlite3?mode=ro",uri=True); assert {"game_save","game_saves","game_campaigns"}<={r[0] for r in s.execute("select name from sqlite_master")}; s.close()'
           - BACKUP_NAME="game-$(date -u +%Y%m%dT%H%M%SZ).sqlite3"
           - BACKUP_FILE="$BACKUP_DIR/$BACKUP_NAME"
-          - docker exec "$API_CONTAINER" python -c 'import sqlite3 as q; s=q.connect("/data/game.sqlite3"); d=q.connect("/tmp/mandato-weekly.sqlite3"); s.backup(d); assert d.execute("pragma integrity_check").fetchone()[0]=="ok"; d.close(); s.close()'
-          - docker cp "$API_CONTAINER:/tmp/mandato-weekly.sqlite3" "$BACKUP_FILE"
+          - docker exec "$API_CONTAINER" python -c 'import sqlite3 as q; s=q.connect("file:/data/game.sqlite3?mode=ro",uri=True); d=q.connect("/tmp/b.sqlite3"); s.backup(d); assert d.execute("pragma integrity_check").fetchone()[0]=="ok"; d.close(); s.close()'
+          - docker cp "$API_CONTAINER:/tmp/b.sqlite3" "$BACKUP_FILE"
           - chmod 600 "$BACKUP_FILE"
           - test -s "$BACKUP_FILE"
-          - docker exec "$API_CONTAINER" rm -f /tmp/mandato-weekly.sqlite3
+          - docker exec "$API_CONTAINER" rm -f /tmp/b.sqlite3
           - !Sub 'aws s3 cp "$BACKUP_FILE" "s3://${GameBackupBucket}/weekly/$BACKUP_NAME" --region ${AWS::Region} --only-show-errors --sse AES256'
           - find "$BACKUP_DIR" -maxdepth 1 -type f -name 'game-*.sqlite3' -mtime +35 -delete
 

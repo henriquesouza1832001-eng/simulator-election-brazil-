@@ -63,7 +63,7 @@ origin to arbitrary networks.
 
 A consistent SQLite snapshot now runs every Sunday at 13:00 UTC (10:00 in
 Brasília) through Systems Manager State Manager. It uses Python's SQLite backup
-API from the API container, checks `PRAGMA integrity_check`, saves the upload
+API from the API container, verifies the core save tables and `PRAGMA integrity_check`, saves the upload
 temporarily under `/opt/mandato/backups/weekly`, and sends it to the private S3
 bucket created by `template.yaml`. A failed upload leaves its local copy for
 recovery; successful runs prune local copies older than 35 days.
@@ -91,7 +91,7 @@ sudo bash /opt/mandato/app/deploy/aws/restore-weekly-backup.sh \
   s3://<bucket-from-CloudFormation-output>/weekly/game-<timestamp>.sqlite3
 ```
 
-The script checks the selected database, makes a consistent pre-restore copy,
+The script verifies database integrity and required save tables, makes a consistent pre-restore copy,
 stops the API only for the replacement, and restarts it afterward. Keep the
 pre-restore file until the game has loaded correctly. This same S3 object can be
 downloaded before moving the game to a different host.
