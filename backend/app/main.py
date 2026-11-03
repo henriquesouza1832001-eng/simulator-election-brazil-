@@ -310,6 +310,7 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         "/api/game/new",
         "/api/measures/preview",
         "/api/learning/corrections",
+        "/api/learning/train",
         "/api/career/start",
         "/api/game/difficulty",
     }:
@@ -1024,3 +1025,30 @@ def save_correction(request: CorrectionRequest) -> dict[str, Any]:
     add_correction(request.original_text, request.corrected_interpretation, labels)
     return {"status": "saved", "corrections_saved": correction_count(),
             "training_labels_saved": bool(labels)}
+
+
+@app.post("/api/learning/train")
+def train_interpreter_candidate() -> dict[str, Any]:
+    """Evaluate reviewed labels for this player and store validated offline candidates."""
+    from .ai.trainer import train
+
+    report = train()
+    player_report = report["reports"][0] if report["reports"] else None
+    fields = {}
+    if player_report:
+        for field, result in player_report["fields"].items():
+            fields[field] = {
+                "ready": result["ready"],
+                "accuracy": result["accuracy"],
+                "minimum_accuracy": result.get("minimum_accuracy"),
+                "examples": result["examples"],
+                "classes": result["classes"],
+                "candidate_saved": bool(result.get("artifact")),
+                "reason": result["reason"],
+            }
+    return {
+        "status": report["status"],
+        "reviewed_proposals": player_report["reviewed_proposals"] if player_report else 0,
+        "fields": fields,
+        "live_interpreter_changed": False,
+    }

@@ -156,6 +156,12 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(len(retrieved), 1)
         self.assertEqual(retrieved[0]["corrected_labels"], examples[0]["labels"])
 
+        evaluation = self.client.post("/api/learning/train", json={})
+        self.assertEqual(evaluation.status_code, 200, evaluation.text)
+        self.assertFalse(evaluation.json()["live_interpreter_changed"])
+        self.assertFalse(evaluation.json()["fields"]["category"]["ready"])
+        self.assertEqual(evaluation.json()["reviewed_proposals"], 1)
+
         invalid = self.client.post("/api/learning/corrections", json={
             "original_text": proposal,
             "corrected_interpretation": "Rótulo inválido.",

@@ -460,7 +460,7 @@ export default function App() {
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      {activeTab === 'Aprendizado' && <LearningPanel state={state} />}
+      {activeTab === 'Aprendizado' && <LearningPanel state={state} request={request} />}
       {activeTab === 'Orçamento' && <section className="panel agenda-page">
         <div className="eyebrow">EXECUTIVO FEDERAL · DESPESAS E INVESTIMENTOS</div>
         <h2>Orçamento do governo</h2>
