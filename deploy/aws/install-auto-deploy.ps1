@@ -38,6 +38,8 @@ if ($Disable) {
         "sudo systemctl is-active mandato-auto-deploy.timer || true"
     )
 } else {
+    $serviceUnitBase64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $PSScriptRoot "mandato-auto-deploy.service")))
+    $timerUnitBase64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $PSScriptRoot "mandato-auto-deploy.timer")))
     $baselineCommand = if ($ResetBaseline) {
         "git -C /opt/mandato/app rev-parse HEAD > /var/lib/mandato/auto-deploy-last-checked; chmod 600 /var/lib/mandato/auto-deploy-last-checked"
     } else {
@@ -46,8 +48,8 @@ if ($Disable) {
     $commands = @(
         "set -euo pipefail",
         "test -x /opt/mandato/app/deploy/aws/auto-deploy-check.sh",
-        "install -m 0644 /opt/mandato/app/deploy/aws/mandato-auto-deploy.service /etc/systemd/system/mandato-auto-deploy.service",
-        "install -m 0644 /opt/mandato/app/deploy/aws/mandato-auto-deploy.timer /etc/systemd/system/mandato-auto-deploy.timer",
+        "printf '%s' '$serviceUnitBase64' | base64 -d > /etc/systemd/system/mandato-auto-deploy.service; chmod 0644 /etc/systemd/system/mandato-auto-deploy.service",
+        "printf '%s' '$timerUnitBase64' | base64 -d > /etc/systemd/system/mandato-auto-deploy.timer; chmod 0644 /etc/systemd/system/mandato-auto-deploy.timer",
         "install -d -m 0700 /var/lib/mandato /var/lib/mandato/docker"
     )
     if ($ResetBaseline) {
