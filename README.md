@@ -10,7 +10,7 @@ As regras são uma abstração de jogo, não um modelo econômico ou jurídico p
 
 ## Jogar na web
 
-A instalação de protótipo está em [Civiciclo](https://d2dpmk0vrt66wn.cloudfront.net). O endereço usa Cognito para cadastro e login e pode exigir confirmação de e-mail. A versão publicada só recebe as mudanças locais depois de um novo deploy; os arquivos e comandos da infraestrutura estão em [`deploy/aws/README.md`](deploy/aws/README.md) e os limites operacionais em [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
+A instalação de protótipo está em [Civiciclo](https://d2dpmk0vrt66wn.cloudfront.net). O endereço usa Cognito para cadastro e login e pode exigir confirmação de e-mail. A branch `main` é validada pelo GitHub Actions e publicada automaticamente pelo servidor após aprovação; a instância verifica atualizações a cada cinco minutos. Os arquivos e limites da infraestrutura estão em [`deploy/aws/README.md`](deploy/aws/README.md) e [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
 
 ## Executar localmente
 

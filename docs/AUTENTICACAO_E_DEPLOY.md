@@ -3,8 +3,8 @@
 ## Situação publicada — 3 nov. 2026
 
 - URL HTTPS: `https://d2dpmk0vrt66wn.cloudfront.net`.
-- Versão em produção: commit `6bcfe36304a5d2a0a0e575bba9e1b23897d72caa`, publicado via Systems Manager após backup consistente do SQLite em `/opt/mandato/backups/predeploy-1ef5e76e955f2ade55d0124c4b713fbfea360e0c.sqlite3`. API e web ficaram em execução; o endpoint público `/api/health` respondeu HTTP 200.
-- O CloudFront entrega o bundle `index-yTsf2tIe.js`, com os rótulos `MOTOR LOCAL` e `GEMINI CONFIGURADO`. O estado atual de produção é `local-fallback`; não há chave Gemini configurada no servidor.
+- Versão em produção: commit `b6b5bf283ebe2ea546b2058651e68d862ee57ffa`, publicado automaticamente via Systems Manager em 3 nov. 2026, após validação do GitHub Actions. O deploy criou o snapshot consistente `/opt/mandato/backups/predeploy-29270be974a54e3df68c843ae061b9d71504279c.sqlite3`; API e web ficaram em execução e `/api/health` respondeu HTTP 200.
+- O CloudFront entrega o bundle `index-U7INEnLm.js`. O estado atual de produção é `local-fallback`; não há chave Gemini configurada no servidor.
 - O backup externo semanal ainda não está ativo. O preview da stack separada `mandato-weekly-backups` foi validado sem alterar recursos; bucket e associação só entram quando essa stack for executada.
 - CloudFront termina TLS e encaminha ao EC2 por HTTP com segredo de origem. A porta 80 do EC2 aceita tráfego do CloudFront; o Nginx bloqueia requisições sem o cabeçalho secreto. O IP antigo responde 403.
 - Amazon Cognito User Pool ativo. Cadastro por e-mail verificado e login pelo fluxo OAuth authorization code + PKCE, sem segredo no cliente público.
@@ -17,7 +17,7 @@
 
 O workflow `aws-deploy.yml` faz build e roda a suíte do backend em cada atualização relevante na `main`. Como a conta AWS bloqueia por SCP a leitura do provedor OIDC, a publicação usa um timer no próprio EC2: a cada cinco minutos ele consulta a API pública do GitHub e só chama o script de deploy se o workflow daquele SHA terminou com sucesso. Não há chave AWS no GitHub nem permissão nova na role da aplicação.
 
-O timer é instalado por `deploy/aws/install-auto-deploy.ps1` via Systems Manager. Ele preserva um marcador do último commit verificado e recusa deploy depois de reescrita da branch. A rota OIDC permanece preparada como alternativa, mas a role e a variável `AWS_DEPLOY_ROLE_ARN` não existem porque a SCP as impede de ser configuradas.
+O timer foi instalado e está ativo na instância via `deploy/aws/install-auto-deploy.ps1`; o checkpoint inicial foi alinhado ao commit `b6b5bf2`. Ele verifica a cada cinco minutos, inicia uma checagem imediata durante a instalação, preserva o último commit verificado e recusa deploy depois de reescrita da branch. A unidade usa `DOCKER_CONFIG=/var/lib/mandato/docker` dentro do diretório gravável do serviço. A rota OIDC permanece preparada como alternativa, mas a role e a variável `AWS_DEPLOY_ROLE_ARN` não existem porque a SCP as impede de ser configuradas.
 
 Depois de a SCP ser alterada pelo administrador da organização, a configuração direta poderá ser concluída com `deploy/aws/setup-github-deploy.ps1`. Até lá, pushes relevantes são publicados pelo timer, sem credenciais AWS persistentes. O deploy manual por SSM continua disponível para recuperação operacional.
 ## Limites que ainda faltam antes de abrir amplamente
