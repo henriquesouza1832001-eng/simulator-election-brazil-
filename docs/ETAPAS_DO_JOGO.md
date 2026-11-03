@@ -83,6 +83,7 @@ Catálogo municipal e temas canônicos já têm primeira implementação. A pró
 
 - **Parcialmente entregue:** os cinco modos ajustam crises, volatilidade econômica, pressão eleitoral e flexibilidade de coalizão. Realismo Puro tem volatilidade econômica maior e resistência política intermediária; falta calibrar parâmetros com séries históricas validadas antes de apresentá-los como dados reais.
 - Adotar identidade visual brasileira sem transformar cada tela em painel denso: visão resumida, grupos de indicadores e modais com impacto agora/depois.
+- **Entregue na 0.1:** guia curto na seleção da partida e tutorial reabrível no jogo, com navegação pelas telas disponíveis para aquele cargo.
 - Criar elenco de retratos/caricaturas originais e fichas de personagens fictícios; dados e imagens de figuras públicas terão fonte e contexto.
 - Expandir as campanhas nomeadas atuais com exportação e recuperação de saves. Cadastro não confirma o e-mail; sem verificar o endereço na área Conta, o Cognito não consegue enviar recuperação de senha.
 

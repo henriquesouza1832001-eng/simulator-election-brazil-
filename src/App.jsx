@@ -13,6 +13,7 @@ import AuthPanel from './AuthPanel';
 import AccountPanel from './AccountPanel';
 import WelcomePanel from './WelcomePanel';
 import GameSetupPanel from './GameSetupPanel';
+import GameGuide from './GameGuide';
 import Brand from './Brand';
 import './diplomacy.css';
 
@@ -187,6 +188,8 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [correction, setCorrection] = useState('');
   const [activeTab, setActiveTab] = useState('Visão geral');
+  const [gameGuideOpen, setGameGuideOpen] = useState(false);
+  const [gameGuideStep, setGameGuideStep] = useState(0);
   const [ruptureInfo, setRuptureInfo] = useState(null);
   const [budgetView, setBudgetView] = useState(null);
   const [budgetSection, setBudgetSection] = useState('Contas públicas');
@@ -383,6 +386,17 @@ export default function App() {
     { label: 'Agenda', items: ['Agenda', 'Aprendizado'] },
   ].filter((group) => group.items.length);
   const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || tabGroups[0];
+  const availableTabs = tabGroups.flatMap((group) => group.items);
+  const gameGuideSteps = [
+    { tab: 'Visão geral', title: 'Comece pelo painel', description: 'Os cartões resumem os números que você escolheu acompanhar. A agenda e os alertas ajudam a decidir o que merece atenção hoje.' },
+    { tab: 'Indicadores', title: 'Consulte os detalhes quando precisar', description: 'Os indicadores ficam agrupados por assunto. Abra só o grupo que procura e compare a variação com o início da partida.' },
+    { tab: 'Medidas', title: 'Revise antes de decidir', description: 'Escreva uma proposta, confira como o jogo a interpretou e leia efeitos e custos projetados antes de aplicar.' },
+    { tab: 'Orçamento', title: 'Acompanhe dinheiro, gastos e obras', description: 'Veja as contas públicas, ajuste despesas e escolha investimentos. Obras custam recursos e levam tempo para entregar.' },
+    { tab: 'Crises', title: 'Responda aos acontecimentos', description: 'Eventos simulados podem continuar afetando o país. Compare o custo e os efeitos imediatos e futuros de cada resposta.' },
+    { tab: 'Diplomacia', title: 'Planeje relações e viagens', description: 'Visitas e compromissos internacionais consomem dias do calendário; o restante do governo continua seguindo a data.' },
+    { tab: careerMode ? 'Carreira' : 'Eleição', title: careerMode ? 'Acompanhe sua carreira' : 'Governe durante a campanha', description: careerMode ? 'Confira cargo, território, apoio e calendário eleitoral. A eleição pode abrir caminho para outro mandato ou cargo.' : 'A campanha tem agenda e recursos próprios. O governo continua funcionando enquanto a eleição se aproxima.' },
+    { tab: 'Agenda', title: 'O tempo também é uma decisão', description: 'Use Próximo dia para avançar com cuidado. Viagens e atividades gastam dias; avançar sete dias ou um mês pode passar por vários acontecimentos.' },
+  ].filter((step) => availableTabs.includes(step.tab));
   const dashboardTab = ['Visão geral', 'Indicadores', 'Medidas'].includes(activeTab);
   const pageGuidance = {
     'Visão geral': ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.'],
@@ -400,7 +414,7 @@ export default function App() {
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">
@@ -515,5 +529,6 @@ export default function App() {
     </main>
     {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} difficulty={state.difficulty} onDifficultyChange={changeDifficulty} busy={busy} setBusy={setBusy} />}
     {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}
+    {gameGuideOpen && <GameGuide steps={gameGuideSteps} stepIndex={gameGuideStep} onStepChange={(nextStep) => { setGameGuideStep(nextStep); const nextTab = gameGuideSteps[nextStep]?.tab; if (nextTab) setActiveTab(nextTab); }} onClose={() => setGameGuideOpen(false)} />}
   </div>;
 }

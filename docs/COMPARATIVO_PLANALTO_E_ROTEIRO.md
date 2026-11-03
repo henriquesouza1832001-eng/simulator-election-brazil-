@@ -105,6 +105,7 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 - [x] Validar token Cognito no backend e filtrar dados pelo identificador verificado do jogador.
 - [x] Criar importador TSE com origem/licença, armazenamento de campos minimizados e consulta filtrada; os anos são importados manualmente no servidor.
 - [x] Criar várias campanhas por jogador, com nome, cargo e dificuldade configuráveis.
+- [x] Oferecer guia curto na escolha da partida e tutorial reabrível durante o jogo, com avanço direto entre as telas principais.
 - [ ] Definir as entidades centrais: jogador, personagem, campanha, cargo, mandato, evento, medida, orçamento e fonte.
 
 ### Vertical slice de carreira
