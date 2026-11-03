@@ -141,17 +141,31 @@ SERVICE_AREAS = {
     "mobility": {"label": "Transporte e mobilidade", "outcome": "mobility", "effect": 4.0, "days": 240},
     "sanitation": {"label": "Saneamento básico", "outcome": "sanitation", "effect": 4.0, "days": 300},
     "infrastructure": {"label": "Infraestrutura e obras", "outcome": "infrastructure", "effect": 3.5, "days": 365},
+    "employment": {"label": "Emprego e renda", "outcome": "employment", "effect": 3.0, "days": 180},
 }
 EXECUTIVE_SERVICE_ACCESS = {
-    "prefeito": {"education", "health", "mobility", "sanitation"},
-    "governador": {"education", "health", "security", "mobility", "sanitation", "infrastructure"},
+    "prefeito": {"education", "health", "mobility", "sanitation", "employment"},
+    "governador": {"education", "health", "security", "mobility", "sanitation", "infrastructure", "employment"},
     "presidente": set(SERVICE_AREAS),
 }
 EXECUTIVE_SERVICE_BASE_COSTS = {
-    "prefeito": {"education": 18.0, "health": 22.0, "mobility": 14.0, "sanitation": 20.0},
-    "governador": {"education": 400.0, "health": 500.0, "security": 380.0, "mobility": 650.0, "sanitation": 470.0, "infrastructure": 900.0},
-    "presidente": {"education": 4500.0, "health": 6500.0, "security": 5000.0, "mobility": 8500.0, "sanitation": 6000.0, "infrastructure": 12000.0},
+    "prefeito": {"education": 18.0, "health": 22.0, "mobility": 14.0, "sanitation": 20.0, "employment": 16.0},
+    "governador": {"education": 400.0, "health": 500.0, "security": 380.0, "mobility": 650.0, "sanitation": 470.0, "infrastructure": 900.0, "employment": 350.0},
+    "presidente": {"education": 4500.0, "health": 6500.0, "security": 5000.0, "mobility": 8500.0, "sanitation": 6000.0, "infrastructure": 12000.0, "employment": 4200.0},
 }
+PROMISE_OUTCOMES = {
+    "economia": "employment", "saude": "health", "educacao": "education",
+    "seguranca": "security", "mobilidade": "mobility",
+}
+PROMISE_MINIMUM_CHANGE = {"employment": 2.0, "health": 3.0, "education": 3.0, "security": 2.5, "mobility": 2.5}
+PROMISE_LIMIT = 6
+PROMISE_REVIEW_DAYS = 365
+PROMISE_LANGUAGE_PATTERNS = (
+    r"\bprometo\b", r"\bprometemos\b", r"\bme comprometo\b", r"\bnos comprometemos\b",
+    r"\bassumo o compromisso\b", r"\bcomprometo-me\b", r"\b(?:minha|nossa) meta e\b", r"\b(?:meu|nosso) compromisso e\b",
+    r"\b(?:vou|vamos) (?:reduzir|ampliar|aumentar|criar|garantir|entregar|construir|melhorar|implantar|investir|publicar|abrir|diminuir|baixar|zerar|combater|proteger|fortalecer|expandir|contratar|assegurar|apoiar|reformar|priorizar|defender|promover|desenvolver|executar|implementar|preservar)\b",
+    r"\b(?:reduzirei|reduziremos|ampliarei|ampliaremos|aumentarei|aumentaremos|criarei|criaremos|garantirei|garantiremos|entregarei|entregaremos|construirei|construiremos|melhorarei|melhoraremos|implantarei|implantaremos|investirei|investiremos|publicarei|publicaremos)\b",
+)
 LEGISLATIVE_ACTIONS = [
     {"key": "proposal", "label": "Apresentar proposta de lei", "capital": 18, "days": 60, "summary": "A proposta entra em tramitação e enfrenta uma votação simulada."},
     {"key": "oversight", "label": "Fiscalizar contrato ou programa", "capital": 12, "days": 30, "summary": "A fiscalização pode revelar falha, melhorar controle ou abrir um caso político."},
@@ -475,6 +489,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
                  "customs": customs, "traits": traits, "biography": str(character.get("biography", ""))[:400]}
     previous = state.get("career") or {}
     previous_history = list(previous.get("history", []))
+    previous_promises = list(previous.get("campaign_promises", []))
     previous_reputation = float(previous.get("reputation", 50.0))
     if previous.get("mode"):
         if previous.get("phase") not in {"opposition", "term_complete"}:
@@ -525,7 +540,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "poll_support": initial_poll, "local_support": local_strength, "campaign_base_local_support": local_strength,
         "state_support": initial_poll,
         "national_support": initial_poll, "momentum": 0.0, "fatigue": 0,
-        "history": previous_history[-20:], "reputation": round(previous_reputation, 1),
+        "history": previous_history[-20:], "campaign_promises": previous_promises[-30:], "reputation": round(previous_reputation, 1),
         "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + (municipality_id or municipality))),
         "campaign_team_municipality_id": municipality_id if role["scope"] == "municipal" else municipality_id or STATE_CAPITALS[state_code],
         "group_support": group_support, "last_action_date": None, "activities": [],
@@ -602,6 +617,217 @@ def _speech_score(issue: str, message: str) -> tuple[int, dict[str, int]]:
     attacks = 12 if any(p in normalized for p in ("lixo", "vagabundo", "traidor", "inimigo do povo")) else 0
     score = max(0, min(100, 40 + relevance + concrete + empathy + length - exaggeration - attacks))
     return score, {"pertinência do tema": relevance, "proposta verificável": concrete, "conexão local": empathy, "clareza": length, "promessa exagerada": -exaggeration, "ataque pessoal": -attacks}
+
+
+def _promise_rule(issue: str, message: str, career: dict[str, Any]) -> dict[str, Any]:
+    """Select a visible, deterministic piece of in-game evidence for a promise."""
+    normalized = _norm(message)
+    if issue == "economia" and career.get("office") == "presidente":
+        metric = next((key for terms, key in (
+            ({"inflacao", "preco", "precos", "custo de vida"}, "inflation"),
+            ({"desemprego", "emprego", "trabalho"}, "unemployment"),
+            ({"crescimento", "pib", "economia"}, "gdp_growth"),
+        ) if any(_norm(term) in normalized for term in terms)), None)
+        if metric:
+            metric_labels = {"inflation": "inflação anual", "unemployment": "desemprego", "gdp_growth": "crescimento do PIB"}
+            direction = "up" if metric == "gdp_growth" else "down"
+            return {"kind": "metric", "key": metric, "label": metric_labels[metric], "direction": direction,
+                    "minimum_change": 0.2, "rule": f"o indicador simulado de {metric_labels[metric]} precisa melhorar ao menos 0,2 ponto."}
+    if issue == "seguranca" and career.get("office") == "prefeito":
+        return {"kind": "unsupported", "key": "security", "label": "segurança municipal",
+                "direction": "evidence", "minimum_change": 0.0,
+                "rule": "o recorte atual ainda não modela um indicador municipal de segurança; a promessa será registrada, sem avaliação ou penalidade."}
+    outcome = PROMISE_OUTCOMES.get(issue)
+    if outcome and career.get("office") not in LEGISLATIVE_OFFICES:
+        return {"kind": "outcome", "key": outcome, "label": SERVICE_AREAS[outcome]["label"],
+                "direction": "up", "minimum_change": PROMISE_MINIMUM_CHANGE[outcome],
+                "rule": f"o indicador de {SERVICE_AREAS[outcome]['label'].lower()} precisa subir ao menos {PROMISE_MINIMUM_CHANGE[outcome]:.1f} pontos com uma entrega concluída."}
+    if issue == "integridade":
+        evidence = "prestação de contas pública" if career.get("office") not in LEGISLATIVE_OFFICES else "fiscalização concluída ou projeto relacionado aprovado"
+        return {"kind": "integrity", "key": "trust", "label": "confiança e transparência", "direction": "up",
+                "minimum_change": 1.5, "rule": f"é preciso registrar {evidence} depois da promessa e preservar ao menos 1,5 ponto de confiança."}
+    issue_label = ISSUES[issue]["label"].lower()
+    return {"kind": "bill", "key": issue, "label": f"entrega legislativa em {issue_label}", "direction": "evidence",
+            "minimum_change": 1.0, "rule": f"ao menos um projeto relacionado a {issue_label} precisa ser aprovado na simulação."}
+
+
+def _promise_baseline(state: dict[str, Any], career: dict[str, Any], rule: dict[str, Any]) -> float:
+    rule_kind = rule.get("kind", rule.get("metric_kind"))
+    rule_key = rule.get("key", rule.get("metric_key"))
+    if rule_kind == "metric":
+        return float(state.get("metrics", {}).get(rule_key, state.get("social_indicators", {}).get(rule_key, 0.0)))
+    governance = career.get("governance") or {}
+    if rule_kind == "outcome":
+        return float((governance.get("outcomes") or {}).get(rule_key, 50.0))
+    return float(governance.get("trust", 50.0))
+
+
+def _is_explicit_promise(message: str) -> bool:
+    normalized = _norm(message)
+    if re.search(r"\bnao\s+(?:(?:vou|vamos)\s+|prometo\b|prometemos\b|me comprometo\b|nos comprometemos\b)", normalized):
+        return False
+    return any(re.search(pattern, normalized) for pattern in PROMISE_LANGUAGE_PATTERNS)
+
+
+def _record_campaign_promise(state: dict[str, Any], career: dict[str, Any], issue: str,
+                             message: str) -> dict[str, Any] | None:
+    if not _is_explicit_promise(message):
+        return None
+    promises = career.setdefault("campaign_promises", [])
+    election_cycle = career.get("election_date")
+    if any(item.get("status") == "pending" and item.get("issue") == issue
+           and item.get("election_date") == election_cycle for item in promises):
+        return {"status": "not_recorded", "issue_label": ISSUES[issue]["label"],
+                "statement": message.strip()[:600],
+                "evidence_rule": "Já existe uma promessa pendente sobre esse tema neste ciclo eleitoral.",
+                "review_date": None}
+    if sum(item.get("status") == "pending" for item in promises) >= PROMISE_LIMIT:
+        return {"status": "not_recorded", "issue_label": ISSUES[issue]["label"],
+                "statement": message.strip()[:600],
+                "evidence_rule": f"O limite de {PROMISE_LIMIT} promessas pendentes já foi atingido.",
+                "review_date": None}
+    today = date.fromisoformat(state["date"])
+    governing = is_career_governing(career, today)
+    rule = _promise_rule(issue, message, career)
+    office_start = career.get("office_start") if governing else None
+    review_date = None
+    baseline = None
+    reference_date = None
+    if governing:
+        review_day = today + timedelta(days=PROMISE_REVIEW_DAYS)
+        term_end = date.fromisoformat(career.get("term_end", review_day.isoformat()))
+        review_date = min(review_day, term_end).isoformat()
+        baseline = _promise_baseline(state, career, rule)
+        reference_date = today.isoformat()
+    promise = {
+        "id": f"pledge-{today.isoformat()}-{issue}-{len(promises) + 1}",
+        "date": today.isoformat(), "election_date": election_cycle,
+        "issue": issue, "issue_label": ISSUES[issue]["label"],
+        "statement": message.strip()[:600], "status": "pending",
+        "review_date": review_date, "reference_date": reference_date,
+        "baseline": baseline, "metric_kind": rule["kind"], "metric_key": rule["key"],
+        "metric_label": rule["label"], "direction": rule["direction"],
+        "minimum_change": rule["minimum_change"], "evidence_rule": rule["rule"],
+        "office": career.get("office"), "simulated": True,
+    }
+    promises.append(promise)
+    career["campaign_promises"] = promises[-30:]
+    return promise
+
+
+def _activate_campaign_promises(state: dict[str, Any], career: dict[str, Any], office_start: date,
+                                *, reset_existing: bool = False) -> None:
+    for promise in career.get("campaign_promises", []):
+        if promise.get("status") != "pending":
+            continue
+        review_date = promise.get("review_date")
+        if review_date and not reset_existing:
+            continue
+        promise["reference_date"] = office_start.isoformat()
+        promise["baseline"] = _promise_baseline(state, career, promise)
+        promise["office"] = career.get("office")
+        limit = office_start + timedelta(days=PROMISE_REVIEW_DAYS)
+        term_end = date.fromisoformat(career.get("term_end", limit.isoformat()))
+        promise["review_date"] = min(limit, term_end).isoformat()
+        promise["activated_at"] = office_start.isoformat()
+        promise["baseline_source"] = "indicador registrado na posse simulada"
+
+
+def _promise_evidence(state: dict[str, Any], career: dict[str, Any], promise: dict[str, Any]) -> tuple[float, bool]:
+    rule_kind = promise.get("metric_kind")
+    key = promise.get("metric_key")
+    reference_date = promise.get("reference_date") or promise.get("date", "9999-12-31")
+    if rule_kind == "metric":
+        observed = float(state.get("metrics", {}).get(key, state.get("social_indicators", {}).get(key, 0.0)))
+        baseline = float(promise.get("baseline", observed))
+        delta = observed - baseline if promise.get("direction") == "up" else baseline - observed
+        return round(delta, 3), delta >= float(promise.get("minimum_change", 0.2))
+    governance = career.get("governance") or {}
+    if rule_kind == "outcome":
+        observed = float((governance.get("outcomes") or {}).get(key, promise.get("baseline", 50.0)))
+        baseline = float(promise.get("baseline", observed))
+        delta = observed - baseline
+        return round(delta, 2), delta >= float(promise.get("minimum_change", 1.0))
+    actions = list(governance.get("actions", []))
+    reports = list(governance.get("public_reports", []))
+    if rule_kind == "integrity":
+        relevant_reports = [item for item in reports if item.get("date", "") > reference_date]
+        relevant_oversight = [item for item in actions if item.get("kind") == "oversight"
+                              and item.get("status") == "concluded"
+                              and (item.get("completed_at") or item.get("due_date") or "") > reference_date]
+        trust_delta = float(governance.get("trust", 50.0)) - float(promise.get("baseline", 50.0))
+        return round(trust_delta, 2), bool(relevant_reports or relevant_oversight) and trust_delta >= float(promise.get("minimum_change", 1.5))
+    terms = [_norm(term) for term in ISSUES.get(key, {}).get("terms", set())]
+    approved = [item for item in actions if item.get("kind") == "bill" and item.get("status") == "approved"
+                and (item.get("completed_at") or item.get("due_date") or "") > reference_date
+                and any(term and term in _norm(str(item.get("title", ""))) for term in terms)]
+    return (1.0 if approved else 0.0), bool(approved)
+
+
+def _review_campaign_promises(state: dict[str, Any], career: dict[str, Any], before: date,
+                              after: date) -> list[str]:
+    messages: list[str] = []
+    governance = career.get("governance") or {}
+    for promise in career.get("campaign_promises", []):
+        if promise.get("status") != "pending" or not promise.get("review_date"):
+            continue
+        review_date = date.fromisoformat(promise["review_date"])
+        if not before < review_date <= after:
+            continue
+        office_start = career.get("office_start")
+        term_end = career.get("term_end")
+        if not office_start or review_date < date.fromisoformat(office_start):
+            continue
+        if term_end and review_date > date.fromisoformat(term_end):
+            continue
+        if promise.get("metric_kind") == "unsupported":
+            promise.update({"status": "not_assessed", "reviewed_on": review_date.isoformat(),
+                            "observed_change": 0.0, "review_office": career.get("office"), "simulated": True})
+            territory = career.get("municipality") or career.get("state_name", "")
+            state.setdefault("simulated_news", []).insert(0, {
+                "id": f"{promise['id']}-review", "date": review_date.isoformat(),
+                "title": f"Compromisso sem indicador municipal: {promise['issue_label']}",
+                "region": territory,
+                "description": f"A promessa foi registrada, mas {promise['evidence_rule']} Nenhum efeito de reputação foi aplicado.",
+                "simulated": True,
+            })
+            promise["news_id"] = f"{promise['id']}-review"
+            messages.append(f"O simulador registrou a promessa sobre {promise['issue_label'].lower()}, mas ainda não dispõe de indicador municipal para avaliá-la.")
+            continue
+        delta, fulfilled = _promise_evidence(state, career, promise)
+        promise.update({"status": "fulfilled" if fulfilled else "questioned", "reviewed_on": review_date.isoformat(),
+                        "observed_change": delta, "review_office": career.get("office"),
+                        "simulated": True})
+        impact = 1.2 if fulfilled else -1.2
+        career["reputation"] = _clamp(float(career.get("reputation", 50.0)) + impact)
+        career["poll_support"] = round(_clamp(float(career.get("poll_support", 50.0)) + impact * .6), 2)
+        for group in ISSUES[promise["issue"]]["groups"]:
+            career.setdefault("group_support", {})[group] = _clamp(
+                career.get("group_support", {}).get(group, 45.0) + impact * .4
+            )
+        territory = career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career.get("state_name", ""))
+        if fulfilled:
+            headline = f"Promessa de campanha cumprida: {promise['issue_label']}"
+            if promise.get("metric_kind") == "bill":
+                evidence_text = "A simulação registrou a aprovação de uma proposta legislativa relacionada ao tema."
+            elif promise.get("metric_kind") == "integrity":
+                evidence_text = f"A confiança simulada variou {delta:+.1f} ponto(s) e houve uma ação pública de transparência ou fiscalização."
+            else:
+                evidence_text = f"O indicador de {promise['metric_label']} avançou {delta:.1f} ponto(s) desde a referência registrada."
+            description = f"A prestação de contas simulada registra o compromisso: {promise['statement']} {evidence_text}"
+            messages.append(f"Cobrança simulada concluída: a promessa sobre {promise['issue_label'].lower()} foi atendida.")
+        else:
+            headline = f"Cobrança de campanha: {promise['issue_label']}"
+            description = (f"A promessa registrada foi: {promise['statement']} "
+                           f"A simulação não encontrou evidência suficiente até {review_date.strftime('%d/%m/%Y')}: {promise['evidence_rule']}")
+            messages.append(f"Cobrança simulada: não houve evidência suficiente para a promessa sobre {promise['issue_label'].lower()}.")
+        state.setdefault("simulated_news", []).insert(0, {
+            "id": f"{promise['id']}-review", "date": review_date.isoformat(), "title": headline,
+            "region": territory, "description": description, "simulated": True,
+        })
+        promise["news_id"] = f"{promise['id']}-review"
+    state["simulated_news"] = state.get("simulated_news", [])[:20]
+    return messages
 
 
 def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
@@ -701,6 +927,8 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "days_until_action": wait, "poll_support": round(career["poll_support"], 1), "local_support": round(career["local_support"], 1),
         "state_support": round(career["state_support"], 1), "national_support": round(career["national_support"], 1),
         "reputation": round(float(career.get("reputation", 50)), 1), "history": list(reversed(career.get("history", [])[-12:])),
+        "campaign_promises": list(reversed(career.get("campaign_promises", [])[-12:])),
+        "pending_campaign_promises": sum(item.get("status") == "pending" for item in career.get("campaign_promises", [])),
         "momentum": round(career["momentum"], 1), "fatigue": career["fatigue"],
         "campaign_fund_mi": round(career["campaign_fund_mi"], 3), "spent_mi": round(career["spent_mi"], 3),
         "opponent_share": round(career["opponent_share"], 1), "opponents": [
@@ -1128,6 +1356,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     career["last_action_date"] = state["date"]
     if activity_type in TRAVEL_ACTIVITIES and target_municipality:
         career["campaign_team_municipality_id"] = target_municipality["ibge_code"]
+    campaign_promise = _record_campaign_promise(state, career, issue, message)
     record = {
         "id": f"career-{state['date']}-{len(career['activities']) + 1}", "date": state["date"], "type": activity_type,
         "label": activity["label"], "channel": activity["channel"], "issue": issue, "issue_label": ISSUES[issue]["label"],
@@ -1144,6 +1373,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
         "days_cost": days_cost, "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,
         "social_result": social_result, "debate": debate_result, "conduct": conduct_result,
+        "campaign_promise_id": campaign_promise.get("id") if campaign_promise and campaign_promise.get("id") else None,
         "character_effects": [f"{trait}: efeito aplicado nesta ação" for trait in traits],
     }
     career["activities"].append(record)
@@ -1151,7 +1381,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     result_message = "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."
     if travel_days:
         result_message += f" O deslocamento de {travel_from['name']} até {target_municipality['name']} consumiu mais {travel_days} dia(s)."
-    return {"activity": record, "score": score, "rubric": rubric, "days_cost": days_cost, "poll_support": career["poll_support"],
+    return {"activity": record, "campaign_promise": campaign_promise, "score": score, "rubric": rubric, "days_cost": days_cost, "poll_support": career["poll_support"],
             "local_support": career["local_support"], "state_support": career["state_support"], "campaign_fund_mi": career["campaign_fund_mi"],
             "municipality_support": target_city_support,
             "social_result": social_result, "debate": debate_result, "forecast": _forecast(career, score), "message": result_message}
@@ -1401,7 +1631,8 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
                                 "budget_source": "federal_investment" if career["office"] == "presidente" else "career_reserve",
                                 "investment_commitment_mi": 0.0,
                                 "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0, "mobility": 50.0,
-                                             "sanitation": 50.0, "infrastructure": 50.0}}
+                                             "sanitation": 50.0, "infrastructure": 50.0, "employment": 50.0}}
+        _activate_campaign_promises(state, career, date.fromisoformat(transition_date), reset_existing=True)
         state["office_status"] = "elected_official"
         state["career_status"] = "in_office"
         state["term_start"] = transition_date
@@ -1456,6 +1687,10 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
                 area = SERVICE_AREAS[item["area"]]
                 outcomes = governance.setdefault("outcomes", {})
                 outcomes[area["outcome"]] = _clamp(outcomes.get(area["outcome"], 50) + item["effect"])
+                if item.get("area") == "employment" and career.get("office") == "presidente":
+                    metrics = state.setdefault("metrics", {})
+                    metrics["unemployment"] = round(max(2.0, float(metrics.get("unemployment", 7.2)) - .25), 2)
+                    metrics["gdp_growth"] = round(float(metrics.get("gdp_growth", 2.1)) + .1, 2)
                 governance["delivery"] = float(governance.get("delivery", 0)) + 1
                 governance["trust"] = _clamp(governance.get("trust", 50) + 1.5)
                 item["status"] = "delivered"
@@ -1483,6 +1718,7 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
                 governance.setdefault("actions", []).append(item)
                 messages.append(f"Fiscalização simulada concluída: {item['title']}. O relatório foi publicado na agenda.")
         governance["pipeline"] = remaining
+    messages.extend(_review_campaign_promises(state, career, before, after))
     return [message for message in messages if message]
 
 

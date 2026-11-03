@@ -19,7 +19,7 @@ from app.db import (
 )
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
-from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
+from app.engine.career import _is_explicit_promise, advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
 from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
 from app.engine.rules import apply_effects, forecast
@@ -369,6 +369,52 @@ class ApiSmokeTests(unittest.TestCase):
         advanced = self.client.post("/api/game/advance", json={"days": 29})
         self.assertEqual(advanced.status_code, 200, advanced.text)
         self.assertTrue(advanced.json()["state"]["career_overview"]["can_prepare"])
+
+    def test_campaign_promises_return_as_simulated_accountability(self) -> None:
+        self.assertTrue(_is_explicit_promise("Prometo publicar metas para melhorar a educação."))
+        self.assertFalse(_is_explicit_promise("Não prometo resolver tudo sem custo."))
+
+        state = new_game()
+        state["date"] = "2030-07-08"
+        start_career(state, "presidente", "DF", "", "Partido da Renovação", "Centro", "Candidatura de teste")
+        first = perform_career_action(
+            state, "entrevista", "educacao",
+            "Prometo publicar metas para melhorar a escola, com prazo e prestação de contas.",
+        )
+        state["date"] = "2030-07-16"
+        second = perform_career_action(
+            state, "entrevista", "seguranca",
+            "Vamos combater a violência e proteger as famílias com acompanhamento público.",
+        )
+        state["date"] = "2030-07-24"
+        duplicate = perform_career_action(
+            state, "entrevista", "educacao", "Prometo melhorar todas as escolas sem informar prazo.",
+        )
+        self.assertEqual(first["campaign_promise"]["status"], "pending")
+        self.assertIsNone(first["campaign_promise"]["review_date"])
+        self.assertEqual(second["campaign_promise"]["issue"], "seguranca")
+        self.assertEqual(duplicate["campaign_promise"]["status"], "not_recorded")
+
+        career = state["career"]
+        career.update({"phase": "transition", "transition_date": "2031-01-05", "result": "won"})
+        state["date"] = "2031-01-05"
+        advance_career(state, date(2031, 1, 4), date(2031, 1, 5))
+        promises = {item["issue"]: item for item in career["campaign_promises"]}
+        self.assertEqual(promises["educacao"]["review_date"], "2032-01-05")
+        self.assertEqual(promises["educacao"]["baseline"], 50.0)
+
+        perform_governance_action(state, "service_education")
+        delivery = date(2031, 1, 5) + timedelta(days=180)
+        state["date"] = delivery.isoformat()
+        advance_career(state, date(2031, 1, 5), delivery)
+        state["date"] = "2032-01-05"
+        advance_career(state, date(2032, 1, 4), date(2032, 1, 5))
+
+        promises = {item["issue"]: item for item in career["campaign_promises"]}
+        self.assertEqual(promises["educacao"]["status"], "fulfilled")
+        self.assertEqual(promises["seguranca"]["status"], "questioned")
+        self.assertEqual(len([item for item in state["simulated_news"] if "pledge-" in item["id"]]), 2)
+        self.assertTrue(all(item["simulated"] for item in state["simulated_news"] if "pledge-" in item["id"]))
 
     def test_pre_campaign_organization_contributes_to_election_result(self) -> None:
         ordinary = new_game()
