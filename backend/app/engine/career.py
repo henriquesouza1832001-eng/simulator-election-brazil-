@@ -336,13 +336,19 @@ def _campaign(state: dict[str, Any]) -> dict[str, Any]:
 def is_career_governing(career: dict[str, Any], today: date) -> bool:
     """Whether this character still holds the elected office on this date."""
     phase = career.get("phase")
-    if phase in {"office", "campaign"} and (phase == "office" or career.get("office_start")):
-        term_end = career.get("term_end")
-        return not term_end or today <= date.fromisoformat(term_end)
-    if phase in {"outgoing", "transition"} and career.get("office_start"):
-        term_end = career.get("term_end")
-        return bool(term_end) and today <= date.fromisoformat(term_end)
-    return False
+    office_start = career.get("office_start")
+    if phase not in {"office", "campaign", "outgoing", "transition"}:
+        return False
+    if phase != "office" and not office_start:
+        return False
+    term_end = career.get("term_end")
+    if not term_end:
+        if not office_start:
+            return phase == "office"
+        role = OFFICES.get(career.get("office"), {})
+        term_years = int(career.get("term_years") or role.get("term_years", 4))
+        term_end = _term_end_date(career["office"], date.fromisoformat(office_start), term_years).isoformat()
+    return today <= date.fromisoformat(term_end)
 
 
 def _speech_score(issue: str, message: str) -> tuple[int, dict[str, int]]:

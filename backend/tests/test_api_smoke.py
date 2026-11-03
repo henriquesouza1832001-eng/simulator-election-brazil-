@@ -332,10 +332,11 @@ class ApiSmokeTests(unittest.TestCase):
         perform_governance_action(state, "public_report")
 
         state["date"] = "2030-10-06"
-        resolve_career_election(state, date(2030, 10, 6))
+        election_message = resolve_career_election(state, date(2030, 10, 6))
         self.assertEqual(career["result"], "lost")
         self.assertEqual(career["phase"], "outgoing")
         self.assertEqual(career["transition_date"], "2031-01-05")
+        self.assertIn("04/01/2031", election_message)
 
         overview = career_overview(state)
         self.assertTrue(overview["governing"])
@@ -348,6 +349,9 @@ class ApiSmokeTests(unittest.TestCase):
         state["date"] = "2031-01-05"
         self.assertFalse(career_overview(state)["governing"])
         self.assertFalse(is_career_governing(career, date(2031, 1, 5)))
+        legacy_caretaker = {"phase": "outgoing", "office": "presidente", "office_start": "2027-01-05", "term_years": 4}
+        self.assertTrue(is_career_governing(legacy_caretaker, date(2031, 1, 4)))
+        self.assertFalse(is_career_governing(legacy_caretaker, date(2031, 1, 5)))
         with self.assertRaises(HTTPException) as error:
             require_presidential_authority(state, "Ação federal de teste")
         self.assertEqual(error.exception.status_code, 403)

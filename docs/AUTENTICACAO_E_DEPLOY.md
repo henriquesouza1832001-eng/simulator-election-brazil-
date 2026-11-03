@@ -10,6 +10,13 @@
 - A interface guarda os tokens com `CookieStorage` Secure e SameSite=Lax; são cookies acessíveis ao JavaScript, não cookies HttpOnly. O backend continua exigindo bearer token validado.
 - A sessão HTTPS e as rotas protegidas foram verificadas: páginas e configuração respondem; `/api/game` sem token retorna 401; acesso direto ao IP retorna 403.
 
+## Deploy automático via GitHub Actions
+
+O workflow `aws-deploy.yml` faz build e roda a suíte do backend em cada atualização relevante na `main`. Para publicar, o GitHub assume por OIDC a role `mandato-github-deploy` e envia o script de deploy para uma instância EC2 específica via Systems Manager; não há chaves AWS permanentes no GitHub.
+
+A role ainda não está conectada: em 3 de novembro de 2026, a validação passou, mas o job de deploy foi pulado porque a variável de repositório `AWS_DEPLOY_ROLE_ARN` não existe. O repositório já tem o subject OIDC imutável habilitado.
+
+Para concluir a configuração uma vez, autentique o AWS CLI e o GitHub CLI na conta correta e execute `./deploy/aws/setup-github-deploy.ps1` no PowerShell. O helper valida o repositório e a OIDC, cria/atualiza a stack CloudFormation `mandato-github-deploy`, restringe a role ao branch `main` e à instância do jogo, grava o ARN como `AWS_DEPLOY_ROLE_ARN` e dispara um deploy. Depois disso, pushes relevantes publicam automaticamente.
 ## Limites que ainda faltam antes de abrir amplamente
 
 1. Aplicar a configuração de backup semanal S3 em `deploy/aws/template.yaml` e validar um envio e uma restauração reais. A cópia manual pré-deploy fica no mesmo volume e não substitui o backup externo.

@@ -106,3 +106,7 @@ Cada etapa será entregue como uma fatia pequena: modelo de dados, regra determi
 ## Limites do modelo fiscal atual
 
 Os valores de referência são abstrações do simulador, não uma reprodução da LOA ou do Siafi. A conta separa fluxos anuais, mas ainda precisa de execução mensal detalhada, vinculações legais, transferências entre entes e amortização explícita da dívida.
+
+## Regra de continuidade eleitoral
+
+Durante a campanha, se o personagem ainda ocupa o cargo, a tela de Mandato e as ações do cargo continuam disponíveis. Após a eleição, uma vitória ou derrota não encerra a autoridade antes do fim do mandato vigente. O incumbente pode governar até o último dia registrado em `term_end`; a oposição começa no dia seguinte. A nova posse presidencial simulada ocorre em 5 de janeiro, e as demais em 1º de janeiro.
