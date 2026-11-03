@@ -1,6 +1,6 @@
-# Mandato 0.1 — simulador político
+# Civiciclo 0.1 — simulador político
 
-Mandato é um jogo fictício de política brasileira, jogado no navegador. O tempo avança por dia; decisões, campanhas, eleições, crises e projetos alteram uma simulação determinística. O projeto não representa previsões oficiais nem atribui fatos inventados a pessoas ou empresas reais.
+Civiciclo é o nome de trabalho do jogo fictício de política brasileira, jogado no navegador. O símbolo vetorial está em `public/assets/brand/civiciclo.svg`; a busca de disponibilidade da marca no INPI ainda não foi feita. O tempo avança por dia; decisões, campanhas, eleições, crises e projetos alteram uma simulação determinística. O projeto não representa previsões oficiais nem atribui fatos inventados a pessoas ou empresas reais.
 
 ## Estado da versão
 
@@ -10,7 +10,7 @@ As regras são uma abstração de jogo, não um modelo econômico ou jurídico p
 
 ## Jogar na web
 
-A instalação de protótipo está em [Mandato](https://d2dpmk0vrt66wn.cloudfront.net). O endereço usa Cognito para cadastro e login e pode exigir confirmação de e-mail. A versão publicada só recebe as mudanças locais depois de um novo deploy; os arquivos e comandos da infraestrutura estão em [`deploy/aws/README.md`](deploy/aws/README.md) e os limites operacionais em [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
+A instalação de protótipo está em [Civiciclo](https://d2dpmk0vrt66wn.cloudfront.net). O endereço usa Cognito para cadastro e login e pode exigir confirmação de e-mail. A versão publicada só recebe as mudanças locais depois de um novo deploy; os arquivos e comandos da infraestrutura estão em [`deploy/aws/README.md`](deploy/aws/README.md) e os limites operacionais em [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
 
 ## Executar localmente
 
