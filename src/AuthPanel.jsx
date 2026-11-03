@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Brand from './Brand';
 import {
   confirmResetPassword,
   confirmSignIn,
@@ -114,8 +115,8 @@ export default function AuthPanel({ onAuthenticated, onCancel, notice, setNotice
 
   return <main className="auth-screen"><section className="auth-card">
     {onCancel && <button className="auth-dismiss" type="button" onClick={onCancel} aria-label="Voltar ao jogo">×</button>}
-    <span className="brand-mark">M</span>
-    <div className="eyebrow">MANDATO · CONTA DO JOGADOR</div>
+    <Brand />
+    <div className="eyebrow">CIVICICLO · CONTA DO JOGADOR</div>
     <h1>{heading.title}</h1>
     <p>{heading.subtitle}</p>
     <form className="auth-form" onSubmit={submit}>

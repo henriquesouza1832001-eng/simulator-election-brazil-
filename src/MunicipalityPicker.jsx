@@ -3,7 +3,7 @@ import './municipality-picker.css';
 
 const population = new Intl.NumberFormat('pt-BR');
 
-export default function MunicipalityPicker({ request, stateCode, value = '', selectedId = '', onSelect, label = 'Município' }) {
+export default function MunicipalityPicker({ request, stateCode, value = '', selectedId = '', onSelect, label = 'Município', required = true, disabled = false }) {
   const [query, setQuery] = useState(value);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,8 @@ export default function MunicipalityPicker({ request, stateCode, value = '', sel
         autoComplete="off"
         minLength={2}
         maxLength={80}
-        required
+        required={required}
+        disabled={disabled}
         placeholder="Digite duas letras e escolha uma cidade"
         aria-autocomplete="list"
         aria-expanded={open && query.trim().length >= 2}

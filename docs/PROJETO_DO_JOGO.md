@@ -39,6 +39,18 @@ O importador iniciado nesta base busca candidaturas no CKAN do TSE e guarda camp
 
 Dados eleitorais são fatos de uma eleição, não cadastro completo de quem ocupa hoje cada cargo. Trajetória em governos, mandatos atuais, votações legislativas, biografia e indicações exigem fontes oficiais adicionais. Cada fato terá URL, instituição, data de referência e nível de confiança. O jogo não inferirá culpa, ideologia ou caráter a partir de uma candidatura ou dado cadastral.
 
+### Uso de nomes públicos, partidos e sátira
+
+- Nomes de pessoas públicas e partidos podem aparecer como referências factuais quando a informação for pública, pertinente e acompanhada de fonte e data. A lista inicial de siglas e nomes partidários vem do TSE; ela não traz uma ideologia atribuída pelo jogo.
+- Partidas, pesquisas, falas, relações, eventos e resultados são ficção satírica. Uma pessoa real pode aparecer num cenário inventado, mas acusações, crimes, falas e decisões geradas pelo jogo não serão apresentados como fatos sobre ela.
+- O rótulo de sátira reduz ambiguidade, mas não é garantia jurídica por si só. Retratos, logotipos, citações e outros materiais precisam de atribuição e revisão de uso; não sugerir endosso de partidos ou instituições.
+- A carreira distingue `birth_municipality_id` (origem opcional do personagem) de `municipality_id` (território eleitoral da disputa). Prefeito e vereador precisam selecionar município válido do catálogo IBGE; eleições estaduais usam a UF; presidente concorre no território nacional.
+- O catálogo inicial de partidos é atualizado a partir do portal do TSE com data de consulta. O jogador define a linha de cada partido naquela partida; esse ajuste é ficcional e não descreve oficialmente a legenda. Diferença entre linha partidária e espectro do personagem gera aviso, confirmação explícita e atrito simulado.
+
+### Nome e identidade visual
+
+O nome de trabalho é **Civiciclo**, com símbolo vetorial próprio em `public/assets/brand/civiciclo.svg`. É uma escolha de desenvolvimento, não uma declaração de disponibilidade ou registro de marca. Antes de divulgar ou comercializar o jogo, consultar a base do INPI por palavra exata, radical e semelhança fonética nas classes pertinentes e revisar o resultado.
+
 ## Eventos e RAG
 
 1. Um motor de regras determina se uma situação ocorre e seus efeitos de jogo, usando cargo, território, estado, alianças, dificuldade, orçamento e histórico.

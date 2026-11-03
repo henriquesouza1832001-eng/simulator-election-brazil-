@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .ai.interpreter import interpret
 from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, list_archives, load_state, recent_actions, record_action, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
@@ -19,8 +19,8 @@ from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
 from .engine.politics import rupture_preview, attempt_rupture
 from .engine.campaign import campaign_overview, perform_campaign_action
-from .engine.career import STATES, career_options, career_overview, perform_career_action, perform_governance_action, start_career
-from .engine.geography import catalog_metadata, municipality_options
+from .engine.career import STATES, career_options, career_overview, perform_career_action, perform_governance_action, start_career, validate_party_name
+from .engine.geography import catalog_metadata, get_municipality, municipality_options
 from .engine.appointments import appointments_overview, appoint_minister, nominate_judge
 from .engine.communications import require_inaugural_address, submit_inaugural_address
 from .engine.ministries import ministry_catalog, INVESTMENT_AREAS
@@ -122,15 +122,28 @@ class DifficultyRequest(BaseModel):
 class PlayerCharacterRequest(BaseModel):
     name: str = Field(default="", max_length=80)
     political_spectrum: str = Field(default="centro", pattern="^(esquerda|centro_esquerda|centro|centro_direita|direita)$")
-    family_background: str = Field(default="classe_media", pattern="^(trabalhadora|classe_media|empreendedora|rural|servidora_publica|politica)$")
+    family_background: str = Field(default="classe_media", pattern="^(trabalhadora|classe_media|empreendedora|rural|servidora_publica|politica|educadora|oficios|lideranca_comunitaria)$")
+    economic_axis: str = Field(default="equilibrio", pattern="^(estado_social|equilibrio|mercado)$")
+    social_axis: str = Field(default="liberdades", pattern="^(liberdades|comunidade|tradicao)$")
+    territorial_axis: str = Field(default="federativa", pattern="^(municipalista|federativa|nacional)$")
+    birth_state_code: str = Field(default="", max_length=2)
+    birth_municipality_id: str | None = Field(default=None, pattern=r"^\d{7}$")
     customs: list[str] = Field(default_factory=list, max_length=3)
     traits: list[str] = Field(default_factory=list, max_length=2)
     biography: str = Field(default="", max_length=400)
 
+    @field_validator("birth_state_code")
+    @classmethod
+    def normalize_birth_state(cls, value: str) -> str:
+        value = value.strip().upper()
+        if value and value not in {code for code, _, _ in STATES}:
+            raise ValueError("Escolha uma UF válida para a cidade natal.")
+        return value
+
     @field_validator("customs")
     @classmethod
     def valid_customs(cls, values: list[str]) -> list[str]:
-        allowed = {"vida_comunitaria", "vida_urbana", "vida_rural", "fe_presente", "cultura_popular", "vida_sindical"}
+        allowed = {"vida_comunitaria", "vida_urbana", "vida_rural", "fe_presente", "cultura_popular", "vida_sindical", "voluntariado", "esporte_local", "migracao"}
         if len(set(values)) != len(values) or any(value not in allowed for value in values):
             raise ValueError("Escolha costumes disponíveis, sem repetir opções.")
         return values
@@ -142,6 +155,19 @@ class PlayerCharacterRequest(BaseModel):
         if len(set(values)) != len(values) or any(value not in allowed for value in values):
             raise ValueError("Escolha traços disponíveis, sem repetir opções.")
         return values
+
+    @model_validator(mode="after")
+    def valid_birthplace(self) -> "PlayerCharacterRequest":
+        code = self.birth_state_code
+        if bool(code) != bool(self.birth_municipality_id):
+            raise ValueError("Informe a UF e a cidade natal juntas, ou deixe ambas em branco.")
+        if self.birth_municipality_id:
+            profile = get_municipality(self.birth_municipality_id)
+            if not profile:
+                raise ValueError("A cidade natal precisa ser selecionada no catálogo oficial do IBGE.")
+            if profile["state_code"] != code:
+                raise ValueError("A cidade natal não pertence à UF informada.")
+        return self
 
 
 class PresidentialStartRequest(DifficultyRequest):
@@ -205,6 +231,18 @@ class CareerStartRequest(BaseModel):
     character: PlayerCharacterRequest = Field(default_factory=PlayerCharacterRequest)
     difficulty: str = Field(default="normal", pattern="^(tranquilo|normal|dificil|complicado|realismo_puro)$")
     new_game: bool = False
+
+    @field_validator("party")
+    @classmethod
+    def validate_party(cls, value: str) -> str:
+        return validate_party_name(value)
+
+    @field_validator("ideology")
+    @classmethod
+    def validate_ideology(cls, value: str) -> str:
+        if value not in {"Esquerda", "Centro-esquerda", "Centro", "Centro-direita", "Direita"}:
+            raise ValueError("Escolha uma linha partidária disponível na simulação.")
+        return value
 
 
 class CareerActionRequest(BaseModel):
@@ -695,6 +733,11 @@ def begin_presidential_game(request: PresidentialStartRequest) -> dict[str, Any]
     state.pop("setup_pending", None)
     state["difficulty"] = request.difficulty
     character = request.character.model_dump()
+    if character.get("birth_municipality_id"):
+        birthplace = get_municipality(character["birth_municipality_id"])
+        character["birthplace"] = {"municipality": birthplace["name"], "state_code": birthplace["state_code"], "municipality_id": birthplace["ibge_code"]}
+    else:
+        character["birthplace"] = None
     state["player_character"] = character
     metrics = state.setdefault("metrics", {})
     for trait, changes in {

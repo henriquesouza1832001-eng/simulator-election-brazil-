@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "source": "Tribunal Superior Eleitoral",
+    "source_url": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse",
+    "checked_on": "2026-11-02",
+    "note": "Lista factual de siglas e nomes; não inclui ideologia, apoio, associação ou endosso. Atualizar antes de novas temporadas."
+  },
+  "parties": [
+    {"acronym": "MDB", "name": "Movimento Democrático Brasileiro"},
+    {"acronym": "PDT", "name": "Partido Democrático Trabalhista"},
+    {"acronym": "PT", "name": "Partido dos Trabalhadores"},
+    {"acronym": "PCdoB", "name": "Partido Comunista do Brasil"},
+    {"acronym": "PSB", "name": "Partido Socialista Brasileiro"},
+    {"acronym": "PSDB", "name": "Partido da Social Democracia Brasileira"},
+    {"acronym": "AGIR", "name": "AGIR"},
+    {"acronym": "MOBILIZA", "name": "Mobilização Nacional"},
+    {"acronym": "CIDADANIA", "name": "CIDADANIA"},
+    {"acronym": "PV", "name": "Partido Verde"},
+    {"acronym": "AVANTE", "name": "AVANTE"},
+    {"acronym": "PP", "name": "Progressistas"},
+    {"acronym": "PSTU", "name": "Partido Socialista dos Trabalhadores Unificado"},
+    {"acronym": "PCB", "name": "Partido Comunista Brasileiro"},
+    {"acronym": "PRTB", "name": "Partido Renovador Trabalhista Brasileiro"},
+    {"acronym": "DC", "name": "Democracia Cristã"},
+    {"acronym": "PCO", "name": "Partido da Causa Operária"},
+    {"acronym": "PODE", "name": "Podemos"},
+    {"acronym": "REPUBLICANOS", "name": "Republicanos"},
+    {"acronym": "PSOL", "name": "Partido Socialismo e Liberdade"},
+    {"acronym": "PL", "name": "Partido Liberal"},
+    {"acronym": "PSD", "name": "Partido Social Democrático"},
+    {"acronym": "SOLIDARIEDADE", "name": "Solidariedade"},
+    {"acronym": "NOVO", "name": "Partido Novo"},
+    {"acronym": "REDE", "name": "Rede Sustentabilidade"},
+    {"acronym": "DEMOCRATA", "name": "Democrata"},
+    {"acronym": "UP", "name": "Unidade Popular"},
+    {"acronym": "UNIÃO", "name": "União Brasil"},
+    {"acronym": "PRD", "name": "Partido Renovação Democrática"},
+    {"acronym": "MISSÃO", "name": "Partido Missão"}
+  ]
+}

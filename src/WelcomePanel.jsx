@@ -1,7 +1,9 @@
+import Brand from './Brand';
+
 export default function WelcomePanel({ onGuest, onSignIn, busy, notice }) {
   return <main className="welcome-screen">
     <header className="welcome-header">
-      <a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR POLÍTICO</small></span></a>
+      <Brand />
       <button className="quiet-button" onClick={onSignIn}>Entrar / criar conta</button>
     </header>
     <section className="welcome-stage">
@@ -20,6 +22,6 @@ export default function WelcomePanel({ onGuest, onSignIn, busy, notice }) {
         <button className="secondary-button" onClick={onSignIn}>Entrar ou criar conta <b>→</b></button>
       </aside>
     </section>
-    <footer className="welcome-footer">Cenário fictício para fins de simulação. As partidas sem conta ficam vinculadas a este navegador.</footer>
+    <footer className="welcome-footer">Simulador político satírico. Pessoas, falas, pesquisas e acontecimentos das partidas são ficção, salvo quando aparecerem identificados como dados públicos com fonte e data. As partidas sem conta ficam vinculadas a este navegador.</footer>
   </main>;
 }

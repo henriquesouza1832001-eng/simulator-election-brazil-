@@ -20,7 +20,7 @@ Status: primeira fatia de geografia e temas canônicos implementada e verificáv
 ### 1. Cidade, personagem e local da ação são campos diferentes
 
 - `municipality_id` será o código IBGE de sete dígitos, armazenado como texto para preservar o formato e servir de chave estável.
-- `Character.home_municipality_id` será opcional. Jornalistas nacionais, figuras institucionais e personagens sem vínculo local podem não ter cidade de origem.
+- `Character.birth_municipality_id` será opcional. Jornalistas nacionais, figuras institucionais e personagens sem vínculo local podem não ter cidade de origem.
 - A candidatura terá sua própria `municipality_id` quando o cargo for municipal; atividades e eventos guardarão o município onde ocorreram. Origem do personagem não será usada como local automático da atividade.
 - Saves antigos manterão o nome livre como campo legado. A migração só associará um código quando a correspondência for inequívoca; nomes ambíguos ficam sem vínculo até escolha explícita.
 - O catálogo inicial já contém todos os municípios e a população estimada de 2026, com origem e data de referência registradas. Porte e alcance de campanha são parâmetros fictícios documentados; ampliar fontes municipais e temas-âncora virá depois.
@@ -34,7 +34,14 @@ Status: primeira fatia de geografia e temas canônicos implementada e verificáv
 
 ### 3. Personagem persistente com contexto geográfico opcional
 
-`Character` terá ID estável dentro da partida, nome, papéis e histórico, traços, vetor ideológico e `home_municipality_id` opcional. Eventos referenciam `character_id` e `municipality_id` separadamente. A geração permanece reproduzível pela semente e os dados inventados recebem o selo de simulação.
+`Character` terá ID estável dentro da partida, nome, papéis e histórico, traços, vetor ideológico e `birth_municipality_id` opcional. Eventos referenciam `character_id` e `municipality_id` separadamente. A geração permanece reproduzível pela semente e os dados inventados recebem o selo de simulação.
+
+### 3a. Origem e território eleitoral são independentes
+
+- `birth_state_code` e `birth_municipality_id` são opcionais e validados juntos contra o catálogo municipal do IBGE.
+- `state_code` e `municipality_id` da candidatura descrevem o território eleitoral, nunca preenchem a origem do personagem por inferência.
+- Vereador e prefeito exigem cidade eleitoral válida; cargos estaduais e federais aceitam UF sem município; presidente usa “Brasil” como território da campanha e não pede município eleitoral.
+- Cidades digitadas fora do catálogo não são aceitas. Cidades opcionais só são enviadas se o jogador escolheu uma sugestão válida.
 
 ### 4. Aprendizado de interpretação separado da avaliação narrativa
 
@@ -65,6 +72,10 @@ O requisito continua aberto: `game_saves.player_id` é único e `game_archives` 
 8. **Mandatos subnacionais e Legislativo:** criar orçamento/serviços/câmaras por ente; depois ligar partidos, bancadas, comissões, coalizões e votos nominais. Não inferir voto legislativo apenas do rótulo ideológico.
 
 Cada fatia termina com regra determinística, estado persistido, endpoint, interface focada e atualização dos documentos. Testes unitários e avaliações sintéticas são critérios de aceite para essas fatias; este documento não executa nem substitui esses testes.
+
+## Uso de referências públicas
+
+Siglas e nomes de partidos podem vir do catálogo público do TSE, com URL e data de consulta. O catálogo não presume linha ideológica: a linha escolhida na partida é um parâmetro ficcional. Nomes públicos, cargos e dados eleitorais só entram com fonte e data; notícias, falas, pesquisas, alianças e eventos satíricos recebem rótulo de ficção. O aviso de sátira não substitui busca de marca, atribuição de imagens ou revisão de direitos antes de divulgação comercial. Nome de trabalho atual: Civiciclo; a disponibilidade no INPI ainda não foi confirmada.
 
 ## Critérios de aceite das três propostas
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Civiciclo</title>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#176c50"/>
+  <path d="M83 38a35 35 0 1 0 4 43" fill="none" stroke="#e7f2e9" stroke-width="10" stroke-linecap="round"/>
+  <path d="m78 26 19 8-8 19" fill="none" stroke="#e7f2e9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="64" cy="64" r="10" fill="#d1a94f"/>
+</svg>

@@ -8,7 +8,9 @@ from __future__ import annotations
 import random
 import re
 import unicodedata
+import json
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 
 from .communications import ensure_communications_state
@@ -56,7 +58,17 @@ FAMILY_GROUP_EFFECTS = {
     "rural": {"rural": 1.4, "trabalhadores": .3},
     "servidora_publica": {"servidores": 1.2, "familias": .3},
     "politica": {"servidores": .3, "empreendedores": .3},
+    "educadora": {"familias": .7, "servidores": .6},
+    "oficios": {"trabalhadores": .8, "empreendedores": .4},
+    "lideranca_comunitaria": {"familias": .5, "trabalhadores": .5},
 }
+IDEOLOGY_SPECTRUM = {
+    "Esquerda": "esquerda", "Centro-esquerda": "centro_esquerda", "Centro": "centro",
+    "Centro-direita": "centro_direita", "Direita": "direita",
+}
+SPECTRUM_ORDER = ["esquerda", "centro_esquerda", "centro", "centro_direita", "direita"]
+PARTY_CATALOG_PATH = Path(__file__).resolve().parents[1] / "data" / "parties.json"
+CUSTOM_PARTY_BLOCKLIST = {"nazista", "nazismo", "fascista", "fascismo", "nsdap"}
 ISSUES = {
     "economia": {"label": ISSUE_LABELS["economia"], "terms": {"emprego", "renda", "preço", "preco", "inflação", "inflacao", "empresa", "trabalho", "salário", "salario"}, "groups": ["trabalhadores", "empreendedores"]},
     "saude": {"label": ISSUE_LABELS["saude"], "terms": {"saúde", "saude", "hospital", "posto", "médico", "medico", "vacina", "atendimento"}, "groups": ["familias", "servidores"]},
@@ -126,6 +138,7 @@ def _term_end_date(office: str, inauguration: date, term_years: int) -> date:
 
 def career_options(as_of: date | None = None) -> dict[str, Any]:
     as_of = as_of or date(2027, 1, 1)
+    party_data = json.loads(PARTY_CATALOG_PATH.read_text(encoding="utf-8"))
     return {
         "offices": [{"key": key, **{name: value for name, value in role.items() if name != "fund_mi"}, "campaign_fund_mi": role["fund_mi"]} for key, role in OFFICES.items()],
         "calendar_previews": {key: {
@@ -135,14 +148,25 @@ def career_options(as_of: date | None = None) -> dict[str, Any]:
             "cycle_label": "Ciclo municipal" if key in {"vereador", "prefeito"} else "Ciclo geral",
         } for key in OFFICES},
         "states": [{"code": code, "name": name, "region": region} for code, name, region in STATES],
-        "parties": ["Partido da Renovação", "Frente Popular", "União Cívica", "Aliança Trabalhista", "Movimento Verde", "Partido Municipalista"],
-        "ideologies": ["Progressista", "Centro-esquerda", "Centro", "Centro-direita", "Conservadora", "Ecologista"],
+        "parties": [f"{item['acronym']} — {item['name']}" for item in party_data["parties"]],
+        "party_source": {"label": "Partidos registrados no TSE", "url": party_data["metadata"]["source_url"], "checked_on": party_data["metadata"]["checked_on"]},
+        "ideologies": list(IDEOLOGY_SPECTRUM),
         "issues": [{"key": key, "label": item["label"]} for key, item in ISSUES.items()],
         "activities": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": item["cost"]} for key, item in ACTIVITIES.items()],
         "appointment_paths": APPOINTED_PATHS,
         "service_areas": SERVICE_AREAS,
         "simulated_notice": "Candidatos, partidos, pesquisas e resultados desta carreira são criados para a simulação. Não representam pesquisa ou endosso real.",
     }
+
+
+def validate_party_name(party: str) -> str:
+    party = re.sub(r"\s+", " ", str(party or "")).strip()
+    normalized = unicodedata.normalize("NFKD", party).encode("ascii", "ignore").decode("ascii").lower()
+    if len(party) < 3 or len(party) > 80:
+        raise ValueError("O nome do partido precisa ter de 3 a 80 caracteres.")
+    if any(term in normalized for term in CUSTOM_PARTY_BLOCKLIST):
+        raise ValueError("Esse nome não está disponível para partidos personalizados.")
+    return party
 
 
 def start_career(state: dict[str, Any], office: str, state_code: str, municipality: str,
@@ -153,8 +177,11 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         raise ValueError("Escolha um cargo eletivo disponível.")
     if state_code not in STATE_NAMES:
         raise ValueError("Escolha uma unidade da federação válida.")
-    if not municipality.strip() and not municipality_id:
-        raise ValueError("Informe o município da candidatura.")
+    role = OFFICES[office]
+    party = validate_party_name(party)
+    if ideology not in IDEOLOGY_SPECTRUM:
+        raise ValueError("Escolha uma linha partidária disponível na simulação.")
+    municipality = (municipality or "").strip()
     municipality_profile = get_municipality(municipality_id) if municipality_id else None
     if municipality_id and not municipality_profile:
         raise ValueError("O código IBGE do município não existe no catálogo carregado.")
@@ -162,20 +189,41 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         raise ValueError("O município escolhido não pertence ao estado da candidatura.")
     if municipality_profile:
         municipality = municipality_profile["name"]
-    else:
+    elif municipality:
         municipality_profile = resolve_municipality(state_code, municipality)
-        municipality_id = municipality_profile["ibge_code"] if municipality_profile else None
-    municipality = municipality.strip()
+        if not municipality_profile:
+            raise ValueError("Escolha um município válido no catálogo oficial; texto livre não identifica uma cidade.")
+        municipality_id = municipality_profile["ibge_code"]
+        municipality = municipality_profile["name"]
+    elif role["scope"] == "municipal":
+        raise ValueError("Para vereador e prefeito, escolha o município da candidatura.")
     today = date.fromisoformat(state["date"])
-    role = OFFICES[office]
     character = character or {}
     spectrum = character.get("political_spectrum", "centro")
     family = character.get("family_background", "classe_media")
     traits = [trait for trait in character.get("traits", []) if trait in {"carismatica", "tecnica", "conciliadora", "combativa", "gestora", "comunitaria"}][:2]
-    customs = [custom for custom in character.get("customs", []) if custom in {"vida_comunitaria", "vida_urbana", "vida_rural", "fe_presente", "cultura_popular", "vida_sindical"}][:3]
+    customs = [custom for custom in character.get("customs", []) if custom in {"vida_comunitaria", "vida_urbana", "vida_rural", "fe_presente", "cultura_popular", "vida_sindical", "voluntariado", "esporte_local", "migracao"}][:3]
+    birthplace_id = character.get("birth_municipality_id") or (character.get("birthplace") or {}).get("municipality_id")
+    birthplace_state = str(character.get("birth_state_code") or (character.get("birthplace") or {}).get("state_code") or "").upper()
+    birthplace_profile = get_municipality(birthplace_id) if birthplace_id else None
+    if birthplace_id and not birthplace_profile:
+        raise ValueError("A cidade natal precisa ser selecionada no catálogo do IBGE.")
+    if birthplace_id and birthplace_state != birthplace_profile["state_code"]:
+        raise ValueError("A cidade natal selecionada não pertence à UF informada.")
+    if birthplace_state and birthplace_state not in STATE_NAMES:
+        raise ValueError("Escolha uma UF válida para a cidade natal.")
+    if bool(birthplace_state) != bool(birthplace_id):
+        raise ValueError("Informe a UF e a cidade natal juntas, ou deixe ambas em branco.")
     character = {"name": (character.get("name") or candidate_name or "").strip()[:80],
                  "political_spectrum": spectrum if spectrum in SPECTRUM_GROUP_EFFECTS else "centro",
                  "family_background": family if family in FAMILY_GROUP_EFFECTS else "classe_media",
+                 "economic_axis": character.get("economic_axis") if character.get("economic_axis") in {"estado_social", "equilibrio", "mercado"} else "equilibrio",
+                 "social_axis": character.get("social_axis") if character.get("social_axis") in {"liberdades", "comunidade", "tradicao"} else "liberdades",
+                 "territorial_axis": character.get("territorial_axis") if character.get("territorial_axis") in {"municipalista", "federativa", "nacional"} else "federativa",
+                 "birth_state_code": birthplace_state,
+                 "birth_municipality_id": birthplace_profile["ibge_code"] if birthplace_profile else None,
+                 "birthplace": ({"municipality": birthplace_profile["name"], "state_code": birthplace_state,
+                                  "municipality_id": birthplace_profile["ibge_code"]} if birthplace_profile else None),
                  "customs": customs, "traits": traits, "biography": str(character.get("biography", ""))[:400]}
     previous = state.get("career") or {}
     previous_history = list(previous.get("history", []))
@@ -186,6 +234,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         previous_history.append({
             "office": previous.get("office_label", previous.get("office", "Cargo")),
             "municipality": previous.get("municipality", ""), "municipality_id": previous.get("municipality_id"),
+            "territory": previous.get("municipality") or ("Brasil" if previous.get("office") == "presidente" else previous.get("state_name", previous.get("state_code", ""))),
             "state_code": previous.get("state_code", ""),
             "result": previous.get("result"), "vote_share": previous.get("vote_share"),
             "term_years": previous.get("term_years", 0), "reputation": round(previous_reputation, 1),
@@ -204,15 +253,17 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
     term_end = _term_end_date(office, inauguration, role["term_years"])
     phase = "campaign" if today >= campaign_start else "pre_campaign"
     local_strength = 39.0 if office in {"vereador", "prefeito"} else 35.0
-    initial_poll = _clamp(role["base_support"] + (previous_reputation - 50) * .22 + (.5 if "carismatica" in traits else 0))
+    party_spectrum = IDEOLOGY_SPECTRUM.get(ideology, "centro")
+    spectrum_gap = abs(SPECTRUM_ORDER.index(character["political_spectrum"]) - SPECTRUM_ORDER.index(party_spectrum))
+    initial_poll = _clamp(role["base_support"] + (previous_reputation - 50) * .22 + (.5 if "carismatica" in traits else 0) - spectrum_gap * .45)
     group_support = {key: 45.0 for key in GROUPS}
     for adjustment in (SPECTRUM_GROUP_EFFECTS[character["political_spectrum"]], FAMILY_GROUP_EFFECTS[character["family_background"]]):
         for group, amount in adjustment.items():
             group_support[group] = _clamp(group_support[group] + amount)
     state["career"] = {
         "mode": True, "version": 1, "office": office, "office_label": role["label"], "scope": role["scope"],
-        "phase": phase, "candidate_name": candidate_name.strip() or "Candidatura do jogador", "party": party.strip() or "Partido da Renovação",
-        "ideology": ideology, "state_code": state_code, "state_name": STATE_NAMES[state_code],
+        "phase": phase, "candidate_name": candidate_name.strip() or "Candidatura do jogador", "party": party,
+        "ideology": ideology, "party_alignment_gap": spectrum_gap, "state_code": state_code, "state_name": STATE_NAMES[state_code],
         "character": character,
         "macroregion": STATE_REGIONS[state_code], "municipality": municipality,
         "municipality_id": municipality_id,
@@ -238,9 +289,10 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
     state["term_start"] = today.isoformat()
     state["term"] = 0
     election_context = f"a campanha abre em {campaign_start.strftime('%d/%m/%Y')}" if phase == "pre_campaign" else "a campanha eleitoral começou"
+    campaign_territory = "Brasil" if office == "presidente" else municipality or STATE_NAMES[state_code]
     state.setdefault("simulated_news", []).insert(0, {
         "id": f"career-start-{today.isoformat()}", "date": today.isoformat(), "title": f"Campanha simulada: {role['label']}",
-        "region": STATE_NAMES[state_code], "description": f"{candidate_name or 'Candidatura do jogador'} prepara a disputa em {municipality}/{state_code}; {election_context}.", "simulated": True,
+        "region": campaign_territory, "description": f"{candidate_name or 'Candidatura do jogador'} prepara a disputa em {campaign_territory}; {election_context}.", "simulated": True,
     })
     state["simulated_news"] = state["simulated_news"][:20]
     return state
@@ -302,8 +354,10 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     return {
         "mode": True, "office": career["office"], "office_label": career["office_label"], "scope": career["scope"],
         "phase": career["phase"], "candidate_name": career["candidate_name"], "party": career["party"], "ideology": career["ideology"],
+        "party_alignment_gap": career.get("party_alignment_gap", 0),
         "character": career.get("character", {}),
         "state_code": career["state_code"], "state_name": career["state_name"], "municipality": career["municipality"],
+        "campaign_territory": career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career["state_name"]),
         "municipality_id": career.get("municipality_id"), "municipality_profile": municipality_profile,
         "electorate": career["electorate"], "powers": career["powers"], "election_date": career["election_date"],
         "inauguration_date": career["inauguration_date"], "term_end": career["term_end"], "term_years": career["term_years"],
@@ -620,7 +674,8 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         address = ensure_communications_state(state)["inauguration"]
         address.update({"required": True, "delivered": False, "legacy_save": False,
                         "date": None, "text": "", "score": None, "rubric": {}})
-        messages.append(f"Posse simulada: você assume o cargo de {career['office_label']} em {career['municipality']}/{career['state_code']}.")
+        territory = career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career.get("state_name", career.get("state_code", "")))
+        messages.append(f"Posse simulada: você assume o cargo de {career['office_label']} em {territory}.")
         messages.append("O primeiro pronunciamento de posse precisa ser registrado antes de novas decisões.")
     if career["phase"] == "office" and after.isoformat() >= career.get("term_end", "9999-12-31"):
         career["phase"] = "term_complete"
