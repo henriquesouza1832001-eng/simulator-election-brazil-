@@ -1,1 +1,3 @@
-Retratos oficiais ligados a registros TSE, se usados, devem guardar o ano eleitoral, identificador da candidatura, URL original e atribuição. Não colocar CPF, endereço ou arquivos processuais aqui.
+Retratos oficiais ligados a registros TSE, se usados, devem guardar o ano eleitoral, identificador da candidatura (`SQ_CANDIDATO`), UF, URL de origem e atribuição. O Portal de Dados Abertos do TSE lista arquivos de fotos de candidatos e identifica a licença do conjunto; verifique a licença do ano importado e mantenha os dados de proveniência no catálogo. Não colocar CPF, endereço ou arquivos processuais aqui.
+
+O catálogo compartilhado está em `../catalog.json` e a estrutura em `../catalog.schema.json`. Foto oficial permanece identificada como `official_photo`; ela não é caricatura e não deve receber o aviso de sátira.

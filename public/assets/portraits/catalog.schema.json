@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mandato.local/portraits/catalog.schema.json",
+  "title": "Catálogo de retratos e caricaturas do Mandato",
+  "type": "object",
+  "required": ["version", "notice", "items"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "notice": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "kind", "image", "source", "attribution"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "party": { "type": "string" },
+          "office": { "type": "string" },
+          "state": { "type": "string", "maxLength": 2 },
+          "election_year": { "type": "integer", "minimum": 1989 },
+          "candidate_id": { "type": "string" },
+          "kind": { "enum": ["official_photo", "caricature", "fictional_avatar"] },
+          "image": { "type": "string", "minLength": 1 },
+          "reference_image": { "type": "string" },
+          "source": { "type": "string", "minLength": 1 },
+          "attribution": { "type": "string", "minLength": 1 },
+          "license": { "type": "string" },
+          "generated_at": { "type": "string", "format": "date-time" },
+          "satire_notice": { "type": "string" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "kind": { "const": "caricature" } }, "required": ["kind"] },
+            "then": { "required": ["reference_image", "generated_at", "satire_notice"] }
+          }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

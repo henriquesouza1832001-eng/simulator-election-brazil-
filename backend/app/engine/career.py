@@ -40,6 +40,21 @@ GROUPS = {
     "trabalhadores": "Trabalhadores", "empreendedores": "Pequenos negócios", "familias": "Famílias",
     "servidores": "Servidores públicos", "jovens": "Jovens", "rural": "População rural",
 }
+SPECTRUM_GROUP_EFFECTS = {
+    "esquerda": {"trabalhadores": 2.0, "servidores": 1.0, "empreendedores": -1.0},
+    "centro_esquerda": {"trabalhadores": 1.2, "familias": .7},
+    "centro": {"familias": .4},
+    "centro_direita": {"empreendedores": 1.0, "rural": .6},
+    "direita": {"empreendedores": 1.8, "rural": 1.0, "servidores": -.6},
+}
+FAMILY_GROUP_EFFECTS = {
+    "trabalhadora": {"trabalhadores": 1.2, "familias": .5},
+    "classe_media": {"familias": .6, "empreendedores": .4},
+    "empreendedora": {"empreendedores": 1.2},
+    "rural": {"rural": 1.4, "trabalhadores": .3},
+    "servidora_publica": {"servidores": 1.2, "familias": .3},
+    "politica": {"servidores": .3, "empreendedores": .3},
+}
 ISSUES = {
     "economia": {"label": "Emprego e custo de vida", "terms": {"emprego", "renda", "preço", "preco", "inflação", "inflacao", "empresa", "trabalho", "salário", "salario"}, "groups": ["trabalhadores", "empreendedores"]},
     "saude": {"label": "Saúde", "terms": {"saúde", "saude", "hospital", "posto", "médico", "medico", "vacina", "atendimento"}, "groups": ["familias", "servidores"]},
@@ -129,7 +144,8 @@ def career_options(as_of: date | None = None) -> dict[str, Any]:
 
 
 def start_career(state: dict[str, Any], office: str, state_code: str, municipality: str,
-                 party: str, ideology: str, candidate_name: str) -> dict[str, Any]:
+                 party: str, ideology: str, candidate_name: str,
+                 character: dict[str, Any] | None = None) -> dict[str, Any]:
     if office not in OFFICES:
         raise ValueError("Escolha um cargo eletivo disponível.")
     if state_code not in STATE_NAMES:
@@ -138,6 +154,15 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         raise ValueError("Informe o município da candidatura.")
     today = date.fromisoformat(state["date"])
     role = OFFICES[office]
+    character = character or {}
+    spectrum = character.get("political_spectrum", "centro")
+    family = character.get("family_background", "classe_media")
+    traits = [trait for trait in character.get("traits", []) if trait in {"carismatica", "tecnica", "conciliadora", "combativa", "gestora", "comunitaria"}][:2]
+    customs = [custom for custom in character.get("customs", []) if custom in {"vida_comunitaria", "vida_urbana", "vida_rural", "fe_presente", "cultura_popular", "vida_sindical"}][:3]
+    character = {"name": (character.get("name") or candidate_name or "").strip()[:80],
+                 "political_spectrum": spectrum if spectrum in SPECTRUM_GROUP_EFFECTS else "centro",
+                 "family_background": family if family in FAMILY_GROUP_EFFECTS else "classe_media",
+                 "customs": customs, "traits": traits, "biography": str(character.get("biography", ""))[:400]}
     previous = state.get("career") or {}
     previous_history = list(previous.get("history", []))
     previous_reputation = float(previous.get("reputation", 50.0))
@@ -164,11 +189,16 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
     term_end = _term_end_date(office, inauguration, role["term_years"])
     phase = "campaign" if today >= campaign_start else "pre_campaign"
     local_strength = 39.0 if office in {"vereador", "prefeito"} else 35.0
-    initial_poll = _clamp(role["base_support"] + (previous_reputation - 50) * .22)
+    initial_poll = _clamp(role["base_support"] + (previous_reputation - 50) * .22 + (.5 if "carismatica" in traits else 0))
+    group_support = {key: 45.0 for key in GROUPS}
+    for adjustment in (SPECTRUM_GROUP_EFFECTS[character["political_spectrum"]], FAMILY_GROUP_EFFECTS[character["family_background"]]):
+        for group, amount in adjustment.items():
+            group_support[group] = _clamp(group_support[group] + amount)
     state["career"] = {
         "mode": True, "version": 1, "office": office, "office_label": role["label"], "scope": role["scope"],
         "phase": phase, "candidate_name": candidate_name.strip() or "Candidatura do jogador", "party": party.strip() or "Partido da Renovação",
         "ideology": ideology, "state_code": state_code, "state_name": STATE_NAMES[state_code],
+        "character": character,
         "macroregion": STATE_REGIONS[state_code], "municipality": municipality.strip(), "electorate": role["electorate"],
         "powers": list(role["powers"]), "term_years": role["term_years"], "election_date": election_day.isoformat(),
         "inauguration_date": inauguration.isoformat(), "term_end": term_end.isoformat(),
@@ -177,7 +207,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "national_support": initial_poll, "momentum": 0.0, "fatigue": 0,
         "history": previous_history[-20:], "reputation": round(previous_reputation, 1),
         "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + municipality)),
-        "group_support": {key: 45.0 for key in GROUPS}, "last_action_date": None, "activities": [],
+        "group_support": group_support, "last_action_date": None, "activities": [],
         "conduct": {"attempts": 0, "detected": 0, "election_penalty": 0.0, "history": []},
         "result": None, "vote_share": None, "opponent_share": 50.0, "appointments": [], "governance": None,
         "simulated": True,
@@ -248,6 +278,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     return {
         "mode": True, "office": career["office"], "office_label": career["office_label"], "scope": career["scope"],
         "phase": career["phase"], "candidate_name": career["candidate_name"], "party": career["party"], "ideology": career["ideology"],
+        "character": career.get("character", {}),
         "state_code": career["state_code"], "state_name": career["state_name"], "municipality": career["municipality"],
         "electorate": career["electorate"], "powers": career["powers"], "election_date": career["election_date"],
         "inauguration_date": career["inauguration_date"], "term_end": career["term_end"], "term_years": career["term_years"],
@@ -267,7 +298,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "can_start_campaign": career.get("phase") in {"opposition", "term_complete"},
         "groups": [{"key": key, "label": label, "support": round(career["group_support"][key], 1)} for key, label in GROUPS.items()],
         "activities": list(reversed(career["activities"][-10:])),
-        "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": item["cost"]} for key, item in ACTIVITIES.items()],
+        "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": round(item["cost"] * (.9 if "gestora" in (career.get("character") or {}).get("traits", []) else 1.0), 4)} for key, item in ACTIVITIES.items()],
         "issue_options": [{"key": key, "label": value["label"]} for key, value in ISSUES.items()],
         "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and career["phase"] == "office"} for key, value in APPOINTED_PATHS.items()],
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
@@ -361,17 +392,22 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     if len(message.strip()) < 12:
         raise ValueError("Escreva pelo menos 12 caracteres para a fala ou proposta.")
     activity = ACTIVITIES[activity_type]
-    if career["campaign_fund_mi"] < activity["cost"]:
+    traits = (career.get("character") or {}).get("traits", [])
+    action_cost = activity["cost"] * (.9 if "gestora" in traits else 1.0)
+    if career["campaign_fund_mi"] < action_cost:
         raise ValueError("O saldo do fundo de campanha não cobre essa atividade.")
     score, rubric = _speech_score(issue, message)
+    if "tecnica" in traits and rubric.get("proposta verificável", 0) > 0:
+        score = min(100, score + 3)
+        rubric["bônus de proposta técnica"] = 3
     quality = (score - 55) / 45
-    reach = activity["reach"]
-    local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1)))
+    reach = activity["reach"] + (.08 if "combativa" in traits else 0)
+    local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1) + (.15 if "carismatica" in traits else 0)))
     state_delta = local_delta * (0.4 if career["scope"] == "municipal" else 0.72)
     career["local_support"] = _clamp(career["local_support"] + local_delta)
     career["state_support"] = _clamp(career["state_support"] + state_delta)
     career["national_support"] = _clamp(career["national_support"] + state_delta * 0.25)
-    group_delta = quality * reach * 0.65
+    group_delta = quality * reach * 0.65 + (.15 if "conciliadora" in traits else 0) + (.2 if "comunitaria" in traits else 0)
     for group in ISSUES[issue]["groups"]:
         career["group_support"][group] = _clamp(career["group_support"][group] + group_delta)
     conduct_result = resolve_campaign_conduct(
@@ -409,17 +445,18 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
                          "virality_pct": round(virality * 100), "event": event, "group_effect": round(effect, 2),
                          "explanation": "A chance considera a nota da mensagem, clareza verificável, formato e fadiga da equipe."}
     career["momentum"] = round(max(-10, min(10, career["momentum"] * 0.8 + quality * 1.1)), 2)
-    career["fatigue"] = min(100, career["fatigue"] + (8 if activity_type in {"comicio", "porta_a_porta"} else 4))
-    career["campaign_fund_mi"] = round(career["campaign_fund_mi"] - activity["cost"], 4)
-    career["spent_mi"] = round(career["spent_mi"] + activity["cost"], 4)
+    career["fatigue"] = min(100, career["fatigue"] + (8 if activity_type in {"comicio", "porta_a_porta"} else 4) + (2 if "combativa" in traits else 0))
+    career["campaign_fund_mi"] = round(career["campaign_fund_mi"] - action_cost, 4)
+    career["spent_mi"] = round(career["spent_mi"] + action_cost, 4)
     career["last_action_date"] = state["date"]
     record = {
         "id": f"career-{state['date']}-{len(career['activities']) + 1}", "date": state["date"], "type": activity_type,
         "label": activity["label"], "channel": activity["channel"], "issue": issue, "issue_label": ISSUES[issue]["label"],
         "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
-        "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": activity["cost"],
+        "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
         "days_cost": activity["days"], "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,
         "social_result": social_result, "conduct": conduct_result,
+        "character_effects": [f"{trait}: efeito aplicado nesta ação" for trait in traits],
     }
     career["activities"].append(record)
     career["activities"] = career["activities"][-60:]

@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .ai.interpreter import interpret
 from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, list_archives, load_state, recent_actions, record_action, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
@@ -118,6 +118,35 @@ class DifficultyRequest(BaseModel):
     difficulty: str = Field(pattern="^(tranquilo|normal|dificil|complicado|realismo_puro)$")
 
 
+class PlayerCharacterRequest(BaseModel):
+    name: str = Field(default="", max_length=80)
+    political_spectrum: str = Field(default="centro", pattern="^(esquerda|centro_esquerda|centro|centro_direita|direita)$")
+    family_background: str = Field(default="classe_media", pattern="^(trabalhadora|classe_media|empreendedora|rural|servidora_publica|politica)$")
+    customs: list[str] = Field(default_factory=list, max_length=3)
+    traits: list[str] = Field(default_factory=list, max_length=2)
+    biography: str = Field(default="", max_length=400)
+
+    @field_validator("customs")
+    @classmethod
+    def valid_customs(cls, values: list[str]) -> list[str]:
+        allowed = {"vida_comunitaria", "vida_urbana", "vida_rural", "fe_presente", "cultura_popular", "vida_sindical"}
+        if len(set(values)) != len(values) or any(value not in allowed for value in values):
+            raise ValueError("Escolha costumes disponíveis, sem repetir opções.")
+        return values
+
+    @field_validator("traits")
+    @classmethod
+    def valid_traits(cls, values: list[str]) -> list[str]:
+        allowed = {"carismatica", "tecnica", "conciliadora", "combativa", "gestora", "comunitaria"}
+        if len(set(values)) != len(values) or any(value not in allowed for value in values):
+            raise ValueError("Escolha traços disponíveis, sem repetir opções.")
+        return values
+
+
+class PresidentialStartRequest(DifficultyRequest):
+    character: PlayerCharacterRequest = Field(default_factory=PlayerCharacterRequest)
+
+
 class DashboardRequest(BaseModel):
     cards: list[str] = Field(min_length=1, max_length=8)
 
@@ -171,6 +200,7 @@ class CareerStartRequest(BaseModel):
     party: str = Field(min_length=2, max_length=80)
     ideology: str = Field(min_length=2, max_length=40)
     candidate_name: str = Field(default="", max_length=80)
+    character: PlayerCharacterRequest = Field(default_factory=PlayerCharacterRequest)
     difficulty: str = Field(default="normal", pattern="^(tranquilo|normal|dificil|complicado|realismo_puro)$")
     new_game: bool = False
 
@@ -349,8 +379,9 @@ def begin_political_career(request: CareerStartRequest) -> dict[str, Any]:
         state["difficulty"] = request.difficulty
         if request.new_game:
             state["career"] = {}
+        character = request.character.model_dump()
         start_career(state, request.office, request.state_code.upper(), request.municipality,
-                     request.party, request.ideology, request.candidate_name)
+                     request.party, request.ideology, request.candidate_name or character["name"], character)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if archive_current:
@@ -642,17 +673,28 @@ def get_game() -> dict[str, Any]:
 
 
 @app.post("/api/game/new")
-def begin_presidential_game(request: DifficultyRequest) -> dict[str, Any]:
+def begin_presidential_game(request: PresidentialStartRequest) -> dict[str, Any]:
     current = game_state()
     if not current.get("setup_pending"):
         archive_state(current, f"Partida anterior · {current.get('date', 'sem data')}")
     state = new_game()
     state.pop("setup_pending", None)
     state["difficulty"] = request.difficulty
+    character = request.character.model_dump()
+    state["player_character"] = character
+    metrics = state.setdefault("metrics", {})
+    for trait, changes in {
+        "carismatica": {"approval": 1.0}, "tecnica": {"institutional_trust": 1.0},
+        "conciliadora": {"congress_support": 1.0}, "gestora": {"governability": 1.0},
+        "combativa": {"approval": .5, "institutional_trust": -.5}, "comunitaria": {"approval": .5},
+    }.items():
+        if trait in character["traits"]:
+            for key, amount in changes.items():
+                metrics[key] = round(max(0, min(100, float(metrics.get(key, 50)) + amount)), 1)
     state["action_log_start_id"] = record_action(
         state["date"], "partida", "Início de governo presidencial simulado", "",
-        {"mode": "presidencial", "difficulty": request.difficulty},
-        [{"date": state["date"], "office": "Presidência da República"}],
+        {"mode": "presidencial", "difficulty": request.difficulty, "character": character},
+        [{"date": state["date"], "office": "Presidência da República", "character_name": character["name"]}],
     )
     save_state(state)
     return public_state(state)
