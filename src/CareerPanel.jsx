@@ -78,6 +78,10 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
   const chosenCalendar = useMemo(() => options?.calendar_previews?.[office], [options, office]);
   const chosenActivity = useMemo(() => overview?.activity_options?.find((item) => item.key === activity), [overview, activity]);
   const chosenPreparation = useMemo(() => overview?.preparation_options?.find((item) => item.key === preparationAction), [overview, preparationAction]);
+  const previousPublicPoll = overview?.public_polls?.[1];
+  const publicPollTrend = overview?.latest_public_poll && previousPublicPoll
+    ? overview.latest_public_poll.candidate_support - previousPublicPoll.candidate_support
+    : null;
   const campaignActivityLocation = overview?.scope === 'municipal'
     ? overview.municipality_profile
     : activityMunicipalityProfile;
@@ -215,6 +219,10 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
         <aside className="panel career-rules"><span className="eyebrow">PODERES DO CARGO</span><ul>{overview.powers.map((item) => <li key={item}>{item}</li>)}</ul><div className="career-appointment"><b>Outros caminhos</b>{overview.appointment_paths.map((item) => <p key={item.key} className={item.available ? 'available' : 'locked'}>{item.label}<small>{item.available ? item.description : `Disponível após exercer: ${item.requires.map((key) => options.offices.find((role) => role.key === key)?.label).join(', ')}`}</small></p>)}</div>{overview.can_start_campaign && <button className="secondary-button career-next-office" onClick={() => setShowSetup(true)}>Escolher próximo cargo</button>}</aside>
       </div>}
 
+      {overview.latest_public_poll && (section === 'Campanha' || section === 'Apoio') && <section className="panel career-poll-card">
+        <div><span className="eyebrow">PESQUISA PÚBLICA · SIMULAÇÃO</span><h3>{overview.latest_public_poll.candidate_name}: {number.format(overview.latest_public_poll.candidate_support)}%</h3><p>Demais candidaturas: {number.format(overview.latest_public_poll.other_candidates_support)}% · margem ±{number.format(overview.latest_public_poll.margin_of_error)} · amostra {number.format(overview.latest_public_poll.sample_size)}.</p>{publicPollTrend != null && <small>{publicPollTrend > 0 ? '+' : ''}{number.format(publicPollTrend)} p.p. desde {dateLabel(previousPublicPoll.date)}.</small>}<small>Levantamento fictício gerado pelas regras do jogo; não representa pesquisa real.</small></div>
+        <details><summary>Evolução das pesquisas ({overview.public_polls.length})</summary><ol>{overview.public_polls.map((poll) => <li key={poll.date}><b>{dateLabel(poll.date)}</b><span>{number.format(poll.candidate_support)}% ±{number.format(poll.margin_of_error)} · n={number.format(poll.sample_size)}</span></li>)}</ol></details>
+      </section>}
       {section === 'Campanha' && overview.phase === 'pre_campaign' && <div className="career-columns">
         <form className="panel career-action" onSubmit={prepareCampaign}>
           <div className="career-section-heading"><div><span className="eyebrow">PREPARAÇÃO INTERNA</span><h3>Monte a estrutura antes da campanha</h3><p>Essas atividades organizam a equipe. Não pedem votos, não publicam propaganda e não alteram a pesquisa.</p></div><span className="career-cooldown">{overview.can_prepare ? 'DISPONÍVEL' : overview.preparation_wait_days ? `EM ${overview.preparation_wait_days} DIAS` : 'BASE COMPLETA'}</span></div>

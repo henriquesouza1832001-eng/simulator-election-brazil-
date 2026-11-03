@@ -9,6 +9,7 @@ import random
 import re
 import unicodedata
 import json
+from math import sqrt
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -215,6 +216,69 @@ def validate_party_name(party: str) -> str:
     return party
 
 
+def _campaign_poll_schedule(career: dict[str, Any]) -> list[date]:
+    start = date.fromisoformat(career["campaign_start"])
+    election = date.fromisoformat(career["election_date"])
+    scheduled = [start]
+    for offset in (30, 60):
+        poll_date = start + timedelta(days=offset)
+        if poll_date < election:
+            scheduled.append(poll_date)
+    final_poll = election - timedelta(days=3)
+    if final_poll > scheduled[-1]:
+        scheduled.append(final_poll)
+    return scheduled
+
+
+def _public_poll_sample_size(career: dict[str, Any]) -> int:
+    if career.get("scope") == "municipal":
+        population = float((career.get("municipality_profile") or {}).get("population_estimate", 0))
+        return max(350, min(1200, round(sqrt(population) * 0.8))) if population > 0 else 600
+    if career.get("office") == "presidente":
+        return 1800
+    if career.get("scope") == "estadual":
+        return 1000
+    return 1200
+
+
+def _projected_public_poll_support(state: dict[str, Any], career: dict[str, Any]) -> float:
+    from .difficulty import get_difficulty
+
+    difficulty = get_difficulty(state.get("difficulty", "normal"))
+    organization = min(8.0, len(career.get("activities", [])) * 0.55 + float(career.get("pre_campaign_organization", 0)))
+    fatigue_penalty = max(0, float(career.get("fatigue", 0)) - 60) * 0.035
+    opposition_drag = (difficulty.get("opposition_pressure", 1) - 1) * 2.0
+    conduct_penalty = float((career.get("conduct") or {}).get("election_penalty", 0))
+    if career.get("office") in {"vereador", "deputado_estadual", "deputado_federal"}:
+        estimate = float(career.get("poll_support", 0)) * 0.78 + organization + float(career.get("momentum", 0)) * 0.35
+    else:
+        estimate = 25 + float(career.get("poll_support", 0)) * 0.42 + organization + float(career.get("momentum", 0)) * 0.4
+    return _clamp(estimate - fatigue_penalty - conduct_penalty - opposition_drag)
+
+
+def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_date: date) -> dict[str, Any] | None:
+    polls = career.setdefault("public_polls", [])
+    if any(item.get("date") == field_date.isoformat() for item in polls):
+        return None
+    sample_size = _public_poll_sample_size(career)
+    margin = round(1.96 * sqrt(0.25 / sample_size) * 100, 1)
+    seed = f"{career.get('seed', 1)}:public-poll:{field_date.isoformat()}"
+    noise = random.Random(seed).uniform(-margin, margin)
+    candidate_support = round(_clamp(_projected_public_poll_support(state, career) + noise), 1)
+    record = {
+        "date": field_date.isoformat(),
+        "candidate_name": career.get("candidate_name", "Candidatura do jogador"),
+        "candidate_support": candidate_support,
+        "other_candidates_support": round(100 - candidate_support, 1),
+        "margin_of_error": margin,
+        "sample_size": sample_size,
+        "simulated": True,
+    }
+    polls.append(record)
+    career["public_polls"] = polls[-12:]
+    return record
+
+
 def start_career(state: dict[str, Any], office: str, state_code: str, municipality: str,
                  party: str, ideology: str, candidate_name: str,
                  character: dict[str, Any] | None = None,
@@ -325,11 +389,13 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + (municipality_id or municipality))),
         "campaign_team_municipality_id": municipality_id if role["scope"] == "municipal" else municipality_id or STATE_CAPITALS[state_code],
         "group_support": group_support, "last_action_date": None, "activities": [],
-        "pre_campaign_organization": 0.0, "last_preparation_date": None, "preparations": [],
+        "pre_campaign_organization": 0.0, "last_preparation_date": None, "preparations": [], "public_polls": [],
         "conduct": {"attempts": 0, "detected": 0, "election_penalty": 0.0, "history": []},
         "result": None, "vote_share": None, "opponent_share": 50.0, "appointments": [], "governance": None,
         "simulated": True,
     }
+    if phase == "campaign":
+        _record_public_poll(state, state["career"], today)
     state["election"] = {}
     state["office_status"] = "candidate"
     state["career_status"] = "campaigning" if phase == "campaign" else "preparing_campaign"
@@ -481,6 +547,8 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
             and any(career.get("campaign_fund_mi", 0) >= action["cost"] for action in PRE_CAMPAIGN_ACTIONS.values())
         ),
         "preparation_options": [{"key": key, **action, "affordable": career.get("campaign_fund_mi", 0) >= action["cost"]} for key, action in PRE_CAMPAIGN_ACTIONS.items()],
+        "public_polls": list(reversed(career.get("public_polls", [])[-8:])),
+        "latest_public_poll": (career.get("public_polls") or [None])[-1],
         "days_until_action": wait, "poll_support": round(career["poll_support"], 1), "local_support": round(career["local_support"], 1),
         "state_support": round(career["state_support"], 1), "national_support": round(career["national_support"], 1),
         "reputation": round(float(career.get("reputation", 50)), 1), "history": list(reversed(career.get("history", [])[-12:])),
@@ -969,7 +1037,12 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         performance = career.get("governance") or {}
         performance_bonus = min(4.0, float(performance.get("delivery", 0)) * 0.12 + (float(performance.get("trust", 50)) - 50) * 0.08)
         career["poll_support"] = round(_clamp(33 + float(performance.get("trust", 50)) * 0.18 + performance_bonus), 2)
+        _record_public_poll(state, career, campaign_start)
         messages.append("A janela eleitoral da reta final abriu. A avaliação do mandato e as novas atividades passam a afetar a tentativa de reeleição.")
+    if career["phase"] == "campaign":
+        for poll_date in _campaign_poll_schedule(career):
+            if before < poll_date <= after:
+                _record_public_poll(state, career, poll_date)
     if career["phase"] == "campaign" and before < election_day <= after:
         messages.append(resolve_career_election(state, election_day))
     transition_date = career.get("transition_date")

@@ -23,7 +23,7 @@ from app.engine.career import advance_career, career_overview, governance_action
 from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
 from app.main import app, require_presidential_authority
-from app.engine.state import new_game
+from app.engine.state import advance_state, new_game
 
 
 INAUGURAL_ADDRESS = (
@@ -359,6 +359,28 @@ class ApiSmokeTests(unittest.TestCase):
         start_career(state, "presidente", "DF", "", "Partido da RenovaÃ§Ã£o", "Centro", "Candidata de teste")
         with self.assertRaisesRegex(ValueError, "antes da abertura oficial"):
             perform_career_preparation(state, "mapear_prioridades")
+
+    def test_public_campaign_polls_have_reproducible_dates_and_report_uncertainty(self) -> None:
+        state = new_game()
+        state["date"] = "2030-07-08"
+        start_career(state, "presidente", "DF", "", "Partido da RenovaÃ§Ã£o", "Centro", "Candidatura de teste")
+        first = career_overview(state)
+        poll = first["latest_public_poll"]
+        self.assertEqual(poll["date"], first["campaign_start_date"])
+        self.assertEqual(poll["sample_size"], 1800)
+        self.assertEqual(poll["margin_of_error"], 2.3)
+        self.assertAlmostEqual(poll["candidate_support"] + poll["other_candidates_support"], 100.0)
+        self.assertTrue(poll["simulated"])
+
+        replay = new_game()
+        replay["date"] = "2030-07-08"
+        start_career(replay, "presidente", "DF", "", "Partido da RenovaÃ§Ã£o", "Centro", "Candidatura de teste")
+        self.assertEqual(replay["career"]["public_polls"], state["career"]["public_polls"])
+
+        state, _ = advance_state(state, 30)
+        later = career_overview(state)
+        self.assertEqual(later["latest_public_poll"]["date"], "2030-08-07")
+        self.assertEqual(len(later["public_polls"]), 2)
 
     def test_campaign_actions_target_valid_cities_within_the_office_scope(self) -> None:
         message = "Vamos publicar prazos para melhorar o transporte e fiscalizar cada obra com transparência."

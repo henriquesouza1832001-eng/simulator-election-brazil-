@@ -51,6 +51,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 
 - As eleições municipais simuladas ocorrem no primeiro domingo de outubro dos anos pares do ciclo municipal (2028, 2032...). As eleições estaduais e federais usam o primeiro domingo de outubro do ciclo geral (2026, 2030, 2034...).
 - A campanha simulada abre 90 dias antes da eleição do cargo escolhido. Antes disso, a carreira fica em pré-campanha e mostra as datas de abertura e votação. Nela, o jogador pode organizar voluntariado, reunir o partido ou mapear prioridades internas, no máximo uma vez a cada 30 dias; essas ações têm custo privado simulado, consomem dias e aumentam uma reserva limitada de organização. Não alteram pesquisa nem produzem comunicação pública. Atividades de campanha só ficam disponíveis na janela simulada.
+- Pesquisas públicas simuladas são registradas na abertura da campanha, a cada 30 dias e três dias antes da eleição. A estimativa usa o apoio projetado pelas regras eleitorais, uma variação reproduzível pela semente e margem de erro calculada a partir da amostra simulada; o histórico não altera os votos. Toda tela identifica candidatos e levantamentos como ficção do jogo.
 - A posse ocorre em 1º de janeiro para cargos municipais, estaduais e legislativos, e em 5 de janeiro para a Presidência. O mandato dura quatro anos, ou oito para o Senado; a próxima eleição é marcada no ciclo correspondente.
 - Na fase aberta, o jogador pode fazer uma atividade por intervalo de sete dias: comício, entrevista, debate ou encontro regional.
 - Cada atividade tem custo de campanha separado do Tesouro, duração em dias, região e tema. Não se pode usar verba pública para pagar a campanha nesta regra inicial.
@@ -61,7 +62,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 - A carreira política oferece uma rota inicial para vereador, prefeito, deputado estadual, deputado federal, senador, governador e presidente. O mesmo personagem conserva reputação e histórico ao disputar outro cargo após concluir a fase atual.
 - Três canais sociais fictícios (grupos de mensagem, vídeo/imagem e debate público) diferem em alcance, público, custo e chance de viralização. O motor pode gerar adesão ou reação negativa; o texto não altera diretamente o resultado eleitoral.
 - A passagem de mandato inclui gabinete fictício de ministérios catalogados e indicação ao STF sujeita a votação simulada no Senado. São sistemas iniciais, não uma representação completa dos processos institucionais.
-- O modelo é uma abstração, não previsão eleitoral. A pré-campanha já respeita a data e a janela do cargo, mas ainda faltam atividades próprias de organização partidária, adversários com plataformas próprias, arrecadação detalhada, pesquisas públicas, propaganda, debates em vários turnos e magnitude de distritos reais para a apuração proporcional.
+- O modelo é uma abstração, não previsão eleitoral. A pré-campanha agora permite preparação interna e a janela eleitoral registra pesquisas públicas simuladas; ainda faltam adversários persistentes com plataformas próprias, arrecadação detalhada, propaganda, debates em vários turnos e magnitude de distritos reais para a apuração proporcional.
 
 ### Medidas, leis e decisões
 
