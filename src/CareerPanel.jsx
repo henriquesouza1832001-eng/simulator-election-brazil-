@@ -132,7 +132,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
       onState(data.state);
       setResult(data.result);
       setMessage('');
-      onNotice(data.calendar_message || data.result.message);
+      onNotice(`${data.result.message}${data.calendar_message ? ` ${data.calendar_message}` : ''}`);
     } catch (error) { onNotice(error.message); }
     finally { setBusy(false); }
   }
