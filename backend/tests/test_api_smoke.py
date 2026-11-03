@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -236,6 +236,7 @@ class ApiSmokeTests(unittest.TestCase):
     def test_executive_mandate_actions_follow_scope_and_inflation(self) -> None:
         career = {
             "mode": True, "phase": "office", "office": "prefeito", "scope": "municipal",
+            "municipality": "Belo Horizonte", "municipality_id": "3106200", "state_name": "Minas Gerais", "state_code": "MG",
             "group_support": {}, "governance": {
                 "budget_mi": 350.0, "annual_budget_mi": 350.0, "budget_year": 2027,
                 "budget_price_index": 1.0, "trust": 50.0, "delivery": 0.0,
@@ -255,6 +256,13 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(result["action"]["cost_mi"], 18.0)
         self.assertEqual(career["governance"]["budget_mi"], 332.0)
         self.assertEqual(career["governance"]["pipeline"][0]["kind"], "service")
+        self.assertEqual(career["governance"]["pipeline"][0]["territory"], "Belo Horizonte · MG")
+        career["election_date"] = "2028-10-01"
+        career["term_end"] = "2031-12-31"
+        due = date.fromisoformat(career["governance"]["pipeline"][0]["due_date"])
+        messages = advance_career(state, due - timedelta(days=1), due)
+        self.assertEqual(career["governance"]["outcomes"]["education"], 55.0)
+        self.assertTrue(any("Belo Horizonte · MG" in message for message in messages))
 
         annual_state = {
             "metrics": {"inflation": 5.0},

@@ -351,6 +351,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     role = OFFICES[career["office"]]
     governance = career.get("governance") or {}
     governance_actions = governance_actions_for(career, governance)
+    governance_territory = governance_territory_for(career)
     governance_wait = max(0, 30 - (today - date.fromisoformat(governance.get("last_action_date", today.isoformat()))).days) if governance.get("last_action_date") else 0
     in_campaign = career["phase"] == "campaign" and campaign_start <= today <= election_day
     next_campaign = max(0, (campaign_start - today).days) if career["phase"] in {"office", "pre_campaign"} else 0
@@ -385,6 +386,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and career["phase"] == "office"} for key, value in APPOINTED_PATHS.items()],
         "governance": career.get("governance"), "next_campaign_days": next_campaign,
         "governance_actions": governance_actions, "governance_wait_days": governance_wait,
+        "governance_territory": governance_territory,
         "governance_budget_mi": round(float(governance.get("budget_mi", 0)), 1),
         "governance_annual_budget_mi": round(float(governance.get("annual_budget_mi", 0)), 1),
         "governance_budget_price_index": round(float(governance.get("budget_price_index", 1.0)), 3),
@@ -436,8 +438,9 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
                 raise ValueError("A reserva anual desta agenda não cobre o programa. Reavalie o orçamento ou aguarde o próximo ano.")
             governance["budget_mi"] = round(governance["budget_mi"] - cost, 1)
             due_date = date.fromisoformat(state["date"]) + timedelta(days=area["days"])
-            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "effect": area["effect"], "cost_mi": cost, "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
-            summary = f"Programa de {area['label'].lower()} iniciado. Custo reservado: R$ {cost:,.1f} milhões; entrega prevista para {due_date.strftime('%d/%m/%Y')} se não houver atraso."
+            territory = governance_territory_for(career)
+            governance.setdefault("pipeline", []).append({"id": f"service-{state['date']}-{len(governance.get('actions', [])) + 1}", "kind": "service", "area": area_key, "title": area["label"], "territory": territory["name"], "territory_scope": territory["scope"], "municipality_id": territory.get("municipality_id"), "effect": area["effect"], "cost_mi": cost, "due_date": due_date.isoformat(), "status": "in_progress", "simulated": True})
+            summary = f"Programa de {area['label'].lower()} iniciado para {territory['name']}. Custo reservado: R$ {cost:,.1f} milhões; entrega prevista para {due_date.strftime('%d/%m/%Y')} se não houver atraso."
         elif action == "public_report":
             cost = 0.0
             governance["trust"] = _clamp(governance.get("trust", 50) + 2.0)
@@ -473,6 +476,18 @@ def governance_actions_for(career: dict[str, Any], governance: dict[str, Any] | 
                         "summary": "Expõe metas, execução financeira e resultados para fiscalização pública."})
         return actions
     return []
+
+
+def governance_territory_for(career: dict[str, Any]) -> dict[str, Any]:
+    office = career.get("office")
+    if office == "prefeito":
+        return {"scope": "Município", "name": f"{career.get('municipality') or career.get('state_name', '')} · {career.get('state_code', '')}",
+                "municipality_id": career.get("municipality_id")}
+    if office == "governador":
+        return {"scope": "Estado", "name": career.get("state_name") or career.get("state_code", "")}
+    if office == "presidente":
+        return {"scope": "País", "name": "Brasil"}
+    return {"scope": "Representação legislativa", "name": career.get("municipality") or career.get("state_name") or "Brasil"}
 
 
 def perform_career_action(state: dict[str, Any], activity_type: str, issue: str, message: str,
@@ -740,7 +755,8 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
                 governance["trust"] = _clamp(governance.get("trust", 50) + 1.5)
                 item["status"] = "delivered"
                 governance.setdefault("actions", []).append(item)
-                messages.append(f"Entrega simulada concluída: {item['title']}. O indicador de serviço sobe para {outcomes[area['outcome']]:.1f}.")
+                territory = item.get("territory") or governance_territory_for(career)["name"]
+                messages.append(f"Entrega simulada concluída: {item['title']} em {territory}. O indicador de serviço sobe para {outcomes[area['outcome']]:.1f}.")
             elif item["kind"] == "bill":
                 support = float(state.get("metrics", {}).get("congress_support", 50)) if career["scope"] == "federal" else float(career.get("state_support", 50))
                 rng = random.Random(f"{state.get('campaign_seed', 1)}:{item['id']}:vote")
