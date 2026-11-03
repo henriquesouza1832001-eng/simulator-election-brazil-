@@ -73,6 +73,7 @@ function toggleLimited(items, value, limit) {
 export default function GameSetupPanel({ state, request, onState, onContinue, busy, setBusy, authConfig, authUser, onSignIn, onAccount }) {
   const [catalog, setCatalog] = useState(null);
   const [archives, setArchives] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [mode, setMode] = useState('');
   const [office, setOffice] = useState('vereador');
   const [stateCode, setStateCode] = useState('SP');
@@ -85,16 +86,18 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const [character, setCharacter] = useState(blankCharacter);
   const [difficulty, setDifficulty] = useState(state.difficulty || 'normal');
   const [selectedArchive, setSelectedArchive] = useState('');
+  const [campaignName, setCampaignName] = useState('');
   const [notice, setNotice] = useState('');
   const [tutorialStep, setTutorialStep] = useState(-1);
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([request('/api/career/options?fresh=true'), request('/api/game/archives')])
-      .then(([career, saved]) => {
+    Promise.all([request('/api/career/options?fresh=true'), request('/api/game/archives'), request('/api/campaigns')])
+      .then(([career, saved, savedCampaigns]) => {
         if (!mounted) return;
         setCatalog(career);
         setArchives(saved.items || []);
+        setCampaigns(savedCampaigns.items || []);
         setParty(career.parties?.[0] || 'MDB — Movimento Democrático Brasileiro');
       })
       .catch((error) => { if (mounted) setNotice(error.message); });
@@ -125,10 +128,9 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
 
   async function startPresidency(event) {
     event.preventDefault();
-    if (hasSavedGame && !window.confirm('A partida atual será arquivada e continuará disponível para restaurar. Iniciar outro governo?')) return;
     setBusy(true); setNotice('');
     try {
-      const data = await request('/api/game/new', { method: 'POST', body: JSON.stringify({ difficulty, character: characterForRequest() }) });
+      const data = await request('/api/game/new', { method: 'POST', body: JSON.stringify({ difficulty, character: characterForRequest(), campaign_name: campaignName }) });
       onState(data);
       onContinue();
     } catch (error) { setNotice(error.message); }
@@ -145,12 +147,11 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
       setNotice(invalidCustomParty ? 'Esse nome não está disponível para partidos personalizados.' : 'Informe um nome para o partido da simulação.');
       return;
     }
-    if (hasSavedGame && !window.confirm('A partida atual será arquivada e poderá ser restaurada depois. Começar esta carreira?')) return;
     setBusy(true); setNotice('');
     try {
       const data = await request('/api/career/start', {
         method: 'POST',
-        body: JSON.stringify({ office, state_code: isPresidentialCampaign ? 'DF' : stateCode, municipality: requiresCampaignCity || municipalityId ? municipality : '', municipality_id: requiresCampaignCity || municipalityId ? municipalityId : null, party: selectedParty, ideology, candidate_name: character.name, character: characterForRequest(), difficulty, new_game: true }),
+        body: JSON.stringify({ office, state_code: isPresidentialCampaign ? 'DF' : stateCode, municipality: requiresCampaignCity || municipalityId ? municipality : '', municipality_id: requiresCampaignCity || municipalityId ? municipalityId : null, party: selectedParty, ideology, candidate_name: character.name, character: characterForRequest(), difficulty, new_game: true, campaign_name: campaignName }),
       });
       onState(data.state);
       onContinue();
@@ -164,6 +165,16 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
     setBusy(true); setNotice('');
     try {
       const data = await request(`/api/game/archives/${selectedArchive}/restore`, { method: 'POST', body: '{}' });
+      onState(data.state);
+      onContinue();
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(false); }
+  }
+
+  async function activateCampaign(campaignId) {
+    setBusy(true); setNotice('');
+    try {
+      const data = await request(`/api/campaigns/${campaignId}/activate`, { method: 'POST', body: '{}' });
       onState(data.state);
       onContinue();
     } catch (error) { setNotice(error.message); }
@@ -223,6 +234,8 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
         <label className="setup-difficulty">Dificuldade<select value={difficulty} onChange={(event) => setDifficulty(event.target.value)}>{difficultyOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><small>{difficultyDescriptions[difficulty]}</small></label>
       </div>
 
+      {campaigns.length > 0 && <details className="saved-campaign-list"><summary>Minhas partidas salvas ({campaigns.length})</summary><div className="saved-campaign-grid">{campaigns.map((item) => <article className={item.active ? 'active' : ''} key={item.campaign_id}><div><b>{item.name}</b><small>{item.office} · {item.phase.replaceAll('_', ' ')} · {item.date ? new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR') : 'sem data'} · {difficultyOptions.find(([value]) => value === item.difficulty)?.[1] || item.difficulty}</small></div><button className="secondary-button" disabled={busy || item.active} onClick={() => activateCampaign(item.campaign_id)}>{item.active ? 'Em andamento' : 'Abrir'}</button></article>)}</div></details>}
+
       <section className="game-mode-grid" aria-label="Modos de jogo">
         <article className={`game-mode-card presidency-mode ${mode === 'presidency' ? 'selected' : ''}`}>
           <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/brasilia-amanhecer.jpg')" }} />
@@ -242,12 +255,14 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
 
       {mode === 'presidency' && <form className="career-start-form" onSubmit={startPresidency}>
         <div className="career-start-heading"><div><span className="eyebrow">POSSE DIRETA</span><h2>Configure sua personagem</h2></div><span className="career-start-date">Brasília · 1º de janeiro de 2027</span></div>
+        <label className="campaign-name-field">Nome desta partida<input value={campaignName} onChange={(event) => setCampaignName(event.target.value.slice(0, 80))} maxLength={80} placeholder={`Mandato de ${character.name || 'seu personagem'}`} /></label>
         {characterFields}
         <button className="primary-button" disabled={busy || character.name.trim().length < 2}>Assumir a Presidência no primeiro dia <b>→</b></button>
       </form>}
 
       {mode === 'career' && <form className="career-start-form" onSubmit={startCareer}>
         <div className="career-start-heading"><div><span className="eyebrow">CAMINHO ELEITORAL</span><h2>Escolha cargo e território</h2></div><span className="career-start-date">Calendário eleitoral simulado</span></div>
+        <label className="campaign-name-field">Nome desta partida<input value={campaignName} onChange={(event) => setCampaignName(event.target.value.slice(0, 80))} maxLength={80} placeholder={`Campanha de ${character.name || 'seu personagem'}`} /></label>
         {!catalog ? <p>Carregando cargos e estados…</p> : <>
           <div className="career-start-fields">
             <label>Cargo<select value={office} onChange={(event) => setOffice(event.target.value)}>{catalog.offices.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>

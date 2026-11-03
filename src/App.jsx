@@ -180,6 +180,7 @@ export default function App() {
   const [showAccountPanel, setShowAccountPanel] = useState(false);
   const [showGameMenu, setShowGameMenu] = useState(true);
   const [state, setState] = useState(null);
+  const [campaignId, setCampaignId] = useState(() => window.localStorage.getItem('mandato.activeCampaign') || 'default');
   const [measure, setMeasure] = useState('');
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -198,7 +199,7 @@ export default function App() {
   const [residenceCutPct, setResidenceCutPct] = useState(0);
 
   async function request(path, options) {
-    const headers = { 'Content-Type': 'application/json', ...(options?.headers || {}) };
+    const headers = { 'Content-Type': 'application/json', 'X-Mandato-Campaign': campaignId, ...(options?.headers || {}) };
     if (authConfig?.enabled && authUser && !authUser.isGuest) {
       const session = await fetchAuthSession();
       const token = session.tokens?.accessToken?.toString();
@@ -210,7 +211,14 @@ export default function App() {
     if (!response.ok) throw new Error(data.detail || 'Falha na solicitação');
     return data;
   }
-  async function refresh() { setState(await request('/api/game')); }
+  function acceptCampaignState(nextState) {
+    if (nextState?.campaign_id) {
+      setCampaignId(nextState.campaign_id);
+      window.localStorage.setItem('mandato.activeCampaign', nextState.campaign_id);
+    }
+    setState(nextState);
+  }
+  async function refresh() { acceptCampaignState(await request('/api/game')); }
   async function startGuest() {
     setBusy(true); setNotice('');
     try {
@@ -348,7 +356,7 @@ export default function App() {
     : <WelcomePanel onGuest={startGuest} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} busy={busy} notice={notice} />;
   if (authConfig?.enabled && authUser?.isGuest && showAuthPanel) return <AuthPanel onAuthenticated={(user) => { setState(null); setShowGameMenu(true); setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />;
   if (!state) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
-  if (showGameMenu) return <><GameSetupPanel state={state} request={request} onState={setState} onContinue={() => setShowGameMenu(false)} busy={busy} setBusy={setBusy} authConfig={authConfig} authUser={authUser} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} onAccount={() => setShowAccountPanel(true)} />{showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}</>;
+  if (showGameMenu) return <><GameSetupPanel state={state} request={request} onState={acceptCampaignState} onContinue={() => setShowGameMenu(false)} busy={busy} setBusy={setBusy} authConfig={authConfig} authUser={authUser} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} onAccount={() => setShowAccountPanel(true)} />{showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}</>;
   const m = state.metrics;
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
   const monthsRemaining = Math.max(0, 48 - termMonth);

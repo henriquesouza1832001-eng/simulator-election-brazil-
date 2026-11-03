@@ -1,4 +1,6 @@
 import os
+import re
+from uuid import uuid4
 from copy import deepcopy
 from datetime import date, timedelta
 import json
@@ -13,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .ai.interpreter import DEFAULT_MODEL, PROMPT_VERSION, interpret
-from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, interpretation_count, list_archives, load_interpretation, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
+from .db import add_correction, archive_state, campaign_exists, campaign_name, connect, correction_count, create_guest_session, current_campaign_id, guest_player_id, initialize, interpretation_count, list_archives, list_campaigns, load_interpretation, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_campaign_id, reset_campaign_id, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
@@ -49,28 +51,32 @@ async def player_authentication(request: Request, call_next):
     pool_id = os.getenv("COGNITO_USER_POOL_ID", "")
     client_id = os.getenv("COGNITO_CLIENT_ID", "")
     if not any((region, pool_id, client_id)):
-        token = set_player_id("local")
+        player_token = set_player_id("local")
+        campaign_token = _set_request_campaign(request)
         try:
             blocked = _inauguration_gate(request)
             if blocked:
                 return blocked
             return await call_next(request)
         finally:
-            reset_player_id(token)
+            reset_campaign_id(campaign_token)
+            reset_player_id(player_token)
     if not all((region, pool_id, client_id)):
         return JSONResponse(status_code=503, content={"detail": "Autenticação Cognito incompleta na configuração do servidor."})
     authorization = request.headers.get("authorization", "")
     if not authorization.lower().startswith("bearer "):
         guest_owner = guest_player_id(request.cookies.get("mandato_guest"))
         if guest_owner:
-            token = set_player_id(guest_owner)
+            player_token = set_player_id(guest_owner)
+            campaign_token = _set_request_campaign(request)
             try:
                 blocked = _inauguration_gate(request)
                 if blocked:
                     return blocked
                 return await call_next(request)
             finally:
-                reset_player_id(token)
+                reset_campaign_id(campaign_token)
+                reset_player_id(player_token)
     if not authorization.lower().startswith("bearer "):
         return JSONResponse(status_code=401, content={"detail": "Entre na sua conta para continuar."})
     try:
@@ -89,14 +95,25 @@ async def player_authentication(request: Request, call_next):
         player_id = str(claims["sub"])
     except Exception:
         return JSONResponse(status_code=401, content={"detail": "Sessão inválida ou expirada. Entre novamente."})
-    token = set_player_id(player_id)
+    player_token = set_player_id(player_id)
+    campaign_token = _set_request_campaign(request)
     try:
         blocked = _inauguration_gate(request)
         if blocked:
             return blocked
         return await call_next(request)
     finally:
-        reset_player_id(token)
+        reset_campaign_id(campaign_token)
+        reset_player_id(player_token)
+
+
+def _set_request_campaign(request: Request):
+    requested = request.headers.get("x-mandato-campaign", "default").strip()
+    if requested != "default" and not re.fullmatch(r"[a-f0-9]{32}", requested):
+        requested = "default"
+    if requested != "default" and not campaign_exists(requested):
+        requested = "default"
+    return set_campaign_id(requested)
 
 
 class AdvanceRequest(BaseModel):
@@ -173,6 +190,7 @@ class PlayerCharacterRequest(BaseModel):
 
 class PresidentialStartRequest(DifficultyRequest):
     character: PlayerCharacterRequest = Field(default_factory=PlayerCharacterRequest)
+    campaign_name: str = Field(default="", max_length=80)
 
 
 class DashboardRequest(BaseModel):
@@ -232,6 +250,7 @@ class CareerStartRequest(BaseModel):
     character: PlayerCharacterRequest = Field(default_factory=PlayerCharacterRequest)
     difficulty: str = Field(default="normal", pattern="^(tranquilo|normal|dificil|complicado|realismo_puro)$")
     new_game: bool = False
+    campaign_name: str = Field(default="", max_length=80)
 
     @field_validator("party")
     @classmethod
@@ -282,6 +301,8 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         "/api/game/difficulty",
     }:
         return None
+    if request.url.path.startswith("/api/campaigns/") and request.url.path.endswith("/activate"):
+        return None
     if request.url.path.startswith("/api/game/archives/") and request.url.path.endswith("/restore"):
         return None
     state = load_state()
@@ -325,7 +346,9 @@ def public_state(state: dict[str, Any]) -> dict[str, Any]:
     executive_wait = max(0, exec_cooldown - (now - date.fromisoformat(executive_last)).days) if executive_last else 0
     legislative_cooldown = int(state.get("legislative_calendar", {}).get("cooldown_days", 60))
     legislative_wait = max(0, legislative_cooldown - (now - date.fromisoformat(legislative_last)).days) if legislative_last else 0
-    return {**state, "events": events, "active_crises": [c for c in state.get("active_crises", []) if c.get("status") == "active"],
+    return {**state, "campaign_id": current_campaign_id(),
+            "campaign_name": state.get("campaign_name") or campaign_name(),
+            "events": events, "active_crises": [c for c in state.get("active_crises", []) if c.get("status") == "active"],
             "action_limits": {"executive_days": executive_wait, "legislative_days": legislative_wait,
                               "pending_bills": len(state.get("legislative_calendar", {}).get("pending_bills", [])),
                               "laws_enacted": state.get("legislative_calendar", {}).get("laws_enacted", 0)},
@@ -403,6 +426,25 @@ def game_archives() -> dict[str, Any]:
     return {"items": list_archives()}
 
 
+@app.get("/api/campaigns")
+def saved_campaigns() -> dict[str, Any]:
+    items = list_campaigns()
+    return {"items": [{**item, "active": item["campaign_id"] == current_campaign_id()} for item in items]}
+
+
+@app.post("/api/campaigns/{campaign_id}/activate")
+def activate_campaign(campaign_id: str) -> dict[str, Any]:
+    if campaign_id != "default" and not re.fullmatch(r"[a-f0-9]{32}", campaign_id):
+        raise HTTPException(status_code=404, detail="Esta partida não está disponível para sua conta.")
+    if not campaign_exists(campaign_id):
+        raise HTTPException(status_code=404, detail="Esta partida não está disponível para sua conta.")
+    token = set_campaign_id(campaign_id)
+    try:
+        return {"state": public_state(game_state())}
+    finally:
+        reset_campaign_id(token)
+
+
 @app.post("/api/game/archives/{archive_id}/restore")
 def restore_game_archive(archive_id: int) -> dict[str, Any]:
     snapshot = restore_archive(archive_id)
@@ -421,7 +463,7 @@ def begin_political_career(request: CareerStartRequest) -> dict[str, Any]:
     title = f"{current.get('career', {}).get('office_label', 'Presidência')} · {current.get('date', '')}"
     setup_pending = bool(current.get("setup_pending"))
     continuing_career = bool((current.get("career") or {}).get("mode")) and not request.new_game
-    archive_current = request.new_game and not setup_pending
+    campaign_token = set_campaign_id(uuid4().hex) if request.new_game else None
     if request.new_game:
         state = new_game()
     else:
@@ -435,21 +477,28 @@ def begin_political_career(request: CareerStartRequest) -> dict[str, Any]:
         start_career(state, request.office, request.state_code.upper(), request.municipality,
                      request.party, request.ideology, request.candidate_name or character["name"], character,
                      request.municipality_id)
+        if request.new_game:
+            candidate_name = state.get("player_character", {}).get("name") or request.candidate_name or "Candidatura"
+            state["campaign_name"] = request.campaign_name.strip() or f"{candidate_name} · {state['career']['office_label']}"
     except ValueError as exc:
+        if campaign_token is not None:
+            reset_campaign_id(campaign_token)
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    if archive_current:
-        archive_state(current, title)
-    archive_id = None if continuing_career or setup_pending or request.new_game else archive_state(snapshot, title)
-    state.pop("setup_pending", None)
-    state.pop("action_log_end_id", None)
-    refresh_calendar_fields(state)
-    save_state(state)
-    start_action_id = record_action(state["date"], "carreira", f"Início de carreira para {state['career']['office_label']}", "",
-                                    request.model_dump(), [{"phase": state["career"]["phase"], "campaign_start": state["career"]["campaign_start"], "election_date": state["career"]["election_date"], "archived_game_id": archive_id, "continuing_character": continuing_career}])
-    if not continuing_career:
-        state["action_log_start_id"] = start_action_id
-    save_state(state)
-    return {"state": public_state(state), "archived_game_id": archive_id}
+    try:
+        archive_id = None if continuing_career or setup_pending or request.new_game else archive_state(snapshot, title)
+        state.pop("setup_pending", None)
+        state.pop("action_log_end_id", None)
+        refresh_calendar_fields(state)
+        save_state(state)
+        start_action_id = record_action(state["date"], "carreira", f"Início de carreira para {state['career']['office_label']}", "",
+                                        request.model_dump(), [{"phase": state["career"]["phase"], "campaign_start": state["career"]["campaign_start"], "election_date": state["career"]["election_date"], "archived_game_id": archive_id, "continuing_character": continuing_career}])
+        if not continuing_career:
+            state["action_log_start_id"] = start_action_id
+        save_state(state)
+        return {"state": public_state(state), "archived_game_id": archive_id}
+    finally:
+        if campaign_token is not None:
+            reset_campaign_id(campaign_token)
 
 
 @app.get("/api/government/ministries")
@@ -727,35 +776,38 @@ def get_game() -> dict[str, Any]:
 
 @app.post("/api/game/new")
 def begin_presidential_game(request: PresidentialStartRequest) -> dict[str, Any]:
-    current = game_state()
-    if not current.get("setup_pending"):
-        archive_state(current, f"Partida anterior · {current.get('date', 'sem data')}")
-    state = new_game()
-    state.pop("setup_pending", None)
-    state["difficulty"] = request.difficulty
-    character = request.character.model_dump()
-    if character.get("birth_municipality_id"):
-        birthplace = get_municipality(character["birth_municipality_id"])
-        character["birthplace"] = {"municipality": birthplace["name"], "state_code": birthplace["state_code"], "municipality_id": birthplace["ibge_code"]}
-    else:
-        character["birthplace"] = None
-    state["player_character"] = character
-    metrics = state.setdefault("metrics", {})
-    for trait, changes in {
-        "carismatica": {"approval": 1.0}, "tecnica": {"institutional_trust": 1.0},
-        "conciliadora": {"congress_support": 1.0}, "gestora": {"governability": 1.0},
-        "combativa": {"approval": .5, "institutional_trust": -.5}, "comunitaria": {"approval": .5},
-    }.items():
-        if trait in character["traits"]:
-            for key, amount in changes.items():
-                metrics[key] = round(max(0, min(100, float(metrics.get(key, 50)) + amount)), 1)
-    state["action_log_start_id"] = record_action(
-        state["date"], "partida", "Início de governo presidencial simulado", "",
-        {"mode": "presidencial", "difficulty": request.difficulty, "character": character},
-        [{"date": state["date"], "office": "Presidência da República", "character_name": character["name"]}],
-    )
-    save_state(state)
-    return public_state(state)
+    campaign_id = uuid4().hex
+    campaign_token = set_campaign_id(campaign_id)
+    try:
+        state = new_game()
+        state.pop("setup_pending", None)
+        state["difficulty"] = request.difficulty
+        character = request.character.model_dump()
+        if character.get("birth_municipality_id"):
+            birthplace = get_municipality(character["birth_municipality_id"])
+            character["birthplace"] = {"municipality": birthplace["name"], "state_code": birthplace["state_code"], "municipality_id": birthplace["ibge_code"]}
+        else:
+            character["birthplace"] = None
+        state["player_character"] = character
+        state["campaign_name"] = request.campaign_name.strip() or f"Mandato de {character['name']}"
+        metrics = state.setdefault("metrics", {})
+        for trait, changes in {
+            "carismatica": {"approval": 1.0}, "tecnica": {"institutional_trust": 1.0},
+            "conciliadora": {"congress_support": 1.0}, "gestora": {"governability": 1.0},
+            "combativa": {"approval": .5, "institutional_trust": -.5}, "comunitaria": {"approval": .5},
+        }.items():
+            if trait in character["traits"]:
+                for key, amount in changes.items():
+                    metrics[key] = round(max(0, min(100, float(metrics.get(key, 50)) + amount)), 1)
+        state["action_log_start_id"] = record_action(
+            state["date"], "partida", "Início de governo presidencial simulado", "",
+            {"mode": "presidencial", "difficulty": request.difficulty, "character": character},
+            [{"date": state["date"], "office": "Presidência da República", "character_name": character["name"]}],
+        )
+        save_state(state)
+        return public_state(state)
+    finally:
+        reset_campaign_id(campaign_token)
 
 
 @app.post("/api/game/advance")

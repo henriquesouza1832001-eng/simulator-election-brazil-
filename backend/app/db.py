@@ -10,6 +10,7 @@ from typing import Any
 
 
 _player_id: ContextVar[str] = ContextVar("player_id", default="local")
+_campaign_id: ContextVar[str] = ContextVar("campaign_id", default="default")
 
 
 class _ClosingConnection(sqlite3.Connection):
@@ -32,6 +33,18 @@ def reset_player_id(token) -> None:
 
 def current_player_id() -> str:
     return _player_id.get()
+
+
+def set_campaign_id(campaign_id: str):
+    return _campaign_id.set(campaign_id)
+
+
+def reset_campaign_id(token) -> None:
+    _campaign_id.reset(token)
+
+
+def current_campaign_id() -> str:
+    return _campaign_id.get()
 
 
 def create_guest_session() -> tuple[str, str]:
@@ -85,6 +98,15 @@ def initialize() -> None:
                 state_json TEXT NOT NULL,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS game_campaigns (
+                player_id TEXT NOT NULL,
+                campaign_id TEXT NOT NULL,
+                campaign_name TEXT NOT NULL,
+                state_json TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (player_id, campaign_id)
+            );
             CREATE TABLE IF NOT EXISTS guest_sessions (
                 token_hash TEXT PRIMARY KEY,
                 player_id TEXT NOT NULL UNIQUE,
@@ -93,6 +115,7 @@ def initialize() -> None:
             CREATE TABLE IF NOT EXISTS game_archives (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 player_id TEXT NOT NULL,
+                campaign_id TEXT NOT NULL DEFAULT 'default',
                 title TEXT NOT NULL,
                 state_json TEXT NOT NULL,
                 archived_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -144,57 +167,156 @@ def initialize() -> None:
         if legacy:
             db.execute("INSERT OR IGNORE INTO game_saves (player_id, state_json) VALUES ('local', ?)",
                        (legacy["state_json"],))
+        # Keep each existing player's active save as their first named campaign.
+        for row in db.execute("SELECT player_id, state_json FROM game_saves").fetchall():
+            try:
+                saved_state = json.loads(row["state_json"])
+            except (TypeError, json.JSONDecodeError):
+                saved_state = {}
+            career = saved_state.get("career") or {}
+            character = saved_state.get("player_character") or {}
+            campaign_name = saved_state.get("campaign_name")
+            if not campaign_name:
+                if career.get("office_label"):
+                    campaign_name = f"{character.get('name') or 'Carreira'} · {career['office_label']}"
+                else:
+                    campaign_name = f"Governo federal · {character.get('name')}" if character.get("name") else "Governo federal"
+            db.execute(
+                "INSERT OR IGNORE INTO game_campaigns (player_id, campaign_id, campaign_name, state_json, updated_at) "
+                "VALUES (?, 'default', ?, ?, COALESCE((SELECT updated_at FROM game_saves WHERE player_id = ?), CURRENT_TIMESTAMP))",
+                (row["player_id"], str(campaign_name)[:80], row["state_json"], row["player_id"]),
+            )
         for table in ("actions", "interpretation_corrections"):
             columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
             if "player_id" not in columns:
                 db.execute(f"ALTER TABLE {table} ADD COLUMN player_id TEXT NOT NULL DEFAULT 'local'")
+        action_columns = {row["name"] for row in db.execute("PRAGMA table_info(actions)").fetchall()}
+        if "campaign_id" not in action_columns:
+            db.execute("ALTER TABLE actions ADD COLUMN campaign_id TEXT NOT NULL DEFAULT 'default'")
+        archive_columns = {row["name"] for row in db.execute("PRAGMA table_info(game_archives)").fetchall()}
+        if "campaign_id" not in archive_columns:
+            db.execute("ALTER TABLE game_archives ADD COLUMN campaign_id TEXT NOT NULL DEFAULT 'default'")
         correction_columns = {row["name"] for row in db.execute("PRAGMA table_info(interpretation_corrections)").fetchall()}
         if "interpretation_log_id" not in correction_columns:
             db.execute("ALTER TABLE interpretation_corrections ADD COLUMN interpretation_log_id INTEGER")
         db.execute("CREATE INDEX IF NOT EXISTS idx_actions_player_id ON actions(player_id, id DESC)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_actions_player_campaign ON actions(player_id, campaign_id, id DESC)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_corrections_player_id ON interpretation_corrections(player_id, id DESC)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_interpretation_log_player_id ON interpretation_log(player_id, id DESC)")
 
 
 def load_state() -> dict[str, Any] | None:
     with connect() as db:
-        row = db.execute("SELECT state_json FROM game_saves WHERE player_id = ?", (current_player_id(),)).fetchone()
+        row = db.execute(
+            "SELECT state_json FROM game_campaigns WHERE player_id = ? AND campaign_id = ?",
+            (current_player_id(), current_campaign_id()),
+        ).fetchone()
+        if row is None and current_campaign_id() == "default":
+            legacy = db.execute("SELECT state_json FROM game_saves WHERE player_id = ?", (current_player_id(),)).fetchone()
+            row = legacy
     return json.loads(row["state_json"]) if row else None
 
 
 def save_state(state: dict[str, Any]) -> None:
+    career = state.get("career") or {}
+    character = state.get("player_character") or {}
+    campaign_name = state.get("campaign_name")
+    if not campaign_name:
+        if career.get("office_label"):
+            campaign_name = f"{character.get('name') or 'Carreira'} · {career['office_label']}"
+        else:
+            campaign_name = f"Governo federal · {character.get('name')}" if character.get("name") else "Governo federal"
     with connect() as db:
         db.execute(
-            "INSERT INTO game_saves (player_id, state_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) "
-            "ON CONFLICT(player_id) DO UPDATE SET state_json=excluded.state_json, updated_at=CURRENT_TIMESTAMP",
-            (current_player_id(), json.dumps(state, ensure_ascii=False)),
+            "INSERT INTO game_campaigns (player_id, campaign_id, campaign_name, state_json) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(player_id, campaign_id) DO UPDATE SET campaign_name=excluded.campaign_name, "
+            "state_json=excluded.state_json, updated_at=CURRENT_TIMESTAMP",
+            (current_player_id(), current_campaign_id(), str(campaign_name)[:80], json.dumps(state, ensure_ascii=False)),
         )
+
+
+def campaign_exists(campaign_id: str) -> bool:
+    with connect() as db:
+        row = db.execute(
+            "SELECT 1 FROM game_campaigns WHERE player_id = ? AND campaign_id = ?",
+            (current_player_id(), campaign_id),
+        ).fetchone()
+    return row is not None
+
+
+def list_campaigns() -> list[dict[str, Any]]:
+    with connect() as db:
+        rows = db.execute(
+            "SELECT campaign_id, campaign_name, state_json, updated_at FROM game_campaigns "
+            "WHERE player_id = ? ORDER BY updated_at DESC, created_at DESC",
+            (current_player_id(),),
+        ).fetchall()
+    campaigns: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            state = json.loads(row["state_json"])
+        except (TypeError, json.JSONDecodeError):
+            continue
+        if state.get("setup_pending"):
+            continue
+        career = state.get("career") or {}
+        campaigns.append({
+            "campaign_id": str(row["campaign_id"]),
+            "name": str(row["campaign_name"]),
+            "date": str(state.get("date", "")),
+            "office": str(career.get("office_label") or "Presidência"),
+            "phase": str(career.get("phase") or ("governo" if career.get("mode") else "mandato")),
+            "difficulty": str(state.get("difficulty", "normal")),
+            "updated_at": str(row["updated_at"]),
+        })
+    return campaigns
+
+
+def campaign_name(campaign_id: str | None = None) -> str:
+    with connect() as db:
+        row = db.execute(
+            "SELECT campaign_name FROM game_campaigns WHERE player_id = ? AND campaign_id = ?",
+            (current_player_id(), campaign_id or current_campaign_id()),
+        ).fetchone()
+    return str(row["campaign_name"]) if row else "Governo federal"
 
 
 def archive_state(state: dict[str, Any], title: str) -> int:
     """Keep a recoverable snapshot before switching a player to another career."""
     with connect() as db:
-        last_action = db.execute("SELECT COALESCE(MAX(id), 0) AS last_id FROM actions WHERE player_id = ?", (current_player_id(),)).fetchone()["last_id"]
+        last_action = db.execute(
+            "SELECT COALESCE(MAX(id), 0) AS last_id FROM actions WHERE player_id = ? AND campaign_id = ?",
+            (current_player_id(), current_campaign_id()),
+        ).fetchone()["last_id"]
         state.setdefault("action_log_end_id", int(last_action))
         cursor = db.execute(
-            "INSERT INTO game_archives (player_id, title, state_json) VALUES (?, ?, ?)",
-            (current_player_id(), title[:160], json.dumps(state, ensure_ascii=False)),
+            "INSERT INTO game_archives (player_id, campaign_id, title, state_json) VALUES (?, ?, ?, ?)",
+            (current_player_id(), current_campaign_id(), title[:160], json.dumps(state, ensure_ascii=False)),
         )
         # Keep a small rolling set so repeated experiments cannot grow saves forever.
-        db.execute("DELETE FROM game_archives WHERE player_id = ? AND id NOT IN (SELECT id FROM game_archives WHERE player_id = ? ORDER BY id DESC LIMIT 12)",
-                   (current_player_id(), current_player_id()))
+        db.execute(
+            "DELETE FROM game_archives WHERE player_id = ? AND campaign_id = ? AND id NOT IN "
+            "(SELECT id FROM game_archives WHERE player_id = ? AND campaign_id = ? ORDER BY id DESC LIMIT 12)",
+            (current_player_id(), current_campaign_id(), current_player_id(), current_campaign_id()),
+        )
         return int(cursor.lastrowid)
 
 
 def list_archives() -> list[dict[str, Any]]:
     with connect() as db:
-        rows = db.execute("SELECT id, title, archived_at FROM game_archives WHERE player_id = ? ORDER BY id DESC", (current_player_id(),)).fetchall()
+        rows = db.execute(
+            "SELECT id, title, archived_at FROM game_archives WHERE player_id = ? AND campaign_id = ? ORDER BY id DESC",
+            (current_player_id(), current_campaign_id()),
+        ).fetchall()
     return [dict(row) for row in rows]
 
 
 def restore_archive(archive_id: int) -> dict[str, Any] | None:
     with connect() as db:
-        row = db.execute("SELECT state_json FROM game_archives WHERE id = ? AND player_id = ?", (archive_id, current_player_id())).fetchone()
+        row = db.execute(
+            "SELECT state_json FROM game_archives WHERE id = ? AND player_id = ? AND campaign_id = ?",
+            (archive_id, current_player_id(), current_campaign_id()),
+        ).fetchone()
     return json.loads(row["state_json"]) if row else None
 
 
@@ -202,15 +324,17 @@ def record_action(date: str, kind: str, title: str, source_text: str,
                   interpretation: dict[str, Any], effects: list[dict[str, Any]]) -> int:
     with connect() as db:
         cursor = db.execute(
-            "INSERT INTO actions (date, kind, title, source_text, interpretation_json, effects_json, player_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (date, kind, title, source_text, json.dumps(interpretation, ensure_ascii=False), json.dumps(effects, ensure_ascii=False), current_player_id()),
+            "INSERT INTO actions (date, kind, title, source_text, interpretation_json, effects_json, player_id, campaign_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (date, kind, title, source_text, json.dumps(interpretation, ensure_ascii=False),
+             json.dumps(effects, ensure_ascii=False), current_player_id(), current_campaign_id()),
         )
         return int(cursor.lastrowid)
 
 
 def recent_actions(limit: int = 10, after_id: int | None = None, through_id: int | None = None) -> list[dict[str, Any]]:
-    clauses = ["player_id = ?"]
-    values: list[Any] = [current_player_id()]
+    clauses = ["player_id = ?", "campaign_id = ?"]
+    values: list[Any] = [current_player_id(), current_campaign_id()]
     if after_id is not None:
         clauses.append("id >= ?"); values.append(after_id)
     if through_id is not None:

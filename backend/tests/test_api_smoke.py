@@ -9,7 +9,11 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
-from app.db import load_state, reset_player_id, save_state, set_player_id
+from app.db import (
+    archive_state, list_archives, load_state, recent_actions, record_action,
+    reset_campaign_id, reset_player_id, restore_archive, save_state,
+    set_campaign_id, set_player_id,
+)
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
 from app.engine.issues import canonical_issue_ids
@@ -130,6 +134,69 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(overview["election_date"], "2028-10-01")
         self.assertEqual(overview["campaign_start_date"], "2028-07-03")
         self.assertFalse(overview["inaugural_address"]["required"])
+
+    def test_named_campaigns_keep_saves_actions_and_archives_separate(self) -> None:
+        first_id = "a" * 32
+        first_token = set_campaign_id(first_id)
+        try:
+            first_state = {"date": "2027-01-01", "owner": "first"}
+            save_state(first_state)
+            record_action("2027-01-01", "test", "Ação da primeira", "", {}, [])
+            first_archive = archive_state(first_state.copy(), "Snapshot da primeira")
+            self.assertEqual(recent_actions()[0]["title"], "Ação da primeira")
+            self.assertEqual(len(list_archives()), 1)
+        finally:
+            reset_campaign_id(first_token)
+
+        second_id = "b" * 32
+        second_token = set_campaign_id(second_id)
+        try:
+            save_state({"date": "2027-02-01", "owner": "second"})
+            record_action("2027-02-01", "test", "Ação da segunda", "", {}, [])
+            self.assertEqual(load_state(), {"date": "2027-02-01", "owner": "second"})
+            self.assertEqual([item["title"] for item in recent_actions()], ["Ação da segunda"])
+            self.assertEqual(list_archives(), [])
+            self.assertIsNone(restore_archive(first_archive))
+        finally:
+            reset_campaign_id(second_token)
+
+        first_token = set_campaign_id(first_id)
+        try:
+            self.assertEqual(load_state(), {"date": "2027-01-01", "owner": "first"})
+            self.assertEqual([item["title"] for item in recent_actions()], ["Ação da primeira"])
+            self.assertEqual(restore_archive(first_archive), {"date": "2027-01-01", "owner": "first", "action_log_end_id": 1})
+        finally:
+            reset_campaign_id(first_token)
+
+    def test_new_named_campaign_can_be_switched_without_overwriting_default(self) -> None:
+        default = self.client.get("/api/game", headers={"X-Mandato-Campaign": "default"})
+        self.assertEqual(default.status_code, 200, default.text)
+
+        started = self.client.post("/api/career/start", headers={"X-Mandato-Campaign": "default"}, json={
+            "office": "prefeito", "state_code": "SP", "municipality": "São Paulo",
+            "party": "MDB — Movimento Democrático Brasileiro", "ideology": "Centro",
+            "candidate_name": "Ana Exemplo", "character": {"name": "Ana Exemplo"},
+            "difficulty": "normal", "new_game": True, "campaign_name": "Prefeitura de teste",
+        })
+        self.assertEqual(started.status_code, 200, started.text)
+        campaign_id = started.json()["state"]["campaign_id"]
+        self.assertRegex(campaign_id, r"^[a-f0-9]{32}$")
+        self.assertEqual(started.json()["state"]["campaign_name"], "Prefeitura de teste")
+
+        reopened = self.client.get("/api/game", headers={"X-Mandato-Campaign": campaign_id})
+        self.assertEqual(reopened.status_code, 200, reopened.text)
+        self.assertEqual(reopened.json()["career_overview"]["office"], "prefeito")
+        unchanged_default = self.client.get("/api/game", headers={"X-Mandato-Campaign": "default"})
+        self.assertEqual(unchanged_default.status_code, 200, unchanged_default.text)
+        self.assertEqual(unchanged_default.json()["campaign_id"], "default")
+        self.assertIsNone(unchanged_default.json()["career_overview"])
+
+        campaigns = self.client.get("/api/campaigns", headers={"X-Mandato-Campaign": "default"})
+        self.assertEqual(campaigns.status_code, 200, campaigns.text)
+        self.assertIn(campaign_id, {item["campaign_id"] for item in campaigns.json()["items"]})
+        activated = self.client.post(f"/api/campaigns/{campaign_id}/activate", headers={"X-Mandato-Campaign": "default"}, json={})
+        self.assertEqual(activated.status_code, 200, activated.text)
+        self.assertEqual(activated.json()["state"]["campaign_id"], campaign_id)
 
     def test_career_campaign_action_and_election_complete(self) -> None:
         started = self.client.post("/api/career/start", json={
@@ -276,6 +343,23 @@ class ApiSmokeTests(unittest.TestCase):
             self.assertEqual(player_b_state.status_code, 200, player_b_state.text)
             self.assertEqual(player_a_state.json()["dashboard_cards"], ["inflation"])
             self.assertNotEqual(player_b_state.json()["dashboard_cards"], ["inflation"])
+
+            started = self.client.post("/api/career/start", headers={"Authorization": "Bearer token-player-a"}, json={
+                "office": "prefeito", "state_code": "SP", "municipality": "São Paulo",
+                "party": "MDB — Movimento Democrático Brasileiro", "ideology": "Centro",
+                "candidate_name": "Ana Exemplo", "character": {"name": "Ana Exemplo"},
+                "new_game": True, "campaign_name": "Partida privada",
+            })
+            self.assertEqual(started.status_code, 200, started.text)
+            private_campaign = started.json()["state"]["campaign_id"]
+            another_player = self.client.get("/api/game", headers={
+                "Authorization": "Bearer token-player-b", "X-Mandato-Campaign": private_campaign,
+            })
+            self.assertEqual(another_player.status_code, 200, another_player.text)
+            self.assertEqual(another_player.json()["campaign_id"], "default")
+            denied_activation = self.client.post(f"/api/campaigns/{private_campaign}/activate",
+                headers={"Authorization": "Bearer token-player-b"}, json={})
+            self.assertEqual(denied_activation.status_code, 404)
 
 if __name__ == "__main__":
     unittest.main()

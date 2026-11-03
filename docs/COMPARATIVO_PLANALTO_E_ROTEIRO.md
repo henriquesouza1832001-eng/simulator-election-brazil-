@@ -71,7 +71,7 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 
 ## Lacunas principais
 
-1. **Identidade e isolamento:** Cognito, validação de JWT e separação de estado, ações e correções por jogador estão implementados. Falta cada conta guardar múltiplas campanhas nomeadas.
+1. **Identidade e isolamento:** Cognito, validação de JWT e separação de campanhas, histórico de ações e correções por jogador estão implementados. Saves antigos migram para uma campanha inicial com ID `default`.
 2. **Carreira jogável:** campanhas para sete cargos, resultado, transição, posse, mandato inicial e retorno após derrota ou mandato concluído estão implementados. Falta separar competências, orçamentos, serviços e legislação de cada ente.
 3. **Legislativo:** não há Câmara/Senado com integrantes e bancadas individualizados no motor; apoio agregado substitui negociações, pauta, comissão, emenda e voto nominal.
 4. **Orçamento executável:** há valores de referência e ajustes, mas ainda não uma LOA/fonte por programa, execução mensal, transferências federativas, empenho, contratos e conciliação entre mudança e entrega.
@@ -83,7 +83,7 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 10. **Experiência:** substituir a sensação de “painel gerado por IA” por uma mesa de governo editorial: manchete/assunto do dia, agenda curta, poucas métricas selecionadas e telas temáticas profundas com explicação e histórico.
 11. **Operação:** domínio e HTTPS, autenticação, cópias automáticas testadas, limite/alerta de custos e recuperação de conta antes de liberar o serviço publicamente.
 
-12. **Geografia, personagens e aprendizagem:** três propostas foram revisadas em conjunto. As decisões de IDs municipais, temas canônicos, vetores ideológicos, logs de interpretação/narrativa e ordem de implementação estão em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md). O catálogo municipal foi a primeira fatia; campanhas nomeadas continuam como dependência, e o custo fiscal já é validado no servidor a partir do texto original.
+12. **Geografia, personagens e aprendizagem:** três propostas foram revisadas em conjunto. As decisões de IDs municipais, temas canônicos, vetores ideológicos, logs de interpretação/narrativa e ordem de implementação estão em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md). O catálogo municipal, as campanhas nomeadas e a validação fiscal no servidor já têm fatias iniciais implementadas.
 
 ## Modelo de jogo proposto
 
@@ -104,7 +104,7 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 - [x] Criar o User Pool e configurar HTTPS para habilitar cadastro real.
 - [x] Validar token Cognito no backend e filtrar dados pelo identificador verificado do jogador.
 - [x] Criar importador TSE com origem/licença, armazenamento de campos minimizados e consulta filtrada; os anos são importados manualmente no servidor.
-- [ ] Criar várias campanhas por jogador, com nome, cargo e dificuldade configuráveis.
+- [x] Criar várias campanhas por jogador, com nome, cargo e dificuldade configuráveis.
 - [ ] Definir as entidades centrais: jogador, personagem, campanha, cargo, mandato, evento, medida, orçamento e fonte.
 
 ### Vertical slice de carreira
@@ -134,7 +134,7 @@ As capturas de 2 nov. 2026 mostram etapas que servirão como referência funcion
 - Cognito User Pool ativo para cadastro/login; o navegador usa e-mail e senha via SRP, com app client público sem segredo. O pré-cadastro confirma a conta sem marcar o e-mail como verificado; URL HTTPS atual: `https://d2dpmk0vrt66wn.cloudfront.net`.
 - O frontend usa cookies Secure e SameSite=Lax para tokens; o backend valida JWT em todas as rotas privadas.
 - API valida JWT em toda rota privada. O identificador imutável `sub` vira `player_id`; nunca confiar em um `player_id` enviado pelo navegador.
-- O estado, as ações e as correções estão filtrados por `player_id`; o esquema de múltiplas campanhas ainda será construído.
+- O estado e as ações estão filtrados por `player_id` e `campaign_id`; correções e interpretações são isoladas por `player_id`.
 - A próxima migração deve adicionar modo, personagem, cargo, calendário, estado e trilha de eventos versionada a cada campanha, sem alterar partidas existentes.
 - Não criar tabela de senha própria. A implantação exige conta autenticada; o modo local permanece disponível apenas no desenvolvimento.
 - A tela **Conta** permite validar o e-mail opcionalmente para que o Cognito habilite recuperação de senha. Contas ainda sem e-mail verificado não podem usar recuperação automática.

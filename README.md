@@ -4,7 +4,7 @@ Mandato é um jogo fictício de política brasileira, jogado no navegador. O tem
 
 ## Estado da versão
 
-O 0.1 reúne uma partida presidencial e uma carreira eleitoral com sete cargos, calendário diário, campanha, transição e exercício do mandato. Orçamento, indicadores, obras, diplomacia, nomeações e eventos estão conectados ao mesmo estado salvo. Cada conta Cognito tem uma partida ativa e até doze arquivos recuperáveis.
+O 0.1 reúne uma partida presidencial e uma carreira eleitoral com sete cargos, calendário diário, campanha, transição e exercício do mandato. Orçamento, indicadores, obras, diplomacia, nomeações e eventos estão conectados ao mesmo estado salvo. Cada conta Cognito pode manter várias partidas nomeadas, alternar entre elas e continuar do ponto salvo.
 
 As regras são uma abstração de jogo, não um modelo econômico ou jurídico preditivo. Candidatos, partidos, pesquisas, contratos, empresas e acontecimentos gerados são fictícios. A carreira tem ações de mandato mais simples que o módulo presidencial; não há ainda vários saves ativos por conta, retratos próprios para o elenco, importação automática contínua do TSE, mensageria multijogador ou automação de backup externo.
 
