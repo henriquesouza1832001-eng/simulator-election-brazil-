@@ -13,6 +13,7 @@
 - **Fatia de temas entregue:** campanha presidencial e carreira usam IDs compartilhados para saúde e educação, mantendo `servicos` como alias compatível com partidas anteriores.
 - **Ainda parcial:** eleitorado municipal, perfil econômico, IDHM e temas-âncora não estão importados; estados e União ainda não têm agenda de campanha cidade a cidade.
 - **Esta entrega:** primeira regra de campanha presidencial: janela de 90 dias, uma atividade a cada sete dias, custo fora do Tesouro, texto com rubrica explicável, apoio regional e efeito no cálculo eleitoral; atividade também avança o calendário do governo.
+- **Esta entrega:** atividades da carreira aceitam município de destino validado pelo código IBGE. Prefeitos ficam no município da candidatura, cargos estaduais e federais subnacionais no estado escolhido e a Presidência pode percorrer o país; cada praça visitada guarda apoio simulado próprio e o histórico mostra local e alcance.
 - **Ainda parcial:** a previsão de medida usa coeficientes amplos por categoria; ainda não explica a curva mês a mês nem aplica uma trajetória específica por instrumento.
 - **Agora implementado em versão inicial:** catálogo de seis obras simuladas — rodovias, ferrovia, hidrovias, porto e saneamento — com leilão, parcela anual, previsão de entrega e preço registrado na contratação.
 - **Agora implementado em versão inicial:** custos futuros usam índice de obra que cresce com a inflação do cenário; compromissos anuais consomem a dotação de Transportes e logística, e estouros entram no resultado fiscal.
@@ -42,7 +43,7 @@
 
 ### 0. Geografia, personagens e interpretação local
 
-Catálogo municipal e temas canônicos já têm primeira implementação. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, depois ligar visitas territoriais aos cargos estaduais/federais. Campanhas nomeadas e avaliação narrativa continuam como frentes próprias. A primeira avaliação e geração de candidato para categorias e instrumentos já existe, mas permanece offline; custo, legalidade, previsões e efeitos continuam sob regras Python separadas. A [validação cruzada das propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
+Catálogo municipal, seleção do local de campanha e temas canônicos já têm primeira implementação. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, e depois ponderar as pesquisas por território com dados adequados. Campanhas nomeadas e avaliação narrativa continuam como frentes próprias. A primeira avaliação e geração de candidato para categorias e instrumentos já existe, mas permanece offline; custo, legalidade, previsões e efeitos continuam sob regras Python separadas. A [validação cruzada das propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
 
 ### 1. Indicadores e explicação das decisões
 
@@ -72,7 +73,7 @@ Catálogo municipal e temas canônicos já têm primeira implementação. A pró
 - **Parcialmente entregue:** começar em qualquer um dos sete cargos eletivos; fazer campanha, receber resultado, assumir após transição e seguir para nova disputa mantendo personagem, reputação e histórico.
 - Cada nível terá território, atribuições legais, orçamento, calendário, aliados e indicadores apropriados.
 - **Parcialmente entregue:** importar e consultar candidaturas históricas do TSE com origem e licença. Ainda faltam resultados nominais, ocupantes atuais e dados de partidos/mandatos; candidatura não é prova de cargo atual, ideologia ou conduta.
-- **Parcialmente entregue:** há campanha de carreira por atividade, tema, fundo separado, avaliação de texto, apoio por grupo e região e canais sociais próprios. O debate usa pergunta temática, escopo do cargo e réplica adversária determinística. Ainda faltam preparação prévia, adversários persistentes, financiamento detalhado, propaganda, pesquisa pública e turnos de debate.
+- **Parcialmente entregue:** há campanha de carreira por atividade, tema, fundo separado, avaliação de texto, apoio por grupo e região, destino municipal validado e canais sociais próprios. O debate usa pergunta temática, escopo do cargo e réplica adversária determinística. Ainda faltam preparação prévia, adversários persistentes, financiamento detalhado, propaganda, pesquisa pública e turnos de debate.
 
 ### 5. Redes e imprensa simuladas
 

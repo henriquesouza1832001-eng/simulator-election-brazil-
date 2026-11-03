@@ -300,7 +300,8 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "powers": list(role["powers"]), "term_years": role["term_years"], "election_date": election_day.isoformat(),
         "inauguration_date": inauguration.isoformat(), "term_end": term_end.isoformat(),
         "campaign_start": campaign_start.isoformat(), "campaign_fund_mi": role["fund_mi"], "spent_mi": 0.0,
-        "poll_support": initial_poll, "local_support": local_strength, "state_support": initial_poll,
+        "poll_support": initial_poll, "local_support": local_strength, "campaign_base_local_support": local_strength,
+        "state_support": initial_poll,
         "national_support": initial_poll, "momentum": 0.0, "fatigue": 0,
         "history": previous_history[-20:], "reputation": round(previous_reputation, 1),
         "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + (municipality_id or municipality))),
@@ -399,6 +400,24 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     governance_wait = max(0, 30 - (today - date.fromisoformat(governance.get("last_action_date", today.isoformat()))).days) if governance.get("last_action_date") else 0
     in_campaign = career["phase"] == "campaign" and campaign_start <= today <= election_day
     next_campaign = max(0, (campaign_start - today).days) if career["phase"] in {"office", "pre_campaign"} else 0
+    city_support = career.get("municipality_support", {})
+    recent_city_ids = []
+    for activity in reversed(career.get("activities", [])):
+        city_id = activity.get("municipality_id")
+        if city_id and city_id not in recent_city_ids:
+            recent_city_ids.append(city_id)
+        if len(recent_city_ids) >= 6:
+            break
+    campaign_city_support = []
+    for city_id in recent_city_ids:
+        profile = get_municipality(city_id)
+        if profile and city_id in city_support:
+            campaign_city_support.append({
+                "municipality_id": city_id,
+                "municipality_name": profile["name"],
+                "state_code": profile["state_code"],
+                "support": round(float(city_support[city_id]), 1),
+            })
     return {
         "mode": True, "office": career["office"], "office_label": career["office_label"], "scope": career["scope"],
         "phase": career["phase"], "candidate_name": career["candidate_name"], "party": career["party"], "ideology": career["ideology"],
@@ -426,6 +445,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "can_start_campaign": career.get("phase") in {"opposition", "term_complete"},
         "groups": [{"key": key, "label": label, "support": round(career["group_support"][key], 1)} for key, label in GROUPS.items()],
         "activities": list(reversed(career["activities"][-10:])),
+        "campaign_city_support": campaign_city_support,
         "debate_prompts": {key: career_debate_prompt(career, key) for key in ISSUES},
         "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": round(item["cost"] * (.9 if "gestora" in (career.get("character") or {}).get("traits", []) else 1.0), 4)} for key, item in ACTIVITIES.items()],
         "issue_options": [{"key": key, "label": value["label"]} for key, value in ISSUES.items()],
@@ -576,7 +596,7 @@ def career_debate_prompt(career: dict[str, Any], issue: str) -> dict[str, str]:
 
 
 def perform_career_action(state: dict[str, Any], activity_type: str, issue: str, message: str,
-                          conduct: str = "regular") -> dict[str, Any]:
+                          conduct: str = "regular", municipality_id: str | None = None) -> dict[str, Any]:
     career = _campaign(state)
     overview = career_overview(state)
     if not overview["campaign_active"]:
@@ -592,6 +612,30 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     if len(message.strip()) < 12:
         raise ValueError("Escreva pelo menos 12 caracteres para a fala ou proposta.")
     activity = ACTIVITIES[activity_type]
+    target_municipality = None
+    if career["scope"] == "municipal":
+        home_city_id = career.get("municipality_id")
+        if municipality_id and municipality_id != home_city_id:
+            raise ValueError("Campanha municipal só pode fazer atividades no município da candidatura.")
+        target_municipality = get_municipality(home_city_id) if home_city_id else None
+        if not target_municipality:
+            raise ValueError("A cidade da candidatura não está vinculada ao catálogo do IBGE.")
+    elif municipality_id:
+        target_municipality = get_municipality(municipality_id)
+        if not target_municipality:
+            raise ValueError("Escolha uma cidade válida no catálogo do IBGE.")
+        if career["office"] != "presidente" and target_municipality["state_code"] != career["state_code"]:
+            raise ValueError("Essa atividade precisa ocorrer no estado da candidatura.")
+    elif career["office"] != "presidente" and career.get("municipality_id"):
+        target_municipality = get_municipality(career["municipality_id"])
+    municipality_support = career.get("municipality_support", {})
+    target_city_support_before = (
+        float(municipality_support.get(
+            target_municipality["ibge_code"],
+            career.get("campaign_base_local_support", career.get("local_support", 45.0)),
+        ))
+        if target_municipality else None
+    )
     traits = (career.get("character") or {}).get("traits", [])
     action_cost = activity["cost"] * (.9 if "gestora" in traits else 1.0)
     if career["campaign_fund_mi"] < action_cost:
@@ -628,15 +672,9 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         }
     quality = (score - 55) / 45
     reach = activity["reach"] + (.08 if "combativa" in traits else 0)
-    municipality_profile = career.get("municipality_profile")
-    if municipality_profile is None:
-        municipality_profile = resolve_municipality(career["state_code"], career.get("municipality", ""))
-        if municipality_profile:
-            career["municipality_id"] = municipality_profile["ibge_code"]
-            career["municipality_profile"] = municipality_profile
     city_reach_multiplier = 1.0
-    if career["scope"] == "municipal" and municipality_profile:
-        city_reach_multiplier = float(municipality_profile["municipal_campaign_reach_multiplier"])
+    if target_municipality:
+        city_reach_multiplier = float(target_municipality["municipal_campaign_reach_multiplier"])
     reach *= city_reach_multiplier
     local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1) + (.15 if "carismatica" in traits else 0)))
     state_delta = local_delta * (0.4 if career["scope"] == "municipal" else 0.72)
@@ -686,6 +724,11 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         career["state_support"] = _clamp(career["state_support"] + debate_result["support_delta"] * .3)
         for group in ISSUES[issue]["groups"]:
             career["group_support"][group] = _clamp(career["group_support"][group] + debate_result["support_delta"] * .35)
+    target_city_support = None
+    if target_municipality:
+        city_delta = local_delta + conduct_delta + (debate_result["support_delta"] * .55 if debate_result else 0.0)
+        target_city_support = round(_clamp(target_city_support_before + city_delta), 2)
+        career.setdefault("municipality_support", {})[target_municipality["ibge_code"]] = target_city_support
     career["momentum"] = round(max(-10, min(10, career["momentum"] * 0.8 + quality * 1.1)), 2)
     career["fatigue"] = min(100, career["fatigue"] + (8 if activity_type in {"comicio", "porta_a_porta"} else 4) + (2 if "combativa" in traits else 0))
     career["campaign_fund_mi"] = round(career["campaign_fund_mi"] - action_cost, 4)
@@ -694,8 +737,10 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     record = {
         "id": f"career-{state['date']}-{len(career['activities']) + 1}", "date": state["date"], "type": activity_type,
         "label": activity["label"], "channel": activity["channel"], "issue": issue, "issue_label": ISSUES[issue]["label"],
-        "municipality_id": career.get("municipality_id") if career["scope"] == "municipal" else None,
-        "municipality_name": career.get("municipality") if career["scope"] == "municipal" else None,
+        "municipality_id": target_municipality["ibge_code"] if target_municipality else None,
+        "municipality_name": target_municipality["name"] if target_municipality else None,
+        "municipality_state_code": target_municipality["state_code"] if target_municipality else None,
+        "municipality_support": target_city_support,
         "city_reach_multiplier": city_reach_multiplier,
         "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
         "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
@@ -707,6 +752,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     career["activities"] = career["activities"][-60:]
     return {"activity": record, "score": score, "rubric": rubric, "days_cost": activity["days"], "poll_support": career["poll_support"],
             "local_support": career["local_support"], "state_support": career["state_support"], "campaign_fund_mi": career["campaign_fund_mi"],
+            "municipality_support": target_city_support,
             "social_result": social_result, "debate": debate_result, "forecast": _forecast(career, score), "message": "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."}
 
 

@@ -282,6 +282,7 @@ class CareerActionRequest(BaseModel):
     issue: str = Field(min_length=3, max_length=30)
     message: str = Field(min_length=12, max_length=600)
     conduct: str = Field(default="regular", pattern="^(regular|irregular)$")
+    municipality_id: str | None = Field(default=None, pattern=r"^\d{7}$")
 
 
 class CareerGovernanceRequest(BaseModel):
@@ -870,13 +871,17 @@ def political_career_action(request: CareerActionRequest) -> dict[str, Any]:
     state = game_state()
     action_date = state["date"]
     try:
-        result = perform_career_action(state, request.activity_type, request.issue, request.message, request.conduct)
+        result = perform_career_action(
+            state, request.activity_type, request.issue, request.message,
+            request.conduct, request.municipality_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     state, calendar_message = advance_state(state, result["days_cost"] or 1)
     save_state(state)
     record_action(action_date, "carreira", result["activity"]["label"], request.message,
-                  {"activity_type": request.activity_type, "issue": request.issue},
+                  {"activity_type": request.activity_type, "issue": request.issue,
+                   "municipality_id": result["activity"].get("municipality_id")},
                   [{"score": result["score"], "rubric": result["rubric"], "poll_support": result["poll_support"],
                     "local_support": result["local_support"], "state_support": result["state_support"],
                     "cost_mi": result["activity"]["cost_mi"], "days_cost": result["days_cost"]}])

@@ -19,7 +19,7 @@ from app.db import (
 )
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
-from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_governance_action, resolve_career_election, start_career
+from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_governance_action, resolve_career_election, start_career
 from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
 from app.main import app, require_presidential_authority
@@ -279,6 +279,7 @@ class ApiSmokeTests(unittest.TestCase):
 
         action = self.client.post("/api/career/action", json={
             "activity_type": "comicio", "issue": "educacao",
+            "municipality_id": "3106200",
             "message": "Vamos publicar metas para melhorar escolas e postos de saúde, com prazo, equipe e prestação de contas.",
         })
         self.assertEqual(action.status_code, 200, action.text)
@@ -286,6 +287,8 @@ class ApiSmokeTests(unittest.TestCase):
         activity = action.json()["state"]["career_overview"]["activities"][0]
         self.assertEqual(activity["type"], "comicio")
         self.assertEqual(activity["municipality_id"], "3106200")
+        self.assertEqual(activity["municipality_name"], "Belo Horizonte")
+        self.assertGreater(activity["municipality_support"], 0)
         self.assertEqual(activity["city_reach_multiplier"], 0.7)
 
         cooldown = self.client.post("/api/game/advance", json={"days": 5})
@@ -308,6 +311,43 @@ class ApiSmokeTests(unittest.TestCase):
         result = election.json()["state"]["career_overview"]
         self.assertIn(result["result"], {"won", "lost"})
         self.assertIn(result["phase"], {"transition", "outgoing", "opposition"})
+
+    def test_campaign_actions_target_valid_cities_within_the_office_scope(self) -> None:
+        message = "Vamos publicar prazos para melhorar o transporte e fiscalizar cada obra com transparência."
+        governor_state = new_game()
+        governor_state["date"] = "2030-07-08"
+        start_career(governor_state, "governador", "MG", "", "Partido da Renovação", "Centro", "Candidata estadual")
+
+        with self.assertRaisesRegex(ValueError, "estado da candidatura"):
+            perform_career_action(governor_state, "comicio", "mobilidade", message, municipality_id="3550308")
+
+        activity = perform_career_action(
+            governor_state, "comicio", "mobilidade", message, municipality_id="3106200",
+        )["activity"]
+        self.assertEqual(activity["municipality_id"], "3106200")
+        self.assertEqual(activity["municipality_name"], "Belo Horizonte")
+        self.assertEqual(activity["municipality_state_code"], "MG")
+        self.assertEqual(career_overview(governor_state)["campaign_city_support"][0]["municipality_id"], "3106200")
+
+        president_state = new_game()
+        president_state["date"] = "2030-07-08"
+        start_career(president_state, "presidente", "DF", "", "Partido da Renovação", "Centro", "Candidato nacional")
+        national_activity = perform_career_action(
+            president_state, "comicio", "mobilidade", message, municipality_id="3550308",
+        )["activity"]
+        self.assertEqual(national_activity["municipality_name"], "São Paulo")
+        self.assertEqual(national_activity["municipality_state_code"], "SP")
+
+    def test_municipal_campaign_cannot_leave_its_electoral_city(self) -> None:
+        state = new_game()
+        state["date"] = "2028-07-03"
+        start_career(state, "prefeito", "MG", "Belo Horizonte", "Partido da Renovação", "Centro", "Candidata municipal", municipality_id="3106200")
+        with self.assertRaisesRegex(ValueError, "município da candidatura"):
+            perform_career_action(
+                state, "comicio", "educacao",
+                "Vamos publicar metas de educação, prazos, equipes e resultados para cada escola.",
+                municipality_id="3170206",
+            )
 
     def test_incumbent_keeps_governing_through_term_end_after_election(self) -> None:
         state = new_game()
