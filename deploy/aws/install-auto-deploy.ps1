@@ -60,6 +60,7 @@ if ($Disable) {
         $baselineCommand,
         "systemctl daemon-reload",
         "systemctl enable --now mandato-auto-deploy.timer",
+        "systemctl start mandato-auto-deploy.service",
         "systemctl is-enabled mandato-auto-deploy.timer",
         "systemctl is-active mandato-auto-deploy.timer"
     )

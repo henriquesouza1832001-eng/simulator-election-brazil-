@@ -141,8 +141,11 @@ current code is on the host:
 .\deploy\aws\install-auto-deploy.ps1 -Region us-east-2
 ```
 
-The first run records the currently deployed commit as its baseline. Later
-documentation-only commits are recorded without rebuilding. A force-push to
+Use `-ResetBaseline` during setup to align the checkpoint with the commit
+currently on the host. The installer enables the five-minute timer and starts
+one immediate check, so the latest CI-approved commit can publish without
+waiting for the first interval. Later documentation-only commits are recorded
+without rebuilding. A force-push to
 `main` stops the timer and requires operator review. Check the host log with
 `journalctl -u mandato-auto-deploy.service`. Disable it with
 `.\deploy\aws\install-auto-deploy.ps1 -Disable`.
