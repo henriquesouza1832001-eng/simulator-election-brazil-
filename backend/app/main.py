@@ -21,7 +21,7 @@ from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
 from .engine.politics import rupture_preview, attempt_rupture
 from .engine.campaign import campaign_overview, perform_campaign_action
-from .engine.career import STATES, career_options, career_overview, is_career_governing, perform_career_action, perform_governance_action, start_career, validate_party_name
+from .engine.career import STATES, career_options, career_overview, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, start_career, validate_party_name
 from .engine.geography import catalog_metadata, get_municipality, municipality_options
 from .engine.appointments import appointments_overview, appoint_minister, nominate_judge
 from .engine.communications import require_inaugural_address, submit_inaugural_address
@@ -283,6 +283,10 @@ class CareerActionRequest(BaseModel):
     message: str = Field(min_length=12, max_length=600)
     conduct: str = Field(default="regular", pattern="^(regular|irregular)$")
     municipality_id: str | None = Field(default=None, pattern=r"^\d{7}$")
+
+
+class CareerPreparationRequest(BaseModel):
+    action: str = Field(pattern="^(mobilizar_voluntariado|reunir_partido|mapear_prioridades)$")
 
 
 class CareerGovernanceRequest(BaseModel):
@@ -885,6 +889,23 @@ def political_career_action(request: CareerActionRequest) -> dict[str, Any]:
                   [{"score": result["score"], "rubric": result["rubric"], "poll_support": result["poll_support"],
                     "local_support": result["local_support"], "state_support": result["state_support"],
                     "cost_mi": result["activity"]["cost_mi"], "days_cost": result["days_cost"]}])
+    return {"state": public_state(state), "result": result, "calendar_message": calendar_message}
+
+
+@app.post("/api/career/preparation")
+def political_career_preparation(request: CareerPreparationRequest) -> dict[str, Any]:
+    state = game_state()
+    action_date = state["date"]
+    try:
+        result = perform_career_preparation(state, request.action)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    state, calendar_message = advance_state(state, result["days_cost"])
+    save_state(state)
+    record_action(action_date, "pré-campanha", result["preparation"]["label"], result["preparation"]["summary"],
+                  {"action": request.action},
+                  [{"organization": result["organization"], "cost_mi": result["preparation"]["cost_mi"],
+                    "days_cost": result["days_cost"]}])
     return {"state": public_state(state), "result": result, "calendar_message": calendar_message}
 
 

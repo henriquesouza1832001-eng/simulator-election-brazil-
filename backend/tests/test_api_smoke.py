@@ -19,7 +19,7 @@ from app.db import (
 )
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
-from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_governance_action, resolve_career_election, start_career
+from app.engine.career import advance_career, career_overview, governance_actions_for, is_career_governing, perform_career_action, perform_career_preparation, perform_governance_action, resolve_career_election, start_career
 from app.engine.fiscal import fiscal_overview
 from app.engine.issues import canonical_issue_ids
 from app.main import app, require_presidential_authority
@@ -314,6 +314,51 @@ class ApiSmokeTests(unittest.TestCase):
         result = election.json()["state"]["career_overview"]
         self.assertIn(result["result"], {"won", "lost"})
         self.assertIn(result["phase"], {"transition", "outgoing", "opposition"})
+
+    def test_pre_campaign_preparation_uses_candidate_fund_without_changing_poll(self) -> None:
+        started = self.client.post("/api/career/start", json={
+            "office": "presidente", "state_code": "DF", "party": "Partido da RenovaÃ§Ã£o",
+            "ideology": "Centro", "candidate_name": "Candidatura de teste",
+        })
+        self.assertEqual(started.status_code, 200, started.text)
+        before = started.json()["state"]["career_overview"]
+        response = self.client.post("/api/career/preparation", json={"action": "mapear_prioridades"})
+        self.assertEqual(response.status_code, 200, response.text)
+        result = response.json()["result"]
+        after = response.json()["state"]["career_overview"]
+        self.assertEqual(result["preparation"]["organization_gain"], 0.75)
+        self.assertEqual(result["days_cost"], 1)
+        self.assertAlmostEqual(after["campaign_fund_mi"], before["campaign_fund_mi"] - 0.04)
+        self.assertEqual(after["poll_support"], before["poll_support"])
+        self.assertEqual(after["pre_campaign_organization"], 0.75)
+        self.assertFalse(after["can_prepare"])
+        self.assertEqual(after["preparation_wait_days"], 29)
+
+        too_soon = self.client.post("/api/career/preparation", json={"action": "reunir_partido"})
+        self.assertEqual(too_soon.status_code, 409)
+        self.assertIn("29 dia(s)", too_soon.json()["detail"])
+
+        advanced = self.client.post("/api/game/advance", json={"days": 29})
+        self.assertEqual(advanced.status_code, 200, advanced.text)
+        self.assertTrue(advanced.json()["state"]["career_overview"]["can_prepare"])
+
+    def test_pre_campaign_organization_contributes_to_election_result(self) -> None:
+        ordinary = new_game()
+        organized = new_game()
+        for state in (ordinary, organized):
+            state["date"] = "2030-07-08"
+            start_career(state, "presidente", "DF", "", "Partido da RenovaÃ§Ã£o", "Centro", "Candidata de teste")
+        organized["career"]["pre_campaign_organization"] = 1.5
+        resolve_career_election(ordinary, date(2030, 10, 6))
+        resolve_career_election(organized, date(2030, 10, 6))
+        self.assertAlmostEqual(organized["career"]["vote_share"] - ordinary["career"]["vote_share"], 1.5)
+
+    def test_pre_campaign_preparation_is_closed_during_official_campaign(self) -> None:
+        state = new_game()
+        state["date"] = "2030-07-08"
+        start_career(state, "presidente", "DF", "", "Partido da RenovaÃ§Ã£o", "Centro", "Candidata de teste")
+        with self.assertRaisesRegex(ValueError, "antes da abertura oficial"):
+            perform_career_preparation(state, "mapear_prioridades")
 
     def test_campaign_actions_target_valid_cities_within_the_office_scope(self) -> None:
         message = "Vamos publicar prazos para melhorar o transporte e fiscalizar cada obra com transparência."

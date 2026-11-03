@@ -111,6 +111,15 @@ ACTIVITIES = {
     "rede_praca": {"label": "Praça · debate público", "days": 1, "cost": 0.016, "reach": 0.82, "channel": "rede_publica", "audience": ["jovens", "servidores"], "viral": .32},
 }
 TRAVEL_ACTIVITIES = {"comicio", "porta_a_porta"}
+PRE_CAMPAIGN_ACTIONS = {
+    "mobilizar_voluntariado": {"label": "Organizar voluntariado", "days": 2, "cost": 0.05, "organization": 0.75,
+        "summary": "Organiza turnos, contatos e treinamento interno; não publica propaganda nem altera a pesquisa."},
+    "reunir_partido": {"label": "Reunir direção partidária", "days": 3, "cost": 0.12, "organization": 1.5,
+        "summary": "Alinha responsabilidades da equipe; não altera apoio eleitoral antes da campanha."},
+    "mapear_prioridades": {"label": "Mapear prioridades do território", "days": 1, "cost": 0.04, "organization": 0.75,
+        "summary": "Prepara um diagnóstico interno sem pedir voto nem publicar promessas."},
+}
+MAX_PRE_CAMPAIGN_ORGANIZATION = 4.5
 APPOINTED_PATHS = {
     "ministro": {"label": "Ministro(a) de Estado", "requires": ["presidente"], "description": "Nomeação presidencial e apoio político; não é cargo eletivo."},
     "stf_indicado": {"label": "Indicação ao STF", "requires": ["presidente"], "description": "Indicação presidencial seguida de sabatina e votação no Senado; não é cargo eletivo."},
@@ -316,6 +325,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "seed": int(today.strftime("%Y%m%d")) + sum(map(ord, office + state_code + (municipality_id or municipality))),
         "campaign_team_municipality_id": municipality_id if role["scope"] == "municipal" else municipality_id or STATE_CAPITALS[state_code],
         "group_support": group_support, "last_action_date": None, "activities": [],
+        "pre_campaign_organization": 0.0, "last_preparation_date": None, "preparations": [],
         "conduct": {"attempts": 0, "detected": 0, "election_penalty": 0.0, "history": []},
         "result": None, "vote_share": None, "opponent_share": 50.0, "appointments": [], "governance": None,
         "simulated": True,
@@ -460,6 +470,17 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "days_until_inauguration": max(0, (date.fromisoformat(career["inauguration_date"]) - today).days),
         "campaign_active": in_campaign,
         "can_act": in_campaign and wait == 0 and career["campaign_fund_mi"] >= 0.01,
+        "pre_campaign_organization": round(float(career.get("pre_campaign_organization", 0)), 2),
+        "pre_campaign_organization_cap": MAX_PRE_CAMPAIGN_ORGANIZATION,
+        "pre_campaign_preparations": list(reversed(career.get("preparations", [])[-8:])),
+        "preparation_wait_days": max(0, 30 - (today - date.fromisoformat(career["last_preparation_date"])).days) if career.get("last_preparation_date") else 0,
+        "can_prepare": (
+            career.get("phase") == "pre_campaign" and today < campaign_start
+            and float(career.get("pre_campaign_organization", 0)) < MAX_PRE_CAMPAIGN_ORGANIZATION
+            and (not career.get("last_preparation_date") or (today - date.fromisoformat(career["last_preparation_date"])).days >= 30)
+            and any(career.get("campaign_fund_mi", 0) >= action["cost"] for action in PRE_CAMPAIGN_ACTIONS.values())
+        ),
+        "preparation_options": [{"key": key, **action, "affordable": career.get("campaign_fund_mi", 0) >= action["cost"]} for key, action in PRE_CAMPAIGN_ACTIONS.items()],
         "days_until_action": wait, "poll_support": round(career["poll_support"], 1), "local_support": round(career["local_support"], 1),
         "state_support": round(career["state_support"], 1), "national_support": round(career["national_support"], 1),
         "reputation": round(float(career.get("reputation", 50)), 1), "history": list(reversed(career.get("history", [])[-12:])),
@@ -618,6 +639,50 @@ def career_debate_prompt(career: dict[str, Any], issue: str) -> dict[str, str]:
         question += " Como você transformará essa proposta em fiscalização, audiência ou votação na sua casa legislativa?"
     return {"moderator": "Bancada de debate simulada", "question": question, "scope": scope,
             "instruction": "Responda ao ponto, indique uma ação possível para o cargo e diga como o resultado será acompanhado."}
+
+
+def perform_career_preparation(state: dict[str, Any], action_type: str) -> dict[str, Any]:
+    """Prepare the campaign team before the official window, without voter-facing effects."""
+    career = _campaign(state)
+    if action_type not in PRE_CAMPAIGN_ACTIONS:
+        raise ValueError("Escolha uma atividade de organização pré-campanha disponível.")
+    today = date.fromisoformat(state["date"])
+    campaign_start = date.fromisoformat(career["campaign_start"])
+    if career.get("phase") != "pre_campaign" or today >= campaign_start:
+        raise ValueError("A organização interna só está disponível antes da abertura oficial da campanha.")
+    last_preparation = career.get("last_preparation_date")
+    if last_preparation:
+        wait = max(0, 30 - (today - date.fromisoformat(last_preparation)).days)
+        if wait:
+            raise ValueError(f"A próxima atividade de organização fica disponível em {wait} dia(s).")
+    organization = float(career.get("pre_campaign_organization", 0))
+    if organization >= MAX_PRE_CAMPAIGN_ORGANIZATION:
+        raise ValueError("A equipe já atingiu o limite de organização pré-campanha desta partida.")
+    action = PRE_CAMPAIGN_ACTIONS[action_type]
+    cost = float(action["cost"])
+    if float(career.get("campaign_fund_mi", 0)) < cost:
+        raise ValueError("O fundo da candidatura não cobre esta atividade de organização.")
+    gain = min(float(action["organization"]), MAX_PRE_CAMPAIGN_ORGANIZATION - organization)
+    career["pre_campaign_organization"] = round(organization + gain, 2)
+    career["campaign_fund_mi"] = round(float(career["campaign_fund_mi"]) - cost, 4)
+    career["spent_mi"] = round(float(career.get("spent_mi", 0)) + cost, 4)
+    career["last_preparation_date"] = state["date"]
+    record = {
+        "id": f"career-preparation-{state['date']}-{len(career.get('preparations', [])) + 1}",
+        "date": state["date"], "type": action_type, "label": action["label"],
+        "summary": action["summary"], "organization_gain": round(gain, 2),
+        "organization_total": career["pre_campaign_organization"], "cost_mi": cost,
+        "days_cost": int(action["days"]), "simulated": True,
+    }
+    career.setdefault("preparations", []).append(record)
+    career["preparations"] = career["preparations"][-30:]
+    return {
+        "preparation": record,
+        "organization": career["pre_campaign_organization"],
+        "campaign_fund_mi": career["campaign_fund_mi"],
+        "days_cost": record["days_cost"],
+        "message": f"{action['label']} concluída. A organização da equipe aumentou {gain:.2f} pontos; a pesquisa não muda antes da campanha.",
+    }
 
 
 def perform_career_action(state: dict[str, Any], activity_type: str, issue: str, message: str,
@@ -841,7 +906,7 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     seed = f"{career.get('seed', state.get('campaign_seed', 203001))}:career-election:{career['office']}:{election_day.isoformat()}"
     conduct_result = settle_campaign_conduct(state, career, seed)
     rng = random.Random(seed)
-    organization = min(8.0, len(career["activities"]) * 0.55)
+    organization = min(8.0, len(career["activities"]) * 0.55 + float(career.get("pre_campaign_organization", 0)))
     fatigue_penalty = max(0, career["fatigue"] - 60) * 0.035
     volatility = 2.5 * difficulty.get("economic_volatility", 1)
     opposition_pressure = difficulty.get("opposition_pressure", 1)

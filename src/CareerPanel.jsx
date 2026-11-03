@@ -40,6 +40,8 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
   const [activityMunicipalityId, setActivityMunicipalityId] = useState('');
   const [activityMunicipalityProfile, setActivityMunicipalityProfile] = useState(null);
   const [result, setResult] = useState(null);
+  const [preparationResult, setPreparationResult] = useState(null);
+  const [preparationAction, setPreparationAction] = useState('mapear_prioridades');
   const [governmentAction, setGovernmentAction] = useState('');
   const [governmentIssue, setGovernmentIssue] = useState('');
   const [governmentResult, setGovernmentResult] = useState(null);
@@ -75,6 +77,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
   const chosenOffice = useMemo(() => options?.offices.find((item) => item.key === office), [options, office]);
   const chosenCalendar = useMemo(() => options?.calendar_previews?.[office], [options, office]);
   const chosenActivity = useMemo(() => overview?.activity_options?.find((item) => item.key === activity), [overview, activity]);
+  const chosenPreparation = useMemo(() => overview?.preparation_options?.find((item) => item.key === preparationAction), [overview, preparationAction]);
   const campaignActivityLocation = overview?.scope === 'municipal'
     ? overview.municipality_profile
     : activityMunicipalityProfile;
@@ -113,6 +116,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
       setShowSetup(false);
       setSection('Campanha');
       setResult(null);
+      setPreparationResult(null);
       const started = data.state.career_overview;
       onNotice(started.phase === 'pre_campaign'
         ? `Carreira iniciada. A campanha abre em ${dateLabel(started.campaign_start_date)} e a eleição será em ${dateLabel(started.election_date)}.`
@@ -132,6 +136,18 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
       onState(data.state);
       setResult(data.result);
       setMessage('');
+      onNotice(`${data.result.message}${data.calendar_message ? ` ${data.calendar_message}` : ''}`);
+    } catch (error) { onNotice(error.message); }
+    finally { setBusy(false); }
+  }
+
+  async function prepareCampaign(event) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const data = await request('/api/career/preparation', { method: 'POST', body: JSON.stringify({ action: preparationAction }) });
+      onState(data.state);
+      setPreparationResult(data.result);
       onNotice(`${data.result.message}${data.calendar_message ? ` ${data.calendar_message}` : ''}`);
     } catch (error) { onNotice(error.message); }
     finally { setBusy(false); }
@@ -199,7 +215,21 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
         <aside className="panel career-rules"><span className="eyebrow">PODERES DO CARGO</span><ul>{overview.powers.map((item) => <li key={item}>{item}</li>)}</ul><div className="career-appointment"><b>Outros caminhos</b>{overview.appointment_paths.map((item) => <p key={item.key} className={item.available ? 'available' : 'locked'}>{item.label}<small>{item.available ? item.description : `Disponível após exercer: ${item.requires.map((key) => options.offices.find((role) => role.key === key)?.label).join(', ')}`}</small></p>)}</div>{overview.can_start_campaign && <button className="secondary-button career-next-office" onClick={() => setShowSetup(true)}>Escolher próximo cargo</button>}</aside>
       </div>}
 
-      {section === 'Campanha' && <div className="career-columns">
+      {section === 'Campanha' && overview.phase === 'pre_campaign' && <div className="career-columns">
+        <form className="panel career-action" onSubmit={prepareCampaign}>
+          <div className="career-section-heading"><div><span className="eyebrow">PREPARAÇÃO INTERNA</span><h3>Monte a estrutura antes da campanha</h3><p>Essas atividades organizam a equipe. Não pedem votos, não publicam propaganda e não alteram a pesquisa.</p></div><span className="career-cooldown">{overview.can_prepare ? 'DISPONÍVEL' : overview.preparation_wait_days ? `EM ${overview.preparation_wait_days} DIAS` : 'BASE COMPLETA'}</span></div>
+          <div className="career-preparation-meter"><div><b>Organização da equipe</b><strong>{number.format(overview.pre_campaign_organization)} / {number.format(overview.pre_campaign_organization_cap)}</strong></div><i><em style={{ width: `${Math.min(100, overview.pre_campaign_organization / overview.pre_campaign_organization_cap * 100)}%` }}/></i><small>Este componente só entra no cálculo do resultado eleitoral; não é intenção de voto.</small></div>
+          {overview.can_prepare ? <>
+            <label className="career-message-label">Atividade<select value={preparationAction} onChange={(event) => setPreparationAction(event.target.value)}>{overview.preparation_options.map((item) => <option value={item.key} key={item.key} disabled={!item.affordable}>{item.label} · {item.days} dia(s) · R$ {number.format(item.cost)} mi{item.affordable ? '' : ' · saldo insuficiente'}</option>)}</select></label>
+            {chosenPreparation && <div className="career-action-preview"><b>{chosenPreparation.label}</b><p>{chosenPreparation.summary}</p><small>Organização: +{number.format(chosenPreparation.organization)} · Fundo da candidatura: R$ {number.format(chosenPreparation.cost)} mi · calendário: {chosenPreparation.days} dia(s). A próxima atividade interna libera 30 dias depois.</small></div>}
+            <div className="career-form-footer"><small>O custo sai do fundo privado simulado da candidatura, não do orçamento público. A campanha oficial abre em {dateLabel(overview.campaign_start_date)}.</small><button className="primary-button" disabled={busy || !chosenPreparation?.affordable}>{busy ? 'Registrando…' : 'Realizar preparação'}</button></div>
+          </> : <p className="empty-state">{overview.pre_campaign_organization >= overview.pre_campaign_organization_cap ? 'A equipe já chegou ao limite de preparação desta disputa.' : overview.preparation_wait_days ? `A próxima atividade interna pode ser feita em ${overview.preparation_wait_days} dia(s). O calendário continua avançando durante a pré-campanha.` : 'O fundo da candidatura não cobre as atividades de preparação disponíveis.'}</p>}
+          {preparationResult && <div className="career-result-box"><div><span>EFEITO REGISTRADO</span><b>{number.format(preparationResult.organization)} / {number.format(overview.pre_campaign_organization_cap)}</b></div><p>{preparationResult.message}</p><small>{preparationResult.preparation.label} · R$ {number.format(preparationResult.preparation.cost_mi)} mi · {preparationResult.days_cost} dia(s) · a pesquisa não mudou.</small></div>}
+        </form>
+        <aside className="panel career-rules"><span className="eyebrow">ANTES DA JANELA ELEITORAL</span><h3>O que dá para fazer</h3><ol><li>Preparação interna: voluntariado, organização partidária ou diagnóstico territorial.</li><li>Uma atividade a cada 30 dias simulados; cada uma consome dias e fundo privado.</li><li>O bônus de organização é limitado e só entra no cálculo eleitoral.</li><li>Comícios, debates, entrevistas e mensagens públicas só aparecem na janela de 90 dias antes da eleição.</li></ol><div className="career-fund"><span>FUNDO DA CANDIDATURA</span><b>R$ {number.format(overview.campaign_fund_mi)} mi</b><small>Preparação e campanha usam este fundo separado do Tesouro.</small></div></aside>
+      </div>}
+      {section === 'Campanha' && overview.phase !== 'pre_campaign' && preparationResult && <div className="panel career-result-box"><div><span>PREPARAÇÃO PRÉ-CAMPANHA REGISTRADA</span><b>{number.format(preparationResult.organization)} / {number.format(overview.pre_campaign_organization_cap)}</b></div><p>{preparationResult.message}</p><small>Consulte o Histórico para ver todas as atividades internas.</small></div>}
+      {section === 'Campanha' && overview.phase !== 'pre_campaign' && <div className="career-columns">
         <form className="panel career-action" onSubmit={act}><div className="career-section-heading"><div><span className="eyebrow">UMA AÇÃO DE CADA VEZ</span><h3>{overview.campaign_active ? 'Fale com o eleitorado' : overview.phase === 'pre_campaign' ? 'A campanha ainda não abriu' : overview.phase === 'office' ? 'A eleição está fora da janela de campanha' : 'Campanha encerrada'}</h3></div><span className="career-cooldown">{overview.campaign_active ? overview.days_until_action ? `EM ${overview.days_until_action} DIAS` : 'DISPONÍVEL' : overview.phase === 'pre_campaign' ? `EM ${overview.days_until_campaign} DIAS` : overview.phase}</span></div>
           {overview.campaign_active ? <><div className="career-form-grid"><label>Atividade<select value={activity} onChange={(event) => setActivity(event.target.value)}>{overview.activity_options.map((item) => <option value={item.key} key={item.key}>{item.label} · {item.days} dia(s) · R$ {number.format(item.cost_mi)} mi</option>)}</select></label><label>Tema<select value={issue} onChange={(event) => setIssue(event.target.value)}>{overview.issue_options.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}</select></label></div>
             {overview.scope === 'municipal'
@@ -230,6 +260,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
       {section === 'Histórico' && <section className="panel career-history"><span className="eyebrow">LINHA DO TEMPO</span><h3>Atividades, eleições e partidas arquivadas</h3>{overview.history?.map((item, index) => <article key={`${item.date}-${item.office}-${index}`}><div><b>{item.office} · {item.territory || `${item.municipality || item.state_code}`}</b><span>{item.result === 'won' ? 'ELEITO' : item.result === 'lost' ? 'NÃO ELEITO' : 'MANDATO CONCLUÍDO'}</span></div><small>{dateLabel(item.date)} · {item.vote_share == null ? `${item.term_years} anos de mandato` : `${number.format(item.vote_share)}% dos votos`} · reputação ${number.format(item.reputation)}/100</small></article>)}{overview.activities.length ? (historyExpanded ? overview.activities : overview.activities.slice(0, 8)).map((item) => <article key={item.id}><div><b>{item.label} · {item.issue_label}</b><span>{item.score}/100</span></div><p>{item.message}</p><small>{dateLabel(item.date)} · {item.days_cost} dia(s) · R$ {number.format(item.cost_mi)} mi · apoio local {item.local_change > 0 ? '+' : ''}{number.format(item.local_change)} p.p.{item.municipality_name ? ` · ${item.municipality_name}/${item.municipality_state_code}` : ''}{item.travel_days > 0 ? ` - viagem ${item.travel_from_municipality_name || 'base'} -> ${item.municipality_name} (+${item.travel_days} dias)` : ''}{item.municipality_id ? ` · alcance simulado ×${number.format(item.city_reach_multiplier || 1)}` : ''}{item.social_result ? ` · ${item.social_result.platform}: ${item.social_result.event}` : ''}</small></article>) : <p className="empty-state">As atividades registradas durante a campanha aparecem aqui.</p>}{overview.activities.length > 8 && <button className="secondary-button career-history-more" onClick={() => setHistoryExpanded(!historyExpanded)}>{historyExpanded ? 'Mostrar menos atividades' : `Ver mais ${overview.activities.length - 8} atividades`}</button>}
         <div className="career-archives"><div><b>Partidas arquivadas</b><small>A partida atual foi guardada quando você iniciou uma nova carreira.</small></div><select value={selectedArchive} onChange={(event) => setSelectedArchive(event.target.value)}><option value="">Escolher partida para restaurar</option>{archives.map((item) => <option value={item.id} key={item.id}>{item.title} · {dateLabel(item.archived_at?.slice(0, 10))}</option>)}</select><button className="secondary-button" disabled={busy || !selectedArchive} onClick={restore}>Restaurar partida</button></div>
       </section>}
+      {section.startsWith('Hist') && overview.pre_campaign_preparations?.length > 0 && <section className="panel career-history"><span className="eyebrow">ORGANIZAÇÃO PRÉ-CAMPANHA</span><h3>Preparação da equipe</h3>{overview.pre_campaign_preparations.map((item) => <article key={item.id}><div><b>{item.label}</b><span>+{number.format(item.organization_gain)} organização</span></div><p>{item.summary}</p><small>{dateLabel(item.date)} · {item.days_cost} dia(s) · R$ {number.format(item.cost_mi)} mi · sem mudança imediata na pesquisa</small></article>)}</section>}
       {section === 'Dados do TSE' && <TSEArchivePanel request={request} stateCode={overview.state_code} />}
     </>}
     {!overview && archives.length > 0 && <section className="panel career-archive-shortcut"><b>Partidas arquivadas</b><select value={selectedArchive} onChange={(event) => setSelectedArchive(event.target.value)}><option value="">Restaurar uma partida anterior</option>{archives.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}</select><button className="secondary-button" disabled={busy || !selectedArchive} onClick={restore}>Restaurar</button></section>}

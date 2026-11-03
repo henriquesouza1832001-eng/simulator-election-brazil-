@@ -50,7 +50,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 ### Campanha eleitoral — primeira regra jogável
 
 - As eleições municipais simuladas ocorrem no primeiro domingo de outubro dos anos pares do ciclo municipal (2028, 2032...). As eleições estaduais e federais usam o primeiro domingo de outubro do ciclo geral (2026, 2030, 2034...).
-- A campanha simulada abre 90 dias antes da eleição do cargo escolhido. Antes disso, a carreira fica em pré-campanha e mostra as datas de abertura e votação; atividades de campanha só ficam disponíveis na janela legal simulada.
+- A campanha simulada abre 90 dias antes da eleição do cargo escolhido. Antes disso, a carreira fica em pré-campanha e mostra as datas de abertura e votação. Nela, o jogador pode organizar voluntariado, reunir o partido ou mapear prioridades internas, no máximo uma vez a cada 30 dias; essas ações têm custo privado simulado, consomem dias e aumentam uma reserva limitada de organização. Não alteram pesquisa nem produzem comunicação pública. Atividades de campanha só ficam disponíveis na janela simulada.
 - A posse ocorre em 1º de janeiro para cargos municipais, estaduais e legislativos, e em 5 de janeiro para a Presidência. O mandato dura quatro anos, ou oito para o Senado; a próxima eleição é marcada no ciclo correspondente.
 - Na fase aberta, o jogador pode fazer uma atividade por intervalo de sete dias: comício, entrevista, debate ou encontro regional.
 - Cada atividade tem custo de campanha separado do Tesouro, duração em dias, região e tema. Não se pode usar verba pública para pagar a campanha nesta regra inicial.
