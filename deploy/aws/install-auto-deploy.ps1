@@ -45,8 +45,7 @@ if ($Disable) {
         "systemctl daemon-reload",
         "systemctl enable --now mandato-auto-deploy.timer",
         "systemctl is-enabled mandato-auto-deploy.timer",
-        "systemctl is-active mandato-auto-deploy.timer",
-        "systemctl list-timers --all mandato-auto-deploy.timer --no-pager"
+        "systemctl is-active mandato-auto-deploy.timer"
     )
 }
 
@@ -65,14 +64,12 @@ try {
     if (-not $commandId) { throw "SSM did not return a command ID." }
     Write-Host "SSM command: $commandId"
     & $awsCommand ssm wait command-executed --region $Region --command-id $commandId --instance-id $InstanceId
-    $resultJson = & $awsCommand ssm get-command-invocation --region $Region --command-id $commandId --instance-id $InstanceId --output json
+    $status = & $awsCommand ssm get-command-invocation --region $Region --command-id $commandId --instance-id $InstanceId --query Status --output text
     if ($LASTEXITCODE -ne 0) { throw "Could not read the SSM command result." }
-    $result = $resultJson | ConvertFrom-Json
-    if ($result.StandardOutputContent) { Write-Host $result.StandardOutputContent.TrimEnd() }
-    if ($result.Status -ne "Success") {
-        if ($result.StandardErrorContent) { Write-Error $result.StandardErrorContent.TrimEnd() }
-        throw "Host configuration ended with status '$($result.Status)'."
+    if ($status.Trim() -ne "Success") {
+        throw "Host configuration ended with status '$($status.Trim())'. Read its details with AWS Systems Manager Run Command."
     }
+    Write-Host "Automatic deployment timer is enabled and active on $InstanceId."
 } finally {
     Remove-Item -LiteralPath $inputPath -Force -ErrorAction SilentlyContinue
 }
