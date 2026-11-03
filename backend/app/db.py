@@ -110,6 +110,19 @@ def initialize() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 original_text TEXT NOT NULL,
                 corrected_interpretation TEXT NOT NULL,
+                interpretation_log_id INTEGER,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS interpretation_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_id TEXT NOT NULL,
+                task TEXT NOT NULL DEFAULT 'policy_interpretation',
+                input_text TEXT NOT NULL,
+                result_json TEXT NOT NULL,
+                source TEXT NOT NULL,
+                model_name TEXT NOT NULL,
+                prompt_version TEXT NOT NULL,
+                confidence REAL NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS knowledge_chunks (
@@ -135,8 +148,12 @@ def initialize() -> None:
             columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
             if "player_id" not in columns:
                 db.execute(f"ALTER TABLE {table} ADD COLUMN player_id TEXT NOT NULL DEFAULT 'local'")
+        correction_columns = {row["name"] for row in db.execute("PRAGMA table_info(interpretation_corrections)").fetchall()}
+        if "interpretation_log_id" not in correction_columns:
+            db.execute("ALTER TABLE interpretation_corrections ADD COLUMN interpretation_log_id INTEGER")
         db.execute("CREATE INDEX IF NOT EXISTS idx_actions_player_id ON actions(player_id, id DESC)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_corrections_player_id ON interpretation_corrections(player_id, id DESC)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_interpretation_log_player_id ON interpretation_log(player_id, id DESC)")
 
 
 def load_state() -> dict[str, Any] | None:
@@ -206,10 +223,42 @@ def recent_actions(limit: int = 10, after_id: int | None = None, through_id: int
 
 def add_correction(original_text: str, corrected_interpretation: str) -> None:
     with connect() as db:
+        logged = db.execute(
+            "SELECT id FROM interpretation_log WHERE player_id = ? AND input_text = ? ORDER BY id DESC LIMIT 1",
+            (current_player_id(), original_text),
+        ).fetchone()
         db.execute(
-            "INSERT INTO interpretation_corrections (original_text, corrected_interpretation, player_id) VALUES (?, ?, ?)",
-            (original_text, corrected_interpretation, current_player_id()),
+            "INSERT INTO interpretation_corrections (original_text, corrected_interpretation, interpretation_log_id, player_id) VALUES (?, ?, ?, ?)",
+            (original_text, corrected_interpretation, logged["id"] if logged else None, current_player_id()),
         )
+
+
+def record_interpretation(text: str, result: dict[str, Any], model_name: str, prompt_version: str) -> int:
+    """Keep a player-scoped audit trail; unreviewed outputs are not training labels."""
+    source = str(result.get("source", "local"))[:40]
+    confidence = result.get("confidence", 0)
+    try:
+        confidence_value = float(confidence)
+    except (TypeError, ValueError):
+        confidence_value = 0.0
+    if confidence_value != confidence_value or confidence_value in (float("inf"), float("-inf")):
+        confidence_value = 0.0
+    confidence_value = min(1.0, max(0.0, confidence_value))
+    with connect() as db:
+        cursor = db.execute(
+            "INSERT INTO interpretation_log "
+            "(player_id, task, input_text, result_json, source, model_name, prompt_version, confidence) "
+            "VALUES (?, 'policy_interpretation', ?, ?, ?, ?, ?, ?)",
+            (current_player_id(), text, json.dumps(result, ensure_ascii=False), source,
+             model_name[:100], prompt_version[:80], confidence_value),
+        )
+        return int(cursor.lastrowid)
+
+
+def interpretation_count() -> int:
+    with connect() as db:
+        row = db.execute("SELECT COUNT(*) AS total FROM interpretation_log WHERE player_id = ?", (current_player_id(),)).fetchone()
+    return int(row["total"])
 
 
 def useful_corrections(text: str, limit: int = 3) -> list[dict[str, str]]:

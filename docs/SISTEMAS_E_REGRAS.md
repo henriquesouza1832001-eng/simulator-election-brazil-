@@ -69,7 +69,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 - **Fronteira canônica IA/motor:** o motor Python valida ações, altera o estado e calcula custos, probabilidades, efeitos e resultados. A IA classifica intenção, sugere rótulos e redige explicações; números do texto do jogador só entram após validação no servidor contra a proposta original. Saída numérica do modelo nunca é, por si só, uma regra ou um efeito. Ver pendência concreta de `fiscal_cost_bi` em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md).
 - Medidas executivas têm intervalo de agenda. Projetos têm prazo e votação simulada; o envio não é aprovação.
 - A tela apresenta custo/financiamento, grupos afetados, prazo, incerteza, efeitos agora e consequências em meses futuros.
-- Toda decisão é registrada com data, parâmetros, resultado e origem. Prévia não aplicada e correção humana também devem ter registros próprios para avaliação do interpretador.
+- Toda decisão é registrada com data, parâmetros, resultado e origem. Prévia não aplicada e correção humana também têm registros próprios por jogador; saída automática não é rótulo de treino e avaliação de narrativa fica separada.
 
 ### Orçamento, serviços e obras
 

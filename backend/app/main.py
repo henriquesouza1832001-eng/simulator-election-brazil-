@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .ai.interpreter import interpret
-from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, list_archives, load_state, recent_actions, record_action, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
+from .ai.interpreter import DEFAULT_MODEL, PROMPT_VERSION, interpret
+from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, interpretation_count, list_archives, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
@@ -331,7 +331,7 @@ def public_state(state: dict[str, Any]) -> dict[str, Any]:
             "simulated_news": state.get("simulated_news", []), "recent_actions": recent_actions(10, state.get("action_log_start_id"), state.get("action_log_end_id")),
             "campaign_overview": campaign_overview(state),
             "career_overview": career_overview(state),
-            "learning": {"corrections_saved": correction_count()}}
+            "learning": {"corrections_saved": correction_count(), "interpretations_logged": interpretation_count()}}
 
 
 @app.on_event("startup")
@@ -868,11 +868,15 @@ async def preview(request: MeasureRequest) -> dict[str, Any]:
         interpretation = await interpret(request.text, examples)
     except Exception as exc:
         raise HTTPException(status_code=502, detail="A interpretação não pôde ser gerada. Tente novamente.") from exc
+    model_name = os.getenv("GEMINI_MODEL", DEFAULT_MODEL).strip() if interpretation.get("source") == "gemini" else "keyword-fallback"
+    interpretation_id = record_interpretation(request.text, interpretation, model_name, PROMPT_VERSION)
     instrument = interpretation.get("instrument", "")
     legal_timing = instrument in {"Projeto de Lei", "Projeto de Lei Complementar", "PEC"}
     timing = ("Envio ao Congresso; votação simulada após 90 a 150 dias. Os efeitos dependem de aprovação." if legal_timing
               else "Ato executivo sujeito ao intervalo da agenda; os efeitos começam quando aplicado.")
-    return {"interpretation": interpretation, "forecast": forecast(game_state(), interpretation), "examples_used": len(examples), "timing": timing}
+    return {"interpretation": interpretation, "interpretation_id": interpretation_id,
+            "learning": {"interpretations_logged": interpretation_count()},
+            "forecast": forecast(game_state(), interpretation), "examples_used": len(examples), "timing": timing}
 
 
 @app.post("/api/measures/apply")
@@ -926,6 +930,6 @@ def apply(request: ApplyRequest) -> dict[str, Any]:
 
 
 @app.post("/api/learning/corrections")
-def save_correction(request: CorrectionRequest) -> dict[str, str]:
+def save_correction(request: CorrectionRequest) -> dict[str, Any]:
     add_correction(request.original_text, request.corrected_interpretation)
-    return {"status": "saved"}
+    return {"status": "saved", "corrections_saved": correction_count()}

@@ -6,7 +6,7 @@
 - CloudFront termina TLS e encaminha ao EC2 por HTTP com segredo de origem. A porta 80 do EC2 aceita tráfego do CloudFront; o Nginx bloqueia requisições sem o cabeçalho secreto. O IP antigo responde 403.
 - Amazon Cognito User Pool ativo. Cadastro por e-mail verificado e login pelo fluxo OAuth authorization code + PKCE, sem segredo no cliente público.
 - A API valida a assinatura/issuer/expiração do access token e exige `token_use=access` e o `client_id` configurado. O `sub` verificado identifica o jogador; não é aceito um identificador escolhido pelo navegador.
-- Partida, histórico de ações e correções de interpretação são filtrados por jogador no SQLite persistente do EC2. O estado legado `local` foi preservado como jogador local; uma conta Cognito inicia um estado separado.
+- Partida, histórico de ações, prévias e correções de interpretação são filtrados por jogador no SQLite persistente do EC2. O texto da proposta e o resultado da interpretação ficam no `interpretation_log`; saídas sem correção humana não são rótulos de treino. O estado legado `local` foi preservado como jogador local; uma conta Cognito inicia um estado separado.
 - A interface guarda os tokens com `CookieStorage` Secure e SameSite=Lax; são cookies acessíveis ao JavaScript, não cookies HttpOnly. O backend continua exigindo bearer token validado.
 - A sessão HTTPS e as rotas protegidas foram verificadas: páginas e configuração respondem; `/api/game` sem token retorna 401; acesso direto ao IP retorna 403.
 
@@ -20,7 +20,7 @@
 
 ## Separação dos dados
 
-`game_saves` tem uma linha por `player_id`; `actions` e `interpretation_corrections` também registram `player_id`. O identificador vem do JWT validado. Catálogos eleitorais e trechos de conhecimento são dados compartilhados somente de leitura, sem saves pessoais.
+`game_saves` tem uma linha por `player_id`; `actions`, `interpretation_log` e `interpretation_corrections` também registram `player_id`. O identificador vem do JWT validado. Catálogos eleitorais e trechos de conhecimento são dados compartilhados somente de leitura, sem saves pessoais.
 
 ## Recursos AWS
 

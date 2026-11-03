@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Least-privilege GitHub Actions OIDC role for deploying Mandato to one EC2 instance through SSM.
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Default: henriquesouza1832001-eng
+  GitHubOwnerId:
+    Type: String
+    Default: '264699377'
+  GitHubRepository:
+    Type: String
+    Default: simulator-election-brazil-
+  GitHubRepositoryId:
+    Type: String
+    Default: '1443429576'
+  InstanceId:
+    Type: String
+    Default: i-0f31ff537ae4f1831
+  ExistingOidcProviderArn:
+    Type: String
+    Default: ''
+    Description: Optional existing IAM provider ARN for token.actions.githubusercontent.com.
+    AllowedPattern: '^$|^arn:aws:iam::[0-9]{12}:oidc-provider/token\.actions\.githubusercontent\.com$'
+
+Conditions:
+  CreateGitHubOidcProvider: !Equals [!Ref ExistingOidcProviderArn, '']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateGitHubOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+
+  GitHubDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: mandato-github-deploy
+      Description: Allows only the Mandato main branch workflow to deploy one EC2 host via SSM.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateGitHubOidcProvider
+                - !Ref GitHubOidcProvider
+                - !Ref ExistingOidcProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOwner}@${GitHubOwnerId}/${GitHubRepository}@${GitHubRepositoryId}:ref:refs/heads/main'
+      Policies:
+        - PolicyName: deploy-one-ec2-instance-through-ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: RunCommandsOnGameHostWithRunShellScriptOnly
+                Effect: Allow
+                Action: ssm:SendCommand
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript'
+                  - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${InstanceId}'
+              - Sid: ReadCommandResult
+                Effect: Allow
+                Action: ssm:GetCommandInvocation
+                Resource: '*'
+
+Outputs:
+  GitHubDeployRoleArn:
+    Description: Set as the repository variable AWS_DEPLOY_ROLE_ARN.
+    Value: !GetAtt GitHubDeployRole.Arn
+  GitHubSubjectClaim:
+    Description: The exact immutable repository and main-branch subject trusted by this role.
+    Value: !Sub 'repo:${GitHubOwner}@${GitHubOwnerId}/${GitHubRepository}@${GitHubRepositoryId}:ref:refs/heads/main'

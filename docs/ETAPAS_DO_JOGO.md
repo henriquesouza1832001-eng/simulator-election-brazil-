@@ -12,7 +12,6 @@
 - **Fatia municipal entregue:** catálogo versionado com 5.571 municípios, códigos IBGE e estimativas populacionais de 2026; campanha exige escolher uma cidade válida e mostra fonte, data, porte e a regra simulada de alcance.
 - **Fatia de temas entregue:** campanha presidencial e carreira usam IDs compartilhados para saúde e educação, mantendo `servicos` como alias compatível com partidas anteriores.
 - **Ainda parcial:** eleitorado municipal, perfil econômico, IDHM e temas-âncora não estão importados; estados e União ainda não têm agenda de campanha cidade a cidade.
-- **Ainda parcial:** eleitores municipais, perfil econ?mico, IDHM e temas-?ncora n?o est?o importados; estados e Uni?o ainda n?o t?m agenda de campanha cidade a cidade.
 - **Esta entrega:** primeira regra de campanha presidencial: janela de 90 dias, uma atividade a cada sete dias, custo fora do Tesouro, texto com rubrica explicável, apoio regional e efeito no cálculo eleitoral; atividade também avança o calendário do governo.
 - **Ainda parcial:** a previsão de medida usa coeficientes amplos por categoria; ainda não explica a curva mês a mês nem aplica uma trajetória específica por instrumento.
 - **Agora implementado em versão inicial:** catálogo de seis obras simuladas — rodovias, ferrovia, hidrovias, porto e saneamento — com leilão, parcela anual, previsão de entrega e preço registrado na contratação.
@@ -36,12 +35,13 @@
 - **Ainda parcial:** a pré-campanha aguarda o início da janela oficial; faltam ações de organização partidária antes dela, magnitude real dos distritos, pesquisas por candidato, propaganda, arrecadação detalhada e debates em vários turnos.
 - **Ainda parcial:** nomeações e STF usam personagens fictícios e parâmetros agregados; ainda faltam convites para a carreira do jogador e trilhas de decisão separadas para cada instituição.
 - **Ainda parcial:** eventos têm sorteio reproduzível por partida, peso regional e sazonal, memória de adiamentos e impactos no tempo; falta ampliar o catálogo de eventos empresariais, climáticos e políticos e ligar promessas de campanha e investigações a eventos de retorno.
+- **Esta entrega:** prévias de medidas ficam registradas por jogador com origem, modelo, versão do prompt e confiança; correções humanas apontam para a última prévia idêntica. O registro serve para auditoria e não trata saída automática como resposta correta.
 
 ## Próximas entregas, em ordem
 
 ### 0. Geografia, personagens e interpretação local
 
-Catálogo municipal e temas canônicos já têm primeira implementação e testes. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, depois ligar visitas territoriais aos cargos estaduais/federais. Campanhas nomeadas e a separação entre logs de interpretação e avaliação narrativa continuam como frentes próprias. A [validação cruzada das três propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
+Catálogo municipal e temas canônicos já têm primeira implementação. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, depois ligar visitas territoriais aos cargos estaduais/federais. Campanhas nomeadas e avaliação narrativa continuam como frentes próprias. O log de interpretações agora existe, mas classificador local só entra depois que custo fiscal for validado e houver uma avaliação separada. A [validação cruzada das propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
 
 ### 1. Indicadores e explicação das decisões
 

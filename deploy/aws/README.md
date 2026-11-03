@@ -65,6 +65,37 @@ A consistent manual SQLite backup can be made over Session Manager with Python's
 SQLite backup API. The previous deployment stores snapshots under
 `/opt/mandato/backups`. A scheduled copy to a separate S3 bucket with lifecycle
 and restore verification remains a follow-up before inviting other players.
+The automatic deploy keeps the 30 newest pre-deploy snapshots on the same
+encrypted EC2 volume; that protects deployments but is not an off-host backup.
+
+## Automatic GitHub deployment
+
+`.github/workflows/aws-deploy.yml` builds the browser app and runs the existing
+API checks on changes to game code. On `main`, it deploys through Systems
+Manager Run Command, creates a consistent SQLite backup on the host, rebuilds
+the Docker Compose services, checks the API, and restores the previous code if
+the health check fails. GitHub Actions receives temporary AWS credentials via
+OIDC; no AWS access key is stored in the repository.
+
+One-time account setup:
+
+1. In CloudFormation (`us-east-2`), create a stack from
+   `deploy/aws/github-actions-role.yaml`. The repository's immutable GitHub
+   owner/repository IDs and the current EC2 instance ID are prefilled. If the
+   IAM OIDC provider for `token.actions.githubusercontent.com` already exists,
+   set `ExistingOidcProviderArn` to its ARN; otherwise leave it blank.
+2. Copy the stack output `GitHubDeployRoleArn`.
+3. In GitHub, open **Settings → Secrets and variables → Actions → Variables**
+   and create `AWS_DEPLOY_ROLE_ARN` with that output. It is an ARN, not a
+   secret credential.
+4. Re-run the latest **Build and deploy Mandato** workflow, or push the next
+   change to `main`. The workflow can also be started manually from **Actions**.
+
+The role trusts only this repository's `main` ref. Its policy can send the
+`AWS-RunShellScript` document only to the Mandato EC2 instance and read that
+command's result. The workflow serializes deployments so two builds cannot
+replace each other at the same time. If the role variable is absent, the build
+still completes and GitHub reports that AWS setup is pending.
 
 ## Gemini text interpretation
 
