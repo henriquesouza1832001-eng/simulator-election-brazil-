@@ -44,13 +44,17 @@ def build_catalog(year: int, retrieved_at: str | None = None) -> dict:
             if population is not None:
                 populations[str(row["localidade"]["id"]).zfill(7)] = int(population)
 
+    previous_catalog = json.loads(OUTPUT_PATH.read_text(encoding="utf-8")) if OUTPUT_PATH.exists() else {}
+    previous_by_code = {
+        str(item["ibge_code"]): item for item in previous_catalog.get("municipalities", [])
+    }
     municipalities = []
     for row in locality_rows:
         state = row["regiao-imediata"]["regiao-intermediaria"]["UF"]
         code = str(row["id"]).zfill(7)
         if code not in populations:
             raise ValueError(f"A estimativa populacional de {code} ({row['nome']}) não foi encontrada.")
-        municipalities.append({
+        municipality = {
             "ibge_code": code,
             "name": row["nome"],
             "state_code": state["sigla"],
@@ -59,7 +63,12 @@ def build_catalog(year: int, retrieved_at: str | None = None) -> dict:
             "population_estimate": populations[code],
             "population_reference_year": year,
             "population_source": "IBGE SIDRA, tabela 6579, variável 9324",
-        })
+        }
+        previous = previous_by_code.get(code, {})
+        if previous.get("electorate_count"):
+            municipality["electorate_count"] = int(previous["electorate_count"])
+            municipality["electorate_reference_year"] = int(previous["electorate_reference_year"])
+        municipalities.append(municipality)
 
     municipalities.sort(key=lambda item: (item["state_code"], item["name"].casefold(), item["ibge_code"]))
     if len(municipalities) != len(populations):
@@ -67,19 +76,25 @@ def build_catalog(year: int, retrieved_at: str | None = None) -> dict:
     if len({item["ibge_code"] for item in municipalities}) != len(municipalities):
         raise ValueError("A lista do IBGE contém códigos municipais duplicados.")
 
+    metadata = {
+        "retrieved_at": retrieved_at or date.today().isoformat(),
+        "population_reference_date": f"{year}-07-01",
+        "population_reference_year": year,
+        "population_source": "IBGE SIDRA, tabela 6579, variável 9324",
+        "population_source_url": POPULATION_URL.format(year=year),
+        "locality_source": "IBGE API de Localidades",
+        "locality_source_url": LOCALITIES_URL,
+        "license_note": "A API não declara licença por registro; preservar atribuição e URL da fonte.",
+        "municipality_count": len(municipalities),
+    }
+    for key, value in previous_catalog.get("metadata", {}).items():
+        if key.startswith("electorate_") and key != "electorate_retrieved_at":
+            metadata[key] = value
+    if any(item.get("electorate_count") for item in municipalities):
+        metadata["electorate_retrieved_at"] = previous_catalog.get("metadata", {}).get("electorate_retrieved_at")
     return {
-        "schema_version": 1,
-        "metadata": {
-            "retrieved_at": retrieved_at or date.today().isoformat(),
-            "population_reference_date": f"{year}-07-01",
-            "population_reference_year": year,
-            "population_source": "IBGE SIDRA, tabela 6579, variável 9324",
-            "population_source_url": POPULATION_URL.format(year=year),
-            "locality_source": "IBGE API de Localidades",
-            "locality_source_url": LOCALITIES_URL,
-            "license_note": "A API não declara licença por registro; preservar atribuição e URL da fonte.",
-            "municipality_count": len(municipalities),
-        },
+        "schema_version": 2 if metadata.get("electorate_source") else 1,
+        "metadata": metadata,
         "municipalities": municipalities,
     }
 

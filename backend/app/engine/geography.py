@@ -23,6 +23,12 @@ CITY_SIZE_BANDS = (
     (1_000_000, "grande", "Grande porte", 0.85),
     (float("inf"), "metropole", "Metrópole", 0.70),
 )
+ELECTORATE_REACH_BANDS = (
+    (35_000, 1.15),
+    (140_000, 1.0),
+    (700_000, 0.85),
+    (float("inf"), 0.70),
+)
 
 
 def _normalize(value: str) -> str:
@@ -54,8 +60,13 @@ def _by_state_and_name() -> dict[tuple[str, str], list[dict[str, Any]]]:
 
 def _profile(item: dict[str, Any]) -> dict[str, Any]:
     population = int(item["population_estimate"])
-    _, size_key, size_label, reach_multiplier = next(
+    _, size_key, size_label, population_reach_multiplier = next(
         band for band in CITY_SIZE_BANDS if population <= band[0]
+    )
+    electorate_count = int(item["electorate_count"]) if item.get("electorate_count") else None
+    reach_multiplier = (
+        next(multiplier for threshold, multiplier in ELECTORATE_REACH_BANDS if electorate_count <= threshold)
+        if electorate_count else population_reach_multiplier
     )
     return {
         "ibge_code": str(item["ibge_code"]),
@@ -65,9 +76,13 @@ def _profile(item: dict[str, Any]) -> dict[str, Any]:
         "macroregion": REGION_NAMES[item["region_code"]],
         "population_estimate": population,
         "population_reference_year": int(item["population_reference_year"]),
+        "electorate_count": electorate_count,
+        "electorate_reference_year": int(item["electorate_reference_year"]) if electorate_count else None,
+        "electorate_source_url": _catalog()["metadata"].get("electorate_dataset_url"),
         "city_size": size_key,
         "city_size_label": size_label,
         "municipal_campaign_reach_multiplier": reach_multiplier,
+        "campaign_reach_basis": "eleitorado" if electorate_count else "população aproximada",
         "anchor_issues": {},
         "data_source": item["population_source"],
     }
@@ -113,5 +128,8 @@ def catalog_metadata() -> dict[str, Any]:
     return {
         "source": metadata["population_source"],
         "reference_date": metadata["population_reference_date"],
+        "electorate_source": metadata.get("electorate_source"),
+        "electorate_source_url": metadata.get("electorate_dataset_url"),
+        "electorate_reference_year": metadata.get("electorate_reference_year"),
         "count": len(_catalog()["municipalities"]),
     }
