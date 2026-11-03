@@ -36,13 +36,13 @@
 - **Ainda parcial:** a pré-campanha aguarda o início da janela oficial; faltam ações de organização partidária antes dela, magnitude real dos distritos, pesquisas por candidato, propaganda, arrecadação detalhada e debates em vários turnos. O debate já traz pergunta por tema e atribuição do cargo, compara a resposta com um oponente simulado conforme a dificuldade e altera a pesquisa em até 0,6 ponto.
 - **Ainda parcial:** nomeações e STF usam personagens fictícios e parâmetros agregados; ainda faltam convites para a carreira do jogador e trilhas de decisão separadas para cada instituição.
 - **Ainda parcial:** eventos têm sorteio reproduzível por partida, peso regional e sazonal, memória de adiamentos e impactos no tempo; falta ampliar o catálogo de eventos empresariais, climáticos e políticos e ligar promessas de campanha e investigações a eventos de retorno.
-- **Esta entrega:** prévias de medidas ficam registradas por jogador com origem, modelo, versão do prompt e confiança; correções humanas apontam para a última prévia idêntica. O registro serve para auditoria e não trata saída automática como resposta correta.
+- **Esta entrega:** prévias de medidas ficam registradas por jogador com origem, modelo, versão do prompt e confiança. A tela permite revisar categoria e instrumento; um classificador lexical Python avalia offline apenas esses rótulos confirmados, separado por jogador. O candidato exige cinco exemplos por classe e 75% de acurácia em holdout, fica fora do fluxo ao vivo e não calcula custo nem efeitos.
 
 ## Próximas entregas, em ordem
 
 ### 0. Geografia, personagens e interpretação local
 
-Catálogo municipal e temas canônicos já têm primeira implementação. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, depois ligar visitas territoriais aos cargos estaduais/federais. Campanhas nomeadas e avaliação narrativa continuam como frentes próprias. O log de interpretações agora existe, mas classificador local só entra depois que custo fiscal for validado e houver uma avaliação separada. A [validação cruzada das propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
+Catálogo municipal e temas canônicos já têm primeira implementação. A próxima camada geográfica depende de adicionar eleitorado, perfil econômico e IDHM com fonte e data, depois ligar visitas territoriais aos cargos estaduais/federais. Campanhas nomeadas e avaliação narrativa continuam como frentes próprias. A primeira avaliação e geração de candidato para categorias e instrumentos já existe, mas permanece offline; custo, legalidade, previsões e efeitos continuam sob regras Python separadas. A [validação cruzada das propostas](VALIDACAO_CRUZADA_PROPOSTAS.md) registra os contratos e critérios de aceite.
 
 ### 1. Indicadores e explicação das decisões
 

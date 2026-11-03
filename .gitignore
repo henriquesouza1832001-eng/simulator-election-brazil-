@@ -8,3 +8,4 @@ __pycache__/
 deploy/aws/.origin-secret
 *.sqlite3
 *.db
+backend/data/interpreter_models/

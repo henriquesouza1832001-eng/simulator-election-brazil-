@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import date, timedelta
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
@@ -128,9 +128,21 @@ class ApplyRequest(MeasureRequest):
     interpretation_id: int = Field(gt=0)
 
 
+class InterpretationLabels(BaseModel):
+    category: Literal[
+        "fiscal_efficiency", "business_formalization", "public_investment", "tax_change",
+        "social_policy", "security", "communication", "other",
+    ] | None = None
+    instrument: Literal[
+        "Ato do Executivo", "Projeto de Lei", "Projeto de Lei Complementar", "PEC",
+        "Decreto", "Medida Provisória", "Indefinido",
+    ] | None = None
+
+
 class CorrectionRequest(BaseModel):
     original_text: str = Field(min_length=5, max_length=3000)
     corrected_interpretation: str = Field(min_length=3, max_length=5000)
+    labels: InterpretationLabels | None = None
 
 
 class DifficultyRequest(BaseModel):
@@ -297,6 +309,7 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         "/api/game/inaugural-address",
         "/api/game/new",
         "/api/measures/preview",
+        "/api/learning/corrections",
         "/api/career/start",
         "/api/game/difficulty",
     }:
@@ -1007,5 +1020,7 @@ def apply(request: ApplyRequest) -> dict[str, Any]:
 
 @app.post("/api/learning/corrections")
 def save_correction(request: CorrectionRequest) -> dict[str, Any]:
-    add_correction(request.original_text, request.corrected_interpretation)
-    return {"status": "saved", "corrections_saved": correction_count()}
+    labels = request.labels.model_dump(exclude_none=True) if request.labels else None
+    add_correction(request.original_text, request.corrected_interpretation, labels)
+    return {"status": "saved", "corrections_saved": correction_count(),
+            "training_labels_saved": bool(labels)}

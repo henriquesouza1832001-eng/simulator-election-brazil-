@@ -1,6 +1,7 @@
 """Small API-level smoke tests for the first playable release."""
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 import unittest
@@ -11,9 +12,9 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from app.db import (
-    archive_state, list_archives, load_state, recent_actions, record_action,
+    archive_state, connect, list_archives, load_state, recent_actions, record_action,
     reset_campaign_id, reset_player_id, restore_archive, save_state,
-    set_campaign_id, set_player_id,
+    set_campaign_id, set_player_id, useful_corrections,
 )
 from app.engine.difficulty import adjust_coalition_probability, election_margin, event_severity_weights, get_difficulty
 from app.engine.appointments import appoint_minister, appointments_overview
@@ -119,6 +120,48 @@ class ApiSmokeTests(unittest.TestCase):
             response = self.client.post("/api/measures/preview", json={"text": "Revisar compras públicas para reduzir desperdício."})
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json()["detail"], "A interpretação não pôde ser gerada. Tente novamente.")
+
+    def test_structured_interpretation_correction_is_saved_for_offline_training(self) -> None:
+        proposal = "Ampliar a rede de saneamento com investimento público planejado."
+        preview = self.client.post("/api/measures/preview", json={"text": proposal})
+        self.assertEqual(preview.status_code, 200, preview.text)
+        response = self.client.post("/api/learning/corrections", json={
+            "original_text": proposal,
+            "corrected_interpretation": "Categoria e instrumento revisados pelo jogador.",
+            "labels": {"category": "public_investment", "instrument": "Projeto de Lei"},
+        })
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(response.json()["training_labels_saved"])
+        with connect() as db:
+            row = db.execute(
+                "SELECT labels_json, interpretation_log_id FROM interpretation_corrections ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        self.assertEqual(json.loads(row["labels_json"]), {
+            "category": "public_investment", "instrument": "Projeto de Lei",
+        })
+        self.assertEqual(row["interpretation_log_id"], preview.json()["interpretation_id"])
+
+        second_correction = self.client.post("/api/learning/corrections", json={
+            "original_text": proposal,
+            "corrected_interpretation": "Instrumento também revisado pelo jogador.",
+            "labels": {"instrument": "Ato do Executivo"},
+        })
+        self.assertEqual(second_correction.status_code, 200, second_correction.text)
+        from app.ai.trainer import load_reviewed_examples
+        examples = load_reviewed_examples()["local"]
+        self.assertEqual(examples[0]["labels"], {
+            "category": "public_investment", "instrument": "Ato do Executivo",
+        })
+        retrieved = useful_corrections(proposal)
+        self.assertEqual(len(retrieved), 1)
+        self.assertEqual(retrieved[0]["corrected_labels"], examples[0]["labels"])
+
+        invalid = self.client.post("/api/learning/corrections", json={
+            "original_text": proposal,
+            "corrected_interpretation": "Rótulo inválido.",
+            "labels": {"category": "valor_inventado"},
+        })
+        self.assertEqual(invalid.status_code, 422)
 
     def test_campaign_can_start_and_reports_its_calendar(self) -> None:
         response = self.client.post("/api/career/start", json={

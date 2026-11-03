@@ -1,0 +1,8 @@
+.learning-page .page-description { font-size: 14px; }
+.learning-page .learning-cards article span,
+.learning-page .learning-cards article small { font-family: inherit; font-size: 12px; line-height: 1.5; }
+.learning-page .learning-cards article strong { font-size: 24px; }
+.learning-page .learning-note > b { font-size: 14px; }
+.learning-page .learning-note > code { font-size: 12px; }
+.learning-page .learning-note > span { color: var(--muted, #aebbc4); font-size: 12px; line-height: 1.5; }
+.learning-page .learning-note span code { font-size: 12px; }

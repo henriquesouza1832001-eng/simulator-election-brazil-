@@ -133,6 +133,7 @@ def initialize() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 original_text TEXT NOT NULL,
                 corrected_interpretation TEXT NOT NULL,
+                labels_json TEXT,
                 interpretation_log_id INTEGER,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
@@ -199,6 +200,8 @@ def initialize() -> None:
         correction_columns = {row["name"] for row in db.execute("PRAGMA table_info(interpretation_corrections)").fetchall()}
         if "interpretation_log_id" not in correction_columns:
             db.execute("ALTER TABLE interpretation_corrections ADD COLUMN interpretation_log_id INTEGER")
+        if "labels_json" not in correction_columns:
+            db.execute("ALTER TABLE interpretation_corrections ADD COLUMN labels_json TEXT")
         db.execute("CREATE INDEX IF NOT EXISTS idx_actions_player_id ON actions(player_id, id DESC)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_actions_player_campaign ON actions(player_id, campaign_id, id DESC)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_corrections_player_id ON interpretation_corrections(player_id, id DESC)")
@@ -345,15 +348,18 @@ def recent_actions(limit: int = 10, after_id: int | None = None, through_id: int
     return [dict(row) for row in rows]
 
 
-def add_correction(original_text: str, corrected_interpretation: str) -> None:
+def add_correction(original_text: str, corrected_interpretation: str,
+                   labels: dict[str, str] | None = None) -> None:
+    labels_json = json.dumps(labels, ensure_ascii=False, sort_keys=True) if labels else None
     with connect() as db:
         logged = db.execute(
             "SELECT id FROM interpretation_log WHERE player_id = ? AND input_text = ? ORDER BY id DESC LIMIT 1",
             (current_player_id(), original_text),
         ).fetchone()
         db.execute(
-            "INSERT INTO interpretation_corrections (original_text, corrected_interpretation, interpretation_log_id, player_id) VALUES (?, ?, ?, ?)",
-            (original_text, corrected_interpretation, logged["id"] if logged else None, current_player_id()),
+            "INSERT INTO interpretation_corrections (original_text, corrected_interpretation, labels_json, interpretation_log_id, player_id) VALUES (?, ?, ?, ?, ?)",
+            (original_text, corrected_interpretation, labels_json,
+             logged["id"] if logged else None, current_player_id()),
         )
 
 
@@ -396,17 +402,34 @@ def interpretation_count() -> int:
     return int(row["total"])
 
 
-def useful_corrections(text: str, limit: int = 3) -> list[dict[str, str]]:
+def useful_corrections(text: str, limit: int = 3) -> list[dict[str, Any]]:
     """Small lexical retrieval for examples; later replaceable by local embeddings."""
     words = {w for w in text.lower().split() if len(w) > 4}
     with connect() as db:
-        rows = db.execute("SELECT original_text, corrected_interpretation FROM interpretation_corrections WHERE player_id = ? ORDER BY id DESC LIMIT 200", (current_player_id(),)).fetchall()
-    scored = []
+        rows = db.execute("SELECT original_text, corrected_interpretation, labels_json FROM interpretation_corrections WHERE player_id = ? ORDER BY id DESC LIMIT 200", (current_player_id(),)).fetchall()
+    by_proposal: dict[str, dict[str, Any]] = {}
     for row in rows:
-        other = {w for w in row["original_text"].lower().split() if len(w) > 4}
+        original = str(row["original_text"])
+        key = original.casefold()
+        example = by_proposal.setdefault(key, {
+            "example": original,
+            "correction": row["corrected_interpretation"],
+            "corrected_labels": {},
+        })
+        try:
+            labels = json.loads(row["labels_json"] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            labels = {}
+        if isinstance(labels, dict):
+            for field in ("category", "instrument"):
+                if field in labels and field not in example["corrected_labels"]:
+                    example["corrected_labels"][field] = labels[field]
+    scored = []
+    for example in by_proposal.values():
+        other = {w for w in example["example"].lower().split() if len(w) > 4}
         score = len(words & other)
         if score:
-            scored.append((score, {"example": row["original_text"], "correction": row["corrected_interpretation"]}))
+            scored.append((score, example))
     scored.sort(key=lambda item: item[0], reverse=True)
     return [item[1] for item in scored[:limit]]
 
