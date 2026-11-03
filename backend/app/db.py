@@ -255,6 +255,17 @@ def record_interpretation(text: str, result: dict[str, Any], model_name: str, pr
         return int(cursor.lastrowid)
 
 
+def load_interpretation(interpretation_id: int) -> dict[str, Any] | None:
+    with connect() as db:
+        row = db.execute(
+            "SELECT input_text, result_json FROM interpretation_log WHERE id = ? AND player_id = ?",
+            (interpretation_id, current_player_id()),
+        ).fetchone()
+    if not row:
+        return None
+    return {"input_text": str(row["input_text"]), "result": json.loads(row["result_json"])}
+
+
 def interpretation_count() -> int:
     with connect() as db:
         row = db.execute("SELECT COUNT(*) AS total FROM interpretation_log WHERE player_id = ?", (current_player_id(),)).fetchone()

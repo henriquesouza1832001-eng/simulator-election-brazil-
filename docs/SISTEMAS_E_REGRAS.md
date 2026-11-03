@@ -66,7 +66,7 @@ Detalhes extensos ficam em páginas internas, acordeões ou histórico. A visão
 ### Medidas, leis e decisões
 
 - A interpretação de texto sugere tipo e intenção; o motor valida alçada, prazo, custo e regra antes de aplicar efeitos.
-- **Fronteira canônica IA/motor:** o motor Python valida ações, altera o estado e calcula custos, probabilidades, efeitos e resultados. A IA classifica intenção, sugere rótulos e redige explicações; números do texto do jogador só entram após validação no servidor contra a proposta original. Saída numérica do modelo nunca é, por si só, uma regra ou um efeito. Ver pendência concreta de `fiscal_cost_bi` em [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md).
+- **Fronteira canônica IA/motor:** o motor Python valida ações, altera o estado e calcula custos, probabilidades, efeitos e resultados. A IA classifica intenção, sugere rótulos e redige explicações; valores fiscais são extraídos no servidor do texto original e a aplicação recupera a prévia registrada do jogador pelo ID. Saída numérica do modelo ou do navegador nunca é, por si só, regra ou efeito. A extração atual exige valor monetário explícito e não estima um orçamento ausente; veja [`VALIDACAO_CRUZADA_PROPOSTAS.md`](VALIDACAO_CRUZADA_PROPOSTAS.md).
 - Medidas executivas têm intervalo de agenda. Projetos têm prazo e votação simulada; o envio não é aprovação.
 - A tela apresenta custo/financiamento, grupos afetados, prazo, incerteza, efeitos agora e consequências em meses futuros.
 - Toda decisão é registrada com data, parâmetros, resultado e origem. Prévia não aplicada e correção humana também têm registros próprios por jogador; saída automática não é rótulo de treino e avaliação de narrativa fica separada.

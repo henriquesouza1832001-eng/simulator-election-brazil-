@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .ai.interpreter import DEFAULT_MODEL, PROMPT_VERSION, interpret
-from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, interpretation_count, list_archives, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
+from .db import add_correction, archive_state, connect, correction_count, create_guest_session, guest_player_id, initialize, interpretation_count, list_archives, load_interpretation, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
@@ -28,6 +28,7 @@ from .engine.difficulty import DIFFICULTIES
 from .engine.fiscal import fiscal_overview, refresh_fiscal_metrics
 from .engine.diplomacy import diplomacy_overview, visit_country, attend_international_event
 from .engine.works import start_work, resolve_work_issue, refresh_work_finance, works_overview
+from .engine.measure_validation import extract_explicit_policy_cost_bi
 from .bot.agent import choose_action
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
@@ -107,7 +108,7 @@ class MeasureRequest(BaseModel):
 
 
 class ApplyRequest(MeasureRequest):
-    interpretation: dict[str, Any]
+    interpretation_id: int = Field(gt=0)
 
 
 class CorrectionRequest(BaseModel):
@@ -868,6 +869,23 @@ async def preview(request: MeasureRequest) -> dict[str, Any]:
         interpretation = await interpret(request.text, examples)
     except Exception as exc:
         raise HTTPException(status_code=502, detail="A interpretação não pôde ser gerada. Tente novamente.") from exc
+    model_cost = interpretation.get("fiscal_cost_bi", 0)
+    fiscal_cost, fiscal_cost_explicit = extract_explicit_policy_cost_bi(request.text)
+    interpretation["fiscal_cost_bi"] = fiscal_cost
+    interpretation["fiscal_cost_explicit"] = fiscal_cost_explicit
+    if fiscal_cost_explicit and fiscal_cost > 0:
+        interpretation["fiscal_cost_note"] = "Valor extraído do texto da proposta; a previsão não substitui um orçamento detalhado."
+    elif fiscal_cost_explicit:
+        interpretation["fiscal_cost_note"] = "O texto declara custo fiscal zero; isso ainda é uma premissa da proposta, não uma auditoria orçamentária."
+    else:
+        interpretation["fiscal_cost_note"] = "Nenhum valor fiscal explícito foi encontrado. R$ 0 entra no cálculo, mas isso não confirma neutralidade fiscal."
+    try:
+        model_cost_value = float(model_cost)
+    except (TypeError, ValueError):
+        model_cost_value = 0.0
+    if model_cost_value > 0 and not fiscal_cost_explicit:
+        interpretation["clarification_needed"] = True
+        interpretation["fiscal_cost_note"] = "A IA sinalizou possível custo, mas o valor foi descartado porque não aparece no texto. Informe um valor para incluí-lo no cálculo."
     model_name = os.getenv("GEMINI_MODEL", DEFAULT_MODEL).strip() if interpretation.get("source") == "gemini" else "keyword-fallback"
     interpretation_id = record_interpretation(request.text, interpretation, model_name, PROMPT_VERSION)
     instrument = interpretation.get("instrument", "")
@@ -885,15 +903,20 @@ def apply(request: ApplyRequest) -> dict[str, Any]:
     require_presidential_authority(state, "Assinar medida federal")
     if state.get("office_status") in {"former_president", "detained_after_failed_rupture"}:
         raise HTTPException(status_code=409, detail="Você não está mais no Executivo. Continue a carreira pelo módulo político quando ele estiver disponível.")
-    interpretation = request.interpretation
-    # Never accept model-supplied numerical forecasts from the browser.
+    logged = load_interpretation(request.interpretation_id)
+    if not logged or logged["input_text"] != request.text:
+        raise HTTPException(status_code=409, detail="A prévia não corresponde a esta proposta ou pertence a outra partida. Gere uma nova leitura.")
+    interpretation = logged["result"]
+    # Resolve the proposal server-side; neither the browser nor the model controls fiscal cost.
     category = interpretation.get("category", "other")
     if category not in {"fiscal_efficiency", "business_formalization", "public_investment", "tax_change", "social_policy", "security", "communication", "other"}:
         category = "other"
+    fiscal_cost, fiscal_cost_explicit = extract_explicit_policy_cost_bi(request.text)
     interpretation = {"title": str(interpretation.get("title", "Medida"))[:100], "category": category,
                       "instrument": str(interpretation.get("instrument", "Indefinido"))[:40],
                       "duration_days": min(1461, max(0, int(interpretation.get("duration_days", 0)))),
-                      "fiscal_cost_bi": min(1000.0, max(0.0, float(interpretation.get("fiscal_cost_bi", 0))))}
+                      "fiscal_cost_bi": fiscal_cost,
+                      "fiscal_cost_explicit": fiscal_cost_explicit}
     instrument = interpretation["instrument"].strip().lower()
     today = date.fromisoformat(state["date"])
     if instrument in {"projeto de lei", "projeto de lei complementar", "pec"}:
