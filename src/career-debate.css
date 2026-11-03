@@ -1,0 +1,27 @@
+.career-debate-prompt,
+.career-debate-result {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 14px;
+  padding: 13px 14px;
+  border: 1px solid #38624f;
+  border-left: 3px solid var(--accent, #26d98a);
+  border-radius: 7px;
+  background: #0d1b17;
+}
+
+.career-debate-prompt > span,
+.career-debate-result > span {
+  color: var(--accent, #26d98a);
+  font: 700 10px ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.career-debate-prompt > b { line-height: 1.45; }
+.career-debate-prompt > small,
+.career-debate-result > small { color: var(--muted, #aebbc4); line-height: 1.45; }
+.career-debate-result > b { font-size: 24px; }
+.career-debate-result > p { margin: 0; line-height: 1.45; }
+.career-debate-result.lost { border-color: #805644; background: #20140f; }
+.career-debate-result.tied { border-color: #8a773e; background: #201d12; }

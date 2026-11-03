@@ -227,6 +227,21 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(activity["municipality_id"], "3106200")
         self.assertEqual(activity["city_reach_multiplier"], 0.7)
 
+        cooldown = self.client.post("/api/game/advance", json={"days": 5})
+        self.assertEqual(cooldown.status_code, 200, cooldown.text)
+        debate = self.client.post("/api/career/action", json={
+            "activity_type": "debate", "issue": "mobilidade",
+            "message": "Vamos publicar metas de transporte, prazo de 100 dias, custo previsto e fiscalização mensal dos moradores.",
+        })
+        self.assertEqual(debate.status_code, 200, debate.text)
+        debate_result = debate.json()["result"]["debate"]
+        self.assertIn(debate_result["outcome"], {"won", "tied", "lost"})
+        self.assertEqual(debate_result["scope"], "municipal")
+        self.assertTrue(debate_result["opponent_reply"])
+        self.assertEqual(debate_result["question"], debate.json()["state"]["career_overview"]["debate_prompts"]["mobilidade"]["question"])
+        self.assertIn(debate_result["support_delta"], {-0.5, 0.1, 0.6})
+        self.assertEqual(debate.json()["state"]["career_overview"]["activities"][0]["debate"], debate_result)
+
         election = self.client.post("/api/game/advance", json={"days": 90})
         self.assertEqual(election.status_code, 200, election.text)
         result = election.json()["state"]["career_overview"]

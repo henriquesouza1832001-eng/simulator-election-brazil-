@@ -77,6 +77,22 @@ ISSUES = {
     "mobilidade": {"label": ISSUE_LABELS["mobilidade"], "terms": {"ônibus", "onibus", "transporte", "estrada", "trânsito", "transito", "mobilidade", "ferrovia"}, "groups": ["trabalhadores", "rural"]},
     "integridade": {"label": ISSUE_LABELS["integridade"], "terms": {"transparência", "transparencia", "auditoria", "contrato", "publicar", "fiscalizar", "prestação", "prestacao"}, "groups": ["jovens", "servidores"]},
 }
+DEBATE_QUESTIONS = {
+    "economia": "Seu plano promete emprego e renda. Qual decisão concreta, com que fonte de recursos e prazo, o eleitor poderá cobrar?",
+    "saude": "A fila de atendimento continua longa. Qual mudança você prioriza e como vai medir se o serviço melhorou?",
+    "educacao": "Os resultados da escola variam muito entre bairros. Qual meta e qual prazo você assume para reduzir essa diferença?",
+    "seguranca": "As famílias querem mais segurança sem abuso. Que ação está ao alcance do cargo e como será fiscalizada?",
+    "mobilidade": "O deslocamento diário custa tempo e dinheiro. Qual trecho ou serviço será priorizado e quando haverá resultado?",
+    "integridade": "O eleitor quer transparência antes que apareça um escândalo. Que dado será publicado e quem poderá fiscalizar?",
+}
+DEBATE_REPLIES = {
+    "economia": "A meta parece boa, mas ainda precisamos saber de onde sai o recurso e quando o emprego aparece.",
+    "saude": "O prazo precisa vir acompanhado de equipe, atendimento disponível e prestação de contas.",
+    "educacao": "Uma promessa de melhoria não explica como a escola mais distante também será atendida.",
+    "seguranca": "A proposta precisa mostrar como protege moradores e mantém fiscalização sobre os agentes públicos.",
+    "mobilidade": "O plano precisa mostrar qual trajeto muda primeiro e como a população vai perceber a diferença.",
+    "integridade": "Publicar dados ajuda, mas é preciso explicar quem verifica a informação e o que acontece diante de irregularidade.",
+}
 ACTIVITIES = {
     "comicio": {"label": "Comício", "days": 2, "cost": 0.045, "reach": 1.35, "channel": "presencial"},
     "debate": {"label": "Debate", "days": 1, "cost": 0.025, "reach": 1.1, "channel": "imprensa"},
@@ -381,6 +397,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "can_start_campaign": career.get("phase") in {"opposition", "term_complete"},
         "groups": [{"key": key, "label": label, "support": round(career["group_support"][key], 1)} for key, label in GROUPS.items()],
         "activities": list(reversed(career["activities"][-10:])),
+        "debate_prompts": {key: career_debate_prompt(career, key) for key in ISSUES},
         "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_mi": round(item["cost"] * (.9 if "gestora" in (career.get("character") or {}).get("traits", []) else 1.0), 4)} for key, item in ACTIVITIES.items()],
         "issue_options": [{"key": key, "label": value["label"]} for key, value in ISSUES.items()],
         "appointment_paths": [{"key": key, **value, "available": career["office"] in value["requires"] and career["phase"] == "office"} for key, value in APPOINTED_PATHS.items()],
@@ -490,6 +507,16 @@ def governance_territory_for(career: dict[str, Any]) -> dict[str, Any]:
     return {"scope": "Representação legislativa", "name": career.get("municipality") or career.get("state_name") or "Brasil"}
 
 
+def career_debate_prompt(career: dict[str, Any], issue: str) -> dict[str, str]:
+    office = career.get("office")
+    scope = "municipal" if office in {"vereador", "prefeito"} else "estadual" if office in {"deputado_estadual", "governador"} else "federal"
+    question = DEBATE_QUESTIONS[issue]
+    if office in LEGISLATIVE_OFFICES:
+        question += " Como você transformará essa proposta em fiscalização, audiência ou votação na sua casa legislativa?"
+    return {"moderator": "Bancada de debate simulada", "question": question, "scope": scope,
+            "instruction": "Responda ao ponto, indique uma ação possível para o cargo e diga como o resultado será acompanhado."}
+
+
 def perform_career_action(state: dict[str, Any], activity_type: str, issue: str, message: str,
                           conduct: str = "regular") -> dict[str, Any]:
     career = _campaign(state)
@@ -515,6 +542,32 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     if "tecnica" in traits and rubric.get("proposta verificável", 0) > 0:
         score = min(100, score + 3)
         rubric["bônus de proposta técnica"] = 3
+    debate_result = None
+    if activity_type == "debate":
+        prompt = career_debate_prompt(career, issue)
+        normalized_message = _norm(message)
+        topic_hits = sum(1 for term in ISSUES[issue]["terms"] if _norm(term) in normalized_message)
+        directness = 4 if topic_hits and rubric.get("proposta verificável", 0) > 0 else 1 if topic_hits else -5
+        score = max(0, min(100, score + directness))
+        rubric["resposta direta à pergunta"] = directness
+        from .difficulty import get_difficulty
+        difficulty = get_difficulty(state.get("difficulty", "normal"))
+        rng = random.Random(f"{career.get('seed', 1)}:{state['date']}:{issue}:{len(career['activities'])}:debate")
+        opponent_score = round(max(35, min(90, 58 + (difficulty["opposition_pressure"] - 1) * 10 + rng.uniform(-9, 9))))
+        if score >= opponent_score + 4:
+            outcome, support_delta = "won", 0.6
+            explanation = "A resposta foi mais clara e verificável que a réplica simulada."
+        elif score <= opponent_score - 4:
+            outcome, support_delta = "lost", -0.5
+            explanation = "A réplica simulada foi mais convincente; a resposta perdeu apoio na pesquisa."
+        else:
+            outcome, support_delta = "tied", 0.1
+            explanation = "As duas respostas tiveram desempenho próximo; o debate quase não alterou a pesquisa."
+        debate_result = {
+            "moderator": prompt["moderator"], "question": prompt["question"], "scope": prompt["scope"],
+            "opponent_reply": DEBATE_REPLIES[issue], "player_score": score, "opponent_score": opponent_score, "outcome": outcome,
+            "support_delta": support_delta, "explanation": explanation, "simulated": True,
+        }
     quality = (score - 55) / 45
     reach = activity["reach"] + (.08 if "combativa" in traits else 0)
     municipality_profile = career.get("municipality_profile")
@@ -569,6 +622,12 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         social_result = {"platform": activity["label"].split(" · ")[0], "audience": [GROUPS[item] for item in activity["audience"]],
                          "virality_pct": round(virality * 100), "event": event, "group_effect": round(effect, 2),
                          "explanation": "A chance considera a nota da mensagem, clareza verificável, formato e fadiga da equipe."}
+    if debate_result:
+        career["poll_support"] = round(_clamp(career["poll_support"] + debate_result["support_delta"]), 2)
+        career["local_support"] = _clamp(career["local_support"] + debate_result["support_delta"] * .55)
+        career["state_support"] = _clamp(career["state_support"] + debate_result["support_delta"] * .3)
+        for group in ISSUES[issue]["groups"]:
+            career["group_support"][group] = _clamp(career["group_support"][group] + debate_result["support_delta"] * .35)
     career["momentum"] = round(max(-10, min(10, career["momentum"] * 0.8 + quality * 1.1)), 2)
     career["fatigue"] = min(100, career["fatigue"] + (8 if activity_type in {"comicio", "porta_a_porta"} else 4) + (2 if "combativa" in traits else 0))
     career["campaign_fund_mi"] = round(career["campaign_fund_mi"] - action_cost, 4)
@@ -583,14 +642,14 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
         "state_change": round(state_delta + conduct_delta * .55, 2), "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
         "days_cost": activity["days"], "affected_groups": [GROUPS[group] for group in ISSUES[issue]["groups"]], "simulated": True,
-        "social_result": social_result, "conduct": conduct_result,
+        "social_result": social_result, "debate": debate_result, "conduct": conduct_result,
         "character_effects": [f"{trait}: efeito aplicado nesta ação" for trait in traits],
     }
     career["activities"].append(record)
     career["activities"] = career["activities"][-60:]
     return {"activity": record, "score": score, "rubric": rubric, "days_cost": activity["days"], "poll_support": career["poll_support"],
             "local_support": career["local_support"], "state_support": career["state_support"], "campaign_fund_mi": career["campaign_fund_mi"],
-            "social_result": social_result, "forecast": _forecast(career, score), "message": "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."}
+            "social_result": social_result, "debate": debate_result, "forecast": _forecast(career, score), "message": "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."}
 
 
 def _forecast(career: dict[str, Any], score: int) -> list[dict[str, Any]]:
