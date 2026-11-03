@@ -853,6 +853,14 @@ class ApiSmokeTests(unittest.TestCase):
         travel_spending = next(item["annual_bi"] for item in overview["primary_spending"] if item["key"] == "official_travel")
         self.assertAlmostEqual(travel_spending, 2.52)
 
+        daily_state = new_game()
+        daily_state["metrics"]["inflation"] = 5.0
+        for _ in range(365):
+            advance_fiscal(daily_state, 1)
+        daily_lines = daily_state["budget"]["operating"]["lines"]
+        self.assertAlmostEqual(daily_lines["official_travel"]["annual_cost_bi"], lines["official_travel"]["annual_cost_bi"], places=10)
+        self.assertAlmostEqual(daily_lines["official_residence"]["annual_cost_bi"], lines["official_residence"]["annual_cost_bi"], places=10)
+
     def test_difficulty_profiles_change_game_parameters(self) -> None:
         easy = get_difficulty("tranquilo")
         normal = get_difficulty("normal")

@@ -198,11 +198,11 @@ def advance_fiscal(state: dict[str, Any], elapsed_days: int, volatility: float =
     real_growth = float(metrics.get("gdp_growth", 0))
     inflation = float(metrics.get("inflation", 0))
     nominal_growth = max(-.15, (real_growth + inflation) / 100 * volatility)
-    factor = max(.8, 1 + nominal_growth * elapsed_days / 365)
+    factor = max(.8, 1 + nominal_growth) ** (elapsed_days / 365)
     fiscal["nominal_gdp_bi"] = old_gdp * factor
     for line in fiscal["revenue_lines"].values():
         line["annual_bi"] *= factor
-    expense_factor = max(.8, 1 + max(-.1, inflation / 100) * elapsed_days / 365)
+    expense_factor = max(.8, 1 + max(-.1, inflation / 100)) ** (elapsed_days / 365)
     for line in fiscal["mandatory_lines"].values():
         line["annual_bi"] *= expense_factor
     fiscal["procurement_bi"] = float(fiscal["procurement_bi"]) * expense_factor
