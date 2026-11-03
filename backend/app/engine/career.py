@@ -102,6 +102,14 @@ DEBATE_REPLIES = {
     "mobilidade": "O plano precisa mostrar qual trajeto muda primeiro e como a população vai perceber a diferença.",
     "integridade": "Publicar dados ajuda, mas é preciso explicar quem verifica a informação e o que acontece diante de irregularidade.",
 }
+OPPONENT_CANDIDATE_POOL = [
+    {"name": "Lia Sabiá", "party": "Movimento Horizonte", "ideology": "Centro-esquerda", "issue_focus": "educacao"},
+    {"name": "Bento do Vale", "party": "Frente do Trabalho", "ideology": "Esquerda", "issue_focus": "economia"},
+    {"name": "Nara Campos", "party": "União Cívica", "ideology": "Centro", "issue_focus": "saude"},
+    {"name": "Raul Monteiro", "party": "Aliança Regional", "ideology": "Centro-direita", "issue_focus": "mobilidade"},
+    {"name": "Ivo Nascimento", "party": "Partido Popular Renovador", "ideology": "Direita", "issue_focus": "seguranca"},
+    {"name": "Dora Veredas", "party": "Rede da Comunidade", "ideology": "Centro-esquerda", "issue_focus": "integridade"},
+]
 ACTIVITIES = {
     "comicio": {"label": "Comício", "days": 2, "cost": 0.045, "reach": 1.35, "channel": "presencial"},
     "debate": {"label": "Debate", "days": 1, "cost": 0.025, "reach": 1.1, "channel": "imprensa"},
@@ -256,6 +264,50 @@ def _projected_public_poll_support(state: dict[str, Any], career: dict[str, Any]
     return _clamp(estimate - fatigue_penalty - conduct_penalty - opposition_drag)
 
 
+def _ensure_opponents(career: dict[str, Any]) -> list[dict[str, Any]]:
+    opponents = career.get("opponents")
+    if isinstance(opponents, list) and len(opponents) == 3:
+        return opponents
+    seed = f"{career.get('seed', 1)}:opponents:{career.get('office', '')}:{career.get('state_code', '')}"
+    rng = random.Random(seed)
+    selected = rng.sample(OPPONENT_CANDIDATE_POOL, 3)
+    opponents = [
+        {
+            "id": f"opponent-{index + 1}",
+            **profile,
+            "support_weight": round(rng.uniform(0.85, 1.15), 2),
+            "simulated": True,
+        }
+        for index, profile in enumerate(selected)
+    ]
+    career["opponents"] = opponents
+    return opponents
+
+
+def _opponent_supports(career: dict[str, Any], candidate_support: float) -> list[dict[str, Any]]:
+    opponents = _ensure_opponents(career)
+    opposition_total = round(max(0.0, 100.0 - float(candidate_support)), 1)
+    total_weight = sum(float(item.get("support_weight", 1.0)) for item in opponents) or 1.0
+    shares: list[dict[str, Any]] = []
+    allocated = 0.0
+    for index, opponent in enumerate(opponents):
+        if index == len(opponents) - 1:
+            support = round(opposition_total - allocated, 1)
+        else:
+            support = round(opposition_total * float(opponent.get("support_weight", 1.0)) / total_weight, 1)
+            allocated += support
+        shares.append({
+            "id": opponent["id"],
+            "name": opponent["name"],
+            "party": opponent["party"],
+            "ideology": opponent["ideology"],
+            "issue_focus": opponent["issue_focus"],
+            "issue_focus_label": ISSUES[opponent["issue_focus"]]["label"],
+            "support": support,
+            "simulated": True,
+        })
+    return shares
+
 def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_date: date) -> dict[str, Any] | None:
     polls = career.setdefault("public_polls", [])
     if any(item.get("date") == field_date.isoformat() for item in polls):
@@ -265,11 +317,14 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
     seed = f"{career.get('seed', 1)}:public-poll:{field_date.isoformat()}"
     noise = random.Random(seed).uniform(-margin, margin)
     candidate_support = round(_clamp(_projected_public_poll_support(state, career) + noise), 1)
+    opponents = _opponent_supports(career, candidate_support)
+    career["opponent_share"] = max((item["support"] for item in opponents), default=0.0)
     record = {
         "date": field_date.isoformat(),
         "candidate_name": career.get("candidate_name", "Candidatura do jogador"),
         "candidate_support": candidate_support,
         "other_candidates_support": round(100 - candidate_support, 1),
+        "opponents": opponents,
         "margin_of_error": margin,
         "sample_size": sample_size,
         "simulated": True,
@@ -394,6 +449,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "result": None, "vote_share": None, "opponent_share": 50.0, "appointments": [], "governance": None,
         "simulated": True,
     }
+    _ensure_opponents(state["career"])
     if phase == "campaign":
         _record_public_poll(state, state["career"], today)
     state["election"] = {}
@@ -480,6 +536,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     campaign_start = election_day - timedelta(days=90)
     last_action = career.get("last_action_date")
     wait = max(0, 7 - (today - date.fromisoformat(last_action)).days) if last_action else 0
+    opponents = _ensure_opponents(career)
     role = OFFICES[career["office"]]
     governance = career.get("governance") or {}
     governance_budget_mi = round(float(governance.get("budget_mi", 0)), 1)
@@ -554,7 +611,12 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "reputation": round(float(career.get("reputation", 50)), 1), "history": list(reversed(career.get("history", [])[-12:])),
         "momentum": round(career["momentum"], 1), "fatigue": career["fatigue"],
         "campaign_fund_mi": round(career["campaign_fund_mi"], 3), "spent_mi": round(career["spent_mi"], 3),
-        "opponent_share": round(career["opponent_share"], 1), "result": career.get("result"), "vote_share": career.get("vote_share"),
+        "opponent_share": round(career["opponent_share"], 1), "opponents": [
+            {"id": item["id"], "name": item["name"], "party": item["party"], "ideology": item["ideology"],
+             "issue_focus": item["issue_focus"], "issue_focus_label": ISSUES[item["issue_focus"]]["label"], "simulated": True}
+            for item in opponents
+        ], "candidate_results": career.get("candidate_results", []),
+        "result": career.get("result"), "vote_share": career.get("vote_share"),
         "conduct_review": career.get("conduct_review"), "electoral_result": career.get("electoral_result"),
         "can_start_campaign": career.get("phase") in {"opposition", "term_complete"},
         "groups": [{"key": key, "label": label, "support": round(career["group_support"][key], 1)} for key, label in GROUPS.items()],
@@ -974,21 +1036,40 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     seed = f"{career.get('seed', state.get('campaign_seed', 203001))}:career-election:{career['office']}:{election_day.isoformat()}"
     conduct_result = settle_campaign_conduct(state, career, seed)
     rng = random.Random(seed)
+    _ensure_opponents(career)
     organization = min(8.0, len(career["activities"]) * 0.55 + float(career.get("pre_campaign_organization", 0)))
     fatigue_penalty = max(0, career["fatigue"] - 60) * 0.035
     volatility = 2.5 * difficulty.get("economic_volatility", 1)
     opposition_pressure = difficulty.get("opposition_pressure", 1)
     opposition_drag = (opposition_pressure - 1) * 2.0
     electoral_result = None
+    candidate_results = []
     if career["office"] in {"vereador", "deputado_estadual", "deputado_federal"}:
         vote_share = _clamp(career["poll_support"] * 0.78 + organization + career["momentum"] * 0.35 - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag + rng.uniform(-volatility, volatility) * opposition_pressure)
         electoral_result = _proportional_result(career, rng, vote_share)
-        opposition_share = 100 - vote_share
         won = electoral_result["party_seats"] > 0
-    else:
-        vote_share = _clamp(25 + career["poll_support"] * 0.42 + organization + career["momentum"] * 0.4 - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag + rng.uniform(-volatility, volatility) * opposition_pressure)
         opposition_share = 100 - vote_share
-        won = vote_share > opposition_share
+    else:
+        vote_share = round(_clamp(25 + career["poll_support"] * 0.42 + organization + career["momentum"] * 0.4 - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag + rng.uniform(-volatility, volatility) * opposition_pressure), 1)
+        opposition_results = _opponent_supports(career, vote_share)
+        opposition_share = max((item["support"] for item in opposition_results), default=0.0)
+        candidate_results = [{
+            "id": "player", "name": career["candidate_name"], "party": career["party"],
+            "support": round(vote_share, 1), "is_player": True, "simulated": True,
+        }, *[{
+            "id": item["id"], "name": item["name"], "party": item["party"], "support": item["support"],
+            "issue_focus_label": item["issue_focus_label"],
+            "is_player": False, "simulated": True,
+        } for item in opposition_results]]
+        winner = max(candidate_results, key=lambda item: item["support"])
+        won = bool(winner["is_player"])
+        career["winning_candidate_name"] = winner["name"]
+        career["candidate_results"] = sorted(candidate_results, key=lambda item: item["support"], reverse=True)
+        electoral_result = {
+            "system": "majoritário_simulado", "runoff": False,
+            "candidates": career["candidate_results"], "winner_name": winner["name"],
+        }
+    career["candidate_results"] = career.get("candidate_results", []) if candidate_results else []
     career["vote_share"] = round(vote_share, 1)
     career["opponent_share"] = round(opposition_share, 1)
     career["conduct_review"] = conduct_result
@@ -1004,10 +1085,14 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     state.setdefault("simulated_news", []).insert(0, {
         "id": f"career-election-{election_day.isoformat()}", "date": election_day.isoformat(),
         "title": f"Resultado eleitoral simulado: {career['office_label']}", "region": career["state_name"],
-        "description": f"{career['candidate_name']} recebeu {vote_share:.1f}% dos votos simulados. {career['result'].capitalize()}.", "simulated": True,
+        "description": f"{career['candidate_name']} recebeu {vote_share:.1f}% dos votos simulados. {career['result'].capitalize()}.",
+        "simulated": True,
     })
     state["simulated_news"] = state["simulated_news"][:20]
-    electoral_summary = (f"Sua legenda obteve {electoral_result['party_seats']} de {electoral_result['district_magnitude']} cadeiras simuladas." if electoral_result else "")
+    if candidate_results:
+        electoral_summary = f"{career.get('winning_candidate_name')} liderou a apuração simulada com múltiplas candidaturas."
+    else:
+        electoral_summary = (f"Sua legenda obteve {electoral_result['party_seats']} de {electoral_result['district_magnitude']} cadeiras simuladas." if electoral_result else "")
     term_end_label = date.fromisoformat(career["term_end"]).strftime("%d/%m/%Y") if career.get("term_end") else "o fim do mandato atual"
     if won and has_current_mandate:
         continuity = f"A nova posse simulada está marcada para {transition.strftime('%d/%m/%Y')}; o mandato atual segue até {term_end_label}."
@@ -1018,7 +1103,6 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     else:
         continuity = "Você segue na oposição; a carreira pode continuar com outra disputa ou uma indicação política."
     return f"Resultado eleitoral simulado: {'vitória' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
-
 
 def advance_career(state: dict[str, Any], before: date, after: date) -> list[str]:
     career = state.get("career") or {}

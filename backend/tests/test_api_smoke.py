@@ -402,6 +402,49 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(later["latest_public_poll"]["date"], "2030-08-07")
         self.assertEqual(len(later["public_polls"]), 2)
 
+    def test_public_polls_distribute_support_across_persistent_simulated_candidates(self) -> None:
+        state = new_game()
+        state["date"] = "2030-07-08"
+        start_career(state, "presidente", "DF", "", "Partido Simulado", "Centro", "Candidatura de teste")
+
+        first = career_overview(state)["latest_public_poll"]
+        self.assertEqual(len(first["opponents"]), 3)
+        self.assertAlmostEqual(
+            first["candidate_support"] + sum(item["support"] for item in first["opponents"]),
+            100.0,
+        )
+        opponent_ids = [item["id"] for item in first["opponents"]]
+
+        state, _ = advance_state(state, 30)
+        later = career_overview(state)["latest_public_poll"]
+        self.assertEqual([item["id"] for item in later["opponents"]], opponent_ids)
+
+        replay = new_game()
+        replay["date"] = "2030-07-08"
+        start_career(replay, "presidente", "DF", "", "Partido Simulado", "Centro", "Candidatura de teste")
+        self.assertEqual(replay["career"]["public_polls"][0], first)
+
+    def test_majoritarian_election_compares_four_candidate_results(self) -> None:
+        state = new_game()
+        state["date"] = "2030-07-08"
+        start_career(state, "presidente", "DF", "", "Partido Simulado", "Centro", "Candidatura de teste")
+        career = state["career"]
+        career["phase"] = "campaign"
+        career["election_date"] = "2030-10-06"
+        career["poll_support"] = 45.0
+        for opponent in career["opponents"]:
+            opponent["support_weight"] = 1.0
+
+        resolve_career_election(state, date(2030, 10, 6))
+        results = career["candidate_results"]
+
+        self.assertEqual(len(results), 4)
+        self.assertEqual(results[0]["id"], "player")
+        self.assertAlmostEqual(sum(item["support"] for item in results), 100.0)
+        self.assertEqual(career["result"], "won")
+        self.assertLess(career["vote_share"], 50.0)
+        self.assertEqual(career["electoral_result"]["winner_name"], "Candidatura de teste")
+
     def test_campaign_actions_target_valid_cities_within_the_office_scope(self) -> None:
         message = "Vamos publicar prazos para melhorar o transporte e fiscalizar cada obra com transparência."
         governor_state = new_game()
