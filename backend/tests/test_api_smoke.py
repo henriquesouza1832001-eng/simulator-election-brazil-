@@ -109,6 +109,17 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertTrue({"saude", "educacao"}.issubset(campaign_topic_ids))
         self.assertNotIn("servicos", campaign_topic_ids)
 
+    def test_health_reports_interpreter_mode_without_exposing_the_key(self) -> None:
+        local = self.client.get("/api/health")
+        self.assertEqual(local.status_code, 200)
+        self.assertEqual(local.json(), {"status": "ok", "ai": "local-fallback"})
+
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key-never-return-this"}):
+            configured = self.client.get("/api/health")
+        self.assertEqual(configured.status_code, 200)
+        self.assertEqual(configured.json(), {"status": "ok", "ai": "gemini"})
+        self.assertNotIn("test-key-never-return-this", configured.text)
+
     def test_municipality_code_must_match_candidate_state(self) -> None:
         response = self.client.post("/api/career/start", json={
             "office": "prefeito", "state_code": "MG", "municipality": "",

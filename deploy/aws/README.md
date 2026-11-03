@@ -144,6 +144,10 @@ still completes and GitHub reports that AWS setup is pending.
 The FastAPI server calls Gemini. The key stays on the server and is never sent
 to the browser or stored in Git. If Gemini is unavailable, the API uses the
 local interpreter; deterministic game rules still calculate the effects.
+In production on 3 November 2026, `/api/health` reports `local-fallback` because
+no Gemini key is configured. The decision screen now labels this state as
+**Motor local** and changes to **Gemini configurado** when the server has a key;
+neither label claims that a particular request succeeded.
 
 1. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey).
    Restrict it to the Gemini API when that option is available. Do not put the

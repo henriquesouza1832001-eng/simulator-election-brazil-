@@ -19,6 +19,7 @@ import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
 import LearningPanel from './LearningPanel';
 import './diplomacy.css';
+import './ai-status.css';
 
 const fmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
@@ -178,6 +179,7 @@ function indicatorTrend(item, state) {
 
 export default function App() {
   const [authConfig, setAuthConfig] = useState(null);
+  const [aiStatus, setAiStatus] = useState('unknown');
   const [authUser, setAuthUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
@@ -234,6 +236,16 @@ export default function App() {
     } catch (error) { setNotice(error.message || 'Não foi possível iniciar a partida.'); }
     finally { setBusy(false); }
   }
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/health')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Health check indisponível')))
+      .then((health) => {
+        if (mounted) setAiStatus(health.ai === 'gemini' ? 'gemini' : health.ai === 'local-fallback' ? 'local-fallback' : 'unknown');
+      })
+      .catch(() => { if (mounted) setAiStatus('unknown'); });
+    return () => { mounted = false; };
+  }, []);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -374,6 +386,14 @@ export default function App() {
   const proposedPrimaryBalance = Number(m.primary_balance) + ((proposedOperatingSavings - currentOperatingSavings) / fiscalReferenceGdp * 100);
   const careerMode = Boolean(state.career_overview?.mode);
   const playerCharacter = state.player_character || state.career_overview?.character || null;
+  const aiStatusLabel = aiStatus === 'gemini' ? 'GEMINI CONFIGURADO'
+    : aiStatus === 'local-fallback' ? 'MOTOR LOCAL'
+      : 'STATUS DA IA INDISPONÍVEL';
+  const aiStatusTitle = aiStatus === 'gemini'
+    ? 'A chave Gemini está configurada no servidor. A interpretação pode recorrer ao motor local se o serviço falhar; custos e efeitos seguem as regras Python.'
+    : aiStatus === 'local-fallback'
+      ? 'Gemini ainda não está configurado. A prévia usa regras locais; custos e efeitos seguem as regras Python.'
+      : 'Não foi possível consultar o estado do serviço. O jogo continua disponível e usa o fallback local quando necessário.';
   const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.governing);
   const tabGroups = [
     { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
@@ -443,7 +463,7 @@ export default function App() {
 
       {activeTab === 'Medidas' && <div className="main-grid">
         <section className="panel measure-panel">
-          <div className="panel-heading"><div><div className="eyebrow">CENTRO DE DECISÕES</div><h2>Escreva uma medida</h2><p>Descreva a ideia com suas palavras. O motor calcula os efeitos antes de você confirmar.</p></div><span className="ai-chip"><i/> INTERPRETAÇÃO IA</span></div>
+          <div className="panel-heading"><div><div className="eyebrow">CENTRO DE DECISÕES</div><h2>Escreva uma medida</h2><p>Descreva a ideia com suas palavras. O motor calcula os efeitos antes de você confirmar.</p></div><span className={`ai-chip ai-chip--${aiStatus}`} title={aiStatusTitle}><i/> {aiStatusLabel}</span></div>
           <label className="field-label" htmlFor="measure">PROPOSTA DO GOVERNO</label>
           <div className="cadence-summary"><span>Agenda executiva: uma decisão administrativa a cada 7 dias ({state.action_limits?.executive_days ?? 0} dia(s) de espera).</span><span>Pauta legislativa: um projeto a cada {state.legislative_calendar?.cooldown_days || 60} dias ({state.action_limits?.legislative_days ?? 0} dia(s) de espera); {state.action_limits?.pending_bills ?? 0} em tramitação · {state.action_limits?.laws_enacted ?? 0} leis aprovadas.</span></div>
           {state.legislative_calendar?.pending_bills?.map((bill) => <div className="pending-bill" key={bill.id}><span>TRAMITANDO · VOTAÇÃO {bill.decision_date}</span><b>{bill.title}</b><small>{bill.instrument} · aprovação por regra parlamentar do simulador</small></div>)}
