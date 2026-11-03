@@ -21,7 +21,7 @@ export default function MunicipalityPicker({ request, stateCode, value = '', sel
   useEffect(() => {
     let active = true;
     const term = query.trim();
-    if (term.length < 2 || !stateCode) {
+    if (term.length < 2) {
       setItems([]);
       setLoading(false);
       return () => { active = false; };

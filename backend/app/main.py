@@ -246,6 +246,7 @@ class DiplomaticEventRequest(BaseModel):
 class CampaignActionRequest(BaseModel):
     activity_type: str = Field(pattern="^(comicio|entrevista|debate|encontro)$")
     region: str = Field(pattern="^(norte|nordeste|centro_oeste|sudeste|sul)$")
+    municipality_id: str | None = Field(default=None, pattern=r"^\d{7}$")
     issue: str = Field(pattern="^(economia|seguranca|servicos|trabalho|integridade)$")
     message: str = Field(min_length=12, max_length=600)
     conduct: str = Field(default="regular", pattern="^(regular|irregular)$")
@@ -858,13 +859,17 @@ def campaign_action(request: CampaignActionRequest) -> dict[str, Any]:
         raise HTTPException(status_code=409, detail="Use a campanha do cargo atual na aba Carreira.")
     action_date = state["date"]
     try:
-        result = perform_campaign_action(state, request.activity_type, request.region, request.issue, request.message, request.conduct)
+        result = perform_campaign_action(
+            state, request.activity_type, request.region, request.issue, request.message,
+            request.conduct, request.municipality_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     state, calendar_message = advance_state(state, result["days_cost"])
     save_state(state)
     record_action(action_date, "campanha", result["activity"]["label"], request.message,
-                  {"activity_type": request.activity_type, "region": request.region, "issue": request.issue},
+                  {"activity_type": request.activity_type, "region": result["activity"]["region"],
+                   "issue": request.issue, "municipality_id": result["activity"].get("municipality_id")},
                   [{"score": result["score"], "rubric": result["rubric"], "national_support": result["national_support"],
                     "regional_support": result["regional_support"], "cost_bi": result["cost_bi"], "days_cost": result["days_cost"]}])
     return {"state": public_state(state), "result": result, "calendar_message": calendar_message}

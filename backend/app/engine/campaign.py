@@ -7,6 +7,7 @@ from typing import Any
 
 from .politics import campaign_active, election_date
 from .electoral_integrity import campaign_conduct_preview, resolve_campaign_conduct
+from .geography import get_municipality
 from .issues import ISSUE_LABELS, canonical_issue_ids, issue_label
 
 
@@ -46,6 +47,8 @@ ACTIVITIES = {
     "debate": {"label": "Debate", "days": 1, "cost_bi": 0.03, "reach": 0.8},
     "encontro": {"label": "Encontro regional", "days": 1, "cost_bi": 0.02, "reach": 0.65},
 }
+TRAVEL_ACTIVITIES = {"comicio", "encontro"}
+CAMPAIGN_BASE_CITY_ID = "5300108"  # Brasília, início da campanha nacional
 
 TOPIC_TERMS = {
     "economia": {"preco", "precos", "inflacao", "renda", "imposto", "credito", "custo", "economia", "salario", "conta", "divida"},
@@ -84,6 +87,7 @@ def ensure_campaign_state(state: dict[str, Any]) -> dict[str, Any]:
     campaign.setdefault("momentum", 0.0)
     campaign.setdefault("last_action_date", None)
     campaign.setdefault("activities", [])
+    campaign.setdefault("municipality_support", {})
     campaign.setdefault("preparation", {"organization": 35.0, "program_detail": 30.0, "coalition": 35.0})
     campaign.setdefault("conduct", {"attempts": 0, "detected": 0, "election_penalty": 0.0, "history": []})
     # Keep saves created before the campaign engine usable.
@@ -111,6 +115,25 @@ def campaign_overview(state: dict[str, Any]) -> dict[str, Any]:
     last_action = campaign.get("last_action_date")
     wait = max(0, 7 - (today - date.fromisoformat(last_action)).days) if last_action else 0
     campaign_start = election.fromordinal(election.toordinal() - 90)
+    recent_city_ids = []
+    for activity in reversed(campaign["activities"]):
+        city_id = activity.get("municipality_id")
+        if city_id and city_id not in recent_city_ids:
+            recent_city_ids.append(city_id)
+        if len(recent_city_ids) >= 8:
+            break
+    city_support = []
+    for city_id in recent_city_ids:
+        profile = get_municipality(city_id)
+        if profile:
+            city_support.append({
+                "municipality_id": city_id,
+                "municipality_name": profile["name"],
+                "state_code": profile["state_code"],
+                "electorate_count": profile.get("electorate_count"),
+                "electorate_reference_year": profile.get("electorate_reference_year"),
+                "support": round(float(campaign["municipality_support"].get(city_id, 50.0)), 1),
+            })
     return {
         "active": active,
         "finished": bool(election_result),
@@ -130,6 +153,7 @@ def campaign_overview(state: dict[str, Any]) -> dict[str, Any]:
         "funds_bi": round(campaign["funds_bi"], 3),
         "preparation": campaign["preparation"],
         "regions": [{"key": key, **region, "support": round(campaign["regional_support"][key], 1)} for key, region in REGIONS.items()],
+        "municipalities": city_support,
         "groups": [{"key": key, "label": GROUP_LABELS[key], "support": round(value, 1)} for key, value in campaign["group_support"].items()],
         "activities": list(reversed(campaign["activities"][-8:])),
         "activity_options": [{"key": key, "label": item["label"], "days": item["days"], "cost_bi": item["cost_bi"]} for key, item in ACTIVITIES.items()],
@@ -157,7 +181,8 @@ def _speech_score(issue: str, message: str) -> tuple[int, dict[str, int]]:
 
 
 def perform_campaign_action(state: dict[str, Any], activity_type: str, region: str,
-                            issue: str, message: str, conduct: str = "regular") -> dict[str, Any]:
+                            issue: str, message: str, conduct: str = "regular",
+                            municipality_id: str | None = None) -> dict[str, Any]:
     today = date.fromisoformat(state["date"])
     campaign = ensure_campaign_state(state)
     overview = campaign_overview(state)
@@ -165,6 +190,11 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
         raise ValueError("A campanha presidencial ainda não está aberta no calendário da partida.")
     if activity_type not in ACTIVITIES:
         raise ValueError("Escolha um formato de campanha válido.")
+    target_municipality = get_municipality(municipality_id) if municipality_id else None
+    if municipality_id and not target_municipality:
+        raise ValueError("Cidade nao encontrada no catalogo oficial do IBGE.")
+    if target_municipality:
+        region = target_municipality["macroregion"]
     if region not in REGIONS:
         raise ValueError("Escolha uma região válida.")
     if issue not in ISSUES:
@@ -177,11 +207,31 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
     if campaign["funds_bi"] < activity["cost_bi"]:
         raise ValueError("O caixa simulado da campanha não cobre esta atividade.")
 
+    travel_from = None
+    travel_days = 0
+    if target_municipality and activity_type in TRAVEL_ACTIVITIES:
+        previous_city_id = next((item.get("municipality_id") for item in reversed(campaign["activities"])
+                                 if item.get("type") in TRAVEL_ACTIVITIES and item.get("municipality_id")), CAMPAIGN_BASE_CITY_ID)
+        travel_from = get_municipality(previous_city_id)
+        if travel_from and travel_from["ibge_code"] != target_municipality["ibge_code"]:
+            travel_days = 1 if (
+                travel_from["state_code"] == target_municipality["state_code"]
+                or travel_from["macroregion"] == target_municipality["macroregion"]
+            ) else 2
+    days_cost = activity["days"] + travel_days
+
     score, rubric = _speech_score(issue, message)
     quality = (score - 55) / 45
     regional = campaign["regional_support"]
     groups = campaign["group_support"]
-    regional_delta = quality * 0.75 * activity["reach"] + (0.12 if activity_type == "comicio" else 0.04)
+    reach_multiplier = float(target_municipality["municipal_campaign_reach_multiplier"]) if target_municipality else 1.0
+    local_delta = quality * 0.75 * activity["reach"] * reach_multiplier + (0.12 if activity_type == "comicio" else 0.04)
+    regional_delta = local_delta * 0.18 if target_municipality else local_delta
+    city_support = campaign["municipality_support"]
+    city_id = target_municipality["ibge_code"] if target_municipality else None
+    if target_municipality:
+        city_support.setdefault(city_id, float(regional[region]))
+        city_support[city_id] = round(max(0, min(100, city_support[city_id] + local_delta)), 2)
     regional[region] = round(max(0, min(100, regional[region] + regional_delta)), 2)
     group_delta = quality * 0.42 * activity["reach"]
     affected = ISSUES[issue]["groups"]
@@ -191,6 +241,8 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
         state, campaign, conduct, f"campaign-{len(campaign['activities']) + 1}-{activity_type}"
     )
     regional[region] = round(max(0, min(100, regional[region] + conduct_result["immediate_support_delta"])), 2)
+    if target_municipality:
+        city_support[city_id] = round(max(0, min(100, city_support[city_id] + conduct_result["immediate_support_delta"])), 2)
     for group in affected:
         groups[group] = round(max(0, min(100, groups[group] + conduct_result["immediate_support_delta"] * .35)), 2)
     campaign["momentum"] = round(max(-10, min(10, campaign["momentum"] * 0.85 + quality * 0.48)), 2)
@@ -202,19 +254,32 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
         "id": f"campaign-{today.isoformat()}-{len(campaign['activities']) + 1}",
         "date": today.isoformat(), "type": activity_type, "label": activity["label"],
         "region": region, "region_label": REGIONS[region]["label"],
+        "municipality_id": city_id,
+        "municipality_name": target_municipality["name"] if target_municipality else None,
+        "municipality_state_code": target_municipality["state_code"] if target_municipality else None,
+        "electorate_count": target_municipality.get("electorate_count") if target_municipality else None,
+        "electorate_reference_year": target_municipality.get("electorate_reference_year") if target_municipality else None,
+        "municipal_reach_multiplier": reach_multiplier if target_municipality else None,
+        "municipality_support": round(city_support[city_id], 1) if target_municipality else None,
         "issue": issue, "issue_label": ISSUES[issue]["label"],
         "canonical_issue_ids": list(canonical_issue_ids(issue)),
         "message": message.strip(), "score": score, "rubric": rubric,
         "support_change": round((regional_delta + conduct_result["immediate_support_delta"]) * REGIONS[region]["weight"], 2),
-        "regional_change": round(regional_delta + conduct_result["immediate_support_delta"], 2), "groups_affected": [GROUP_LABELS[key] for key in affected],
-        "cost_bi": activity["cost_bi"], "days_cost": activity["days"], "simulated": True,
+        "regional_change": round(regional_delta + conduct_result["immediate_support_delta"], 2),
+        "municipal_change": round(local_delta + conduct_result["immediate_support_delta"], 2) if target_municipality else None,
+        "groups_affected": [GROUP_LABELS[key] for key in affected],
+        "cost_bi": activity["cost_bi"], "days_cost": days_cost,
+        "activity_days": activity["days"], "travel_days": travel_days,
+        "travel_from": travel_from["name"] if travel_from and travel_days else None,
+        "in_person": activity_type in TRAVEL_ACTIVITIES and bool(target_municipality),
+        "simulated": True,
         "conduct": conduct_result,
     }
     campaign["activities"].append(activity_record)
     campaign["activities"] = campaign["activities"][-40:]
     return {"activity": activity_record, "score": score, "rubric": rubric,
             "national_support": campaign["national_support"], "regional_support": round(regional[region], 1),
-            "momentum": campaign["momentum"], "days_cost": activity["days"],
+            "momentum": campaign["momentum"], "days_cost": days_cost,
             "cost_bi": activity["cost_bi"], "message": "A atividade foi registrada; o calendário do governo também avança durante a campanha."}
 
 
