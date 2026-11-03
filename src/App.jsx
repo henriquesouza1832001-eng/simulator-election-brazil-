@@ -12,24 +12,30 @@ import InauguralAddress from './InauguralAddress';
 import AuthPanel from './AuthPanel';
 import AccountPanel from './AccountPanel';
 import WelcomePanel from './WelcomePanel';
+import GameSetupPanel from './GameSetupPanel';
 import './diplomacy.css';
 
 const fmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
-const indicatorDigits = { human_development_index: 3, gini_index: 3, country_risk: 0 };
+const indicatorPrecision = {
+  human_development_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
+  gini_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
+  country_risk: { minimumFractionDigits: 0, maximumFractionDigits: 0 },
+};
 const indicatorFormatters = new Map();
 
 function formatIndicator(value, key) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return '—';
-  const digits = indicatorDigits[key] ?? 1;
-  if (!indicatorFormatters.has(digits)) {
-    indicatorFormatters.set(digits, new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
+  const precision = indicatorPrecision[key] ?? { minimumFractionDigits: 0, maximumFractionDigits: 1 };
+  const formatKey = `${precision.minimumFractionDigits}:${precision.maximumFractionDigits}`;
+  if (!indicatorFormatters.has(formatKey)) {
+    indicatorFormatters.set(formatKey, new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: precision.minimumFractionDigits,
+      maximumFractionDigits: precision.maximumFractionDigits,
     }));
   }
-  return indicatorFormatters.get(digits).format(numericValue);
+  return indicatorFormatters.get(formatKey).format(numericValue);
 }
 
 function Metric({ label, value, unit = '', tone = '', detail, indicatorKey }) {
@@ -127,6 +133,13 @@ const detailedIndicatorGroups = [
   ] },
 ];
 
+const institutionLabels = {
+  military_loyalty: 'Lealdade militar à Constituição',
+  constitutional_order: 'Ordem constitucional',
+  civilian_legitimacy: 'Legitimidade civil',
+  institutional_resistance: 'Resistência institucional',
+};
+
 function readIndicator(item, state) {
   if (item.source === 'metric') return state.metrics?.[item.key];
   if (item.source === 'institution') return state.institutions?.[item.key];
@@ -164,6 +177,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showAccountPanel, setShowAccountPanel] = useState(false);
+  const [showGameMenu, setShowGameMenu] = useState(true);
   const [state, setState] = useState(null);
   const [measure, setMeasure] = useState('');
   const [preview, setPreview] = useState(null);
@@ -329,10 +343,11 @@ export default function App() {
 
   if (!authReady || (authUser && !state)) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
   if (authConfig?.enabled && !authUser) return showAuthPanel
-    ? <AuthPanel onAuthenticated={(user) => { setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />
+    ? <AuthPanel onAuthenticated={(user) => { setState(null); setShowGameMenu(true); setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />
     : <WelcomePanel onGuest={startGuest} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} busy={busy} notice={notice} />;
-  if (authConfig?.enabled && authUser?.isGuest && showAuthPanel) return <AuthPanel onAuthenticated={(user) => { setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />;
+  if (authConfig?.enabled && authUser?.isGuest && showAuthPanel) return <AuthPanel onAuthenticated={(user) => { setState(null); setShowGameMenu(true); setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />;
   if (!state) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
+  if (showGameMenu) return <><GameSetupPanel state={state} request={request} onState={setState} onContinue={() => setShowGameMenu(false)} busy={busy} setBusy={setBusy} authConfig={authConfig} authUser={authUser} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} onAccount={() => setShowAccountPanel(true)} />{showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}</>;
   const m = state.metrics;
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
   const monthsRemaining = Math.max(0, 48 - termMonth);
@@ -375,7 +390,7 @@ export default function App() {
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR POLÍTICO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.state_code} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">M</span><span>MANDATO<small>SIMULADOR POLÍTICO</small></span></a><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.state_code} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">
@@ -482,7 +497,7 @@ export default function App() {
       {activeTab === 'Eleição' && <CampaignPanel state={state} request={request} onState={setState} busy={busy} setBusy={setBusy} onNotice={setNotice} />}
       {activeTab === 'Carreira' && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      {activeTab === 'Instituições' && <section className="panel agenda-page"><div className="eyebrow">CENÁRIO INSTITUCIONAL FICTÍCIO</div><h2>Instituições e estabilidade</h2><p className="page-description">Indicadores agregados mudam com as decisões. A opção de ruptura é uma mecânica de alto risco, inteiramente abstrata; não há passos operacionais.</p><div className="institution-grid">{Object.entries(state.institutions || {}).map(([key, value]) => <article key={key}><span>{key.replaceAll('_', ' ')}</span><strong>{Math.round(value)}/100</strong><div className="bar"><i style={{ width: `${value}%` }}/></div></article>)}</div><div className="rupture-box"><h3>Ruptura institucional simulada</h3><p>Sucesso: governo de facto, resistência institucional, isolamento e choque econômico. Fracasso: prisão e remoção do cargo. Os resultados são calculados pelo motor e pela semente da partida.</p><button className="secondary-button" onClick={loadRupturePreview}>Ver chance e consequências</button>{ruptureInfo && <div className="rupture-preview"><b>Chance abstrata de sucesso: {ruptureInfo.chance}%</b><p>{ruptureInfo.success}</p><p>{ruptureInfo.failure}</p><button className="danger-button" disabled={busy} onClick={attemptRupture}>Tentar ruptura no cenário</button></div>}</div></section>}
+      {activeTab === 'Instituições' && <section className="panel agenda-page"><div className="eyebrow">CENÁRIO INSTITUCIONAL FICTÍCIO</div><h2>Instituições e estabilidade</h2><p className="page-description">Indicadores agregados mudam com as decisões. A opção de ruptura é uma mecânica de alto risco, inteiramente abstrata; não há passos operacionais.</p><div className="institution-grid">{Object.entries(state.institutions || {}).map(([key, value]) => <article key={key}><span>{institutionLabels[key] || key.replaceAll('_', ' ')}</span><strong>{formatIndicator(value, key)}/100</strong><div className="bar"><i style={{ width: `${value}%` }}/></div></article>)}</div><div className="rupture-box"><h3>Ruptura institucional simulada</h3><p>Sucesso: governo de facto, resistência institucional, isolamento e choque econômico. Fracasso: prisão e remoção do cargo. Os resultados são calculados pelo motor e pela semente da partida.</p><button className="secondary-button" onClick={loadRupturePreview}>Ver chance e consequências</button>{ruptureInfo && <div className="rupture-preview"><b>Chance abstrata de sucesso: {ruptureInfo.chance}%</b><p>{ruptureInfo.success}</p><p>{ruptureInfo.failure}</p><button className="danger-button" disabled={busy} onClick={attemptRupture}>Tentar ruptura no cenário</button></div>}</div></section>}
 
       {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 

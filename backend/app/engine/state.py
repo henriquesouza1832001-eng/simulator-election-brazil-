@@ -29,6 +29,7 @@ REGION_BASELINES = {
 def new_game() -> dict[str, Any]:
     state = {
         "term": 1, "term_start": START_DATE.isoformat(), "campaign_seed": 203001,
+        "setup_pending": True,
         "difficulty": "normal",
         "dashboard_cards": ["gdp_growth", "inflation", "unemployment", "debt_gdp", "primary_balance", "approval"],
         "day_of_mandate": 1, "date": START_DATE.isoformat(), "regime": "democratic",

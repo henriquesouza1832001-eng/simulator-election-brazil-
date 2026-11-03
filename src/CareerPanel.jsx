@@ -51,7 +51,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
     if (!confirmed) return;
     setBusy(true);
     try {
-      const data = await request('/api/career/start', { method: 'POST', body: JSON.stringify({ office, state_code: stateCode, municipality, party, ideology, candidate_name: candidateName }) });
+      const data = await request('/api/career/start', { method: 'POST', body: JSON.stringify({ office, state_code: stateCode, municipality, party, ideology, candidate_name: candidateName, difficulty: state.difficulty || 'normal' }) });
       onState(data.state);
       if (!overview) {
         const saved = await request('/api/game/archives');

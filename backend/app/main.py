@@ -171,6 +171,8 @@ class CareerStartRequest(BaseModel):
     party: str = Field(min_length=2, max_length=80)
     ideology: str = Field(min_length=2, max_length=40)
     candidate_name: str = Field(default="", max_length=80)
+    difficulty: str = Field(default="normal", pattern="^(tranquilo|normal|dificil|complicado|realismo_puro)$")
+    new_game: bool = False
 
 
 class CareerActionRequest(BaseModel):
@@ -203,10 +205,13 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         return None
     if request.url.path in {
         "/api/game/inaugural-address",
+        "/api/game/new",
         "/api/measures/preview",
         "/api/career/start",
         "/api/game/difficulty",
     }:
+        return None
+    if request.url.path.startswith("/api/game/archives/") and request.url.path.endswith("/restore"):
         return None
     state = load_state()
     if state is not None and require_inaugural_address(state):
@@ -306,8 +311,9 @@ def game_options() -> dict[str, Any]:
 
 
 @app.get("/api/career/options")
-def political_career_options() -> dict[str, Any]:
-    return career_options(date.fromisoformat(game_state()["date"]))
+def political_career_options(fresh: bool = False) -> dict[str, Any]:
+    as_of = date(2027, 1, 1) if fresh else date.fromisoformat(game_state()["date"])
+    return career_options(as_of)
 
 
 @app.get("/api/game/archives")
@@ -329,16 +335,28 @@ def restore_game_archive(archive_id: int) -> dict[str, Any]:
 
 @app.post("/api/career/start")
 def begin_political_career(request: CareerStartRequest) -> dict[str, Any]:
-    state = game_state()
-    title = f"{state.get('career', {}).get('office_label', 'Presidência')} · {state.get('date', '')}"
+    current = game_state()
+    title = f"{current.get('career', {}).get('office_label', 'Presidência')} · {current.get('date', '')}"
+    setup_pending = bool(current.get("setup_pending"))
+    continuing_career = bool((current.get("career") or {}).get("mode")) and not request.new_game
+    archive_current = request.new_game and not setup_pending
+    if request.new_game:
+        state = new_game()
+    else:
+        state = current
     snapshot = deepcopy(state)
-    continuing_career = bool((state.get("career") or {}).get("mode"))
     try:
+        state["difficulty"] = request.difficulty
+        if request.new_game:
+            state["career"] = {}
         start_career(state, request.office, request.state_code.upper(), request.municipality,
                      request.party, request.ideology, request.candidate_name)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    archive_id = None if continuing_career else archive_state(snapshot, title)
+    if archive_current:
+        archive_state(current, title)
+    archive_id = None if continuing_career or setup_pending or request.new_game else archive_state(snapshot, title)
+    state.pop("setup_pending", None)
     state.pop("action_log_end_id", None)
     refresh_calendar_fields(state)
     save_state(state)
@@ -621,6 +639,23 @@ def set_dashboard(request: DashboardRequest) -> dict[str, Any]:
 @app.get("/api/game")
 def get_game() -> dict[str, Any]:
     return public_state(game_state())
+
+
+@app.post("/api/game/new")
+def begin_presidential_game(request: DifficultyRequest) -> dict[str, Any]:
+    current = game_state()
+    if not current.get("setup_pending"):
+        archive_state(current, f"Partida anterior · {current.get('date', 'sem data')}")
+    state = new_game()
+    state.pop("setup_pending", None)
+    state["difficulty"] = request.difficulty
+    state["action_log_start_id"] = record_action(
+        state["date"], "partida", "Início de governo presidencial simulado", "",
+        {"mode": "presidencial", "difficulty": request.difficulty},
+        [{"date": state["date"], "office": "Presidência da República"}],
+    )
+    save_state(state)
+    return public_state(state)
 
 
 @app.post("/api/game/advance")
