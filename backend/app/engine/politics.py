@@ -22,7 +22,7 @@ def campaign_active(state: dict[str, Any], current: date | None = None) -> bool:
     current = current or date.fromisoformat(state["date"])
     career = state.get("career") or {}
     if career.get("mode"):
-        return career.get("phase") == "campaign" and current <= election_date(state)
+        return career.get("phase") in {"campaign", "runoff_campaign"} and current <= election_date(state)
     election = election_date(state)
     campaign_start = date.fromordinal(election.toordinal() - 90)
     return election.year == current.year and campaign_start <= current <= election

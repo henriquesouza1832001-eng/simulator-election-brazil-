@@ -360,11 +360,12 @@ export default function App() {
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
   const monthsRemaining = Math.max(0, 48 - termMonth);
   const careerPhase = state.career_overview?.phase;
-  const careerCardLabel = careerPhase === 'campaign' ? 'ELEIÇÃO' : careerPhase === 'office' ? 'MANDATO' : careerPhase === 'transition' ? 'POSSE' : 'CARREIRA';
-  const careerCardValue = careerPhase === 'campaign' ? state.career_overview?.days_until_election : careerPhase === 'transition' ? state.career_overview?.days_until_inauguration : careerPhase === 'office' ? state.career_overview?.term_years : '—';
-  const careerCardSuffix = careerPhase === 'campaign' ? ' dias' : careerPhase === 'transition' ? ' dias' : careerPhase === 'office' ? ' anos' : '';
-  const careerCardNote = careerPhase === 'campaign' ? 'dias até a votação' : careerPhase === 'transition' ? 'dias até a posse' : careerPhase === 'office' ? `campanha abre em ${state.career_overview?.days_until_campaign} dias` : 'escolha o próximo passo';
-  const careerCardProgress = careerPhase === 'campaign' ? Math.max(3, 100 - (state.career_overview?.days_until_election || 0) / 90 * 100) : state.career_overview?.governing ? 100 * Math.min(1, ((state.career_overview?.term_years || 4) * 365 - (state.career_overview?.next_campaign_days || 0)) / ((state.career_overview?.term_years || 4) * 365)) : careerPhase === 'transition' ? 85 : 0;
+  const careerElectionPhase = ['campaign', 'runoff_campaign', 'runoff_observer'].includes(careerPhase);
+  const careerCardLabel = careerPhase === 'campaign' ? 'ELEIÇÃO' : careerPhase === 'runoff_campaign' ? '2º TURNO' : careerPhase === 'runoff_observer' ? 'APURAÇÃO' : careerPhase === 'office' ? 'MANDATO' : careerPhase === 'transition' ? 'POSSE' : 'CARREIRA';
+  const careerCardValue = careerElectionPhase ? state.career_overview?.days_until_election : careerPhase === 'transition' ? state.career_overview?.days_until_inauguration : careerPhase === 'office' ? state.career_overview?.term_years : '—';
+  const careerCardSuffix = careerElectionPhase || careerPhase === 'transition' ? ' dias' : careerPhase === 'office' ? ' anos' : '';
+  const careerCardNote = careerPhase === 'campaign' ? 'dias até a votação' : careerPhase === 'runoff_campaign' || careerPhase === 'runoff_observer' ? 'dias até o segundo turno' : careerPhase === 'transition' ? 'dias até a posse' : careerPhase === 'office' ? `campanha abre em ${state.career_overview?.days_until_campaign} dias` : 'escolha o próximo passo';
+  const careerCardProgress = careerElectionPhase ? Math.max(3, 100 - (state.career_overview?.days_until_election || 0) / (careerPhase === 'campaign' ? 90 : 28) * 100) : state.career_overview?.governing ? 100 * Math.min(1, ((state.career_overview?.term_years || 4) * 365 - (state.career_overview?.next_campaign_days || 0)) / ((state.career_overview?.term_years || 4) * 365)) : careerPhase === 'transition' ? 85 : 0;
   const operatingLines = budgetView?.operating?.lines || {};
   const proposedOperatingSavings = (Number(operatingLines.official_travel?.annual_cost_bi || 0) * Number(travelCutPct) / 100)
     + (Number(operatingLines.official_residence?.annual_cost_bi || 0) * Number(residenceCutPct) / 100);

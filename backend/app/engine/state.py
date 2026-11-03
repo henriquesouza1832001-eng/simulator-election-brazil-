@@ -71,7 +71,7 @@ def refresh_calendar_fields(state: dict[str, Any]) -> dict[str, Any]:
     state["election_date"] = election_date(state).isoformat()
     ensure_campaign_state(state)
     state["campaign_active"] = (is_campaign_active(state, current) if not (state.get("career") or {}).get("mode")
-                                else (state.get("career", {}).get("phase") == "campaign" and current <= election_date(state)))
+                                else (state.get("career", {}).get("phase") in {"campaign", "runoff_campaign"} and current <= election_date(state)))
     ensure_event_state(state)
     state.setdefault("legislative_calendar", {"last_submission": None, "pending_bills": [], "laws_enacted": 0, "laws_failed": 0})
     state.setdefault("executive_calendar", {"last_action": None})

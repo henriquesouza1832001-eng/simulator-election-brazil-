@@ -331,9 +331,17 @@ class ApiSmokeTests(unittest.TestCase):
 
         election = self.client.post("/api/game/advance", json={"days": 90})
         self.assertEqual(election.status_code, 200, election.text)
-        result = election.json()["state"]["career_overview"]
+        first_round = election.json()["state"]["career_overview"]
+        self.assertTrue(first_round["runoff_active"])
+        self.assertIn(first_round["phase"], {"runoff_campaign", "runoff_observer"})
+        self.assertEqual(len(first_round["runoff_finalists"]), 2)
+        final_round = self.client.post("/api/game/advance", json={"days": 28})
+        self.assertEqual(final_round.status_code, 200, final_round.text)
+        result = final_round.json()["state"]["career_overview"]
         self.assertIn(result["result"], {"won", "lost"})
         self.assertIn(result["phase"], {"transition", "outgoing", "opposition"})
+        self.assertEqual(len(result["runoff_results"]), 2)
+        self.assertAlmostEqual(sum(item["support"] for item in result["runoff_results"]), 100.0)
 
     def test_pre_campaign_preparation_uses_candidate_fund_without_changing_poll(self) -> None:
         started = self.client.post("/api/career/start", json={
@@ -435,15 +443,47 @@ class ApiSmokeTests(unittest.TestCase):
         for opponent in career["opponents"]:
             opponent["support_weight"] = 1.0
 
-        resolve_career_election(state, date(2030, 10, 6))
+        state["date"] = "2030-10-06"
+        first_round_message = resolve_career_election(state, date(2030, 10, 6))
         results = career["candidate_results"]
 
         self.assertEqual(len(results), 4)
         self.assertEqual(results[0]["id"], "player")
         self.assertAlmostEqual(sum(item["support"] for item in results), 100.0)
-        self.assertEqual(career["result"], "won")
+        self.assertIsNone(career["result"])
+        self.assertEqual(career["phase"], "runoff_campaign")
+        self.assertEqual(career["runoff_date"], "2030-11-03")
+        self.assertIn("avan\u00e7ou para o segundo turno", first_round_message)
         self.assertLess(career["vote_share"], 50.0)
-        self.assertEqual(career["electoral_result"]["winner_name"], "Candidatura de teste")
+        overview = career_overview(state)
+        self.assertTrue(overview["campaign_active"])
+        self.assertTrue(overview["can_act"])
+        self.assertEqual(len(overview["runoff_finalists"]), 2)
+
+        runoff_message = resolve_career_election(state, date(2030, 11, 3))
+        runoff_results = career["runoff_results"]
+        self.assertEqual(career["result"], "won")
+        self.assertEqual(len(runoff_results), 2)
+        self.assertAlmostEqual(sum(item["support"] for item in runoff_results), 100.0)
+        self.assertEqual(career["electoral_result"]["round"], 2)
+        self.assertIn("segundo turno", runoff_message)
+
+    def test_single_round_senate_race_can_be_won_without_half_the_vote(self) -> None:
+        state = new_game()
+        state["date"] = "2030-07-08"
+        start_career(state, "senador", "MG", "", "Partido Simulado", "Centro", "Candidatura de teste")
+        career = state["career"]
+        career["phase"] = "campaign"
+        career["election_date"] = "2030-10-06"
+        career["poll_support"] = 45.0
+        for opponent in career["opponents"]:
+            opponent["support_weight"] = 1.0
+
+        resolve_career_election(state, date(2030, 10, 6))
+
+        self.assertEqual(career["result"], "won")
+        self.assertEqual(career["phase"], "transition")
+        self.assertFalse(career["electoral_result"]["runoff"])
 
     def test_campaign_actions_target_valid_cities_within_the_office_scope(self) -> None:
         message = "Vamos publicar prazos para melhorar o transporte e fiscalizar cada obra com transparência."
@@ -525,7 +565,14 @@ class ApiSmokeTests(unittest.TestCase):
         perform_governance_action(state, "public_report")
 
         state["date"] = "2030-10-06"
-        election_message = resolve_career_election(state, date(2030, 10, 6))
+        first_round_message = resolve_career_election(state, date(2030, 10, 6))
+        self.assertIsNone(career["result"])
+        self.assertEqual(career["phase"], "runoff_observer")
+        self.assertTrue(career_overview(state)["governing"])
+        self.assertIn("n\u00e3o avan\u00e7ou", first_round_message)
+
+        state["date"] = "2030-11-03"
+        election_message = resolve_career_election(state, date(2030, 11, 3))
         self.assertEqual(career["result"], "lost")
         self.assertEqual(career["phase"], "outgoing")
         self.assertEqual(career["transition_date"], "2031-01-05")

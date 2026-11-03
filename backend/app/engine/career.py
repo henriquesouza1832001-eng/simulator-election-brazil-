@@ -260,7 +260,7 @@ def _projected_public_poll_support(state: dict[str, Any], career: dict[str, Any]
     if career.get("office") in {"vereador", "deputado_estadual", "deputado_federal"}:
         estimate = float(career.get("poll_support", 0)) * 0.78 + organization + float(career.get("momentum", 0)) * 0.35
     else:
-        estimate = 25 + float(career.get("poll_support", 0)) * 0.42 + organization + float(career.get("momentum", 0)) * 0.4
+        estimate = float(career.get("poll_support", 0)) * 0.82 + organization + float(career.get("momentum", 0)) * 0.35
     return _clamp(estimate - fatigue_penalty - conduct_penalty - opposition_drag)
 
 
@@ -308,6 +308,75 @@ def _opponent_supports(career: dict[str, Any], candidate_support: float) -> list
         })
     return shares
 
+
+def _requires_second_round(career: dict[str, Any]) -> bool:
+    office = career.get("office")
+    if office in {"presidente", "governador"}:
+        return True
+    if office != "prefeito":
+        return False
+    # The game catalogue has resident-population estimates, not voter rolls. Use
+    # this only as a clearly marked proxy for the municipal runoff threshold.
+    population = float((career.get("municipality_profile") or {}).get("population_estimate", 0))
+    return population > 200_000
+
+
+def _spectrum_index(candidate: dict[str, Any]) -> int:
+    spectrum = IDEOLOGY_SPECTRUM.get(candidate.get("ideology", "Centro"), "centro")
+    return SPECTRUM_ORDER.index(spectrum)
+
+
+def _runoff_vote_results(career: dict[str, Any], poll_support: float | None = None,
+                         noise: float = 0.0) -> list[dict[str, Any]]:
+    first_round = career.get("first_round_results") or []
+    finalists = career.get("runoff_finalists") or sorted(
+        first_round, key=lambda item: float(item.get("support", 0)), reverse=True,
+    )[:2]
+    if len(finalists) < 2:
+        return []
+    first, second = finalists
+    first_share = float(first.get("support", 0))
+    second_share = float(second.get("support", 0))
+    first_distance = _spectrum_index(first)
+    second_distance = _spectrum_index(second)
+    for eliminated in first_round:
+        if eliminated.get("id") in {first.get("id"), second.get("id")}:
+            continue
+        eliminated_share = float(eliminated.get("support", 0))
+        eliminated_distance = _spectrum_index(eliminated)
+        first_affinity = 1 / (1 + abs(eliminated_distance - first_distance))
+        second_affinity = 1 / (1 + abs(eliminated_distance - second_distance))
+        first_transfer = first_affinity / (first_affinity + second_affinity)
+        first_transfer = max(.15, min(.85, first_transfer))
+        first_share += eliminated_share * first_transfer
+        second_share += eliminated_share * (1 - first_transfer)
+
+    if first.get("is_player") or second.get("is_player"):
+        baseline = float(career.get("first_round_poll_support", career.get("poll_support", 0)))
+        current = float(career.get("poll_support", 0) if poll_support is None else poll_support)
+        shift = max(-5.0, min(5.0, (current - baseline) * .3 + float(career.get("momentum", 0)) * .15))
+        if first.get("is_player"):
+            first_share += shift
+            second_share -= shift
+        else:
+            second_share += shift
+            first_share -= shift
+    if first.get("is_player"):
+        first_share += noise
+        second_share -= noise
+    elif second.get("is_player"):
+        second_share += noise
+        first_share -= noise
+    else:
+        first_share += noise
+        second_share -= noise
+
+    first_final = round(max(0.0, min(100.0, first_share)), 1)
+    first_result = {**first, "support": first_final, "round": 2, "simulated": True}
+    second_result = {**second, "support": round(100 - first_final, 1), "round": 2, "simulated": True}
+    return sorted([first_result, second_result], key=lambda item: item["support"], reverse=True)
+
+
 def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_date: date) -> dict[str, Any] | None:
     polls = career.setdefault("public_polls", [])
     if any(item.get("date") == field_date.isoformat() for item in polls):
@@ -316,11 +385,25 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
     margin = round(1.96 * sqrt(0.25 / sample_size) * 100, 1)
     seed = f"{career.get('seed', 1)}:public-poll:{field_date.isoformat()}"
     noise = random.Random(seed).uniform(-margin, margin)
-    candidate_support = round(_clamp(_projected_public_poll_support(state, career) + noise), 1)
-    opponents = _opponent_supports(career, candidate_support)
+    if career.get("phase") == "runoff_campaign":
+        runoff_results = _runoff_vote_results(career, noise=noise)
+        player_result = next((item for item in runoff_results if item.get("is_player")), None)
+        if not player_result:
+            return None
+        candidate_support = player_result["support"]
+        opponents = [{
+            "id": item["id"], "name": item["name"], "party": item["party"],
+            "ideology": item.get("ideology", "Centro"), "issue_focus": item.get("issue_focus", "integridade"),
+            "issue_focus_label": ISSUES[item.get("issue_focus", "integridade")]["label"],
+            "support": item["support"], "simulated": True,
+        } for item in runoff_results if not item.get("is_player")]
+    else:
+        candidate_support = round(_clamp(_projected_public_poll_support(state, career) + noise), 1)
+        opponents = _opponent_supports(career, candidate_support)
     career["opponent_share"] = max((item["support"] for item in opponents), default=0.0)
     record = {
         "date": field_date.isoformat(),
+        "round": 2 if career.get("phase") == "runoff_campaign" else 1,
         "candidate_name": career.get("candidate_name", "Candidatura do jogador"),
         "candidate_support": candidate_support,
         "other_candidates_support": round(100 - candidate_support, 1),
@@ -435,6 +518,8 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         "municipality_profile": municipality_profile,
         "electorate": role["electorate"],
         "powers": list(role["powers"]), "term_years": role["term_years"], "election_date": election_day.isoformat(),
+        "first_round_date": election_day.isoformat(), "runoff_date": None, "first_round_poll_support": None,
+        "first_round_results": [], "runoff_finalists": [], "runoff_results": [],
         "inauguration_date": inauguration.isoformat(), "term_end": term_end.isoformat(),
         "campaign_start": campaign_start.isoformat(), "campaign_fund_mi": role["fund_mi"], "spent_mi": 0.0,
         "poll_support": initial_poll, "local_support": local_strength, "campaign_base_local_support": local_strength,
@@ -489,7 +574,7 @@ def is_career_governing(career: dict[str, Any], today: date) -> bool:
     """Whether this character still holds the elected office on this date."""
     phase = career.get("phase")
     office_start = career.get("office_start")
-    if phase not in {"office", "campaign", "outgoing", "transition"}:
+    if phase not in {"office", "campaign", "runoff_campaign", "runoff_observer", "outgoing", "transition"}:
         return False
     if phase != "office" and not office_start:
         return False
@@ -533,7 +618,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     team_city_profile = get_municipality(team_city_id) if team_city_id else None
     today = date.fromisoformat(state["date"])
     election_day = date.fromisoformat(career["election_date"])
-    campaign_start = election_day - timedelta(days=90)
+    campaign_start = date.fromisoformat(career.get("campaign_start", (election_day - timedelta(days=90)).isoformat()))
     last_action = career.get("last_action_date")
     wait = max(0, 7 - (today - date.fromisoformat(last_action)).days) if last_action else 0
     opponents = _ensure_opponents(career)
@@ -552,7 +637,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     governance_actions = governance_actions_for(career, governance) if governing else []
     governance_territory = governance_territory_for(career)
     governance_wait = max(0, 30 - (today - date.fromisoformat(governance.get("last_action_date", today.isoformat()))).days) if governance.get("last_action_date") else 0
-    in_campaign = career["phase"] == "campaign" and campaign_start <= today <= election_day
+    in_campaign = career["phase"] in {"campaign", "runoff_campaign"} and campaign_start <= today <= election_day
     next_campaign = max(0, (campaign_start - today).days) if career["phase"] in {"office", "pre_campaign"} else 0
     city_support = career.get("municipality_support", {})
     recent_city_ids = []
@@ -592,6 +677,13 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "days_until_campaign": next_campaign,
         "days_until_inauguration": max(0, (date.fromisoformat(career["inauguration_date"]) - today).days),
         "campaign_active": in_campaign,
+        "runoff_active": career.get("phase") in {"runoff_campaign", "runoff_observer"},
+        "first_round_date": career.get("first_round_date"), "runoff_date": career.get("runoff_date"),
+        "first_round_vote_share": career.get("first_round_vote_share"),
+        "first_round_results": career.get("first_round_results", []),
+        "runoff_finalists": career.get("runoff_finalists", []),
+        "runoff_results": career.get("runoff_results", []),
+        "runoff_projection": _runoff_vote_results(career) if career.get("phase") == "runoff_campaign" else [],
         "can_act": in_campaign and wait == 0 and career["campaign_fund_mi"] >= 0.01,
         "pre_campaign_organization": round(float(career.get("pre_campaign_organization", 0)), 2),
         "pre_campaign_organization_cap": MAX_PRE_CAMPAIGN_ORGANIZATION,
@@ -1029,12 +1121,19 @@ def _proportional_result(career: dict[str, Any], rng: random.Random, candidate_v
 
 def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     career = state.get("career") or {}
-    if not career.get("mode") or career["phase"] != "campaign":
+    phase = career.get("phase")
+    if not career.get("mode") or phase not in {"campaign", "runoff_campaign", "runoff_observer"}:
         return ""
     from .difficulty import get_difficulty
+
     difficulty = get_difficulty(state.get("difficulty", "normal"))
-    seed = f"{career.get('seed', state.get('campaign_seed', 203001))}:career-election:{career['office']}:{election_day.isoformat()}"
-    conduct_result = settle_campaign_conduct(state, career, seed)
+    round_number = 2 if phase in {"runoff_campaign", "runoff_observer"} else 1
+    seed = f"{career.get('seed', state.get('campaign_seed', 203001))}:career-election:{career['office']}:{election_day.isoformat()}:round-{round_number}"
+    conduct_result = (
+        career.get("conduct_review") or {"attempts": 0, "detected": 0, "reviewed": False, "vote_penalty": 0.0}
+        if phase in {"runoff_campaign", "runoff_observer"}
+        else settle_campaign_conduct(state, career, seed)
+    )
     rng = random.Random(seed)
     _ensure_opponents(career)
     organization = min(8.0, len(career["activities"]) * 0.55 + float(career.get("pre_campaign_organization", 0)))
@@ -1042,38 +1141,115 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     volatility = 2.5 * difficulty.get("economic_volatility", 1)
     opposition_pressure = difficulty.get("opposition_pressure", 1)
     opposition_drag = (opposition_pressure - 1) * 2.0
-    electoral_result = None
-    candidate_results = []
+    electoral_result: dict[str, Any] | None = None
+    candidate_results: list[dict[str, Any]] = []
+    runoff_results: list[dict[str, Any]] = []
+
     if career["office"] in {"vereador", "deputado_estadual", "deputado_federal"}:
-        vote_share = _clamp(career["poll_support"] * 0.78 + organization + career["momentum"] * 0.35 - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag + rng.uniform(-volatility, volatility) * opposition_pressure)
+        vote_share = _clamp(career["poll_support"] * 0.78 + organization + career["momentum"] * 0.35
+                            - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag
+                            + rng.uniform(-volatility, volatility) * opposition_pressure)
         electoral_result = _proportional_result(career, rng, vote_share)
         won = electoral_result["party_seats"] > 0
         opposition_share = 100 - vote_share
-    else:
-        vote_share = round(_clamp(25 + career["poll_support"] * 0.42 + organization + career["momentum"] * 0.4 - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag + rng.uniform(-volatility, volatility) * opposition_pressure), 1)
+    elif round_number == 1:
+        vote_share = round(_clamp(career["poll_support"] * 0.82 + organization + career["momentum"] * 0.35
+                                  - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag
+                                  + rng.uniform(-volatility, volatility) * opposition_pressure), 1)
         opposition_results = _opponent_supports(career, vote_share)
-        opposition_share = max((item["support"] for item in opposition_results), default=0.0)
         candidate_results = [{
             "id": "player", "name": career["candidate_name"], "party": career["party"],
-            "support": round(vote_share, 1), "is_player": True, "simulated": True,
+            "ideology": career["ideology"], "support": vote_share, "is_player": True, "simulated": True,
         }, *[{
-            "id": item["id"], "name": item["name"], "party": item["party"], "support": item["support"],
-            "issue_focus_label": item["issue_focus_label"],
+            "id": item["id"], "name": item["name"], "party": item["party"],
+            "ideology": item["ideology"], "issue_focus": item["issue_focus"],
+            "issue_focus_label": item["issue_focus_label"], "support": item["support"],
             "is_player": False, "simulated": True,
         } for item in opposition_results]]
-        winner = max(candidate_results, key=lambda item: item["support"])
+        candidate_results.sort(key=lambda item: item["support"], reverse=True)
+        winner = candidate_results[0]
+        if _requires_second_round(career) and float(winner["support"]) <= 50.0:
+            runoff_date = election_day + timedelta(days=28)
+            finalists = candidate_results[:2]
+            career["first_round_date"] = election_day.isoformat()
+            career["first_round_poll_support"] = float(career["poll_support"])
+            career["first_round_vote_share"] = next(item["support"] for item in candidate_results if item["is_player"])
+            career["first_round_results"] = candidate_results
+            career["candidate_results"] = candidate_results
+            career["runoff_finalists"] = finalists
+            career["runoff_results"] = []
+            career["runoff_date"] = runoff_date.isoformat()
+            career["election_date"] = runoff_date.isoformat()
+            career["phase"] = "runoff_campaign" if any(item["is_player"] for item in finalists) else "runoff_observer"
+            career["electoral_result"] = {
+                "system": "majoritario_simulado", "runoff": True, "round": 1,
+                "first_round": candidate_results, "finalists": finalists,
+                "runoff_date": runoff_date.isoformat(), "simulated": True,
+            }
+            career["conduct_review"] = conduct_result
+            career["vote_share"] = career["first_round_vote_share"]
+            career["opponent_share"] = max(item["support"] for item in candidate_results if not item["is_player"])
+            career["result"] = None
+            state["career_status"] = "runoff_campaign" if career["phase"] == "runoff_campaign" else "runoff_observer"
+            state["office_status"] = "incumbent_caretaker" if career.get("office_start") else "opposition_candidate"
+            state.setdefault("simulated_news", []).insert(0, {
+                "id": f"career-first-round-{election_day.isoformat()}", "date": election_day.isoformat(),
+                "title": "Apura\u00e7\u00e3o simulada: segundo turno", "region": career["state_name"],
+                "description": f"{finalists[0]['name']} e {finalists[1]['name']} avan\u00e7aram para a rodada final em {runoff_date.strftime('%d/%m/%Y')}.",
+                "simulated": True,
+            })
+            state["simulated_news"] = state["simulated_news"][:20]
+            if career["phase"] == "runoff_campaign":
+                return f"Primeiro turno simulado: voc\u00ea avan\u00e7ou para o segundo turno em {runoff_date.strftime('%d/%m/%Y')}. A campanha continua e o mandato segue em funcionamento."
+            return f"Primeiro turno simulado: voc\u00ea n\u00e3o avan\u00e7ou. {finalists[0]['name']} e {finalists[1]['name']} disputar\u00e3o o segundo turno em {runoff_date.strftime('%d/%m/%Y')}; a transi\u00e7\u00e3o ainda n\u00e3o terminou."
         won = bool(winner["is_player"])
+        opposition_share = max((item["support"] for item in candidate_results if not item["is_player"]), default=0.0)
         career["winning_candidate_name"] = winner["name"]
-        career["candidate_results"] = sorted(candidate_results, key=lambda item: item["support"], reverse=True)
         electoral_result = {
-            "system": "majoritário_simulado", "runoff": False,
-            "candidates": career["candidate_results"], "winner_name": winner["name"],
+            "system": "majoritario_simulado", "runoff": False, "round": 1,
+            "candidates": candidate_results, "winner_name": winner["name"], "simulated": True,
         }
-    career["candidate_results"] = career.get("candidate_results", []) if candidate_results else []
+    else:
+        runoff_results = _runoff_vote_results(career)
+        if len(runoff_results) != 2:
+            return ""
+        runoff_noise = rng.uniform(-volatility, volatility) * opposition_pressure
+        player_result = next((item for item in runoff_results if item.get("is_player")), None)
+        if player_result:
+            player_support = round(max(0.0, min(100.0, player_result["support"] - conduct_result["vote_penalty"] + runoff_noise)), 1)
+            other_result = next(item for item in runoff_results if not item.get("is_player"))
+            runoff_results = sorted([
+                {**player_result, "support": player_support},
+                {**other_result, "support": round(100 - player_support, 1)},
+            ], key=lambda item: item["support"], reverse=True)
+        else:
+            first_support = round(max(0.0, min(100.0, runoff_results[0]["support"] + runoff_noise)), 1)
+            runoff_results = [
+                {**runoff_results[0], "support": first_support},
+                {**runoff_results[1], "support": round(100 - first_support, 1)},
+            ]
+        winner = runoff_results[0]
+        won = bool(winner.get("is_player"))
+        career["winning_candidate_name"] = winner["name"]
+        career["runoff_results"] = runoff_results
+        candidate_results = career.get("first_round_results", [])
+        electoral_result = {
+            "system": "majoritario_simulado", "runoff": True, "round": 2,
+            "first_round": candidate_results, "final_round": runoff_results,
+            "winner_name": winner["name"], "runoff_date": election_day.isoformat(), "simulated": True,
+        }
+        if player_result:
+            vote_share = player_support
+            opposition_share = next(item["support"] for item in runoff_results if not item.get("is_player"))
+        else:
+            vote_share = float(career.get("first_round_vote_share", 0))
+            opposition_share = max((item["support"] for item in candidate_results if not item.get("is_player")), default=0.0)
+
+    career["candidate_results"] = candidate_results
     career["vote_share"] = round(vote_share, 1)
     career["opponent_share"] = round(opposition_share, 1)
     career["conduct_review"] = conduct_result
-    career["electoral_result"] = electoral_result or {"system": "majoritário_simulado", "runoff": False}
+    career["electoral_result"] = electoral_result or {"system": "majoritario_simulado", "runoff": False}
     career["result"] = "won" if won else "lost"
     has_current_mandate = bool(career.get("office_start"))
     career["phase"] = "transition" if won else "outgoing" if has_current_mandate else "opposition"
@@ -1089,20 +1265,29 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
         "simulated": True,
     })
     state["simulated_news"] = state["simulated_news"][:20]
-    if candidate_results:
-        electoral_summary = f"{career.get('winning_candidate_name')} liderou a apuração simulada com múltiplas candidaturas."
+    if runoff_results:
+        electoral_summary = f"{career.get('winning_candidate_name')} venceu a rodada final simulada entre duas candidaturas."
+    elif candidate_results:
+        electoral_summary = f"{career.get('winning_candidate_name')} liderou a apura\u00e7\u00e3o simulada com m\u00faltiplas candidaturas."
     else:
         electoral_summary = (f"Sua legenda obteve {electoral_result['party_seats']} de {electoral_result['district_magnitude']} cadeiras simuladas." if electoral_result else "")
     term_end_label = date.fromisoformat(career["term_end"]).strftime("%d/%m/%Y") if career.get("term_end") else "o fim do mandato atual"
     if won and has_current_mandate:
-        continuity = f"A nova posse simulada está marcada para {transition.strftime('%d/%m/%Y')}; o mandato atual segue até {term_end_label}."
+        continuity = f"A nova posse simulada est\u00e1 marcada para {transition.strftime('%d/%m/%Y')}; o mandato atual segue at\u00e9 {term_end_label}."
     elif won:
-        continuity = f"A posse simulada está marcada para {transition.strftime('%d/%m/%Y')}."
+        continuity = f"A posse simulada est\u00e1 marcada para {transition.strftime('%d/%m/%Y')}."
     elif has_current_mandate:
-        continuity = f"Você permanece no cargo até {term_end_label} e depois segue na oposição."
+        continuity = f"Voc\u00ea permanece no cargo at\u00e9 {term_end_label} e depois segue na oposi\u00e7\u00e3o."
+    elif runoff_results and not any(item.get("is_player") for item in runoff_results):
+        continuity = "Voc\u00ea segue na oposi\u00e7\u00e3o; a carreira pode continuar com outra disputa ou uma indica\u00e7\u00e3o pol\u00edtica."
     else:
-        continuity = "Você segue na oposição; a carreira pode continuar com outra disputa ou uma indicação política."
-    return f"Resultado eleitoral simulado: {'vitória' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
+        continuity = "Voc\u00ea segue na oposi\u00e7\u00e3o; a carreira pode continuar com outra disputa ou uma indica\u00e7\u00e3o pol\u00edtica."
+    if runoff_results and not any(item.get("is_player") for item in runoff_results):
+        return f"Resultado final simulado: sua candidatura ficou fora do segundo turno com {vote_share:.1f}% no primeiro turno. {electoral_summary} {continuity}"
+    if runoff_results:
+        return f"Resultado eleitoral simulado no segundo turno: {'vit\u00f3ria' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
+    return f"Resultado eleitoral simulado: {'vit\u00f3ria' if won else 'derrota'} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
+
 
 def advance_career(state: dict[str, Any], before: date, after: date) -> list[str]:
     career = state.get("career") or {}
@@ -1110,7 +1295,7 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         return []
     messages: list[str] = []
     election_day = date.fromisoformat(career["election_date"])
-    campaign_start = election_day - timedelta(days=90)
+    campaign_start = date.fromisoformat(career.get("campaign_start", (election_day - timedelta(days=90)).isoformat()))
     if career["phase"] in {"office", "pre_campaign"} and before < campaign_start <= after:
         career["phase"] = "campaign"
         state["career_status"] = "campaigning"
@@ -1123,11 +1308,11 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         career["poll_support"] = round(_clamp(33 + float(performance.get("trust", 50)) * 0.18 + performance_bonus), 2)
         _record_public_poll(state, career, campaign_start)
         messages.append("A janela eleitoral da reta final abriu. A avaliação do mandato e as novas atividades passam a afetar a tentativa de reeleição.")
-    if career["phase"] == "campaign":
+    if career["phase"] in {"campaign", "runoff_campaign"}:
         for poll_date in _campaign_poll_schedule(career):
             if before < poll_date <= after:
                 _record_public_poll(state, career, poll_date)
-    if career["phase"] == "campaign" and before < election_day <= after:
+    if career["phase"] in {"campaign", "runoff_campaign", "runoff_observer"} and before < election_day <= after:
         messages.append(resolve_career_election(state, election_day))
     transition_date = career.get("transition_date")
     if career["phase"] == "transition" and transition_date and before < date.fromisoformat(transition_date) <= after:
