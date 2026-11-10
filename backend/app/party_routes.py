@@ -29,6 +29,10 @@ class ActBody(BaseModel):
     action: str = Field(min_length=3, max_length=40)
 
 
+class LaunchBody(BaseModel):
+    office: str = Field(default="vereador", min_length=3, max_length=30)
+
+
 class AffiliateBody(BaseModel):
     party: str = Field(min_length=2, max_length=80)
     ideology: str = Field(min_length=2, max_length=40)
@@ -88,9 +92,9 @@ def build_router(get_state: Callable[[], dict[str, Any]], public: Callable[[dict
         return run(party_path.run_for_party_post)
 
     @router.post("/api/party-path/launch")
-    def launch() -> dict[str, Any]:
+    def launch(body: LaunchBody | None = None) -> dict[str, Any]:
         def go(s):
-            result = party_path.launch_candidacy(s)
+            result = party_path.launch_candidacy(s, (body.office if body else "vereador"))
             return {**result, "state": public(s)}
         return run(go)
 

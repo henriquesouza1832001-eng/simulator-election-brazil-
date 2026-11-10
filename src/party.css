@@ -12,3 +12,13 @@
 .pp-box{border:1px solid rgba(128,128,128,.4);border-radius:12px;padding:1rem;margin:1rem 0}
 .party-start .career-start-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (max-width:600px){.party-start .career-start-fields{grid-template-columns:1fr}}
+
+.launch-offices{list-style:none;padding:0;margin:.5rem 0;display:grid;gap:.5rem}
+.launch-offices li{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+.launch-offices li.ready{border-color:var(--accent-2)}
+.launch-offices small{display:block;color:var(--ink-2)}
+@media (max-width:520px){.launch-offices li{flex-direction:column;align-items:stretch}}
+.proportional-result{margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--line)}
+.proportional-result p{margin:.3rem 0}
+.proportional-result li.player{font-weight:700}
+.career-next-step{margin:.8rem 0 0;padding:.7rem .9rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--accent-tint);color:var(--ink)}

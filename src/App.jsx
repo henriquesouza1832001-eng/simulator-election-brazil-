@@ -403,7 +403,7 @@ export default function App() {
       : 'Não foi possível consultar o estado do serviço. O jogo continua disponível e usa o fallback local quando necessário.';
   const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.governing);
   const tabGroups = partyMode ? [
-    { label: 'Militância', items: ['Trajetória', 'Acontecimentos'] },
+    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Acontecimentos'] : ['Trajetória', 'Acontecimentos'] },
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ] : [

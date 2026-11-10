@@ -125,6 +125,17 @@ def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | Non
             c["hint"] = remap_places(c["hint"], state, key, ev["remix"]["places"])
             c["cost_bi"] = round(c["cost_bi"] * r["intensity"], 2)
         ev["inspired_by_real_event"] = True
+    if _career_governance(state) is not None:
+        ev["career_level"] = True
+        ev["career_costs"] = {}
+        for c in ev["choices"]:
+            cost_mi = _career_cost_mi(state, float(c["cost_bi"]))
+            ev["career_costs"][c["id"]] = cost_mi
+            had_cost = bool(c["cost_bi"])
+            c["cost_bi"] = 0.0
+            c["cost_mi"] = cost_mi
+            if had_cost:
+                c["hint"] = f"Usa R$ {cost_mi:.1f} mi da reserva do cargo." if cost_mi else "Sem verba própria do cargo: depende de articulação."
     story["seen"][def_id] = {"n": number, "last": day.isoformat()}
     story.setdefault("seen_family", {})[definition.get("family", "base")] = day.isoformat()
     story["last_event"] = day.isoformat()
@@ -148,7 +159,12 @@ def _resolve(state: dict[str, Any], ev: dict[str, Any], choice_id: str, day: dat
         effects = scale_effects(effects, remixed["intensity"])
         cost = round(cost * remixed["intensity"], 3)
         outcome = remap_places(outcome, state, f"{ev['def']}|{ev['on']}", remixed["places"])
-    deltas = _apply_effects(state, effects, cost)
+    if ev.get("career_level") and _career_governance(state) is not None:
+        # _fire stores the career cost after applying a historical remix intensity.
+        # Do not scale it again here; only base event effects/costs need scaling at resolution.
+        deltas = _apply_career_effects(state, effects, float(ev.get("career_costs", {}).get(choice_id, 0.0)))
+    else:
+        deltas = _apply_effects(state, effects, cost)
     for follow_id, days in choice.get("follow", []):
         story["queue"].append({"def": follow_id, "on": (day + timedelta(days=days)).isoformat()})
     entry = {"id": ev["id"], "def": ev["def"], "title": ev["title"], "kind": ev["kind"], "on": day.isoformat(),
@@ -176,10 +192,73 @@ def respond(state: dict[str, Any], event_id: str, choice_id: str) -> dict[str, A
 FAMILY_COOLDOWN_DAYS = 75  # a mesma família de acontecimento não volta antes disso (vale para variações de setor/estado)
 
 
-def current_level(state: dict[str, Any]) -> str:
-    """Nível em que o jogador atua agora: militante, partido (trajetória partidária) ou federal (Presidência)."""
+CAREER_LEVEL = {"vereador": "legislativo", "deputado_estadual": "legislativo", "deputado_federal": "legislativo", "senador": "legislativo",
+                "prefeito": "municipal", "governador": "estadual", "presidente": "federal"}
+EXECUTIVE_EVENT_COST_CAP = 0.04   # um acontecimento custa no máximo 4% da reserva anual do cargo (carreira)
+
+
+def _career_governance(state: dict[str, Any]) -> dict[str, Any] | None:
+    """Dados de governo do cargo de carreira, quando o jogador exerce mandato que não é a Presidência."""
+    career = state.get("career") or {}
+    if career.get("mode") and career.get("phase") == "office" and career.get("office") != "presidente":
+        return career.setdefault("governance", {})
+    return None
+
+
+def current_level(state: dict[str, Any]) -> str | None:
+    """Nível em que o jogador atua agora; None quando não há acontecimentos (ex.: campanha de carreira)."""
     from .party_path import story_level
-    return story_level(state) or state.get("story_level", "federal")
+    level = story_level(state)
+    if level:
+        return level
+    career = state.get("career") or {}
+    if career.get("mode"):
+        if career.get("phase") != "office":
+            return None
+        return CAREER_LEVEL.get(career.get("office"), None)
+    if state.get("office_status") in {"former_president", "detained_after_failed_rupture"}:
+        return None
+    return state.get("story_level", "federal")
+
+
+def _career_cost_mi(state: dict[str, Any], cost_bi: float) -> float:
+    governance = _career_governance(state) or {}
+    annual = float(governance.get("annual_budget_mi") or 0)
+    if not cost_bi or annual <= 0:
+        return 0.0
+    return round(min(cost_bi * 1000, annual * EXECUTIVE_EVENT_COST_CAP), 2)
+
+
+def _apply_career_effects(state: dict[str, Any], effects: dict[str, float], cost_mi: float) -> list[dict[str, Any]]:
+    """No mandato de carreira, os efeitos caem sobre confiança, reputação, capital político e reserva do cargo."""
+    career = state["career"]
+    governance = career.setdefault("governance", {})
+    deltas: list[dict[str, Any]] = []
+
+    def bump(holder: dict[str, Any], field: str, amount: float, label: str, default: float = 50.0) -> None:
+        if not amount:
+            return
+        before = float(holder.get(field, default))
+        holder[field] = round(max(0.0, min(100.0, before + amount)), 2)
+        if holder[field] != before:
+            deltas.append({"key": field, "label": label, "delta": round(holder[field] - before, 2)})
+
+    trust = capital = reputation = 0.0
+    for key, value in effects.items():
+        if key == "approval":
+            trust += value * 1.2
+        elif key == "integrity":
+            reputation += value * 0.8
+        elif key in ("congress_support", "governability"):
+            capital += value
+    bump(governance, "trust", round(trust, 2), "confiança do eleitorado")
+    bump(governance, "political_capital", round(capital, 2), "capital político")
+    bump(career, "reputation", round(reputation, 2), "reputação")
+    if cost_mi:
+        before = float(governance.get("budget_mi", 0))
+        governance["budget_mi"] = round(max(0.0, before - cost_mi), 2)
+        deltas.append({"key": "cost_mi", "label": "reserva do cargo (R$ mi)", "delta": round(governance["budget_mi"] - before, 2)})
+    return deltas
 
 
 def _eligible(state: dict[str, Any], day: date) -> list[tuple[str, float]]:
@@ -214,7 +293,7 @@ def _eligible(state: dict[str, Any], day: date) -> list[tuple[str, float]]:
 def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
     """Processa dias entre `before` (exclusivo) e `after` (inclusivo)."""
     story = ensure_story_state(state)
-    if state.get("office_status") in {"former_president", "detained_after_failed_rupture"}:
+    if current_level(state) is None:
         return []
     messages: list[str] = []
     day = before

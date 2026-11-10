@@ -20,6 +20,14 @@ CAUSES = {"moradia": "Moradia", "saude": "Saúde", "educacao": "Educação", "tr
           "ambiente": "Meio ambiente", "cultura": "Cultura", "esporte": "Esporte", "trabalho": "Trabalho e renda", "mulheres": "Direitos das mulheres",
           "juventude": "Juventude", "idosos": "Pessoas idosas"}
 
+# Cargos que um quadro do partido pode disputar e o que o partido exige para dar a legenda (ajustável).
+LAUNCH_OFFICES: dict[str, dict[str, Any]] = {
+    "vereador": {"label": "Vereador(a)", "standing": 55, "network": 35, "reputation": 45, "cycle": "municipal"},
+    "deputado_estadual": {"label": "Deputado(a) estadual", "standing": 62, "network": 45, "reputation": 52, "cycle": "geral"},
+    "prefeito": {"label": "Prefeito(a)", "standing": 70, "network": 55, "reputation": 60, "cycle": "municipal"},
+    "deputado_federal": {"label": "Deputado(a) federal", "standing": 72, "network": 58, "reputation": 60, "cycle": "geral"},
+}
+
 ENERGY_MAX = 100
 ENERGY_REGEN_PER_DAY = 6
 LOW_ENERGY = 35
@@ -144,12 +152,33 @@ def next_stage_requirements(state: dict[str, Any]) -> dict[str, Any]:
                                                                     {"label": "Dias de casa", "value": _days_as_member(pp, today), "need": 90}],
                 "ready": pp["standing"] >= 40 and _days_as_member(pp, today) >= 90, "how": "Faça tarefas e participe do diretório; depois dispute um cargo."}
     if stage == "quadro":
-        return {"goal": "Lançar a pré-candidatura", "items": [{"label": "Prestígio no partido", "value": round(pp["standing"], 1), "need": 55},
-                                                              {"label": "Contatos", "value": round(pp["network"], 1), "need": 35}, {"label": "Reputação", "value": round(pp["reputation"], 1), "need": 45},
-                                                              {"label": "Dias de casa", "value": _days_as_member(pp, today), "need": MIN_DAYS_AS_MEMBER_TO_LAUNCH}],
-                "ready": pp["standing"] >= 55 and pp["network"] >= 35 and pp["reputation"] >= 45 and _days_as_member(pp, today) >= MIN_DAYS_AS_MEMBER_TO_LAUNCH,
-                "how": "Cumpra as metas e lance a pré-candidatura a vereador na sua cidade."}
+        days = _days_as_member(pp, today)
+        offices = []
+        for key, req in LAUNCH_OFFICES.items():
+            ok = (pp["standing"] >= req["standing"] and pp["network"] >= req["network"] and pp["reputation"] >= req["reputation"]
+                  and days >= MIN_DAYS_AS_MEMBER_TO_LAUNCH)
+            offices.append({"key": key, "label": req["label"], "ready": ok, "cycle": req["cycle"],
+                            "needs": {"standing": req["standing"], "network": req["network"], "reputation": req["reputation"]}})
+        base = LAUNCH_OFFICES["vereador"]
+        return {"goal": "Lançar uma pré-candidatura", "items": [{"label": "Prestígio no partido", "value": round(pp["standing"], 1), "need": base["standing"]},
+                                                                {"label": "Contatos", "value": round(pp["network"], 1), "need": base["network"]},
+                                                                {"label": "Reputação", "value": round(pp["reputation"], 1), "need": base["reputation"]},
+                                                                {"label": "Dias de casa", "value": days, "need": MIN_DAYS_AS_MEMBER_TO_LAUNCH}],
+                "ready": offices[0]["ready"], "offices": offices,
+                "how": "Cumpra as metas e escolha o cargo. Cargos maiores exigem mais prestígio, contatos e reputação."}
     return {"goal": "Disputar a eleição", "items": [], "ready": False, "how": "Você já é pré-candidato."}
+
+
+def _next_election(today: date, remainder: int) -> date:
+    """Próxima eleição regular: primeiro domingo de outubro de anos com resto 0 (municipal) ou 2 (geral) na divisão por 4."""
+    year = today.year
+    while True:
+        if year % 4 == remainder:
+            first = date(year, 10, 1)
+            day = first + timedelta(days=(6 - first.weekday()) % 7)
+            if day >= today:
+                return day
+        year += 1
 
 
 def overview(state: dict[str, Any]) -> dict[str, Any]:
@@ -163,14 +192,15 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
             reason = _blocked(state, pp, key)
             if pp["stage"] in a["stages"]:
                 actions.append({"key": key, "label": a["label"], "text": a["text"], "energy": a["energy"], "available": reason is None, "reason": reason})
-    election = date(2028, 10, 1)
+    municipal, general = _next_election(today, 0), _next_election(today, 2)
     return {"active": bool(pp.get("active")), "simulated": True, "stage": pp["stage"], "stage_label": STAGE_LABEL.get(pp["stage"], pp["stage"]), "date": state["date"],
             "name": pp["name"], "municipality": pp["municipality"], "state_code": pp["state_code"], "cause": CAUSES.get(pp["cause"], pp["cause"]),
             "meters": {"energy": round(pp["energy"]), "energy_max": ENERGY_MAX, "reputation": round(pp["reputation"], 1), "network": round(pp["network"], 1),
                        "militancy": round(pp["militancy"], 1), "standing": round(pp["standing"], 1)},
             "low_energy": pp["energy"] < LOW_ENERGY, "party": pp["party"], "ideology": pp.get("ideology"), "post": pp["post"], "days_as_member": _days_as_member(pp, today),
             "affiliation": pp["affiliation"], "next": next_stage_requirements(state) if pp.get("active") else None, "actions": actions, "log": pp["log"][:15],
-            "days_to_municipal_election": (election - today).days,
+            "days_to_municipal_election": (municipal - today).days, "next_municipal_election": municipal.isoformat(),
+            "days_to_general_election": (general - today).days, "next_general_election": general.isoformat(), "returns": int(pp.get("returns", 0)),
             "note": "Prazos de filiação e domicílio são simplificações do jogo; o prazo legal real está pendente de conferência."}
 
 
@@ -271,34 +301,65 @@ def run_for_party_post(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def launch_candidacy(state: dict[str, Any], office: str = "vereador") -> dict[str, Any]:
-    """Entrega ao motor de carreira: abre a pré-candidatura a vereador no município do jogador."""
+    """Entrega ao motor de carreira: abre a pré-candidatura ao cargo escolhido, preservando o histórico."""
     pp = _pp(state)
     today = date.fromisoformat(state["date"])
     if pp["stage"] != "quadro":
         raise ValueError("A pré-candidatura é lançada por quadros do partido.")
-    if office != "vereador":
-        raise ValueError("Nesta versão, a trajetória leva à candidatura a vereador na sua cidade.")
-    req = next_stage_requirements(state)
-    if not req["ready"]:
-        raise ValueError("Cumpra as metas de prestígio, contatos, reputação e tempo de casa antes de lançar a pré-candidatura.")
+    if office not in LAUNCH_OFFICES:
+        raise ValueError("Cargo indisponível para lançamento pela trajetória partidária.")
+    option = next(o for o in next_stage_requirements(state)["offices"] if o["key"] == office)
+    if not option["ready"]:
+        raise ValueError(f"O partido ainda não dá a legenda para {option['label']}: cumpra prestígio {option['needs']['standing']}, "
+                         f"contatos {option['needs']['network']}, reputação {option['needs']['reputation']} e {MIN_DAYS_AS_MEMBER_TO_LAUNCH} dias de casa.")
     character = dict(state.get("player_character") or {})
     character.setdefault("name", pp["name"])
     character["political_spectrum"] = pp["spectrum"]
     previous = state.get("career")
-    state["career"] = {"reputation": round(_clamp(pp["reputation"] * 0.6 + pp["standing"] * 0.25 + pp["network"] * 0.15 + 8), 1)}
+    built = round(_clamp(pp["reputation"] * 0.6 + pp["standing"] * 0.25 + pp["network"] * 0.15 + 8), 1)
+    if previous and previous.get("mode"):
+        snapshot = dict(previous)
+        previous["reputation"] = max(float(previous.get("reputation", 50.0)), built)   # start_career arquiva a disputa anterior no histórico
+    else:
+        snapshot = previous
+        state["career"] = {"reputation": built}
     try:
         start_career(state, office, pp["state_code"], pp["municipality"], pp["party"], pp["ideology"], pp["name"], character, pp["municipality_id"])
     except ValueError:
-        if previous is None:
+        if snapshot is None:
             state.pop("career", None)
         else:
-            state["career"] = previous
+            state["career"] = snapshot
         raise
     pp["stage"] = "candidato"
     pp["active"] = False
     pp["launched"] = today.isoformat()
-    _log(pp, today, "Pré-candidatura a vereador lançada. A campanha segue no módulo de carreira.")
-    return {"launched": True, "career_phase": state["career"].get("phase")}
+    pp["launched_office"] = office
+    _log(pp, today, f"Pré-candidatura a {LAUNCH_OFFICES[office]['label']} lançada. A campanha segue no módulo de carreira.")
+    return {"launched": True, "office": office, "career_phase": state["career"].get("phase")}
+
+
+def sync_with_career(state: dict[str, Any]) -> list[str]:
+    """Depois de uma derrota (ou do fim do mandato), o personagem volta à vida partidária como quadro."""
+    pp = state.get("party_path")
+    career = state.get("career") or {}
+    if not pp or pp.get("active") or pp.get("stage") != "candidato":
+        return []
+    if career.get("phase") not in {"opposition", "term_complete"}:
+        return []
+    today = date.fromisoformat(state["date"])
+    lost = career.get("result") == "lost"
+    pp["active"] = True
+    pp["stage"] = "quadro"
+    pp["energy"] = ENERGY_MAX
+    pp["last_action"] = today.isoformat()
+    pp["standing"] = round(_clamp(pp["standing"] + (-6 if lost else 8)), 2)          # derrota desgasta; mandato cumprido valoriza
+    pp["reputation"] = round(_clamp(max(pp["reputation"], float(career.get("reputation", 0)) * 0.9) + (0 if lost else 4)), 2)
+    pp["network"] = round(_clamp(pp["network"] + 5), 2)                             # a campanha deixa contatos
+    pp["returns"] = int(pp.get("returns", 0)) + 1
+    _log(pp, today, "Depois da derrota, você volta ao diretório como quadro do partido." if lost
+         else "Mandato concluído: você volta ao diretório com mais prestígio.")
+    return ["Você volta à vida partidária: reconstrua prestígio e escolha a próxima disputa na aba Trajetória."]
 
 
 def tick(state: dict[str, Any], before: date, after: date) -> list[str]:

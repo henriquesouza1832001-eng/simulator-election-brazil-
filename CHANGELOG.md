@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7 — 10 nov. 2026 (continuidade da carreira partidária)
+
+- A trajetória partidária agora pode lançar pré-candidaturas a vereador, prefeito, deputado estadual e deputado federal, com exigências próprias de prestígio, contatos e reputação.
+- A apuração proporcional simulada calcula cadeiras por D'Hondt entre legendas fictícias e a votação nominal dentro da lista; a tela explica posição, eleitos, margem e votos estimados quando há eleitorado municipal.
+- Depois de uma derrota, personagem e save permanecem; o jogador volta ao diretório, pode reconstruir prestígio e lançar nova disputa. Vitórias avançam para transição e mandato.
+- Mandatos legislativos recebem acontecimentos próprios. O custo de acontecimentos remixed é aplicado uma vez, com teste de regressão.
+- Limites: magnitude de distrito, lista e comparecimento continuam simplificados e rotulados como estimativas do jogo.
+
 ## 0.6 — 10 nov. 2026 (redesenho das telas antigas)
 
 - Sistema de design único (`src/theme.css`, `docs/DESIGN_SISTEMA.md`): tema claro, DM Sans, escala tipográfica fixa, contraste e foco verificados, controles de 44 px.
