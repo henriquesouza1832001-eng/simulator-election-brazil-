@@ -1,3 +1,5 @@
-Caricaturas originais de um elenco selecionado de figuras públicas. Cada imagem deve ter metadados no catálogo, aviso de sátira e referência pública da pessoa retratada. Não apresentar caricatura como retrato documental.
+Caricaturas editoriais originais de um elenco selecionado de figuras públicas. Não apresentar uma caricatura como fotografia ou retrato documental.
 
-O catálogo vazio fica em `../catalog.json`; sua estrutura é validada por `../catalog.schema.json`. A imagem de referência, autoria, data de geração e vínculo com a pessoa precisam ser registrados por arquivo. Não gerar nem publicar caricaturas em lote sem associar cada arquivo à candidatura correta.
+O catálogo fica em `../catalog.json`, com estrutura descrita em `../catalog.schema.json`. O primeiro lote contém caricaturas de Luiz Inácio Lula da Silva e Jair Bolsonaro, geradas por texto sem fotografias de referência. Cada item declara que é sátira gerada por IA e não atribui falas, atos ou fatos ao retratado.
+
+Antes de associar arte a uma candidatura, confirme ano, cargo, UF/município, partido e situação do registro nos dados oficiais do TSE. Retratos documentais devem ficar em `../official`, com fonte, licença e atribuição próprias. O catálogo não substitui a revisão jurídica para publicação do jogo.

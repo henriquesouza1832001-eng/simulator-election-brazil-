@@ -1,5 +1,30 @@
 {
   "version": 1,
   "notice": "Imagens oficiais e caricaturas são conjuntos separados. As caricaturas são sátira; consulte a fonte e a atribuição de cada item.",
-  "items": []
+  "items": [
+    {
+      "id": "lula-editorial-v1",
+      "name": "Luiz Inácio Lula da Silva",
+      "office": "Figura pública brasileira; caricatura editorial",
+      "kind": "caricature",
+      "image": "/assets/portraits/caricatures/lula-editorial.png",
+      "reference_image": "Sem fotografia de referência; gerada a partir de descrição textual.",
+      "source": "OpenAI ImageGen, texto para imagem, 2026-11-09 (America/Sao_Paulo)",
+      "attribution": "Imagem gerada por IA para o Civiciclo. Caricatura editorial satírica; não é retrato documental nem endosso.",
+      "generated_at": "2026-11-10T01:17:16Z",
+      "satire_notice": "Representação satírica gerada por IA. A imagem não atribui falas, atos ou fatos ao retratado."
+    },
+    {
+      "id": "bolsonaro-editorial-v1",
+      "name": "Jair Bolsonaro",
+      "office": "Figura pública brasileira; caricatura editorial",
+      "kind": "caricature",
+      "image": "/assets/portraits/caricatures/bolsonaro-editorial.png",
+      "reference_image": "Sem fotografia de referência; gerada a partir de descrição textual.",
+      "source": "OpenAI ImageGen, texto para imagem, 2026-11-09 (America/Sao_Paulo)",
+      "attribution": "Imagem gerada por IA para o Civiciclo. Caricatura editorial satírica; não é retrato documental nem endosso.",
+      "generated_at": "2026-11-10T01:17:16Z",
+      "satire_notice": "Representação satírica gerada por IA. A imagem não atribui falas, atos ou fatos ao retratado."
+    }
+  ]
 }
