@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.5 — 9 nov. 2026 (biblioteca de eventos e trajetória partidária)
+
+### Novo
+- **Biblioteca de acontecimentos em dados:** 2.276 eventos válidos (28 famílias, 230 encadeamentos), esquema com condições declarativas e limites de efeito, ritmo por família e níveis (`federal`, `estadual`, `municipal`, `legislativo`, `partido`, `militante`). Ver `docs/BIBLIOTECA_DE_EVENTOS.md`.
+- **Gerador de eventos** com Gemini opcional e adaptação local, a partir de um corpus histórico com fonte; saída **pendente de revisão**; trava contra nomes de candidatos reais do TSE (`python -m app.ai.event_generator`).
+- **Trajetória partidária:** eleitor engajado → militante → filiado (com recusa) → quadro (cargo no diretório) → pré-candidato a vereador, ligada ao motor de carreira. Quarto modo na tela inicial. Ver `docs/TRAJETORIA_PARTIDARIA.md`.
+- API: `/api/party-path/*`, `/api/story/library`.
+
+### Corrigido
+- Acontecimentos que nasciam durante um avanço de vários dias venciam antes de o jogador vê-los (valia sempre a opção padrão).
+- Custo único de um acontecimento virava déficit anual permanente.
+- O placar quebrava com o texto de resultado da eleição.
+- Equilíbrio: decidir bem sobe a aprovação, ignorar ou decidir mal derruba (teste de regressão em `tests/test_story_balance.py`).
+
+### Pendente
+- Corpus histórico real (arquivo do autor) e primeiro lote gerado.
+- Gemini como narrador em tempo de jogo; interface de revisão de eventos.
+- Outros papéis (prefeito, deputado, vice, assessor, cargos de nomeação) e vida interna do partido.
+- Redesenho das telas antigas.
+
 ## 0.4 — 9 nov. 2026 (fatia: cenários eleitorais e Modo Eleitor)
 
 ### Novo

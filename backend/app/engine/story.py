@@ -12,7 +12,7 @@ import hashlib
 from datetime import date, timedelta
 from typing import Any
 
-from .story_catalog import EVENTS
+from .event_library import get_library
 
 EXPIRES_DAYS = {"decisao": 5, "oportunidade": 14, "info": 0}
 BASE_DAILY_CHANCE = 0.05
@@ -59,7 +59,8 @@ def _apply_effects(state: dict[str, Any], effects: dict[str, float], cost_bi: fl
     for key, delta in effects.items():
         if not delta:
             continue
-        delta = round(delta * EFFECT_SCALE, 3)
+        if not key.startswith("pp:"):
+            delta = round(delta * EFFECT_SCALE, 3)  # a trajetória partidária usa valores já na escala da própria tela
         if not delta:
             continue
         if key.startswith("inst:"):
@@ -68,6 +69,16 @@ def _apply_effects(state: dict[str, Any], effects: dict[str, float], cost_bi: fl
             before = float(inst.get(name, 50))
             inst[name] = round(max(0, min(100, before + delta)), 2)
             deltas.append({"key": key, "label": name.replace("_", " "), "delta": round(inst[name] - before, 2)})
+            continue
+        if key.startswith("pp:"):
+            pp = state.get("party_path")
+            if pp and pp.get("active"):
+                name = key[3:]
+                before = float(pp.get(name, 0))
+                top = 100 if name != "energy" else 100
+                pp[name] = round(max(0, min(top, before + delta)), 2)
+                deltas.append({"key": key, "label": {"reputation": "reputação", "network": "contatos", "standing": "prestígio no partido",
+                                                     "militancy": "militância", "energy": "energia"}[name], "delta": round(pp[name] - before, 2)})
             continue
         if key.startswith("rel:"):
             rel = state.setdefault("relation_delta", {})
@@ -91,7 +102,7 @@ def _public(ev: dict[str, Any]) -> dict[str, Any]:
 
 def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | None:
     story = ensure_story_state(state)
-    definition = EVENTS[def_id]
+    definition = get_library().get(def_id)
     kind = definition["kind"]
     number = story["seen"].get(def_id, {}).get("n", 0) + 1
     ev = {
@@ -103,6 +114,7 @@ def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | Non
         "fallback": definition.get("fallback") or definition["choices"][-1]["id"], "simulated": True,
     }
     story["seen"][def_id] = {"n": number, "last": day.isoformat()}
+    story.setdefault("seen_family", {})[definition.get("family", "base")] = day.isoformat()
     story["last_event"] = day.isoformat()
     story["last_tags"] = definition.get("tags", [])
     if kind == "info":
@@ -114,7 +126,7 @@ def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | Non
 
 def _resolve(state: dict[str, Any], ev: dict[str, Any], choice_id: str, day: date, auto: bool) -> dict[str, Any]:
     story = ensure_story_state(state)
-    definition = EVENTS[ev["def"]]
+    definition = get_library().get(ev["def"])
     choice = next((c for c in definition["choices"] if c["id"] == choice_id), None)
     if choice is None:
         raise ValueError("Opção inválida.")
@@ -142,17 +154,32 @@ def respond(state: dict[str, Any], event_id: str, choice_id: str) -> dict[str, A
     return _resolve(state, ev, choice_id, date.fromisoformat(state["date"]), auto=False)
 
 
+FAMILY_COOLDOWN_DAYS = 75  # a mesma família de acontecimento não volta antes disso (vale para variações de setor/estado)
+
+
+def current_level(state: dict[str, Any]) -> str:
+    """Nível em que o jogador atua agora: militante, partido (trajetória partidária) ou federal (Presidência)."""
+    from .party_path import story_level
+    return story_level(state) or state.get("story_level", "federal")
+
+
 def _eligible(state: dict[str, Any], day: date) -> list[tuple[str, float]]:
     story = ensure_story_state(state)
+    level = current_level(state)
+    families = story.setdefault("seen_family", {})
+    pending_defs = {p["def"] for p in story["pending"]}
     out = []
-    for def_id, definition in EVENTS.items():
+    for def_id, definition in get_library().events.items():
         weight = float(definition.get("weight", 1.0))
-        if weight <= 0:
-            continue  # só entra por continuação
+        if weight <= 0 or level not in definition["levels"]:
+            continue  # peso 0 = só entra por continuação
         last = story["seen"].get(def_id, {}).get("last")
         if last and (day - date.fromisoformat(last)).days < int(definition.get("cooldown", 120)):
             continue
-        if any(p["def"] == def_id for p in story["pending"]):
+        fam_last = families.get(definition.get("family", "base"))
+        if fam_last and (day - date.fromisoformat(fam_last)).days < FAMILY_COOLDOWN_DAYS:
+            continue
+        if def_id in pending_defs:
             continue
         if story["last_tags"] and set(story["last_tags"]) & set(definition.get("tags", [])):
             weight *= 0.3  # evita repetir o mesmo assunto em sequência
@@ -187,7 +214,7 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
         due = [q for q in story["queue"] if date.fromisoformat(q["on"]) <= day]
         story["queue"] = [q for q in story["queue"] if q not in due]
         for item in due:
-            if item["def"] in EVENTS:
+            if get_library().get(item["def"]):
                 ev = _fire(state, item["def"], day)
                 if ev:
                     messages.append(f"Acontecimento: {ev['title']}.")

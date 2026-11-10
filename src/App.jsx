@@ -18,6 +18,7 @@ import Brand from './Brand';
 import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
 import LearningPanel from './LearningPanel';
+import PartyPathPanel from './PartyPathPanel';
 import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel, InfoPanel } from './MetaPanels';
 import './diplomacy.css';
 import './ai-status.css';
@@ -225,6 +226,7 @@ export default function App() {
       window.localStorage.setItem('mandato.activeCampaign', nextState.campaign_id);
     }
     setState(nextState);
+    if (nextState?.mode === 'party_path' && nextState?.party_path?.active) setActiveTab('Trajetória');
   }
   async function refresh() { acceptCampaignState(await request('/api/game')); }
   async function startGuest() {
@@ -386,6 +388,7 @@ export default function App() {
   const fiscalReferenceGdp = Number(budgetView?.operating?.nominal_gdp_bi || 15000);
   const proposedPrimaryBalance = Number(m.primary_balance) + ((proposedOperatingSavings - currentOperatingSavings) / fiscalReferenceGdp * 100);
   const careerMode = Boolean(state.career_overview?.mode);
+  const partyMode = state.mode === 'party_path' && Boolean(state.party_path?.active);
   const playerCharacter = state.player_character || state.career_overview?.character || null;
   const aiStatusLabel = aiStatus === 'gemini' ? 'GEMINI CONFIGURADO'
     : aiStatus === 'local-fallback' ? 'MOTOR LOCAL'
@@ -396,7 +399,11 @@ export default function App() {
       ? 'Gemini ainda não está configurado. A prévia usa regras locais; custos e efeitos seguem as regras Python.'
       : 'Não foi possível consultar o estado do serviço. O jogo continua disponível e usa o fallback local quando necessário.';
   const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.governing);
-  const tabGroups = [
+  const tabGroups = partyMode ? [
+    { label: 'Militância', items: ['Trajetória', 'Acontecimentos'] },
+    { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
+    { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
+  ] : [
     { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
     { label: 'Governo', items: presidentCareer ? ['Medidas', 'Orçamento', 'Crises'] : [] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Nomeações'] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
@@ -434,11 +441,11 @@ export default function App() {
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${state.career_overview.phase.replaceAll('_', ' ')}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${(state.office_status || 'incumbent').replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">
-      <section className="welcome-row"><div><div className="eyebrow">{careerMode ? `${state.career_overview.office_label.toUpperCase()} · ${(state.career_overview.campaign_territory || state.career_overview.state_name).toUpperCase()}` : `GABINETE DA PRESIDÊNCIA · CICLO ${state.term}`}</div><h1>{pageGuidance[0]}</h1><p>{pageGuidance[1]}</p>{playerCharacter?.name && <div className="character-nameplate"><span>{playerCharacter.name.slice(0, 1).toUpperCase()}</span><div><b>{playerCharacter.name}</b><small>{playerCharacter.political_spectrum?.replaceAll('_', ' ') || playerCharacter.family_background?.replaceAll('_', ' ') || 'personagem da partida'}</small></div></div>}</div><div className="term-card"><span>{careerMode ? careerCardLabel : 'MANDATO'}</span><strong>{careerMode ? careerCardValue : termMonth}<small>{careerMode ? careerCardSuffix : ' / 48'}</small></strong><div className="progress"><i style={{ width: `${careerMode ? careerCardProgress : termMonth / 48 * 100}%` }}/></div><small>{careerMode ? careerCardNote : `${monthsRemaining} meses restantes`}</small></div></section>
+      {!partyMode && <section className="welcome-row"><div><div className="eyebrow">{careerMode ? `${state.career_overview.office_label.toUpperCase()} · ${(state.career_overview.campaign_territory || state.career_overview.state_name).toUpperCase()}` : `GABINETE DA PRESIDÊNCIA · CICLO ${state.term}`}</div><h1>{pageGuidance[0]}</h1><p>{pageGuidance[1]}</p>{playerCharacter?.name && <div className="character-nameplate"><span>{playerCharacter.name.slice(0, 1).toUpperCase()}</span><div><b>{playerCharacter.name}</b><small>{playerCharacter.political_spectrum?.replaceAll('_', ' ') || playerCharacter.family_background?.replaceAll('_', ' ') || 'personagem da partida'}</small></div></div>}</div><div className="term-card"><span>{careerMode ? careerCardLabel : 'MANDATO'}</span><strong>{careerMode ? careerCardValue : termMonth}<small>{careerMode ? careerCardSuffix : ' / 48'}</small></strong><div className="progress"><i style={{ width: `${careerMode ? careerCardProgress : termMonth / 48 * 100}%` }}/></div><small>{careerMode ? careerCardNote : `${monthsRemaining} meses restantes`}</small></div></section>}
 
       {dashboardTab && <>{activeTab === 'Visão geral' && <><div className="indicator-toolbar"><span>SEU PAINEL · ATÉ 6 INDICADORES</span><details className="dashboard-customizer"><summary>Escolher indicadores</summary><div>{indicatorOptions.map((option) => <label key={option.key}><input type="checkbox" checked={(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).includes(option.key)} onChange={() => toggleDashboardCard(option.key)} />{option.label}</label>)}</div></details></div><section className="indicator-grid">
         {(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).slice(0, 6).map((key) => { const option = indicatorOptions.find((item) => item.key === key); if (!option) return null; const value = readIndicator(option, state); const tone = key === 'primary_balance' ? (m.primary_balance < 0 ? 'red' : 'green') : option.tone; return <Metric key={key} indicatorKey={key} label={option.label} value={value} unit={option.unit} tone={tone || ''} detail={option.detail} />; })}
@@ -486,6 +493,7 @@ export default function App() {
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
       {activeTab === 'Aprendizado' && <LearningPanel state={state} request={request} />}
+        {activeTab === 'Trajetória' && partyMode && <PartyPathPanel state={state} request={request} onNotice={setNotice} onLaunched={(next) => { acceptCampaignState(next); setActiveTab('Carreira'); }} />}
         {activeTab === 'Acontecimentos' && <StoryPanel state={state} request={request} onNotice={setNotice} />}
         {activeTab === 'Semana' &&<CampaignWeekPanel request={request} onNotice={setNotice} />}
         {activeTab === 'Congresso' &&<CongressPanel state={state} request={request} />}

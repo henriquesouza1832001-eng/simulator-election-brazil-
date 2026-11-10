@@ -12,7 +12,7 @@ SPEECH = ("Assumo com responsabilidade fiscal, diálogo com o Congresso e metas 
 
 
 def _play(policy: str, months: int = 24) -> float:
-    from app.engine.story_catalog import EVENTS
+    from app.engine.event_library import get_library
     tmp = tempfile.mkdtemp()
     old = os.environ.get("DATABASE_PATH")
     os.environ["DATABASE_PATH"] = os.path.join(tmp, "g.sqlite3")
@@ -30,7 +30,7 @@ def _play(policy: str, months: int = 24) -> float:
             for _ in range(months):
                 if policy != "ignorar":
                     for ev in client.get("/api/story").json()["pending"][:2]:
-                        choices = EVENTS[ev["def"]]["choices"]
+                        choices = get_library().get(ev["def"])["choices"]
                         pick = max(choices, key=score) if policy == "melhor" else min(choices, key=score)
                         client.post(f"/api/story/{ev['id']}/respond", json={"choice": pick["id"]})
                 state = client.post("/api/game/advance", json={"days": 30}).json()["state"]

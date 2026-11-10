@@ -72,7 +72,6 @@
 .tag{display:inline-block;font-size:.7rem;padding:.1rem .5rem;border-radius:999px;margin-right:.5rem;color:#fff;background:#6b7280}
 .t-novo{background:#15803d}.t-melhor{background:#1d4ed8}.t-correcao{background:#b45309}
 @media (max-width:600px){.party-row{grid-template-columns:44px 1fr 34px}.party-row small{display:none}.rank-list li{grid-template-columns:28px 34px 1fr auto}}
-@media (min-width:980px){.game-setup-screen .game-mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .elector details.elector-rules{border:1px solid rgba(128,128,128,.45);border-radius:10px;padding:.6rem .9rem;margin:.8rem 0;background:rgba(128,128,128,.06)}
 .elector details.elector-rules summary{cursor:pointer;font-weight:650;font-size:1rem;color:inherit;background:none;padding:.3rem 0;min-height:40px;display:flex;align-items:center}
 .elector details.elector-rules summary:focus-visible{outline:3px solid #2563eb;outline-offset:2px}

@@ -314,6 +314,7 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
     if request.url.path in {
         "/api/game/inaugural-address",
         "/api/game/new",
+        "/api/party-path/start",
         "/api/measures/preview",
         "/api/learning/corrections",
         "/api/learning/train",
@@ -805,6 +806,10 @@ app.include_router(build_router(lambda: game_state(), lambda s: save_state(s)))
 from .scenario_routes import build_router as build_scenario_router  # noqa: E402
 
 app.include_router(build_scenario_router())
+
+from .party_routes import build_router as build_party_router  # noqa: E402
+
+app.include_router(build_party_router(lambda: game_state(), lambda s: public_state(s)))
 
 
 @app.get("/api/game")

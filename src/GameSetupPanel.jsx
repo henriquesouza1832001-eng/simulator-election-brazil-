@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import MunicipalityPicker from './MunicipalityPicker';
 import ElectorPanel from './ElectorPanel';
+import { PartyStartForm } from './PartyPathPanel';
 import Brand from './Brand';
 
 const difficultyOptions = [
@@ -259,7 +260,16 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
           <ul><li>Dados oficiais do TSE com fonte</li><li>2028 e 2030 são cenários futuros simulados</li><li>Nunca envia voto a uma eleição real</li></ul>
           <button className="secondary-button" disabled={busy} onClick={() => updateMode('elector')}>{mode === 'elector' ? 'Fechar modo eleitor' : 'Abrir Modo Eleitor'}</button>
         </article>
+        <article className={`game-mode-card party-mode ${mode === 'party' ? 'selected' : ''}`}>
+          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/praca-campanha-civiciclo.png')" }} />
+          <span className="game-mode-kicker">MILITÂNCIA E PARTIDO</span><h2>Começar como militante</h2>
+          <p>Comece como eleitor engajado, ganhe espaço no partido e chegue à candidatura a vereador.</p>
+          <ul><li>Militância, filiação e vida partidária</li><li>Acontecimentos de bairro e de diretório</li><li>Pré-candidatura leva à campanha</li></ul>
+          <button className="secondary-button" disabled={busy} onClick={() => updateMode('party')}>{mode === 'party' ? 'Fechar configuração' : 'Começar trajetória'}</button>
+        </article>
       </section>
+
+      {mode === 'party' && <PartyStartForm request={request} onState={onState} onContinue={onContinue} busy={busy} setBusy={setBusy} setNotice={setNotice} />}
 
       {mode === 'elector' && <ElectorPanel request={request} />}
 

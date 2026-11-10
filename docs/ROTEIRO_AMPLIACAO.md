@@ -32,7 +32,7 @@ Legenda de origem: **P** = observado no Planalto · **D** = conceito do dominio-
 | Congresso nominal 513 + 81, eixos, disciplina, relação | P + D | ✅ |
 | Compromissos de campanha e penalidade de relação | P | ✅ |
 | Acontecimentos (decisão/oportunidade/info, prazo, padrão, encadeamento) | D | ✅ (14 eventos) |
-| Mais acontecimentos (meta: 60+), por área e fase do mandato | A | ⬜ |
+| Biblioteca de acontecimentos em dados (2.276; meta: milhares de histórias independentes) | A | 🟡 |
 | Fechamento mensal com extrato (receitas, gastos, juros, dívida) | D | ⬜ |
 | Emendas, comissões, CPIs completas com investigação em etapas | P + D | ⬜ |
 | Ministérios com titulares, partido e cobrança | P | 🟡 (existe nomeação) |
@@ -54,7 +54,7 @@ Legenda de origem: **P** = observado no Planalto · **D** = conceito do dominio-
 ### Carreira e mundo
 | Item | Origem | Estado |
 | --- | --- | --- |
-| Carreira em etapas (cidadão → … → mandato) | D | 🟡 (existe carreira por cargo) |
+| Carreira em etapas (eleitor → militante → filiado → quadro → pré-candidato → vereador) | D | 🟡 (até vereador) |
 | Regras por época (filiação, fundo, coligações) | D | ⬜ |
 | Partido próprio (fundação, apoiamento, registro) | D | ⬜ |
 | Finanças pessoais e mensais | D | ⬜ |
@@ -64,7 +64,8 @@ Legenda de origem: **P** = observado no Planalto · **D** = conceito do dominio-
 | Item | Origem | Estado |
 | --- | --- | --- |
 | Interpretação de medidas (Gemini + local) | existente | ✅ |
-| Narrador de acontecimentos (Gemini opcional, fallback local) | A | ⬜ próximo |
+| Gerador de eventos a partir de corpus (Gemini opcional, fallback local, revisão) | A | ✅ |
+| Narrador de acontecimentos em tempo de jogo (Gemini) | A | ⬜ |
 | Avaliação de falas em debate com Gemini (nota + leitura) | P | ⬜ |
 | Réplica do rival gerada por IA com custo/tokens registrados | P | ⬜ |
 | ML local: classificar medidas e prever aprovação com histórico do jogador | A | 🟡 (trainer existe) |

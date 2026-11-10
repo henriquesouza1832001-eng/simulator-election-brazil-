@@ -1,0 +1,14 @@
+.pp-stages{list-style:none;display:flex;flex-wrap:wrap;gap:.5rem;padding:0;margin:1rem 0}
+.pp-stages li{display:flex;align-items:center;gap:.5rem;padding:.4rem .8rem;border:1px solid rgba(128,128,128,.45);border-radius:999px;opacity:.7}
+.pp-stages li span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(128,128,128,.3);font-weight:700;font-size:.8rem}
+.pp-stages li.done{opacity:1;border-color:#15803d}.pp-stages li.done span{background:#15803d;color:#fff}
+.pp-stages li.current{opacity:1;border-color:#14342d;font-weight:700}.pp-stages li.current span{background:#14342d;color:#fff}
+.pp-meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin:1rem 0}
+.pp-meter{border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:.6rem .8rem}
+.pp-meter-head{display:flex;justify-content:space-between}
+.pp-meter .bar{display:block;height:10px;background:rgba(128,128,128,.25);border-radius:5px;overflow:hidden;margin-top:.3rem}
+.pp-meter .bar i{display:block;height:100%;background:#15803d}.pp-meter.low .bar i{background:#b91c1c}
+.pp-goals{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem 1.2rem}.pp-goals li{opacity:.85}.pp-goals li.ok{color:#15803d;font-weight:700;opacity:1}
+.pp-box{border:1px solid rgba(128,128,128,.4);border-radius:12px;padding:1rem;margin:1rem 0}
+.party-start .career-start-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:600px){.party-start .career-start-fields{grid-template-columns:1fr}}
