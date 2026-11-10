@@ -441,7 +441,75 @@ def militancy() -> Iterator[dict[str, Any]]:
                            {"id": "recusar", "label": "Recusar", "hint": "Sem custo.", "tone": "passiva", "effects": {}, "outcome": "Nada muda por ora."}])
 
 
-FAMILIES = [strikes, disasters, scandals, markets, prices, health, security, congress, opinion, infrastructure, legal, environment_and_diplomacy, militancy]
+# ---------------------------------------------------------------------------------------------- mandato legislativo
+# Acontecimentos de quem exerce mandato em câmara ou assembleia (nível `legislativo`).
+# Efeitos usam as chaves comuns; no mandato de carreira o motor as converte: approval → confiança do eleitorado,
+# integrity → reputação, congress_support/governability → capital político.
+LEGIS_THEMES = [("saude", "saúde"), ("educacao", "educação"), ("transporte", "transporte público"), ("seguranca", "segurança"),
+                ("moradia", "moradia"), ("ambiente", "meio ambiente"), ("cultura", "cultura e esporte"), ("tributos", "tributos e taxas"),
+                ("saneamento", "saneamento"), ("emprego", "emprego e renda")]
+
+
+def legislative_mandate() -> Iterator[dict[str, Any]]:
+    for tid, t in LEGIS_THEMES:
+        common = dict(tags=["mandato", tid], levels=["legislativo"], weight=1.0, cooldown=120)
+        yield _ev("leg_projeto_polemico", (tid,), kind="decisao", title=f"Projeto polêmico sobre {t} chega ao plenário",
+                  text=f"Um projeto fictício sobre {t} divide a casa. Sua base eleitoral cobra um voto, e a liderança do partido orienta outro. A votação é nominal.",
+                  fallback="abster", **common, choices=[
+                      {"id": "base", "label": "Votar com a sua base eleitoral", "hint": "Agrada o eleitor; contraria a liderança.", "tone": "populista",
+                       "effects": {"approval": 2.5, "congress_support": -2.0}, "outcome": "Seu voto repercute bem no bairro e mal na reunião de bancada."},
+                      {"id": "partido", "label": "Seguir a orientação do partido", "hint": "Fortalece você na bancada.", "tone": "neutra",
+                       "effects": {"congress_support": 3.0, "approval": -1.5}, "outcome": "A liderança agradece; parte dos eleitores estranha."},
+                      {"id": "abster", "label": "Abster-se", "hint": "Evita o desgaste imediato.", "tone": "passiva",
+                       "effects": {"approval": -1.0, "congress_support": -1.0, "integrity": -0.5}, "outcome": "A abstenção é lida como fuga dos dois lados."}])
+        yield _ev("leg_audiencia", (tid,), kind="oportunidade", title=f"Moradores pedem audiência pública sobre {t}",
+                  text=f"Entidades fictícias pedem que você convoque uma audiência pública sobre {t}. Dá trabalho organizar e pode expor problemas da gestão.",
+                  fallback="recusar", **common, choices=[
+                      {"id": "convocar", "label": "Convocar e presidir a audiência", "hint": "Dá visibilidade e cobra o Executivo.", "tone": "dialogo",
+                       "effects": {"approval": 2.0, "integrity": 1.0, "congress_support": -0.5}, "outcome": "A audiência lota e seu nome ganha destaque no tema."},
+                      {"id": "apoiar", "label": "Apoiar a audiência de um colega", "hint": "Menos esforço, menos crédito.", "tone": "neutra",
+                       "effects": {"approval": 0.8, "congress_support": 0.8}, "outcome": "Você participa e divide o crédito."},
+                      {"id": "recusar", "label": "Recusar por agenda cheia", "hint": "Sem custo.", "tone": "passiva",
+                       "effects": {"approval": -1.2}, "outcome": "As entidades procuram outro parlamentar."}])
+        yield _ev("leg_emenda", (tid,), kind="decisao", title=f"Hora de indicar emendas: {t} está na disputa",
+                  text=f"Abre o prazo de emendas ao orçamento. Você pode destinar a sua cota a {t} na sua base, negociar com a bancada ou seguir a indicação da liderança.",
+                  fallback="lideranca", **common, choices=[
+                      {"id": "base", "label": f"Destinar a {t} na sua base", "hint": "Entrega visível ao eleitor.", "tone": "dialogo",
+                       "effects": {"approval": 2.5, "integrity": 0.5}, "outcome": "A entrega aparece no bairro e vira argumento de campanha."},
+                      {"id": "negociar", "label": "Trocar apoio com outros parlamentares", "hint": "Constrói alianças; menos entrega própria.", "tone": "fisiologica",
+                       "effects": {"congress_support": 3.0, "integrity": -1.0}, "outcome": "Você ganha aliados para projetos futuros."},
+                      {"id": "lideranca", "label": "Seguir a indicação da liderança", "hint": "Sem atrito.", "tone": "passiva",
+                       "effects": {"congress_support": 1.0, "approval": -0.8}, "outcome": "A cota vai para onde a liderança pediu."}])
+        yield _ev("leg_fiscalizacao", (tid,), kind="decisao", title=f"Denúncia sobre contrato de {t} chega ao seu gabinete",
+                  text=f"Um servidor fictício entrega ao seu gabinete indícios de irregularidade em um contrato de {t} do Executivo. Aliados pedem cautela.",
+                  fallback="arquivar", **common, choices=[
+                      {"id": "investigar", "label": "Pedir informações e levar ao plenário", "hint": "Fiscalizar é papel do mandato; cria inimigos.", "tone": "etica",
+                       "effects": {"integrity": 3.0, "approval": 1.5, "congress_support": -2.5}, "outcome": "O caso ganha as manchetes locais e o Executivo passa a tratar você como adversário."},
+                      {"id": "encaminhar", "label": "Encaminhar ao tribunal de contas", "hint": "Discreto e correto.", "tone": "tecnica",
+                       "effects": {"integrity": 1.5, "congress_support": -0.5}, "outcome": "O órgão de controle abre apuração sem alarde."},
+                      {"id": "arquivar", "label": "Arquivar por falta de provas", "hint": "Preserva relações.", "tone": "passiva",
+                       "effects": {"integrity": -2.5, "congress_support": 1.0}, "outcome": "O assunto morre no gabinete, e quem denunciou se decepciona."}])
+        yield _ev("leg_base_cobra", (tid,), kind="oportunidade", title=f"Lideranças de bairro cobram resultado em {t}",
+                  text=f"Lideranças fictícias da sua base dizem que o mandato sumiu do bairro e cobram resultado em {t}.",
+                  fallback="adiar", **common, choices=[
+                      {"id": "visitar", "label": "Fazer uma rodada de visitas e prestar contas", "hint": "Custa tempo; recupera confiança.", "tone": "dialogo",
+                       "effects": {"approval": 2.2, "integrity": 0.5}, "outcome": "A prestação de contas presencial reaproxima a base."},
+                      {"id": "gabinete", "label": "Atender no gabinete", "hint": "Resposta parcial.", "tone": "neutra",
+                       "effects": {"approval": 0.6}, "outcome": "Quem foi ao gabinete saiu satisfeito; o bairro, nem tanto."},
+                      {"id": "adiar", "label": "Adiar para depois das votações", "hint": "Sem custo agora.", "tone": "passiva",
+                       "effects": {"approval": -1.8}, "outcome": "A cobrança vira crítica nas redes do bairro."}])
+        yield _ev("leg_cargo_mesa", (tid,), kind="oportunidade", title=f"Vaga na comissão de {t}",
+                  text=f"Abre uma vaga na comissão fictícia de {t}. Disputar a presidência dá poder de pauta, mas exige acordos.",
+                  fallback="ficar_fora", **common, choices=[
+                      {"id": "presidir", "label": "Disputar a presidência da comissão", "hint": "Poder de pauta; exige acordos.", "tone": "fisiologica",
+                       "effects": {"congress_support": 3.5, "integrity": -0.8, "approval": 0.5}, "outcome": "Você costura os votos e passa a pautar o tema."},
+                      {"id": "membro", "label": "Entrar como membro", "hint": "Presença sem desgaste.", "tone": "tecnica",
+                       "effects": {"congress_support": 1.2, "approval": 0.4}, "outcome": "Você acompanha o tema de perto."},
+                      {"id": "ficar_fora", "label": "Ficar fora da comissão", "hint": "Sem compromisso.", "tone": "passiva",
+                       "effects": {"congress_support": -0.8}, "outcome": "Outro parlamentar ocupa o espaço."}])
+
+
+FAMILIES = [strikes, disasters, scandals, markets, prices, health, security, congress, opinion, infrastructure, legal, environment_and_diplomacy, militancy, legislative_mandate]
 
 
 def generate_all() -> list[dict[str, Any]]:

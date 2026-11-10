@@ -133,12 +133,14 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(process_election(state, before, after))
     messages.extend(process_legislation(state, before, after))
     messages.extend(process_investments(state, before, after))
+    if state.get("party_path"):
+        from .party_path import sync_with_career
+        messages.extend(sync_with_career(state))
     if state.get("party_path", {}).get("active"):
         from .party_path import tick as party_tick
         messages.extend(party_tick(state, before, after))
-    if not (state.get("career") or {}).get("mode") or state.get("office_status") == "incumbent" or state.get("party_path", {}).get("active"):
-        from .story import tick as story_tick
-        messages.extend(story_tick(state, before, after))
+    from .story import tick as story_tick
+    messages.extend(story_tick(state, before, after))
     advance_social_indicators(state, elapsed)
     event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
     if event_names:

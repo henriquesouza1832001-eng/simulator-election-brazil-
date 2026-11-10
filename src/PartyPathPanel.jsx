@@ -69,8 +69,8 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
     } catch (e) { setError(e.message); onNotice?.(e.message); } finally { setBusy(false); }
   }
 
-  async function launch() {
-    const out = await call('/api/party-path/launch', {}, 'Pré-candidatura lançada! A campanha segue no módulo de carreira.');
+  async function launch(office) {
+    const out = await call('/api/party-path/launch', { office }, 'Pré-candidatura lançada! A campanha segue no módulo de carreira.');
     if (out?.state) onLaunched?.(out.state);
   }
 
@@ -85,7 +85,7 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
 
   return <section className="panel meta-page party-path">
     <h2>{ov.name} · {ov.stage_label}</h2>
-    <p className="page-description">{ov.municipality} ({ov.state_code}) · causa: {ov.cause}. {ov.party ? `Filiado(a) a ${ov.party}${ov.post ? `, ${ov.post}` : ''}.` : 'Sem partido.'} Faltam {ov.days_to_municipal_election} dias para a eleição municipal de 2028.</p>
+    <p className="page-description">{ov.municipality} ({ov.state_code}) · causa: {ov.cause}. {ov.party ? `Filiado(a) a ${ov.party}${ov.post ? `, ${ov.post}` : ''}.` : 'Sem partido.'} Próximas eleições: municipal em {new Date(`${ov.next_municipal_election}T12:00:00`).toLocaleDateString('pt-BR')} ({ov.days_to_municipal_election} dias) e geral em {new Date(`${ov.next_general_election}T12:00:00`).toLocaleDateString('pt-BR')} ({ov.days_to_general_election} dias).</p>
 
     <ol className="pp-stages" aria-label="Etapas da trajetória">{STAGES.map(([k, l], i) => <li key={k} className={i < stageIndex ? 'done' : i === stageIndex ? 'current' : ''} aria-current={i === stageIndex ? 'step' : undefined}><span>{i + 1}</span>{l}</li>)}</ol>
 
@@ -121,9 +121,12 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
       <p className="meta-count">Disputar a secretaria do diretório municipal. Se perder, perde prestígio, mas segue filiado(a).</p>
       <button className="primary-button" disabled={busy || !ov.next.ready} onClick={() => call('/api/party-path/run-post', {}, (o) => (o.won ? 'Você foi eleito(a) para o diretório!' : 'Você perdeu a eleição do diretório.'))}>Disputar cargo no diretório</button></section>}
 
-    {ov.stage === 'quadro' && <section className="pp-box"><h3 className="subheading">Pré-candidatura</h3>
-      <p className="meta-count">Ao lançar, a trajetória termina e a campanha a vereador começa no módulo de carreira, levando a reputação que você construiu.</p>
-      <button className="primary-button" disabled={busy || !ov.next.ready} onClick={launch}>Lançar pré-candidatura a vereador em {ov.municipality}</button></section>}
+    {ov.stage === 'quadro' && <section className="pp-box" aria-label="Pré-candidatura"><h3 className="subheading">Pré-candidatura</h3>
+      {ov.returns > 0 && <p className="meta-status" role="status">Você voltou ao diretório depois da última disputa. O resultado está na aba Carreira; aqui você reconstrói prestígio e escolhe a próxima eleição.</p>}
+      <p className="meta-count">Ao lançar, a campanha começa no módulo de carreira, levando a reputação que você construiu. Cargos maiores exigem mais do partido.</p>
+      <ul className="launch-offices">{(ov.next.offices || []).map((o) => <li key={o.key} className={o.ready ? 'ready' : ''}>
+        <div><b>{o.label}</b><small>Eleição {o.cycle === 'municipal' ? 'municipal' : 'geral'} · exige prestígio {o.needs.standing}, contatos {o.needs.network}, reputação {o.needs.reputation}</small></div>
+        <button className={o.ready ? 'primary-button' : 'secondary-button'} disabled={busy || !o.ready} onClick={() => launch(o.key)}>{o.ready ? 'Lançar' : 'Ainda não'}</button></li>)}</ul></section>}
 
     {last && <p className="meta-status" role="status">{last.label}: {Object.entries(last.applied).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${({ reputation: 'reputação', network: 'contatos', militancy: 'militância', standing: 'prestígio' })[k] || k}`).join(' · ') || 'recuperou energia'}{last.gaffe ? ' · deu errado' : ''}{last.repeat_factor < 1 ? ` · repetição ×${last.repeat_factor}` : ''}.</p>}
 

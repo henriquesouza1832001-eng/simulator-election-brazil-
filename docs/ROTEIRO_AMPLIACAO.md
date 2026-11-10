@@ -54,7 +54,7 @@ Legenda de origem: **P** = observado no Planalto · **D** = conceito do dominio-
 ### Carreira e mundo
 | Item | Origem | Estado |
 | --- | --- | --- |
-| Carreira em etapas (eleitor → militante → filiado → quadro → pré-candidato → vereador) | D | 🟡 (até vereador) |
+| Carreira em etapas (eleitor → militante → filiado → quadro → pré-candidato → vereador, prefeito, deputado estadual/federal) | D | 🟡 (quatro cargos pela trajetória partidária; outras rotas pendentes) |
 | Regras por época (filiação, fundo, coligações) | D | ⬜ |
 | Partido próprio (fundação, apoiamento, registro) | D | ⬜ |
 | Finanças pessoais e mensais | D | ⬜ |

@@ -1493,25 +1493,82 @@ def _forecast(career: dict[str, Any], score: int) -> list[dict[str, Any]]:
     ]
 
 
-def _proportional_result(career: dict[str, Any], rng: random.Random, candidate_vote: float) -> dict[str, Any]:
-    """Simplified open-list simulation: fictional party totals apportioned by D'Hondt."""
+# Lista aberta simulada (ajustável). Colegas de lista têm força sorteada em torno de LIST_MATE_MEAN;
+# a força do jogador vem da campanha (apoio, organização, embalo, desgaste). Elege-se quem fica dentro
+# das cadeiras da legenda. Calibrado para: sem campanha ≈ derrota provável; campanha consistente ≈ disputa
+# aberta; campanha forte ≈ vitória provável.
+LIST_MATE_MEAN = 31.0
+LIST_MATE_SD = 11.0
+LEGEND_VOTE_SHARE = 0.12       # parte dos votos da legenda que não vai a nenhum nome
+TURNOUT_VALID = 0.70           # comparecimento × votos válidos (estimativa do jogo)
+
+
+def _list_mate_names(rng: random.Random, count: int) -> list[str]:
+    from .legislature import _FIRST, _LAST
+    names: list[str] = []
+    while len(names) < count:
+        name = f"{rng.choice(_FIRST)} {rng.choice(_LAST)}"
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def _proportional_electorate(career: dict[str, Any]) -> int | None:
+    profile = get_municipality(career.get("municipality_id")) if career.get("municipality_id") and career.get("office") == "vereador" else None
+    if profile and profile.get("electorate_count"):
+        return int(profile["electorate_count"])
+    return None
+
+
+def _proportional_result(career: dict[str, Any], rng: random.Random, strength: float) -> dict[str, Any]:
+    """Lista aberta simulada: D'Hondt entre legendas fictícias e ordem interna por votos nominais."""
     seats = 13 if career["office"] == "vereador" else 24
-    party_vote = _clamp(candidate_vote + rng.uniform(0.0, 7.0))
+    party_vote = max(3.0, min(60.0, 6.0 + strength * 0.32 + rng.uniform(-2.0, 3.0)))
     weights = [rng.gammavariate(1.7, 1.0) for _ in range(9)]
     total_weight = sum(weights) or 1.0
-    other_votes = [(100.0 - party_vote) * weight / total_weight for weight in weights]
-    votes = [party_vote, *other_votes]
+    votes = [party_vote, *[(100.0 - party_vote) * weight / total_weight for weight in weights]]
     allocations = [0] * len(votes)
     for _ in range(seats):
         winner = max(range(len(votes)), key=lambda index: votes[index] / (allocations[index] + 1))
         allocations[winner] += 1
+    party_seats = allocations[0]
+
+    mates = [max(5.0, rng.gauss(LIST_MATE_MEAN, LIST_MATE_SD)) for _ in range(seats)]
+    names = _list_mate_names(rng, seats)
+    entries = [{"name": career.get("candidate_name") or "Você", "score": max(5.0, float(strength)), "is_player": True},
+               *[{"name": names[i], "score": mates[i], "is_player": False} for i in range(seats)]]
+    cube_total = sum(e["score"] ** 3 for e in entries)
+    nominal = party_vote * (1 - LEGEND_VOTE_SHARE)
+    electorate = _proportional_electorate(career)
+    valid_votes = int(electorate * TURNOUT_VALID) if electorate else None
+    for e in entries:
+        e["vote_share"] = round(nominal * e["score"] ** 3 / cube_total, 2)
+        e["votes"] = int(valid_votes * e["vote_share"] / 100) if valid_votes else None
+    entries.sort(key=lambda e: (e["score"], e["is_player"]), reverse=True)
+    for position, e in enumerate(entries, start=1):
+        e["rank"] = position
+        e["elected"] = position <= party_seats
+        e["simulated"] = True
+    for e in entries:
+        e.pop("score")
+    player = next(e for e in entries if e["is_player"])
+    last_in = entries[party_seats - 1] if party_seats else None
+    first_out = entries[party_seats] if party_seats < len(entries) else None
+    if player["elected"]:
+        margin_share = round(player["vote_share"] - (first_out["vote_share"] if first_out else 0.0), 2)
+    else:
+        margin_share = round((last_in["vote_share"] if last_in else party_vote) - player["vote_share"], 2)
+    shown = max(party_seats + 2, 5)
     return {
-        "system": "proporcional_simulado",
-        "district_magnitude": seats,
-        "party_vote_share": round(party_vote, 1),
-        "party_seats": allocations[0],
-        "candidate_list_rank": 1,
-        "method": "D'Hondt entre legendas fictícias; candidatura do jogador ocupa a primeira posição simulada da lista.",
+        "system": "proporcional_simulado", "district_magnitude": seats,
+        "party_vote_share": round(party_vote, 1), "party_seats": party_seats,
+        "candidate_list_rank": player["rank"], "candidate_vote_share": player["vote_share"], "candidate_votes": player["votes"],
+        "list_size": len(entries), "elected": player["elected"], "margin_share": margin_share,
+        "margin_votes": int(valid_votes * margin_share / 100) if valid_votes else None,
+        "valid_votes": valid_votes, "list": entries[:shown] + ([player] if player["rank"] > shown else []),
+        "method": "Lista aberta simulada: cadeiras por D'Hondt entre legendas fictícias; dentro da legenda, elegem-se os mais votados. "
+                  "Nomes, votos e comparecimento são estimativas do jogo.",
+        "simulated": True,
     }
 
 
@@ -1542,12 +1599,13 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     runoff_results: list[dict[str, Any]] = []
 
     if career["office"] in {"vereador", "deputado_estadual", "deputado_federal"}:
-        vote_share = _clamp(career["poll_support"] * 0.78 + organization + career["momentum"] * 0.35
-                            - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag
-                            + rng.uniform(-volatility, volatility) * opposition_pressure)
-        electoral_result = _proportional_result(career, rng, vote_share)
-        won = electoral_result["party_seats"] > 0
-        opposition_share = 100 - vote_share
+        strength = _clamp(career["poll_support"] * 0.78 + organization + career["momentum"] * 0.35
+                          - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag
+                          + rng.uniform(-volatility, volatility) * opposition_pressure)
+        electoral_result = _proportional_result(career, rng, strength)
+        won = bool(electoral_result["elected"])
+        vote_share = electoral_result["candidate_vote_share"]   # voto nominal do jogador (% dos válidos)
+        opposition_share = 100 - electoral_result["party_vote_share"]
     elif round_number == 1:
         vote_share = round(_clamp(career["poll_support"] * 0.82 + organization + career["momentum"] * 0.35
                                   - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag
@@ -1657,7 +1715,7 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     state.setdefault("simulated_news", []).insert(0, {
         "id": f"career-election-{election_day.isoformat()}", "date": election_day.isoformat(),
         "title": f"Resultado eleitoral simulado: {career['office_label']}", "region": career["state_name"],
-        "description": f"{career['candidate_name']} recebeu {vote_share:.1f}% dos votos simulados. {career['result'].capitalize()}.",
+        "description": f"{career['candidate_name']} recebeu {vote_share:.2f}% dos votos simulados. {'Eleito(a)' if won else 'Não eleito(a)'}.",
         "simulated": True,
     })
     state["simulated_news"] = state["simulated_news"][:20]
@@ -1666,7 +1724,17 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     elif candidate_results:
         electoral_summary = f"{career.get('winning_candidate_name')} liderou a apura\u00e7\u00e3o simulada com m\u00faltiplas candidaturas."
     else:
-        electoral_summary = (f"Sua legenda obteve {electoral_result['party_seats']} de {electoral_result['district_magnitude']} cadeiras simuladas." if electoral_result else "")
+        electoral_summary = ""
+        if electoral_result:
+            er = electoral_result
+            electoral_summary = (f"Sua legenda fez {er['party_vote_share']:.1f}% e obteve {er['party_seats']} de {er['district_magnitude']} cadeiras simuladas; "
+                                 f"você ficou em {er['candidate_list_rank']}º entre {er['list_size']} nomes da lista. ")
+            if er["elected"]:
+                electoral_summary += f"Folga sobre o primeiro não eleito: {er['margin_share']:.2f} ponto(s)."
+            elif er["party_seats"]:
+                electoral_summary += f"Faltaram {er['margin_share']:.2f} ponto(s) para alcançar o último eleito da legenda."
+            else:
+                electoral_summary += "A legenda não atingiu votos para uma cadeira."
     term_end_label = date.fromisoformat(career["term_end"]).strftime("%d/%m/%Y") if career.get("term_end") else "o fim do mandato atual"
     if won and has_current_mandate:
         continuity = f"A nova posse simulada est\u00e1 marcada para {transition.strftime('%d/%m/%Y')}; o mandato atual segue at\u00e9 {term_end_label}."
@@ -1683,7 +1751,9 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
     result_label = "vit\u00f3ria" if won else "derrota"
     if runoff_results:
         return f"Resultado eleitoral simulado no segundo turno: {result_label} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
-    return f"Resultado eleitoral simulado: {result_label} com {vote_share:.1f}% dos votos. {electoral_summary} {continuity}"
+    proportional = bool(electoral_result and electoral_result.get("system") == "proporcional_simulado")
+    share_label = f"{vote_share:.2f}% dos votos válidos em seu nome" if proportional else f"{vote_share:.1f}% dos votos"
+    return f"Resultado eleitoral simulado: {result_label} com {share_label}. {electoral_summary} {continuity}"
 
 
 def advance_career(state: dict[str, Any], before: date, after: date) -> list[str]:

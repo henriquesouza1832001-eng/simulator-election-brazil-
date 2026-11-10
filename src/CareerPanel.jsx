@@ -16,8 +16,21 @@ const spectrumIndex = { esquerda: 0, centro_esquerda: 1, centro: 2, centro_direi
 const ideologyToSpectrum = { Esquerda: 'esquerda', 'Centro-esquerda': 'centro_esquerda', Centro: 'centro', 'Centro-direita': 'centro_direita', Direita: 'direita' };
 const bannedPartyTerms = ['nazista', 'nazismo', 'fascista', 'fascismo', 'nsdap'];
 
+function ProportionalResult({ result }) {
+  const pct = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return <div className="proportional-result">
+    <p>Sua legenda fez <b>{Number(result.party_vote_share).toLocaleString('pt-BR')}%</b> dos votos e ficou com <b>{result.party_seats} de {result.district_magnitude}</b> cadeiras. Dentro da legenda, elegem-se os mais votados: você ficou em <b>{result.candidate_list_rank}º</b> entre {result.list_size} nomes.</p>
+    <p>{result.elected ? `Folga sobre o primeiro não eleito: ${pct(result.margin_share)} ponto(s)` : result.party_seats ? `Faltaram ${pct(result.margin_share)} ponto(s) para alcançar o último eleito da legenda` : 'A legenda não alcançou votos para uma cadeira'}{result.margin_votes ? ` (cerca de ${result.margin_votes.toLocaleString('pt-BR')} votos estimados).` : '.'}</p>
+    <details className="career-candidate-results"><summary>Ver a lista da legenda</summary>
+      <ol>{result.list.map((item) => <li key={`${item.rank}-${item.name}`} className={item.is_player ? 'player' : ''}><span>{item.rank}º · {item.name}{item.is_player ? ' · você' : ''}<small>{item.elected ? 'eleito(a)' : 'não eleito(a)'}{item.votes ? ` · ${item.votes.toLocaleString('pt-BR')} votos estimados` : ''}</small></span><b>{pct(item.vote_share)}%</b></li>)}</ol>
+    </details>
+    <small>{result.method}</small>
+  </div>;
+}
+
 export default function CareerPanel({ state, request, onState, onNotice, busy, setBusy }) {
   const overview = state.career_overview;
+  const partyReturn = Boolean(state.party_path?.active);
   const municipalityProfile = overview?.municipality_profile;
   const currentCharacter = state.player_character || overview?.character || {};
   const [options, setOptions] = useState(null);
@@ -224,11 +237,13 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
             <ol className="career-runoff-candidates">{overview.first_round_results?.map((candidate) => <li key={candidate.id} className={`${candidate.is_player ? 'player ' : ''}${overview.runoff_finalists?.some((item) => item.id === candidate.id) ? 'finalist' : ''}`}><span><b>{candidate.name}{candidate.is_player ? ' · você' : ''}</b><small>{candidate.party}{overview.runoff_finalists?.some((item) => item.id === candidate.id) ? ' · classificada(o)' : ''}</small></span><strong>{number.format(candidate.support)}%</strong></li>)}</ol>
             {overview.phase === 'runoff_campaign' && <small>Você pode seguir fazendo campanha. O segundo turno terá uma nova pesquisa e uma apuração própria.</small>}
           </section>}
-          {overview.result && <div className={`career-result ${overview.result}`}><b>{overview.result === 'won' ? 'Vitória eleitoral simulada' : 'Derrota eleitoral simulada'}</b><span>{overview.runoff_results?.some((candidate) => candidate.is_player) ? `Votos no segundo turno: ${number.format(overview.vote_share)}%` : overview.runoff_results?.length ? `Sua votação no primeiro turno: ${number.format(overview.vote_share)}%` : `Votos: ${number.format(overview.vote_share)}% · maior concorrente: ${number.format(overview.opponent_share)}%`}</span>
+          {overview.result && <div className={`career-result ${overview.result}`}><b>{overview.result === 'won' ? 'Vitória eleitoral simulada' : 'Derrota eleitoral simulada'}</b><span>{overview.runoff_results?.some((candidate) => candidate.is_player) ? `Votos no segundo turno: ${number.format(overview.vote_share)}%` : overview.runoff_results?.length ? `Sua votação no primeiro turno: ${number.format(overview.vote_share)}%` : overview.electoral_result?.system === 'proporcional_simulado' ? `Seu voto nominal: ${Number(overview.vote_share).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}% dos votos válidos${overview.electoral_result.candidate_votes ? ` (cerca de ${overview.electoral_result.candidate_votes.toLocaleString('pt-BR')} votos estimados)` : ''}` : `Votos: ${number.format(overview.vote_share)}% · maior concorrente: ${number.format(overview.opponent_share)}%`}</span>
             {overview.first_round_results?.length > 0 && <details className="career-candidate-results"><summary>Apuração do primeiro turno</summary><ol>{overview.first_round_results.map((candidate) => <li key={candidate.id}><span>{candidate.name} · {candidate.party}</span><b>{number.format(candidate.support)}%</b></li>)}</ol></details>}
             {overview.runoff_results?.length > 0 && <details className="career-candidate-results"><summary>Apuração do segundo turno</summary><ol>{overview.runoff_results.map((candidate) => <li key={candidate.id}><span>{candidate.name}{candidate.is_player ? ' · você' : ''} · {candidate.party}</span><b>{number.format(candidate.support)}%</b></li>)}</ol></details>}
             {!overview.first_round_results?.length && overview.candidate_results?.length > 0 && <details className="career-candidate-results"><summary>Ver a apuração das candidaturas simuladas</summary><ol>{overview.candidate_results.map((candidate) => <li key={candidate.id}><span>{candidate.name} · {candidate.party}{candidate.issue_focus_label && <small>Foco: {candidate.issue_focus_label}</small>}</span><b>{number.format(candidate.support)}%</b></li>)}</ol></details>}
-            {overview.electoral_result?.system === 'proporcional_simulado' && <small>A legenda obteve {overview.electoral_result.party_seats} de {overview.electoral_result.district_magnitude} cadeiras simuladas; sua candidatura ocupava a primeira posição fictícia da lista. Distribuição proporcional simplificada.</small>}
+            {overview.electoral_result?.system === 'proporcional_simulado' && <ProportionalResult result={overview.electoral_result} />}
+            {overview.result === 'lost' && overview.phase === 'opposition' && <p className="career-next-step"><b>E agora?</b> A partida continua. {partyReturn ? 'Você voltou à vida partidária: abra a aba Trajetória para reconstruir prestígio e escolher a próxima disputa.' : 'Use “Escolher próximo cargo” para disputar a próxima eleição.'}</p>}
+            {overview.result === 'won' && overview.phase === 'transition' && <p className="career-next-step"><b>E agora?</b> Avance o tempo até a posse em {dateLabel(overview.inauguration_date)}. No dia da posse você fará o primeiro pronunciamento.</p>}
             {overview.conduct_review?.attempts > 0 && <small>{overview.conduct_review.detected} irregularidade(s) detectada(s); revisão final {overview.conduct_review.reviewed ? 'aberta' : 'não aberta'}; penalidade de {number.format(overview.conduct_review.vote_penalty)} pontos.</small>}
           </div>}
         </section>
