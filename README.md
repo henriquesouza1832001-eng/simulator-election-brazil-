@@ -35,6 +35,21 @@ Requisitos: Node.js 20+ e Python 3.11+.
 
 O Vite encaminha `/api` para `http://localhost:8000`. Sem Cognito configurado, o modo local usa uma única partida local. O banco padrão é `data/game.sqlite3`; defina `DATABASE_PATH` para usar outro arquivo.
 
+## Cenários eleitorais e Modo Eleitor (0.4)
+
+Na tela inicial há três modos: **Modo Eleitor**, **Campanha e carreira** e **Posse direta**. O Modo Eleitor cobre os pleitos de 2014 a 2030: consulte os candidatos oficiais do TSE, com fonte, e dê um **voto simulado** (nunca enviado a uma eleição real). 2028 e 2030 são cenários futuros com participantes fictícios.
+
+Para (re)importar candidaturas oficiais: `cd backend && python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`. Detalhes, fontes, limitações e o que ainda não foi conferido: [`docs/ELEICOES_E_CENARIOS.md`](docs/ELEICOES_E_CENARIOS.md). Multiplayer ainda não existe; a arquitetura planejada está em [`docs/MULTIPLAYER_ARQUITETURA.md`](docs/MULTIPLAYER_ARQUITETURA.md). Histórico: [`CHANGELOG.md`](CHANGELOG.md).
+
+## Congresso, placar e coleção (0.3)
+
+- **Congresso** (Política → Congresso): 513 deputados e 81 senadores fictícios, bancadas por partido e votação nominal de projetos de lei e PECs (257 e 308 votos na Câmara; PEC em dois turnos). Código em `backend/app/engine/legislature.py`.
+- **Placar** (Placar → Placar): nota de S a F calculada em sete blocos, com filtros. Registre o mandato depois de 12 meses. Tranquilo não conta. Código em `backend/app/engine/meta.py`.
+- **Coleção** e **Diário**: carimbos desbloqueados pelo estado da partida; diário de versões. Planos, Legado, Termos e Créditos são telas informativas.
+- API: `/api/legislature`, `/api/score`, `/api/ranking`, `/api/ranking/submit`, `/api/collection`, `/api/diary`.
+- Regras inferidas e ajustáveis; ver [`docs/REGISTRO_OBSERVACAO_PLANALTO.md`](docs/REGISTRO_OBSERVACAO_PLANALTO.md) para o que foi observado e o que não foi.
+- **IA (Gemini):** a chave fica só no backend, em `backend/.env` (`GEMINI_API_KEY`). Sem chave, tudo funciona em modo local.
+
 ## Fluxo principal
 
 1. Escolha entre seguir a posse presidencial ou iniciar uma carreira eleitoral em outro cargo.

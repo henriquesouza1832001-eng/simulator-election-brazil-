@@ -1,0 +1,230 @@
+"""Motor de acontecimentos do mandato.
+
+Três tipos: decisão (tem prazo e uma opção padrão), oportunidade (prazo maior) e informativo
+(acontece e vai ao histórico). O diretor respeita ritmo: dias tranquilos entre acontecimentos,
+nada de empilhar decisões nem repetir a mesma etiqueta em sequência. Sorteios são determinísticos
+(hash da semente, do dia e da chave), então a mesma partida produz a mesma história.
+Conceitos inspirados em estudo de projetos de referência; implementação e conteúdo originais.
+"""
+from __future__ import annotations
+
+import hashlib
+from datetime import date, timedelta
+from typing import Any
+
+from .story_catalog import EVENTS
+
+EXPIRES_DAYS = {"decisao": 5, "oportunidade": 14, "info": 0}
+BASE_DAILY_CHANCE = 0.05
+MIN_GAP_DAYS = 7          # dias tranquilos entre acontecimentos
+MAX_PENDING = 2           # nunca empilhar mais que isso
+HISTORY_LIMIT = 60
+
+# Limites por métrica ao aplicar efeitos.
+CLAMPS: dict[str, tuple[float, float]] = {
+    "approval": (0, 100), "congress_support": (0, 100), "integrity": (0, 100), "governability": (0, 100),
+    "institutional_trust": (0, 100), "gdp_growth": (-10, 15), "inflation": (0.5, 40), "unemployment": (2, 30),
+    "primary_balance": (-15, 10),
+}
+# Escala global dos efeitos dos acontecimentos nas métricas de opinião e instituições.
+# Ajustada por simulação de mandato completo (ver tests/test_story_balance.py): sem isso, a soma de ~20
+# acontecimentos em 4 anos derrubava a aprovação de forma desproporcional.
+EFFECT_SCALE = 0.45
+
+
+def _rand(state: dict[str, Any], day: date, key: str) -> float:
+    """Número em [0, 1) determinístico por semente, dia e chave (sem random global)."""
+    digest = hashlib.sha256(f"{state.get('campaign_seed', 203001)}|story|{day.isoformat()}|{key}".encode()).digest()
+    return int.from_bytes(digest[:8], "big") / 2 ** 64
+
+
+def ensure_story_state(state: dict[str, Any]) -> dict[str, Any]:
+    story = state.setdefault("story", {})
+    story.setdefault("pending", [])
+    story.setdefault("history", [])
+    story.setdefault("seen", {})
+    story.setdefault("queue", [])        # continuações agendadas: {"def", "on"}
+    story.setdefault("last_event", None)
+    story.setdefault("last_tags", [])
+    story.setdefault("counters", {})
+    return story
+
+
+def _apply_effects(state: dict[str, Any], effects: dict[str, float], cost_bi: float) -> list[dict[str, Any]]:
+    """Aplica efeitos e devolve os deltas realmente aplicados, para mostrar ao jogador."""
+    from .fiscal import record_one_off_spending
+
+    deltas: list[dict[str, Any]] = []
+    metrics = state.setdefault("metrics", {})
+    for key, delta in effects.items():
+        if not delta:
+            continue
+        delta = round(delta * EFFECT_SCALE, 3)
+        if not delta:
+            continue
+        if key.startswith("inst:"):
+            inst = state.setdefault("institutions", {})
+            name = key[5:]
+            before = float(inst.get(name, 50))
+            inst[name] = round(max(0, min(100, before + delta)), 2)
+            deltas.append({"key": key, "label": name.replace("_", " "), "delta": round(inst[name] - before, 2)})
+            continue
+        if key.startswith("rel:"):
+            rel = state.setdefault("relation_delta", {})
+            rel[key[4:]] = round(rel.get(key[4:], 0.0) + delta, 3)
+            deltas.append({"key": key, "label": f"relação {key[4:]}", "delta": delta})
+            continue
+        low, high = CLAMPS.get(key, (-1e9, 1e9))
+        before = float(metrics.get(key, 0))
+        metrics[key] = round(max(low, min(high, before + delta)), 2)
+        deltas.append({"key": key, "label": key.replace("_", " "), "delta": round(metrics[key] - before, 2)})
+    if cost_bi:
+        # Gasto único (não vira déficit recorrente): entra na dívida e nas despesas extras do ano corrente.
+        record_one_off_spending(state, cost_bi)
+        deltas.append({"key": "cost_bi", "label": "custo (R$ bi)", "delta": -cost_bi})
+    return deltas
+
+
+def _public(ev: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in ev.items() if k != "fallback"}
+
+
+def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | None:
+    story = ensure_story_state(state)
+    definition = EVENTS[def_id]
+    kind = definition["kind"]
+    number = story["seen"].get(def_id, {}).get("n", 0) + 1
+    ev = {
+        "id": f"{def_id}-{number}", "def": def_id, "kind": kind, "tags": definition.get("tags", []),
+        "title": definition["title"], "text": definition["text"], "on": day.isoformat(),
+        "expires": (day + timedelta(days=EXPIRES_DAYS[kind])).isoformat() if kind != "info" else None,
+        "choices": [{"id": c["id"], "label": c["label"], "hint": c.get("hint", ""), "tone": c.get("tone", "neutra"),
+                     "cost_bi": c.get("cost_bi", 0.0)} for c in definition["choices"]],
+        "fallback": definition.get("fallback") or definition["choices"][-1]["id"], "simulated": True,
+    }
+    story["seen"][def_id] = {"n": number, "last": day.isoformat()}
+    story["last_event"] = day.isoformat()
+    story["last_tags"] = definition.get("tags", [])
+    if kind == "info":
+        _resolve(state, ev, definition["choices"][0]["id"], day, auto=False)
+    else:
+        story["pending"].append(ev)
+    return ev
+
+
+def _resolve(state: dict[str, Any], ev: dict[str, Any], choice_id: str, day: date, auto: bool) -> dict[str, Any]:
+    story = ensure_story_state(state)
+    definition = EVENTS[ev["def"]]
+    choice = next((c for c in definition["choices"] if c["id"] == choice_id), None)
+    if choice is None:
+        raise ValueError("Opção inválida.")
+    deltas = _apply_effects(state, dict(choice.get("effects", {})), float(choice.get("cost_bi", 0.0)))
+    for follow_id, days in choice.get("follow", []):
+        story["queue"].append({"def": follow_id, "on": (day + timedelta(days=days)).isoformat()})
+    entry = {"id": ev["id"], "def": ev["def"], "title": ev["title"], "kind": ev["kind"], "on": day.isoformat(),
+             "choice": choice_id, "choice_label": choice["label"], "outcome": choice.get("outcome", ""),
+             "deltas": deltas, "auto": auto, "tags": ev.get("tags", [])}
+    story["history"].insert(0, entry)
+    del story["history"][HISTORY_LIMIT:]
+    story["pending"] = [p for p in story["pending"] if p["id"] != ev["id"]]
+    counters = story["counters"]
+    counters[f"tom:{choice.get('tone', 'neutra')}"] = counters.get(f"tom:{choice.get('tone', 'neutra')}", 0) + 1
+    if auto:
+        counters["sem_resposta"] = counters.get("sem_resposta", 0) + 1
+    return entry
+
+
+def respond(state: dict[str, Any], event_id: str, choice_id: str) -> dict[str, Any]:
+    story = ensure_story_state(state)
+    ev = next((p for p in story["pending"] if p["id"] == event_id), None)
+    if ev is None:
+        raise ValueError("Acontecimento não encontrado ou já resolvido.")
+    return _resolve(state, ev, choice_id, date.fromisoformat(state["date"]), auto=False)
+
+
+def _eligible(state: dict[str, Any], day: date) -> list[tuple[str, float]]:
+    story = ensure_story_state(state)
+    out = []
+    for def_id, definition in EVENTS.items():
+        weight = float(definition.get("weight", 1.0))
+        if weight <= 0:
+            continue  # só entra por continuação
+        last = story["seen"].get(def_id, {}).get("last")
+        if last and (day - date.fromisoformat(last)).days < int(definition.get("cooldown", 120)):
+            continue
+        if any(p["def"] == def_id for p in story["pending"]):
+            continue
+        if story["last_tags"] and set(story["last_tags"]) & set(definition.get("tags", [])):
+            weight *= 0.3  # evita repetir o mesmo assunto em sequência
+        try:
+            if not definition["when"](state):
+                continue
+        except Exception:
+            continue  # um acontecimento com defeito nunca trava o dia
+        out.append((def_id, weight))
+    return out
+
+
+def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
+    """Processa dias entre `before` (exclusivo) e `after` (inclusivo)."""
+    story = ensure_story_state(state)
+    if state.get("office_status") in {"former_president", "detained_after_failed_rupture"}:
+        return []
+    messages: list[str] = []
+    day = before
+    while day < after:
+        day += timedelta(days=1)
+        # 1) prazos: vale a opção padrão. Só vencem acontecimentos que já estavam pendentes antes deste
+        #    avanço: o que nasce durante o avanço só começa a contar prazo quando o controle volta ao jogador.
+        for ev in list(story["pending"]):
+            if ev["on"] > before.isoformat():
+                continue
+            if ev["expires"] and date.fromisoformat(ev["expires"]) < day:
+                entry = _resolve(state, ev, ev["fallback"], day, auto=True)
+                messages.append(f"Sem resposta no prazo: {ev['title']} (valeu a opção padrão).")
+                del entry
+        # 2) continuações agendadas
+        due = [q for q in story["queue"] if date.fromisoformat(q["on"]) <= day]
+        story["queue"] = [q for q in story["queue"] if q not in due]
+        for item in due:
+            if item["def"] in EVENTS:
+                ev = _fire(state, item["def"], day)
+                if ev:
+                    messages.append(f"Acontecimento: {ev['title']}.")
+        # 3) acontecimento novo, respeitando o ritmo
+        if len(story["pending"]) >= MAX_PENDING:
+            continue
+        last = story["last_event"]
+        if last and (day - date.fromisoformat(last)).days < MIN_GAP_DAYS:
+            continue
+        if _rand(state, day, "chance") >= BASE_DAILY_CHANCE:
+            continue
+        pool = _eligible(state, day)
+        if not pool:
+            continue
+        total = sum(w for _, w in pool)
+        pick = _rand(state, day, "pick") * total
+        for def_id, weight in pool:
+            pick -= weight
+            if pick <= 0:
+                ev = _fire(state, def_id, day)
+                if ev:
+                    messages.append(f"Acontecimento: {ev['title']}.")
+                break
+    # Acontecimentos criados neste avanço: o prazo conta a partir do dia em que o jogador retoma o controle.
+    for ev in story["pending"]:
+        if ev["on"] > before.isoformat() and ev["expires"]:
+            ev["expires"] = (after + timedelta(days=EXPIRES_DAYS[ev["kind"]])).isoformat()
+    return messages
+
+
+def overview(state: dict[str, Any]) -> dict[str, Any]:
+    story = ensure_story_state(state)
+    today = date.fromisoformat(state["date"])
+    pending = []
+    for ev in story["pending"]:
+        days_left = (date.fromisoformat(ev["expires"]) - today).days if ev["expires"] else None
+        pending.append({**_public(ev), "days_left": days_left})
+    return {"simulated": True, "pending": pending, "history": story["history"][:30],
+            "profile": {k[4:]: v for k, v in story["counters"].items() if k.startswith("tom:")},
+            "unanswered": story["counters"].get("sem_resposta", 0)}

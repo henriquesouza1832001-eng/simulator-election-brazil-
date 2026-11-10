@@ -85,8 +85,27 @@ def connect() -> sqlite3.Connection:
     return connection
 
 
+ELECTOR_DDL = """
+CREATE TABLE IF NOT EXISTS elector_votes (
+    player_id TEXT NOT NULL,
+    election_year INTEGER NOT NULL,
+    office TEXT NOT NULL,
+    scope_key TEXT NOT NULL,
+    choice TEXT NOT NULL,
+    choice_label TEXT NOT NULL,
+    source_kind TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (player_id, election_year, office, scope_key)
+);
+"""
+
+
 def initialize() -> None:
+    from .data.tse_candidacies import DDL as TSE_DDL  # import tardio: evita ciclo com o importador
+
     with connect() as db:
+        db.executescript(TSE_DDL)
+        db.executescript(ELECTOR_DDL)
         db.executescript("""
             CREATE TABLE IF NOT EXISTS game_save (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -119,6 +138,23 @@ def initialize() -> None:
                 title TEXT NOT NULL,
                 state_json TEXT NOT NULL,
                 archived_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS hall_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_id TEXT NOT NULL,
+                campaign_id TEXT NOT NULL,
+                term_number INTEGER NOT NULL DEFAULT 1,
+                entry_json TEXT NOT NULL,
+                points INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (player_id, campaign_id, term_number)
+            );
+            CREATE TABLE IF NOT EXISTS stamps_unlocked (
+                player_id TEXT NOT NULL,
+                stamp_id TEXT NOT NULL,
+                campaign_id TEXT NOT NULL,
+                unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (player_id, stamp_id)
             );
             CREATE TABLE IF NOT EXISTS actions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -133,6 +133,9 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(process_election(state, before, after))
     messages.extend(process_legislation(state, before, after))
     messages.extend(process_investments(state, before, after))
+    if not (state.get("career") or {}).get("mode") or state.get("office_status") == "incumbent":
+        from .story import tick as story_tick
+        messages.extend(story_tick(state, before, after))
     advance_social_indicators(state, elapsed)
     event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
     if event_names:
@@ -150,14 +153,18 @@ def process_legislation(state: dict[str, Any], before: date, after: date) -> lis
     for bill in calendar.get("pending_bills", []):
         decision_day = date.fromisoformat(bill["decision_date"])
         if before < decision_day <= after:
-            support = state["metrics"].get("congress_support", 50)
-            modifier = -.22 if bill.get("instrument") == "PEC" else -.08 if bill.get("instrument") == "Projeto de Lei Complementar" else 0
-            base_chance = .16 + support / 100 * .62 + modifier
-            chance = adjust_coalition_probability(
-                base_chance, get_difficulty(state.get("difficulty", "normal"))["coalition_flexibility"]
-            )
-            rng = random.Random(f"{state.get('campaign_seed', 203001)}:bill:{bill['id']}")
-            if rng.random() < chance:
+            from .legislature import roll_call
+            result = roll_call(state, bill)
+            history = calendar.setdefault("vote_history", [])
+            entry = {"bill_id": bill["id"], "title": bill["title"], "instrument": bill.get("instrument"),
+                     "date": decision_day.isoformat(), "aprovado": result["aprovado"], "resultado": result}
+            history.insert(0, entry)
+            for old in history[3:]:  # só os três mais recentes guardam voto nominal
+                old.get("resultado", {}).get("camara", {}).pop("votos", None)
+            del history[40:]
+            bill["vote"] = {"camara": {k: v for k, v in result["camara"].items() if k not in {"votos", "por_partido"}},
+                            "senado": result.get("senado") and {k: v for k, v in result["senado"].items() if k != "por_partido"}}
+            if result["aprovado"]:
                 from .rules import apply_effects
                 effects = apply_effects(state, bill["interpretation"])
                 calendar["laws_enacted"] = int(calendar.get("laws_enacted", 0)) + 1

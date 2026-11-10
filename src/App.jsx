@@ -18,6 +18,7 @@ import Brand from './Brand';
 import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
 import LearningPanel from './LearningPanel';
+import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel, InfoPanel } from './MetaPanels';
 import './diplomacy.css';
 import './ai-status.css';
 
@@ -398,9 +399,11 @@ export default function App() {
   const tabGroups = [
     { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
     { label: 'Governo', items: presidentCareer ? ['Medidas', 'Orçamento', 'Crises'] : [] },
-    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Nomeações'] : ['Carreira', 'Eleição', 'Instituições', 'Nomeações'] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Nomeações'] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
-    { label: 'Agenda', items: ['Agenda', 'Aprendizado'] },
+    { label: 'Agenda', items: ['Agenda', 'Acontecimentos', 'Aprendizado'] },
+    { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
+    { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
   const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || tabGroups[0];
   const availableTabs = tabGroups.flatMap((group) => group.items);
@@ -483,6 +486,13 @@ export default function App() {
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
       {activeTab === 'Aprendizado' && <LearningPanel state={state} request={request} />}
+        {activeTab === 'Acontecimentos' && <StoryPanel state={state} request={request} onNotice={setNotice} />}
+        {activeTab === 'Semana' &&<CampaignWeekPanel request={request} onNotice={setNotice} />}
+        {activeTab === 'Congresso' &&<CongressPanel state={state} request={request} />}
+        {activeTab === 'Placar' && <RankingPanel state={state} request={request} onNotice={setNotice} />}
+        {activeTab === 'Coleção' && <CollectionPanel state={state} request={request} />}
+        {activeTab === 'Diário' && <DiaryPanel request={request} />}
+        {['Planos', 'Legado', 'Termos', 'Créditos'].includes(activeTab) && <InfoPanel section={activeTab} />}
       {activeTab === 'Orçamento' && <section className="panel agenda-page">
         <div className="eyebrow">EXECUTIVO FEDERAL · DESPESAS E INVESTIMENTOS</div>
         <h2>Orçamento do governo</h2>

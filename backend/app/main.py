@@ -323,6 +323,8 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         return None
     if request.url.path.startswith("/api/campaigns/") and request.url.path.endswith("/activate"):
         return None
+    if request.url.path.startswith(("/api/elector/", "/api/scenarios")):
+        return None  # o Modo Eleitor e a validação de cenários não dependem de uma partida em andamento
     if request.url.path.startswith("/api/game/archives/") and request.url.path.endswith("/restore"):
         return None
     state = load_state()
@@ -794,6 +796,15 @@ def set_dashboard(request: DashboardRequest) -> dict[str, Any]:
     state["dashboard_cards"] = cards
     save_state(state)
     return public_state(state)
+
+
+from .meta_routes import build_router  # noqa: E402
+
+app.include_router(build_router(lambda: game_state(), lambda s: save_state(s)))
+
+from .scenario_routes import build_router as build_scenario_router  # noqa: E402
+
+app.include_router(build_scenario_router())
 
 
 @app.get("/api/game")

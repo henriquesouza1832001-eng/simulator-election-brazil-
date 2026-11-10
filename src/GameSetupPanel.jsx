@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import MunicipalityPicker from './MunicipalityPicker';
+import ElectorPanel from './ElectorPanel';
 import Brand from './Brand';
 
 const difficultyOptions = [
@@ -251,7 +252,16 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
           <ul><li>De vereador a presidente</li><li>Calendário e poderes próprios de cada cargo</li><li>Estado e município definem o cenário local</li></ul>
           <button className="secondary-button" disabled={!catalog || busy} onClick={() => updateMode('career')}>{mode === 'career' ? 'Fechar configuração' : 'Escolher cargo e lugar'}</button>
         </article>
+        <article className={`game-mode-card elector-mode ${mode === 'elector' ? 'selected' : ''}`}>
+          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/plenario-civiciclo.png')" }} />
+          <span className="game-mode-kicker">MODO ELEITOR · 2014 A 2030</span><h2>Consultar e votar em simulação</h2>
+          <p>Veja os candidatos oficiais de um pleito e escolha seu voto simulado, sem criar partida.</p>
+          <ul><li>Dados oficiais do TSE com fonte</li><li>2028 e 2030 são cenários futuros simulados</li><li>Nunca envia voto a uma eleição real</li></ul>
+          <button className="secondary-button" disabled={busy} onClick={() => updateMode('elector')}>{mode === 'elector' ? 'Fechar modo eleitor' : 'Abrir Modo Eleitor'}</button>
+        </article>
       </section>
+
+      {mode === 'elector' && <ElectorPanel request={request} />}
 
       {mode === 'presidency' && <form className="career-start-form" onSubmit={startPresidency}>
         <div className="career-start-heading"><div><span className="eyebrow">POSSE DIRETA</span><h2>Configure sua personagem</h2></div><span className="career-start-date">Brasília · 1º de janeiro de 2027</span></div>
