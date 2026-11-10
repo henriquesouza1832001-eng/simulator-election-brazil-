@@ -395,6 +395,8 @@ export default function App() {
   const fiscalReferenceGdp = Number(budgetView?.operating?.nominal_gdp_bi || 15000);
   const proposedPrimaryBalance = Number(m.primary_balance) + ((proposedOperatingSavings - currentOperatingSavings) / fiscalReferenceGdp * 100);
   const careerMode = Boolean(state.career_overview?.mode);
+  const careerOverview = state.career_overview;
+  const careerOffice = careerOverview?.office;
   const partyMode = state.mode === 'party_path' && Boolean(state.party_path?.active);
   const playerCharacter = state.player_character || state.career_overview?.character || null;
   const aiStatusLabel = aiStatus === 'gemini' ? 'GEMINI CONFIGURADO'
@@ -405,15 +407,20 @@ export default function App() {
     : aiStatus === 'local-fallback'
       ? 'Gemini ainda não está configurado. A prévia usa regras locais; custos e efeitos seguem as regras Python.'
       : 'Não foi possível consultar o estado do serviço. O jogo continua disponível e usa o fallback local quando necessário.';
-  const presidentCareer = !careerMode || (state.career_overview?.office === 'presidente' && state.career_overview?.governing);
+  const presidentCareer = !careerMode || (careerOffice === 'presidente' && careerOverview?.governing);
+  const officeTabLabel = ({
+    vereador: 'Câmara municipal', prefeito: 'Prefeitura', deputado_estadual: 'Assembleia estadual',
+    governador: 'Governo estadual', deputado_federal: 'Câmara dos Deputados', senador: 'Senado',
+    presidente: 'Presidência',
+  })[careerOffice] || 'Mandato';
   const tabGroups = partyMode ? [
     { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Acontecimentos'] : ['Trajetória', 'Acontecimentos'] },
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ] : [
     { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
-    { label: 'Governo', items: presidentCareer ? ['Medidas', 'Orçamento', 'Crises'] : [] },
-    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Nomeações'] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
+    { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato'] : []) : ['Medidas', 'Orçamento', 'Crises'] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Acontecimentos', 'Aprendizado'] },
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
@@ -425,6 +432,7 @@ export default function App() {
     { tab: 'Visão geral', title: 'Comece pelo painel', description: 'Os cartões resumem os números que você escolheu acompanhar. A agenda e os alertas ajudam a decidir o que merece atenção hoje.' },
     { tab: 'Indicadores', title: 'Consulte os detalhes quando precisar', description: 'Os indicadores ficam agrupados por assunto. Abra só o grupo que procura e compare a variação com o início da partida.' },
     { tab: 'Medidas', title: 'Revise antes de decidir', description: 'Escreva uma proposta, confira como o jogo a interpretou e leia efeitos e custos projetados antes de aplicar.' },
+    { tab: 'Mandato', title: `Exerça o cargo de ${careerOverview?.office_label || 'representante'}`, description: `Acompanhe o território de ${careerOverview?.governance_territory?.name || careerOverview?.campaign_territory || 'sua representação'}, suas atribuições, recursos e entregas. As decisões seguem os poderes de ${officeTabLabel.toLowerCase()}.` },
     { tab: 'Orçamento', title: 'Acompanhe dinheiro, gastos e obras', description: 'Veja as contas públicas, ajuste despesas e escolha investimentos. Obras custam recursos e levam tempo para entregar.' },
     { tab: 'Crises', title: 'Responda aos acontecimentos', description: 'Eventos simulados podem continuar afetando o país. Compare o custo e os efeitos imediatos e futuros de cada resposta.' },
     { tab: 'Diplomacia', title: 'Planeje relações e viagens', description: 'Visitas e compromissos internacionais consomem dias do calendário; o restante do governo continua seguindo a data.' },
@@ -561,7 +569,7 @@ export default function App() {
       {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">EVENTOS FICTÍCIOS · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><EventArtwork event={event} /><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} dias · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {option.cost_bi.toFixed(1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <>{state.simulated_news.slice(0, 3).map((item) => <div className="agenda-event" key={item.id}><EventArtwork event={item} compact /><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}{state.simulated_news.length > 3 && <details className="agenda-more"><summary>Ver mais {state.simulated_news.length - 3} notícias</summary>{state.simulated_news.slice(3, 12).map((item) => <div className="agenda-event" key={item.id}><EventArtwork event={item} compact /><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}</details>}</> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
 
       {activeTab === 'Eleição' && <CampaignPanel state={state} request={request} onState={setState} busy={busy} setBusy={setBusy} onNotice={setNotice} />}
-      {activeTab === 'Carreira' && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
+      {['Carreira', 'Mandato'].includes(activeTab) && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} standaloneMandate={activeTab === 'Mandato'} />}
 
       {activeTab === 'Instituições' && <section className="panel agenda-page"><div className="eyebrow">CENÁRIO INSTITUCIONAL FICTÍCIO</div><h2>Instituições e estabilidade</h2><p className="page-description">Indicadores agregados mudam com as decisões. A opção de ruptura é uma mecânica de alto risco, inteiramente abstrata; não há passos operacionais.</p><div className="institution-grid">{Object.entries(state.institutions || {}).map(([key, value]) => <article key={key}><span>{institutionLabels[key] || key.replaceAll('_', ' ')}</span><strong>{formatIndicator(value, key)}/100</strong><div className="bar"><i style={{ width: `${value}%` }}/></div></article>)}</div><div className="rupture-box"><h3>Ruptura institucional simulada</h3><p>Sucesso: governo de facto, resistência institucional, isolamento e choque econômico. Fracasso: prisão e remoção do cargo. Os resultados são calculados pelo motor e pela semente da partida.</p><button className="secondary-button" onClick={loadRupturePreview}>Ver chance e consequências</button>{ruptureInfo && <div className="rupture-preview"><b>Chance abstrata de sucesso: {ruptureInfo.chance}%</b><p>{ruptureInfo.success}</p><p>{ruptureInfo.failure}</p><button className="danger-button" disabled={busy} onClick={attemptRupture}>Tentar ruptura no cenário</button></div>}</div></section>}
 
