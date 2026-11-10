@@ -165,6 +165,43 @@ input:disabled, select:disabled, textarea:disabled { background: #213236; color:
 .career-start-fields label, .setup-difficulty, .setup-difficulty-card,
 .character-chip-grid label, .character-trait-grid label,
 .setup-difficulty-option, .setup-difficulty-copy b { color: var(--ink); }
+.character-creator, .saved-campaign-grid article,
+.saved-campaign-grid article.active {
+  background: var(--paper-2);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.character-creator-heading h3, .saved-campaign-grid article b,
+.campaign-name-field, .saved-campaign-list > summary {
+  color: var(--ink);
+}
+.character-creator-heading p, .saved-campaign-grid article small {
+  color: var(--ink-2);
+}
+.campaign-name-field input { background: #0e2025; color: var(--ink); border-color: var(--line-strong); }
+.campaign-name-field input::placeholder { color: #a8bcb8; }
+.character-avatar { background: #214039; color: #b9e3c9; border-color: var(--accent); }
+.inaugural-overlay { background: #071216e8; backdrop-filter: blur(7px); }
+.inaugural-card {
+  background: #172b31;
+  color: var(--ink);
+  border: 1px solid #9a7c53;
+  box-shadow: 0 24px 90px #000b;
+}
+.inaugural-card h2 { color: var(--ink); font-family: Georgia, "Times New Roman", serif; }
+.inaugural-card > p, .inaugural-footer small { color: var(--ink-2); }
+.inaugural-guide span, .inaugural-difficulty {
+  background: #213840;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.inaugural-card > label { color: var(--warn); }
+.inaugural-card textarea {
+  background: #0e2025;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.inaugural-card textarea::placeholder { color: #a8bcb8; }
 .game-setup-notice { border-color: #896f49; color: #f0d4a3; }
 .game-setup-caption, .setup-tutorial > div:first-child span,
 .setup-tutorial-step p, .setup-difficulty small,
@@ -230,6 +267,78 @@ input:disabled, select:disabled, textarea:disabled { background: #213236; color:
 .agenda-event:has(> .event-art) > .agenda-count { grid-column: 2; grid-row: 1; }
 .agenda-event:has(> .event-art) > div:last-child { grid-column: 2; grid-row: 2; }
 .today-brief > .event-art { width: 100%; height: 112px; margin: 0 0 14px; border-radius: 6px; }
+.today-brief p, .brief-meta, .brief-meta b, .latest-action small,
+.indicator-toolbar > span, .indicator-count, .dashboard-customizer summary,
+.dashboard-customizer label, .subheading, .setup-choice-heading h2 {
+  color: var(--ink-2);
+}
+.subheading, .setup-choice-heading h2 { color: var(--ink); }
+.dashboard-customizer summary { border-color: var(--line); }
+.character-nameplate { background: var(--paper-2); border-color: var(--line); color: var(--ink); }
+.character-nameplate small { color: var(--ink-2); }
+.indicator-group, .works-section, .works-index, .work-card, .work-running,
+.work-costs span, .work-issue, .work-forecast, .regional-snapshot,
+.campaign-countdown, .campaign-rule-note, .campaign-result,
+.campaign-region-grid article, .campaign-integrity-choice, .campaign-city-target,
+.campaign-local-support article, .campaign-conduct-result,
+.career-office-preview, .career-countdown > div, .career-result,
+.career-result-box, .career-area-card, .career-action-preview,
+.career-social-result, .career-runoff, .career-runoff-candidates li,
+.career-promise-result, .appointment-candidate, .current-minister,
+.judge-candidate, .pending-nomination, .appointment-rule,
+.vacancy-badge, .filled-badge, .appointments-locked {
+  background: var(--paper-2);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.career-hero { background: linear-gradient(110deg, #1d363a, #172b31 65%); border-color: var(--line); }
+.indicator-group > summary, .indicator-group h3, .indicator-line b,
+.indicator-line > strong, .works-index > span b, .work-route,
+.work-costs strong, .work-forecast b, .work-forecast span:first-of-type,
+.campaign-region-grid article strong, .campaign-groups article b,
+.campaign-result p, .campaign-history article > div,
+.career-result-box p, .career-social-result > b,
+.candidate-politics, .candidate-stats b,
+.candidate-effect-list b, .appointment-rule > b,
+.cabinet-summary summary, .court-results article span {
+  color: var(--ink);
+}
+.indicator-line > div small, .indicator-line > strong small,
+.indicator-footnote, .indicator-group > summary span,
+.works-index > span, .work-kind span, .work-card p,
+.work-running p, .work-costs span, .contractor-profile,
+.work-running-meta, .work-issue button small, .work-history,
+.work-forecast, .campaign-heading p, .campaign-countdown span,
+.campaign-countdown small, .campaign-metrics article p,
+.campaign-rule-note, .campaign-form label, .campaign-submit-row small,
+.campaign-closed p, .campaign-rules, .campaign-mini-bar,
+.campaign-result li, .campaign-result > small,
+.campaign-region-grid article > div:first-child,
+.campaign-groups summary, .campaign-groups article,
+.campaign-history article p, .campaign-empty,
+.career-form-grid label, .career-message-label,
+.career-office-preview span, .career-hero p,
+.career-result span, .career-fund small,
+.career-history > article p, .career-action-preview p,
+.career-social-result p, .career-social-result small,
+.appointment-candidate .candidate-background,
+.appointment-preview p, .cabinet-summary p {
+  color: var(--ink-2);
+}
+.indicator-line, .campaign-result li { border-color: var(--line); }
+.budget-subnav button, .campaign-subnav button, .career-subnav button,
+.appointments-nav button { color: var(--ink-2); }
+.budget-subnav button.active, .budget-subnav button:hover,
+.campaign-subnav button.active, .career-subnav button.active,
+.appointments-nav button.active { background: #25453f; color: var(--ink); border-color: var(--line); }
+.campaign-form select, .campaign-form textarea, .career-form-grid input,
+.career-form-grid select, .career-message-label input,
+.career-message-label select, .career-message-label textarea,
+.career-archives select, .career-archive-shortcut select,
+.career-conduct select, .cabinet-picker select,
+.contractor-picker select { background: #0e2025; color: var(--ink); border-color: var(--line-strong); }
+.work-progress, .campaign-bar, .cabinet-progress, .career-bars i { background: #3b5658; }
+.simulated-tag { border-color: var(--line); }
 @media (max-width: 760px) {
   .story-card > .event-art, .crisis-card > .event-art { height: 145px; }
   .today-brief > .event-art { height: 98px; }

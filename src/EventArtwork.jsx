@@ -3,7 +3,8 @@ import { useId } from 'react';
 const SCENES = [
   ['flood', /enchent|alag|inunda|chuva|ressaca|tempestad/, 'ÁGUA E CLIMA', '#193c50', '#5bb5c3'],
   ['drought', /seca|estiagem|reservat|geada|calor/, 'CLIMA E TERRITÓRIO', '#4b3827', '#d4a663'],
-  ['fire', /queimad|incend|fogo|fumaca|desliz/, 'EMERGÊNCIA', '#4a2c30', '#e69365'],
+  ['landslide', /desliz|encosta|soterr/, 'DEFESA CIVIL', '#463b32', '#c4af8d'],
+  ['fire', /queimad|incend|fogo|fumaca/, 'EMERGÊNCIA', '#4a2c30', '#e69365'],
   ['health', /saude|hospital|vacina|epidemi|atendimento|medic/, 'SAÚDE PÚBLICA', '#24414a', '#7ac4b5'],
   ['power', /apagao|energia|eletric|internet|servico digital|infraestrutura|barragem/, 'INFRAESTRUTURA', '#263c50', '#8cacd4'],
   ['transport', /rodovia|ferrovia|transporte|cargas|porto|aeroporto|logistica/, 'MOBILIDADE', '#263d43', '#85b7a7'],
@@ -11,7 +12,7 @@ const SCENES = [
   ['security', /seguranca|crime|policia|violencia|milicia/, 'SEGURANÇA', '#273c46', '#8ab8c8'],
   ['economy', /economia|mercado|preco|credito|juros|cambio|bolsa|abastec|inflacao|orcamento|fiscal|divida|investimento|balanco/, 'ECONOMIA', '#3d392c', '#c5b271'],
   ['labor', /greve|paralis|trabalho|sindica|servidor|salario/, 'TRABALHO', '#3d3540', '#c6a2ad'],
-  ['diplomacy', /diplomacia|exterior|internacion|fronteira|embaix|pais/, 'RELAÇÕES EXTERIORES', '#244251', '#88bed4'],
+  ['diplomacy', /diplomacia|exterior|internacion|fronteira|embaix/, 'RELAÇÕES EXTERIORES', '#244251', '#88bed4'],
   ['education', /educac|escola|professor|universid/, 'EDUCAÇÃO', '#304044', '#b7c895'],
   ['culture', /cultura|arte|musica|festival|esporte/, 'CULTURA', '#443344', '#d2a4c4'],
   ['politics', /congresso|senado|camara|eleic|partido|militan|govern|mandato/, 'VIDA POLÍTICA', '#243e39', '#8bc2a1'],
@@ -46,6 +47,7 @@ function SceneSymbol({ name }) {
   switch (name) {
     case 'flood': return <g {...common}><path d="M460 197l68-56 68 56M478 188v-37h22v19M477 198v42h103v-42" /><path d="M436 251c20-14 41-14 61 0s41 14 61 0 41-14 61 0M436 278c20-14 41-14 61 0s41 14 61 0 41-14 61 0" /></g>;
     case 'drought': return <g {...common}><circle cx="550" cy="139" r="38" /><path d="M443 251h60l26 23 21-21h78M479 219l38 20-18 27M568 220l-14 31 34 16" /></g>;
+    case 'landslide': return <g {...common}><path d="M441 249l87-131 45 70 26-35 55 96H441Z" /><path d="M528 118l19 93 30 18M599 153l-21 70M480 249l22-26M616 249l16-20" /></g>;
     case 'fire': return <g {...common}><path d="M529 256c-28-19-33-46-8-75 2 20 17 21 17 21-5-37 10-51 23-67-2 38 36 43 36 80 0 24-18 44-44 44-13 0-23-9-24-21 0-12 12-20 17-29 11 11 21 19 18 34" /></g>;
     case 'health': return <g {...common}><rect x="482" y="145" width="132" height="112" rx="9" /><path d="M548 170v61M518 200h60M469 130h157M517 130V99h62v31" /></g>;
     case 'power': return <g {...common}><path d="M516 117h65l-12 140h-41l-12-140ZM508 146h81M502 181h92M521 217h57M548 94v-26M480 111l-29-20M610 111l29-20" /></g>;
@@ -73,15 +75,18 @@ export default function EventArtwork({ event, compact = false }) {
     r: 24 + ((hash >> (index % 3) * 7) + index * 17) % 90,
   }));
   return <svg className={`event-art${compact ? ' compact' : ''}`} viewBox={compact ? '390 70 300 220' : '0 0 800 320'} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Ilustração de ${event?.title || 'acontecimento'}`}>
-    <defs><linearGradient id={reactId} x1="0" y1="0" x2="1" y2="1"><stop stopColor={base} /><stop offset="1" stopColor="#0b191e" /></linearGradient></defs>
+    <defs><linearGradient id={reactId} x1="0" y1="0" x2="1" y2="1"><stop stopColor={base} /><stop offset="1" stopColor="#0b191e" /></linearGradient><clipPath id={`${reactId}-text`}><rect x="0" y="0" width="390" height="320" /></clipPath></defs>
     <rect width="800" height="320" fill={`url(#${reactId})`} />
     <path d="M0 257C173 231 250 292 391 256c134-35 262-4 409-39v103H0Z" fill={accent} opacity=".12" />
     {topography.map(({ x, y, r }, index) => <circle key={index} cx={x} cy={y} r={r} fill="none" stroke={accent} strokeWidth="1" opacity=".12" />)}
     <path d="M390 0v320" stroke={accent} strokeWidth="1" opacity=".3" />
     <g color={accent} opacity=".96"><SceneSymbol name={scene} /></g>
-    <text x="31" y="46" fill={accent} fontSize="15" fontFamily="system-ui, sans-serif" fontWeight="700" letterSpacing="2">CIVICICLO  /  {sceneLabel}</text>
-    <text x="31" y="104" fill="#f1f5ee" fontSize="24" fontFamily="Georgia, serif" fontWeight="700">{lines.map((line, index) => <tspan key={index} x="31" dy={index ? 31 : 0}>{line}</tspan>)}</text>
-    <path d="M31 267h205" stroke={accent} strokeWidth="2" opacity=".8" />
-    <text x="31" y="291" fill="#bbcfca" fontSize="13" fontFamily="system-ui, sans-serif" letterSpacing="1">ARQUIVO DE EVENTOS  /  Nº {serial}</text>
+    <text x="660" y="276" textAnchor="end" fill={accent} fontSize="12" fontFamily="system-ui, sans-serif" letterSpacing="1" opacity=".8">{serial}</text>
+    <g clipPath={`url(#${reactId}-text)`}>
+      <text x="31" y="46" fill={accent} fontSize="15" fontFamily="system-ui, sans-serif" fontWeight="700" letterSpacing="2">CIVICICLO  /  {sceneLabel}</text>
+      <text x="31" y="104" fill="#f1f5ee" fontSize="24" fontFamily="Georgia, serif" fontWeight="700">{lines.map((line, index) => <tspan key={index} x="31" dy={index ? 31 : 0}>{line}</tspan>)}</text>
+      <path d="M31 267h205" stroke={accent} strokeWidth="2" opacity=".8" />
+      <text x="31" y="291" fill="#bbcfca" fontSize="13" fontFamily="system-ui, sans-serif" letterSpacing="1">ARQUIVO DE EVENTOS  /  Nº {serial}</text>
+    </g>
   </svg>;
 }
