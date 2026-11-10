@@ -10,7 +10,7 @@ O resumo detalhado, regras observadas, decisões, efeitos, inconsistências e ro
 - CDP local: `http://127.0.0.1:9333`
 - Origem permitida: `https://planalto.fun`
 - Alvo atual: `F78E36C80ECC84AF4232BCF8B95D40ED`
-- Estado atual: campanha presidencial, semana 7 de 13; resposta à denúncia do dossiê feita; visita ao Grito dos Excluídos em São Paulo rendeu +5,6 pontos de intenção somados. Personagem: Augusto Cury (AVANTE), no modo Normal. Agenda da semana 7 em andamento.
+- Estado atual: campanha presidencial, semana 8 de 13; sabatina 2 concluída com nota 63 e debate 2 assistido de casa; agenda da semana 8 ainda não começou. Personagem: Augusto Cury (AVANTE), no modo Normal. Apoios acumulados: +3,09 p.p./semana.
 - Evidência REA: [planalto-map-week3-2026-11-09.json](planalto-map-week3-2026-11-09.json)
 - Evidência REA com São Paulo selecionado: [planalto-map-sp-detail-week3-2026-11-09.json](planalto-map-sp-detail-week3-2026-11-09.json)
 - Evidência REA após a pesquisa interna em São Paulo: [planalto-map-sp-internal-poll-week3-2026-11-09.json](planalto-map-sp-internal-poll-week3-2026-11-09.json)
@@ -21,6 +21,7 @@ O resumo detalhado, regras observadas, decisões, efeitos, inconsistências e ro
 - Evidência REA do editor de horário eleitoral: [planalto-tv-block-editor-week4-2026-11-09.json](planalto-tv-block-editor-week4-2026-11-09.json)
 - Evidência REA da explicação do tempo de TV: [planalto-tv-time-source-week4-2026-11-09.json](planalto-tv-time-source-week4-2026-11-09.json)
 - Evidência REA do debate e fechamento da semana 6, mais as decisões da semana 7: [DOSSIER.md](DOSSIER.md#semana-6-expointer-redes-e-fechamento) · [denúncia](planalto-campaign-week7-scandal-2026-11-09.json) · [resposta](planalto-week7-scandal-response-2026-11-09.json) · [visita a SP](planalto-visit-sp-week7-2026-11-09.json)
+- Evidência REA de semana 8, sabatina, podcast e apoios: [abertura](planalto-week8-opening-2026-11-09.json) · [sabatina 2](planalto-sabatina2-results-week8-2026-11-09.json) · [debate 2 em casa](planalto-debate2-home-week8-2026-11-09.json) · [apoios](planalto-week8-results-and-allies-2026-11-09.json)
 
 ## Como continuar pelo Claude Code
 

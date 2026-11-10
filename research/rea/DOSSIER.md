@@ -91,6 +91,23 @@ O debate tem etapas sequenciais com cronômetros e limite de 600 caracteres: pre
 - São Paulo foi selecionado para coincidir com o Grito dos Excluídos. Resultado: “Periferia e trabalho informal viu, e São Paulo anotou”; +5,6 pontos de intenção somados pelo país, para entrar na média ao fechar a semana. A recompensa está vinculada ao calendário e à região, sem especificar qual obra ou interação ocorreu.
 - Apoios disponíveis no início da semana: Tarcísio de Freitas (Republicanos/SP), +0,40 p.p. por semana e pedido de ministério; Renzo Braz (PP/MG), +0,23 p.p. por semana e pedido de ministério. Recusar Tarcísio informa 75% de chance de adesão a Flávio Bolsonaro. Decisões pendentes.
 
+## Semana 7: conclusão da agenda e apoios
+
+- A live com o tema “o dossiê: a denúncia” usou tom “falando como gente” e alcançou 2,8 mi por ser o assunto da semana. A reescrita da fala enfatizou abrir as contas; seis perfis reagiram, incluindo crítica de Fábio Porchat à situação e apoio de Pablo Marçal, Galvão Bueno, Silas Malafaia, Craque Neto e Rafinha Bastos. Resultado: +0,5 momentum. A pontuação da resposta foi 58, ainda que o momentum fosse positivo.
+- Tentei um palanque com Ratinho Júnior no Paraná. A tela disse antes da ação “Já está no seu palanque”, mas na resolução revelou falta de 10 pontos de disposição: Ratinho preferiu neutralidade, ficou um pouco mais receptivo e a ação rendeu −0,3 ponto nacional. A interface não preveniu a ação inviável.
+- A agenda foi: visita ao Grito dos Excluídos em SP (+5,6), live (0,0 na lista; +0,5 momentum separado) e palanque com o governador no PR (−0,3). Sem descanso, a energia chegou a 26; o jogo avisou que abaixo de 35 as ações rendem 60% e o próximo debate perde 8 pontos. Caixa no fechamento: R$ 29,6 mi.
+- Aceitei Tarcísio de Freitas (Republicanos/SP) e Renzo Braz (PP/MG): apoios recorrentes passaram a +2,48 p.p./semana, cada um com promessa de ministério ao partido.
+
+## Semana 8: consequência, sabatina e debate
+
+- A abertura mostrou Cury em 7,7% (−0,4 na semana) contra Lula em 38,3%; caixa R$ 32,5 mi, energia 38 e apoio recorrente +2,48 p.p./semana antes dos dois apoios novos. O aviso de teto natural em 8% pelo caso do drone continuava ativo.
+- A denúncia anterior virou “O dossiê: as contas abertas”. Após três dias revisando os livros, jornalistas encontraram uma nota de R$ 180 mil por serviço de gráfica não entregue; o restante estava em ordem. Escolhi devolver o valor e demitir quem assinou; o cartão saiu da tela. A consequência visível confirma transparência com custo reputacional concreto, sem esclarecer se o tema se encerrou permanentemente.
+- Sabatina 2: TV Popular, José Luiz Datena, três perguntas de 90 segundos; fuga retorna com 60 segundos e menos paciência. Q1 exigiu número exato de viaturas. A resposta prometeu mil veículos no primeiro ano, priorizando PF/PRF e convênios estaduais dentro do orçamento; nota 74. O avaliador premiou responder com número e passo concreto.
+- Q2 perguntou quantos policiais civis e militares seriam contratados em 12 meses. A resposta distinguiu competência federal e estadual, comprometeu 2.000 vagas federais PF/PRF e convênios; nota 58 (“entendida, sem empolgar”). O sistema pede precisão e linha memorável, mesmo quando a resposta explica limites institucionais.
+- Q3 perguntou como desmontar organizações armadas sem violar direitos humanos. A resposta propôs integração federal/estadual, rastreamento financeiro e mandados judiciais; nota 58, “correta, sem susto”. Média da sabatina: 63, “saiu maior do que entrou”.
+- Debate de podcast 2, Inteligência Ltda. e Metrópoles: mediação de Rogério Vilela, 11 na mesa, Flávio Bolsonaro ausente. A versão livre permitiu apenas assistir de casa, com nota fixa 45 e sem risco; o resumo disse que Caiado levou a melhor sobre Zema no bloco em que o jogador não estava. A resposta ao vivo estava marcada como Pro; faltar custaria −2 momentum e cadeira vazia por duas semanas.
+- Aceitei Eduardo Leite (PSD/RS) e Clécio Luís (União/AP), ambos com +0,32 p.p./semana indicado e exigência de ministério. O apoio total subiu de +2,48 para +3,09 p.p./semana, mostrando redução marginal do ganho de novos aliados.
+
 ## Lições para o design do Mandato
 
 - Tornar claro o calendário: separar notícias e obrigações extraordinárias das três ações semanais; mostrar por que a agenda está travada e o que falta.
@@ -112,10 +129,11 @@ O debate tem etapas sequenciais com cronômetros e limite de 600 caracteres: pre
 - [Impulsionamento da live em SP](planalto-redes-week5-boost-2026-11-09.json)
 - [Evento e câmbio, semana 6](planalto-campaign-week6-event-2026-11-09.json) · [primeira resposta do debate](planalto-debate1-answer1-week6-2026-11-09.json) · [avaliação final](planalto-debate1-final-week6-2026-11-09.json) · [resultado do debate](planalto-debate1-results-week6-2026-11-09.json)
 - [Fechamento da semana 6](planalto-campaign-week6-actions-2026-11-09.json) · [denúncia da semana 7](planalto-campaign-week7-scandal-2026-11-09.json) · [resposta à denúncia](planalto-week7-scandal-response-2026-11-09.json) · [visita a São Paulo](planalto-visit-sp-week7-2026-11-09.json)
+- [Live sobre a denúncia](planalto-live-dossier-week7-2026-11-09.json) · [agenda 3/3](planalto-week7-agenda-fulfilled-2026-11-09.json) · [apoio a Tarcísio](planalto-week7-support-tarcisio-2026-11-09.json) · [abertura da semana 8](planalto-week8-opening-2026-11-09.json) · [resultados e novos apoios](planalto-week8-results-and-allies-2026-11-09.json) · [sabatina 2](planalto-sabatina2-results-week8-2026-11-09.json) · [debate 2 assistido de casa](planalto-debate2-home-week8-2026-11-09.json)
 
 ## Exploração pendente
 
-- Completar as ações restantes da semana 7, decidir os apoios de Tarcísio e Renzo, e fechar a semana.
+- Explorar a resposta ao debate 2 e as ações da semana 8, aceitar ou recusar novos apoios dentro do prazo, e avançar até o primeiro turno.
 - Continuar as semanas restantes até o primeiro turno, inclusive eleição, apuração, crise de campanha e eventual segundo turno. Se perder, iniciar outra campanha conforme a instrução do jogador.
 - Explorar telas de candidato, carreata, pesquisa nacional/estadual, recursos de denúncia/justiça eleitoral no jogo, arrecadação, apoios, pesquisas legais, agenda local, publicidade, seleção de flanco, contratação e composição de chapa.
 - Depois da eleição, se vencer, mapear transição, posse, gabinete, orçamento e governabilidade; se perder, observar encerramento e reiniciar.
