@@ -4,13 +4,13 @@ Este diretório compartilha evidências locais com o Claude Code enquanto a part
 
 O resumo detalhado, regras observadas, decisões, efeitos, inconsistências e roteiro de exploração está em [DOSSIER.md](DOSSIER.md).
 
-## Sessão ativa
+## Sessão observada (pausada)
 
 - Site: `https://planalto.fun/jogar`
 - CDP local: `http://127.0.0.1:9333`
 - Origem permitida: `https://planalto.fun`
 - Alvo atual: `F78E36C80ECC84AF4232BCF8B95D40ED`
-- Estado atual: campanha presidencial, semana 8 de 13; sabatina 2 concluída com nota 63 e debate 2 assistido de casa; agenda da semana 8 ainda não começou. Personagem: Augusto Cury (AVANTE), no modo Normal. Apoios acumulados: +3,09 p.p./semana.
+- Estado atual: campanha presidencial, semana 9 de 13; pausa solicitada pelo jogador. A agenda da semana 9 está em 0/3 e a campanha não foi avançada além da resposta ao evento inicial. Personagem: Augusto Cury (AVANTE), no modo Normal. Na tela de corrida, Cury aparece em 3º com 9,5%, atrás de Lula (42,0%) e Flávio Bolsonaro (29,4%); o resultado eleitoral não foi observado.
 - Evidência REA: [planalto-map-week3-2026-11-09.json](planalto-map-week3-2026-11-09.json)
 - Evidência REA com São Paulo selecionado: [planalto-map-sp-detail-week3-2026-11-09.json](planalto-map-sp-detail-week3-2026-11-09.json)
 - Evidência REA após a pesquisa interna em São Paulo: [planalto-map-sp-internal-poll-week3-2026-11-09.json](planalto-map-sp-internal-poll-week3-2026-11-09.json)
@@ -22,6 +22,7 @@ O resumo detalhado, regras observadas, decisões, efeitos, inconsistências e ro
 - Evidência REA da explicação do tempo de TV: [planalto-tv-time-source-week4-2026-11-09.json](planalto-tv-time-source-week4-2026-11-09.json)
 - Evidência REA do debate e fechamento da semana 6, mais as decisões da semana 7: [DOSSIER.md](DOSSIER.md#semana-6-expointer-redes-e-fechamento) · [denúncia](planalto-campaign-week7-scandal-2026-11-09.json) · [resposta](planalto-week7-scandal-response-2026-11-09.json) · [visita a SP](planalto-visit-sp-week7-2026-11-09.json)
 - Evidência REA de semana 8, sabatina, podcast e apoios: [abertura](planalto-week8-opening-2026-11-09.json) · [sabatina 2](planalto-sabatina2-results-week8-2026-11-09.json) · [debate 2 em casa](planalto-debate2-home-week8-2026-11-09.json) · [apoios](planalto-week8-results-and-allies-2026-11-09.json)
+- Evidência REA do fechamento da semana 8 e da semana 9 pausada: [agenda 3/3](planalto-week8-agenda-fulfilled-2026-11-09.json) · [live](planalto-live-week8-2026-11-09.json) · [abertura da semana 9](planalto-week9-opening-2026-11-09.json) · [desfecho do dossiê](planalto-week9-scandal-resolution-2026-11-09.json) · [tela após resposta ao evento](planalto-week9-event-response-2026-11-09.json) · [corrida eleitoral](current-browser.png)
 
 ## Como continuar pelo Claude Code
 

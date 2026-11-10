@@ -108,6 +108,15 @@ O debate tem etapas sequenciais com cronômetros e limite de 600 caracteres: pre
 - Debate de podcast 2, Inteligência Ltda. e Metrópoles: mediação de Rogério Vilela, 11 na mesa, Flávio Bolsonaro ausente. A versão livre permitiu apenas assistir de casa, com nota fixa 45 e sem risco; o resumo disse que Caiado levou a melhor sobre Zema no bloco em que o jogador não estava. A resposta ao vivo estava marcada como Pro; faltar custaria −2 momentum e cadeira vazia por duas semanas.
 - Aceitei Eduardo Leite (PSD/RS) e Clécio Luís (União/AP), ambos com +0,32 p.p./semana indicado e exigência de ministério. O apoio total subiu de +2,48 para +3,09 p.p./semana, mostrando redução marginal do ganho de novos aliados.
 
+## Fechamento da semana 8 e pausa na semana 9
+
+- A agenda da semana 8 foi concluída com reunião com trabalhadores com carteira, live sobre o dossiê e descanso. A reunião gerou simpatia +3,5, descrita como conversão gradual de votos com decaimento lento. A live alcançou 2,8 milhões e somou +0,3 momentum. Descansar recuperou 25 de energia e ocupou a terceira ação semanal. A lista de resultados mostrou 0,0 ponto direto para cada ação; o fechamento marcou energia 49 e caixa R$ 32,3 mi.
+- A abertura da semana 9 trouxe o rótulo “Última semana de TV”, semana 9 de 13, com primeiro turno em 4 de outubro. O painel começou com energia 61, caixa R$ 35,1 mi, 35 segundos diários de TV e estrutura em um estado. Os grupos exibidos vinham com variações positivas: mercado financeiro +10, empresariado +8, classe média +7 e periferia/trabalho informal +6.
+- A manchete de semana 8 dizia “Debate termina sem vencedor claro”; a própria régua do jogo atribuiu nota média 50 ao debate paralelo. O calendário da semana 9 destacou a Semana Farroupilha no RS, associada a benefício para católicos.
+- A resolução da denúncia anterior apareceu como “O dossiê: página virada”: a revista publicou a devolução em uma nota pequena e mudou de assunto dois dias depois; o texto diz que quem já não gostava continua lembrando, enquanto quem estava em dúvida esqueceu. Isso sugere persistência assimétrica do dano reputacional, mas não apareceu um valor numérico isolando o efeito.
+- Na tela de corrida após a resposta ao evento, Augusto Cury estava em terceiro com 9,5% (+1,8 na semana; faixa exibida 6,7–12,3), atrás de Lula (42,0%) e Flávio Bolsonaro (29,4%). A resposta escolhida foi publicar um vídeo sobre “a campanha mais transparente”. A captura não isola o efeito causal do vídeo sobre a pesquisa; os números são o estado agregado da corrida naquele momento.
+- A partida foi pausada a pedido do jogador, que avaliou que a campanha provavelmente perderia. A agenda da semana 9 permanecia em 0/3; não foram executadas novas ações, não se fechou a semana e não se observou o resultado eleitoral. Este é o ponto de retomada.
+
 ## Lições para o design do Mandato
 
 - Tornar claro o calendário: separar notícias e obrigações extraordinárias das três ações semanais; mostrar por que a agenda está travada e o que falta.
@@ -130,11 +139,12 @@ O debate tem etapas sequenciais com cronômetros e limite de 600 caracteres: pre
 - [Evento e câmbio, semana 6](planalto-campaign-week6-event-2026-11-09.json) · [primeira resposta do debate](planalto-debate1-answer1-week6-2026-11-09.json) · [avaliação final](planalto-debate1-final-week6-2026-11-09.json) · [resultado do debate](planalto-debate1-results-week6-2026-11-09.json)
 - [Fechamento da semana 6](planalto-campaign-week6-actions-2026-11-09.json) · [denúncia da semana 7](planalto-campaign-week7-scandal-2026-11-09.json) · [resposta à denúncia](planalto-week7-scandal-response-2026-11-09.json) · [visita a São Paulo](planalto-visit-sp-week7-2026-11-09.json)
 - [Live sobre a denúncia](planalto-live-dossier-week7-2026-11-09.json) · [agenda 3/3](planalto-week7-agenda-fulfilled-2026-11-09.json) · [apoio a Tarcísio](planalto-week7-support-tarcisio-2026-11-09.json) · [abertura da semana 8](planalto-week8-opening-2026-11-09.json) · [resultados e novos apoios](planalto-week8-results-and-allies-2026-11-09.json) · [sabatina 2](planalto-sabatina2-results-week8-2026-11-09.json) · [debate 2 assistido de casa](planalto-debate2-home-week8-2026-11-09.json)
+- [Fechamento da semana 8](planalto-week8-agenda-fulfilled-2026-11-09.json) · [live da semana 8](planalto-live-week8-2026-11-09.json) · [abertura da semana 9](planalto-week9-opening-2026-11-09.json) · [resolução do dossiê](planalto-week9-scandal-resolution-2026-11-09.json) · [resposta ao evento](planalto-week9-event-response-2026-11-09.json) · [corrida eleitoral após a resposta](current-browser.png)
 
-## Exploração pendente
+## Exploração pausada
 
-- Explorar a resposta ao debate 2 e as ações da semana 8, aceitar ou recusar novos apoios dentro do prazo, e avançar até o primeiro turno.
-- Continuar as semanas restantes até o primeiro turno, inclusive eleição, apuração, crise de campanha e eventual segundo turno. Se perder, iniciar outra campanha conforme a instrução do jogador.
+- Retomar, se solicitado, na agenda da semana 9 (0/3 ações), após a resposta ao evento “O dossiê: página virada”. A corrida está em 3º lugar, mas o jogo ainda não foi avançado para apurar derrota ou vitória.
+- Se a exploração for retomada: concluir as semanas restantes até o primeiro turno, acompanhar TV, debates, pesquisas, eventos e alianças; observar eleição, apuração, crise de campanha e eventual segundo turno. Só reiniciar uma campanha se o jogador pedir.
 - Explorar telas de candidato, carreata, pesquisa nacional/estadual, recursos de denúncia/justiça eleitoral no jogo, arrecadação, apoios, pesquisas legais, agenda local, publicidade, seleção de flanco, contratação e composição de chapa.
-- Depois da eleição, se vencer, mapear transição, posse, gabinete, orçamento e governabilidade; se perder, observar encerramento e reiniciar.
+- Se a exploração for retomada e a eleição terminar, mapear a transição e o mandato em caso de vitória, ou registrar a tela final em caso de derrota. Reiniciar somente se o jogador pedir.
 - Manter este arquivo atualizado por rodada e adicionar capturas REA das mecânicas novas, evitando capturas redundantes de cada clique.
