@@ -7,5 +7,6 @@ import './editorial.css';
 import './readability.css';
 import './theme.css';
 import './polish.css';
+import './government.css';
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);

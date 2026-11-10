@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import './meta.css';
+import EventArtwork from './EventArtwork';
 
 function useLoad(request, path, deps = []) {
   const [data, setData] = useState(null);
@@ -160,6 +161,7 @@ export function StoryPanel({ request, state, onNotice }) {
       <h3 className="subheading">Pedem resposta ({data.pending.length})</h3>
       {data.pending.length === 0 ? <p className="meta-status">Nenhum acontecimento pendente. Avance o tempo para ver novidades.</p> :
         data.pending.map((ev) => <article className="story-card" key={ev.id}>
+          <EventArtwork event={ev} />
           <div className="story-head"><span className={`tag t-${ev.kind === 'decisao' ? 'correcao' : ev.kind === 'oportunidade' ? 'melhor' : 'novo'}`}>{ev.kind === 'decisao' ? 'Decisão' : 'Oportunidade'}</span>
             {ev.days_left != null && <small>{ev.days_left <= 0 ? 'Último dia' : `${ev.days_left} dia(s) para responder`}</small>}</div>
           <h3>{ev.title}</h3>{ev.inspired_by_real_event && <p className="meta-count">Versão fictícia inspirada em um episódio real{ev.remix?.label ? ` · intensidade ${ev.remix.label}` : ''}.</p>}<p>{ev.text}</p>
@@ -171,9 +173,12 @@ export function StoryPanel({ request, state, onNotice }) {
         <ul className="meta-notes">{Object.entries(data.profile).map(([k, v]) => <li key={k}>{TONE_LABEL[k] || k}: {v}</li>)}{data.unanswered > 0 && <li>Sem resposta no prazo: {data.unanswered}</li>}</ul></>}
       <details className="agenda-more" open={data.pending.length === 0}><summary>Histórico ({data.history.length})</summary>
       {data.history.length === 0 ? <p className="meta-status">Ainda não há histórico.</p> :
-        <ul className="vote-list">{data.history.map((h) => <li key={h.id}><b>{h.title}</b>
-          <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
-          <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></li>)}</ul>}</details>
+        <ul className="vote-list story-history-list">{data.history.map((h) => <li key={h.id}>
+          <EventArtwork event={h} compact />
+          <div><b>{h.title}</b>
+            <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
+            <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></div>
+        </li>)}</ul>}</details>
     </>}</Status>
   </section>;
 }

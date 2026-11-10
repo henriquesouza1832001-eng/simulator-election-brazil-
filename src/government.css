@@ -1,0 +1,238 @@
+/* Sala de governo: contraste, hierarquia e ilustracoes de acontecimentos. */
+:root {
+  color-scheme: dark;
+  --ground: #0b171b;
+  --paper: #15272d;
+  --paper-2: #1b3036;
+  --ink: #edf4f0;
+  --ink-2: #b4c8c5;
+  --line: #38525a;
+  --line-strong: #66818a;
+  --brand: #0d302b;
+  --accent: #88ddb5;
+  --accent-2: #3ba878;
+  --accent-tint: #213c37;
+  --warn: #e2b972;
+  --warn-tint: #40351f;
+  --danger: #f08e8b;
+  --danger-tint: #422829;
+  --info: #a2c6ea;
+  --focus: #9dcbff;
+  --bg: var(--ground);
+  --panel: var(--paper);
+  --panel2: var(--paper-2);
+  --muted: var(--ink-2);
+  --green: var(--accent);
+  --blue: var(--info);
+  --amber: var(--warn);
+  --red: var(--danger);
+  --radius: 8px;
+}
+html { scrollbar-color: #5c7880 var(--ground); }
+body, .app-shell, .game-setup-screen, .welcome-screen, .auth-screen {
+  background: var(--ground);
+  color: var(--ink);
+}
+body { background-image: radial-gradient(ellipse at 50% -20%, #1f3839 0, transparent 52%); }
+::selection { background: #416e5e; color: #fff; }
+h1, h2, h3, h4, h5, h6, p, label, summary { color: var(--ink); }
+.welcome-copy h1, .welcome-row h1, .game-setup-intro h1, .agenda-page > h2,
+.meta-page > h2, .panel-heading h2, .game-mode-card h2, .career-start-heading h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -.025em;
+  color: var(--ink);
+}
+.eyebrow, .field-label, .game-mode-kicker, .setup-new-label, .brief-label {
+  color: var(--warn);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.page-description, .muted, .metric-detail, .empty-state, .panel-heading p,
+.welcome-row p, .game-setup-intro p, .game-mode-card p, .game-mode-card ul,
+.career-start-date, .career-start-fields label small, .character-biography > small,
+.character-trait-grid small, .character-choice-group legend small,
+.setup-difficulty-copy small, .setup-choice-heading p, .setup-choice-footer > span,
+.setup-step-nav > span, .welcome-copy > p, .welcome-save-note,
+.welcome-account-card p, .auth-card p, .auth-card > small {
+  color: var(--ink-2);
+}
+.topbar, .welcome-header, .game-setup-header {
+  background: #102b2c;
+  border-bottom: 1px solid #8d7352;
+  color: var(--ink);
+}
+.topbar .brand, .topbar .date-block, .welcome-header .brand,
+.game-setup-header .brand, .welcome-header .brand small,
+.game-setup-header .brand small { color: var(--ink); }
+.tabs { background: #122429; border-color: var(--line); }
+.tab, .advance-link, .quiet-button, .icon-button { color: var(--ink-2); }
+.tab:hover, .advance-link:hover, .quiet-button:hover { color: var(--ink); }
+.tab.active, .tabs.tabs-grouped .tab-sub.active {
+  color: #e7f5eb;
+  border-bottom-color: var(--warn);
+}
+.tabs.tabs-grouped .tab-sub.active { background: #255044; }
+.topbar .quiet-button, .welcome-header .quiet-button,
+.game-setup-header .quiet-button { background: #19383a; border-color: var(--line-strong); color: var(--ink); }
+.topbar select { background: #1d3b3c; border-color: var(--line-strong); color: var(--ink); }
+.welcome-footer, .game-setup-footer, .footer { color: var(--ink-2); border-color: var(--line); }
+.welcome-stage::before { opacity: .11; }
+.welcome-copy h1 { color: #f2f4ed; }
+.welcome-account-card, .auth-card, .game-setup-toolbar, .setup-difficulty-card,
+.game-mode-card, .career-start-form, .game-archives, .setup-tutorial,
+.saved-campaign-list, .panel, .metric, .term-card, .compact-panel,
+.election-summary article, .institution-grid article, .meta-cards article,
+.story-card, .crisis-card, .rupture-box, .learning-cards article,
+.learning-note, .investment-grid article, .operating-lines article,
+.cadence-summary, .preview-card, .country-grid article,
+.fiscal-overview, .fiscal-kpis article, .diplomacy-summary article,
+.diplomacy-form, .flight-card, .score-box, .vote-list li,
+.member-list, .candidate-list li, .week-actions li, .stamp,
+.dashboard-customizer > div, details.agenda-more, details.diplomacy-section {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.game-mode-card.selected, .setup-difficulty-option.selected { border-color: var(--warn); }
+.game-setup-intro h1, .game-mode-card h2, .career-start-heading h2,
+.career-start-preview b, .character-trait-grid b, .mini-stats b,
+.metric-value, .event b, .decision b, .agenda-event h3,
+.fiscal-line b, .flight-footer b, .diplomacy-trip-quote b,
+.institution-grid article strong, .welcome-account-card h2,
+.auth-card h1, .setup-choice-heading h2 { color: var(--ink); }
+.metric { background: #1b3034; border-top: 2px solid #6a987e; }
+.metric-label, .term-card > span, .metric-value small, .metric-detail,
+.mini-stats div, .event small, .decision small, .agenda-event p,
+.crisis-card > p, .rupture-box p, .crisis-actions button small,
+.fiscal-line, .flight-route, .setup-difficulty-card small,
+.setup-summary, .career-start-preview small,
+.character-trait-grid label small { color: var(--ink-2); }
+.metric-value { color: #eaf5ec; }
+.green { color: var(--accent) !important; }
+.amber { color: var(--warn) !important; }
+.red { color: var(--danger) !important; }
+.progress, .bar, .flight-track { background: #3b5658; }
+.progress i, .bar i, .flight-track > i { background: var(--accent-2); }
+.game-setup-screen .setup-back-button,
+.secondary-button, .quiet-button, .danger-button,
+.game-mode-card .secondary-button, .game-archives .secondary-button {
+  background: #1e373a;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.secondary-button:hover:not(:disabled), .quiet-button:hover:not(:disabled) {
+  background: #2a4b48;
+  color: #fff;
+  border-color: var(--accent);
+}
+.primary-button, .game-setup-screen .primary-button {
+  background: #2b8d67;
+  border-color: #6fc69a;
+  color: #fff;
+}
+.primary-button:hover:not(:disabled) { background: #36a876; }
+.primary-button:disabled, .secondary-button:disabled { background: #304144; color: #cad4cf; border-color: #52696d; }
+.danger-button { border-color: var(--danger); color: #ffc2bd; }
+.danger-button:hover:not(:disabled) { background: #553234; }
+input, select, textarea, .career-start-fields input, .career-start-fields select,
+.character-fields input, .character-fields select, .character-biography textarea,
+.measure-panel textarea, .correction textarea, .budget-form select,
+.budget-form input, .operating-lines select, .diplomacy-form select,
+.setup-difficulty select, .game-archives select {
+  background: #0e2025;
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+input::placeholder, textarea::placeholder,
+.measure-panel textarea::placeholder, .character-fields input::placeholder,
+.character-biography textarea::placeholder { color: #a8bcb8; }
+input:disabled, select:disabled, textarea:disabled { background: #213236; color: #bccbc6; }
+.character-chip-grid label, .character-trait-grid label,
+.setup-difficulty-option, .career-start-preview,
+.setup-summary, .game-setup-notice, .notice, .pending-bill,
+.preview-tags span, .impact-row > div, .diplomacy-trip-quote,
+.simulation-timing, .elector-banner {
+  background: var(--paper-2);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.character-chip-grid label.chosen, .character-trait-grid label.chosen {
+  background: #25453d;
+  border-color: var(--accent);
+}
+.character-fields label, .character-biography, .character-choice-group legend,
+.career-start-fields label, .setup-difficulty, .setup-difficulty-card,
+.character-chip-grid label, .character-trait-grid label,
+.setup-difficulty-option, .setup-difficulty-copy b { color: var(--ink); }
+.game-setup-notice { border-color: #896f49; color: #f0d4a3; }
+.game-setup-caption, .setup-tutorial > div:first-child span,
+.setup-tutorial-step p, .setup-difficulty small,
+.career-territory-note small, .party-data-note,
+.character-more summary small, .character-field-note {
+  color: var(--ink-2);
+}
+.setup-tutorial-step > span, .character-more summary, .party-data-note a {
+  color: var(--accent);
+}
+.career-territory-note, .party-alignment-warning {
+  background: var(--paper-2);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.party-alignment-warning { border-left: 3px solid var(--warn); }
+.character-axis-grid label { color: var(--ink); }
+.character-axis-grid select { background: #0e2025; color: var(--ink); border-color: var(--line-strong); }
+.setup-choice-footer { background: var(--paper); border-color: var(--line); }
+.agenda-event, .event, .decision, .fiscal-line, .flight-footer {
+  border-color: var(--line);
+}
+.agenda-count, .event-date, .crisis-heading > b { color: var(--warn); }
+.agenda-count small { color: var(--ink-2); }
+.ai-chip, .ai-chip--gemini, .ai-chip--local-fallback,
+.ai-chip--unknown { color: var(--accent); border-color: var(--line-strong); }
+.meta-tab.active { background: #255044; border-color: var(--accent); }
+.meta-status, .meta-cards article, .vote-list li, .stamp, .week-actions li {
+  border-color: var(--line);
+}
+.story-card, .crisis-card { overflow: hidden; }
+.story-card > .event-art, .crisis-card > .event-art {
+  display: block;
+  width: 100%;
+  height: clamp(155px, 21vw, 205px);
+  margin: 0 0 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+.story-history-list li { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 10px; align-items: start; }
+.story-history-list li .event-art { width: 66px; height: 66px; border-radius: 5px; }
+.story-history-list li > div { display: grid; gap: 3px; }
+.event-art { display: block; width: 100%; height: auto; min-width: 0; }
+.event, .agenda-event { min-width: 0; }
+.event {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 2px 11px;
+}
+.event > .event-art { grid-column: 1; grid-row: 1 / 3; width: 66px; height: 66px; border-radius: 5px; }
+.event > .event-date { grid-column: 2; grid-row: 1; }
+.event > div:last-child { grid-column: 2; grid-row: 2; }
+.agenda-event:has(> .event-art) {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 3px 15px;
+}
+.agenda-event > .event-art { grid-column: 1; grid-row: 1 / 3; width: 104px; height: 80px; border-radius: 5px; }
+.agenda-event:has(> .event-art) > .agenda-count { grid-column: 2; grid-row: 1; }
+.agenda-event:has(> .event-art) > div:last-child { grid-column: 2; grid-row: 2; }
+.today-brief > .event-art { width: 100%; height: 112px; margin: 0 0 14px; border-radius: 6px; }
+@media (max-width: 760px) {
+  .story-card > .event-art, .crisis-card > .event-art { height: 145px; }
+  .today-brief > .event-art { height: 98px; }
+  .agenda-event:has(> .event-art) { grid-template-columns: 76px minmax(0, 1fr); gap: 2px 10px; }
+  .agenda-event > .event-art { width: 76px; height: 72px; }
+}
