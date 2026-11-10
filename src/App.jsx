@@ -24,6 +24,7 @@ import './diplomacy.css';
 import './ai-status.css';
 
 const fmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
+const difficultyLabels = { tranquilo: 'Tranquilo', normal: 'Normal', dificil: 'Difícil', complicado: 'Complicado', realismo_puro: 'Realismo Puro' };
 
 const indicatorPrecision = {
   human_development_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
@@ -266,7 +267,13 @@ export default function App() {
               redirectSignOut: [window.location.origin], responseType: 'code' } } } } });
           // Amplify.configure resets its token provider, so select secure cookies afterward.
           cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({ secure: true, sameSite: 'lax', path: '/', expires: 7 }));
-          try { setAuthUser(await getCurrentUser()); } catch { setAuthUser(null); }
+          try { setAuthUser(await getCurrentUser()); } catch {
+            const setupMode = new URLSearchParams(window.location.search).get('novo');
+            if (['presidency', 'career', 'party'].includes(setupMode)) {
+              const guestResponse = await fetch('/api/guest/session', { method: 'POST', credentials: 'same-origin' });
+              setAuthUser(guestResponse.ok ? { username: 'guest', isGuest: true } : null);
+            } else setAuthUser(null);
+          }
         } else setAuthUser({ username: 'local' });
       } catch (e) { if (mounted) setNotice(`Não foi possível carregar a configuração de acesso: ${e.message}`); }
       finally { if (mounted) setAuthReady(true); }
@@ -299,10 +306,6 @@ export default function App() {
     setBusy(true);
     try { const data = await request('/api/measures/apply', { method: 'POST', body: JSON.stringify({ text: measure, interpretation_id: preview.interpretation_id }) }); setState(data.state); setPreview(null); setMeasure(''); setNotice(data.status === 'pending_legislation' ? `Projeto enviado ao Congresso. A votação simulada está prevista para ${data.effects[0].decision_date}; efeitos dependem de aprovação.` : 'Ato registrado. O Executivo tem agenda limitada e os efeitos seguem as regras do simulador.'); }
     catch (e) { setNotice(e.message); } finally { setBusy(false); }
-  }
-  async function changeDifficulty(difficulty) {
-    try { setState(await request('/api/game/difficulty', { method: 'PATCH', body: JSON.stringify({ difficulty }) })); }
-    catch (e) { setNotice(e.message); }
   }
   async function toggleDashboardCard(key) {
     const current = state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key);
@@ -367,13 +370,13 @@ export default function App() {
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
-  if (!authReady || (authUser && !state)) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
+  if (!authReady || (authUser && !state)) return <main className="loading"><img className="brand-mark" src="/assets/brand/civiciclo-marca.png" alt="" aria-hidden="true"/><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
   if (authConfig?.enabled && !authUser) return showAuthPanel
     ? <AuthPanel onAuthenticated={(user) => { setState(null); setShowGameMenu(true); setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />
     : <WelcomePanel onGuest={startGuest} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} busy={busy} notice={notice} />;
   if (authConfig?.enabled && authUser?.isGuest && showAuthPanel) return <AuthPanel onAuthenticated={(user) => { setState(null); setShowGameMenu(true); setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />;
-  if (!state) return <main className="loading"><span className="brand-mark">M</span><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
-  if (showGameMenu) return <><GameSetupPanel state={state} request={request} onState={acceptCampaignState} onContinue={() => setShowGameMenu(false)} busy={busy} setBusy={setBusy} authConfig={authConfig} authUser={authUser} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} onAccount={() => setShowAccountPanel(true)} />{showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}</>;
+  if (!state) return <main className="loading"><img className="brand-mark" src="/assets/brand/civiciclo-marca.png" alt="" aria-hidden="true"/><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
+  if (showGameMenu) return <><GameSetupPanel state={state} request={request} onState={acceptCampaignState} onContinue={() => { const url = new URL(window.location.href); url.searchParams.delete('novo'); window.history.replaceState(null, '', url); setShowGameMenu(false); }} busy={busy} setBusy={setBusy} authConfig={authConfig} authUser={authUser} onSignIn={() => { setShowAuthPanel(true); setNotice(''); }} onAccount={() => setShowAccountPanel(true)} />{showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}</>;
   const m = state.metrics;
   const termMonth = Math.min(48, Math.max(1, state.month || 1));
   const monthsRemaining = Math.max(0, 48 - termMonth);
@@ -444,7 +447,7 @@ export default function App() {
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><label className="difficulty-picker"><span>DIFICULDADE</span><select value={state.difficulty || 'normal'} onChange={(e) => changeDifficulty(e.target.value)}><option value="tranquilo">Tranquilo</option><option value="normal">Normal</option><option value="dificil">Difícil</option><option value="complicado">Complicado</option><option value="realismo_puro">Realismo Puro</option></select></label><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">
@@ -565,7 +568,7 @@ export default function App() {
 
       <footer className="footer"><span>CIVICICLO · simulador em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
     </main>
-    {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} difficulty={state.difficulty} onDifficultyChange={changeDifficulty} busy={busy} setBusy={setBusy} />}
+    {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} busy={busy} setBusy={setBusy} />}
     {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}
     {gameGuideOpen && <GameGuide steps={gameGuideSteps} stepIndex={gameGuideStep} onStepChange={(nextStep) => { setGameGuideStep(nextStep); const nextTab = gameGuideSteps[nextStep]?.tab; if (nextTab) setActiveTab(nextTab); }} onClose={() => setGameGuideOpen(false)} />}
   </div>;

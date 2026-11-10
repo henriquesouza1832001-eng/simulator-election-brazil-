@@ -1,0 +1,332 @@
+/* Ajustes transversais para manter as telas do Civiciclo coesas e legíveis. */
+:root {
+  --bg: var(--ground);
+  --panel: var(--paper);
+  --panel2: var(--paper-2);
+  --muted: var(--ink-2);
+  --green: var(--accent-2);
+  --blue: #1f4f8a;
+  --amber: #7a4f00;
+  --red: #a4262c;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--ground); }
+button, input, select, textarea { max-width: 100%; }
+img, svg, canvas { max-width: 100%; }
+.panel, .overview-grid > *, .main-grid > *, .career-start-form, .game-mode-card { min-width: 0; }
+
+/* Marca raster nova e cabeçalho com contraste consistente. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  color: var(--brand);
+  text-decoration: none;
+  font: 800 .9rem/1.15 var(--font);
+  letter-spacing: .08em;
+}
+.brand:hover { color: var(--accent); }
+.brand-mark {
+  display: block;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  object-fit: contain;
+}
+.brand small {
+  display: block;
+  margin-top: .2rem;
+  color: var(--ink-2);
+  font: 600 .63rem/1.2 var(--font);
+  letter-spacing: .04em;
+}
+.topbar {
+  color: #fff;
+  background: var(--brand);
+  border-bottom-color: #345c50;
+}
+.topbar .brand { color: #fff; }
+.topbar .brand small, .topbar .date-block small { color: #d1e0d8; }
+.topbar .date-block { color: #fff; border-color: #668477; }
+.topbar .quiet-button { min-height: 44px; }
+
+/* Abertura mais visual, sem colocar texto sobre áreas carregadas. */
+.welcome-stage { position: relative; isolation: isolate; }
+.welcome-stage::before {
+  position: absolute;
+  z-index: -1;
+  top: 5%;
+  right: -5vw;
+  bottom: 5%;
+  width: 59%;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #f2f1e9 0%, #f2f1e91a 70%), url('/assets/backgrounds/campanha-praca-v2.jpg') center / cover;
+  content: '';
+  opacity: .25;
+  pointer-events: none;
+}
+.welcome-account-card { background: color-mix(in srgb, var(--paper) 94%, transparent); }
+
+/* A escolha do modo e sua configuração passam a ser etapas visuais distintas. */
+.game-setup-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: .5rem; }
+.game-setup-header .brand-mark { width: 44px; height: 44px; }
+.game-setup-caption { margin-inline: auto; }
+.game-setup-header .secondary-button { min-height: 44px; }
+.game-setup-content { width: min(1120px, calc(100% - 40px)); }
+.game-setup-hero {
+  min-height: 250px;
+  margin-bottom: 20px;
+  border-color: #244b3d;
+  background-position: center 52%;
+  box-shadow: 0 10px 30px #17382c18;
+}
+.game-setup-hero h1 { max-width: 760px; }
+.game-config-hero { min-height: 230px; }
+.setup-step-label {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: .65rem;
+  color: #edf5ee;
+  font-size: .8rem;
+}
+.setup-step-label span {
+  padding: .25rem .5rem;
+  border: 1px solid #d5e8da88;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.setup-difficulty-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 auto 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.setup-difficulty-card > div { display: grid; gap: .2rem; }
+.setup-difficulty-card b { font-size: .95rem; }
+.setup-difficulty-card small { max-width: 620px; color: var(--ink-2); font-size: .82rem; line-height: 1.45; }
+.setup-difficulty-card select { min-width: 180px; }
+.game-mode-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 345px;
+  padding-top: 0;
+  border-radius: 14px;
+  background: var(--paper);
+}
+.game-mode-art {
+  width: calc(100% + 42px);
+  height: 142px;
+  flex: 0 0 142px;
+  margin: 0 -21px 17px;
+  border-radius: 9px 9px 0 0;
+  background-position: center 48%;
+  background-size: cover;
+}
+.game-mode-card .game-mode-kicker { font-size: .75rem; letter-spacing: .04em; }
+.game-mode-card h2 { margin: .4rem 0 .55rem; }
+.game-mode-card ul { line-height: 1.65; }
+.game-mode-card .secondary-button { width: 100%; justify-content: space-between; }
+.career-start-form {
+  max-width: 920px;
+  margin: 18px auto 0;
+  padding: clamp(18px, 3vw, 30px);
+  border-radius: 14px;
+  box-shadow: 0 8px 26px #173a2e0b;
+}
+.career-start-form > .primary-button { min-height: 48px; }
+.game-setup-screen .setup-back-button { background: #fffefa; }
+.elector-panel, .elector-screen { min-width: 0; }
+
+/* Navegação e controles pensados para toque e telas estreitas. */
+.tabs-grouped { scroll-padding-inline: 12px; -webkit-overflow-scrolling: touch; }
+.tabs-grouped .tab, .tabs-grouped .advance-link { flex: 0 0 auto; }
+.overview-grid { align-items: start; }
+.today-brief, .latest-action, .compact-panel { min-width: 0; }
+table { max-width: 100%; }
+.agenda-page, .panel { overflow-wrap: anywhere; }
+
+@media (max-width: 760px) {
+  html { scroll-padding-top: 8px; }
+  .brand-mark { width: 38px; height: 38px; }
+  .topbar { align-items: flex-start; gap: .55rem; padding: .65rem 1rem; }
+  .topbar > .brand { flex: 0 0 auto; }
+  .date-block { width: auto; min-width: 0; flex: 1 1 100%; padding: 0; border: 0; }
+  .date-block span, .date-block small { overflow-wrap: anywhere; }
+  .top-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    width: calc(100vw - 2rem);
+    margin: 0;
+    padding: 0 0 .2rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .top-actions > * { flex: 0 0 auto; }
+  .difficulty-picker { display: flex; align-items: center; }
+  .difficulty-picker span, .live-dot { display: none; }
+  .tabs.tabs-grouped {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 50px;
+    flex-wrap: nowrap;
+    padding-inline: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .tabs-grouped .tab { min-height: 48px; padding-inline: .65rem; }
+  .tabs-grouped .advance-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: .4rem .65rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+  }
+  .content { padding: 18px 14px 24px; }
+  .indicator-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metric { min-width: 0; overflow-wrap: anywhere; }
+  .game-setup-content { width: min(100% - 28px, 680px); padding: 20px 0 28px; }
+  .game-setup-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 10px 14px;
+  }
+  .game-setup-header .brand { grid-column: 1; grid-row: 1; }
+  .game-setup-caption { grid-column: 1 / -1; grid-row: 2; margin: 0; font-size: .78rem; }
+  .game-setup-header-actions {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: calc(100vw - 165px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .game-setup-header-actions::-webkit-scrollbar { display: none; }
+  .game-setup-header-actions .secondary-button { flex: 0 0 auto; padding-inline: .7rem; font-size: .82rem; }
+  .game-setup-hero { min-height: 210px; margin-bottom: 14px; }
+  .game-config-hero { min-height: 200px; }
+  .game-mode-grid { grid-template-columns: 1fr; gap: 12px; }
+  .game-mode-card { min-height: 0; padding-bottom: 16px; }
+  .game-mode-art { height: 150px; flex-basis: 150px; }
+  .setup-difficulty-card { align-items: stretch; flex-direction: column; }
+  .setup-difficulty-card select { width: 100%; }
+  .career-start-form { margin-top: 14px; }
+  .career-start-form > .primary-button { width: 100%; justify-content: space-between; }
+  .setup-tutorial { padding: 12px; }
+  .welcome-stage::before { top: 0; right: -8px; bottom: 0; width: 100%; opacity: .13; }
+  .welcome-stage { padding-block: 36px 28px; }
+}
+
+@media (max-width: 480px) {
+  .content { padding-inline: 12px; }
+  .indicator-grid { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .metric { padding: 11px; }
+  .metric-value { font-size: 1.3rem; }
+  .game-setup-header .brand { gap: .4rem; font-size: .78rem; }
+  .game-setup-header .brand-mark { width: 36px; height: 36px; }
+  .game-setup-header-actions { max-width: calc(100vw - 148px); }
+  .game-setup-header-actions .secondary-button { min-height: 40px; }
+  .game-setup-hero { min-height: 190px; padding: 18px; }
+  .setup-step-label { align-items: flex-start; flex-direction: column; gap: .35rem; }
+  .career-start-heading { align-items: flex-start; }
+  .setup-tutorial-actions { width: 100%; }
+  .setup-tutorial-actions button { flex: 1 1 auto; }
+  .welcome-header { gap: 10px; }
+  .welcome-header .quiet-button { padding-inline: .7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* A dificuldade é uma etapa da criação, com espaço para ler cada consequência. */
+.difficulty-readonly {
+  align-self: center;
+  padding: .5rem .65rem;
+  border: 1px solid #779284;
+  border-radius: 8px;
+  color: #e1eee6;
+  font-size: .8rem;
+  white-space: nowrap;
+}
+.setup-difficulty-choice { margin: 0 auto 18px; }
+.setup-choice-heading h2 { margin: .25rem 0 .35rem; color: var(--brand); font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+.setup-choice-heading p { max-width: 760px; margin: 0 0 16px; color: var(--ink-2); line-height: 1.5; }
+.setup-swipe-hint { display: none; }
+.setup-difficulty-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.setup-difficulty-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--brand);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.setup-difficulty-option:hover { border-color: var(--accent-2); transform: translateY(-2px); }
+.setup-difficulty-option:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.setup-difficulty-option.selected { border-color: var(--accent-2); box-shadow: 0 0 0 3px #167a4c22; }
+.setup-difficulty-option img { display: block; width: 100%; height: 124px; object-fit: cover; }
+.setup-difficulty-copy { display: grid; gap: .4rem; padding: 12px; }
+.setup-difficulty-copy b { font-size: 1rem; }
+.setup-difficulty-copy small { color: var(--ink-2); font-size: .83rem; line-height: 1.4; }
+.setup-difficulty-check { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: var(--accent-2); color: white; font-weight: 800; }
+.setup-difficulty-option:not(.selected) .setup-difficulty-check { display: none; }
+.setup-choice-footer, .setup-step-nav { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.setup-choice-footer { margin-top: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.setup-choice-footer > span, .setup-step-nav > span { color: var(--ink-2); font-size: .85rem; line-height: 1.4; }
+.setup-step-nav { max-width: 920px; margin: 0 auto 12px; }
+.setup-step-nav .secondary-button { flex: 0 0 auto; }
+.setup-next-button { margin-top: 16px; }
+.setup-summary { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid var(--accent-2); background: var(--paper-2); color: var(--brand); font-size: .9rem; }
+
+@media (max-width: 1050px) and (min-width: 761px) {
+  .setup-difficulty-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .game-config-hero { min-height: 155px; }
+  .setup-swipe-hint { display: block; margin: -5px 0 10px; color: var(--accent); font-weight: 700; }
+  .setup-difficulty-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(235px, 78vw);
+    grid-template-columns: none;
+    gap: 10px;
+    margin: 0 -14px;
+    padding: 3px 14px 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .setup-difficulty-option { scroll-snap-align: center; }
+  .setup-difficulty-option img { height: 135px; }
+  .setup-choice-footer { position: sticky; bottom: 0; z-index: 5; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: 0 -4px 18px #15382a16; }
+  .setup-choice-footer .primary-button { min-height: 44px; }
+  .setup-step-nav { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .setup-step-nav .secondary-button { min-height: 44px; }
+  .difficulty-readonly { font-size: .75rem; }
+}

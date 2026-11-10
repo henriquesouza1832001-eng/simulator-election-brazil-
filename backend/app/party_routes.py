@@ -23,6 +23,7 @@ class StartBody(BaseModel):
     spectrum: str = "centro"
     cause: str = Field(min_length=3, max_length=20)
     campaign_name: str = Field(default="", max_length=80)
+    difficulty: str = Field(default="normal", pattern="^(tranquilo|normal|dificil|complicado|realismo_puro)$")
 
 
 class ActBody(BaseModel):
@@ -63,6 +64,7 @@ def build_router(get_state: Callable[[], dict[str, Any]], public: Callable[[dict
         try:
             state = new_game()
             state.pop("setup_pending", None)
+            state["difficulty"] = body.difficulty
             state["player_character"] = {"name": body.name.strip(), "political_spectrum": body.spectrum, "birthplace": None, "traits": [], "customs": []}
             state["campaign_name"] = body.campaign_name.strip() or f"Trajetória de {body.name.strip()}"
             try:

@@ -9,12 +9,13 @@ const difficultyOptions = [
   ['complicado', 'Complicado'], ['realismo_puro', 'Realismo puro'],
 ];
 const difficultyDescriptions = {
-  tranquilo: 'Mais margem para recuperar apoio e orçamento; eventos dão avisos claros.',
-  normal: 'Pressão equilibrada, com consequências graduais e tempo para reagir.',
-  dificil: 'Menos folga política e fiscal; oposição e choques aparecem com mais frequência.',
-  complicado: 'Pouca margem para erro; efeitos acumulados exigem planejamento.',
-  realismo_puro: 'Parâmetros mais voláteis e consequências persistentes; continua sendo um cenário fictício.',
+  tranquilo: 'Menos crises, economia mais estável e acordos políticos mais fáceis.',
+  normal: 'Pressões equilibradas para conhecer os sistemas do jogo.',
+  dificil: 'Mais crises e oposição, com economia menos previsível.',
+  complicado: 'Crises frequentes, coalizões difíceis e oposição intensa.',
+  realismo_puro: 'Economia muito volátil e crises frequentes em um cenário fictício.',
 };
+const setupModes = ['presidency', 'career', 'party', 'elector'];
 const spectra = [
   ['esquerda', 'Esquerda'], ['centro_esquerda', 'Centro-esquerda'], ['centro', 'Centro'],
   ['centro_direita', 'Centro-direita'], ['direita', 'Direita'],
@@ -76,7 +77,11 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const [catalog, setCatalog] = useState(null);
   const [archives, setArchives] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
-  const [mode, setMode] = useState('');
+  const [mode, setMode] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('novo');
+    return setupModes.includes(requested) ? requested : '';
+  });
+  const [setupStep, setSetupStep] = useState(0);
   const [office, setOffice] = useState('vereador');
   const [stateCode, setStateCode] = useState('SP');
   const [municipality, setMunicipality] = useState('');
@@ -86,7 +91,7 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const [ideology, setIdeology] = useState('Centro');
   const [alignmentConfirmed, setAlignmentConfirmed] = useState(false);
   const [character, setCharacter] = useState(blankCharacter);
-  const [difficulty, setDifficulty] = useState(state.difficulty || 'normal');
+  const [difficulty, setDifficulty] = useState('normal');
   const [selectedArchive, setSelectedArchive] = useState('');
   const [campaignName, setCampaignName] = useState('');
   const [notice, setNotice] = useState('');
@@ -117,12 +122,37 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const partyReady = Boolean(selectedParty && selectedParty.length >= 3 && !invalidCustomParty);
   const preview = catalog?.calendar_previews?.[office];
   const hasSavedGame = Boolean(state && !state.setup_pending);
-  const heroImage = mode === 'career' && ['AC', 'AP', 'AM', 'PA', 'RO', 'RR', 'TO'].includes(stateCode)
-    ? 'porto-amazonico.jpg' : mode === 'career' ? 'praca-campanha.jpg' : 'brasilia-amanhecer.jpg';
+  const heroImage = mode === 'elector' ? 'plenario-jogo-v2.jpg'
+    : mode === 'career' && ['AC', 'AP', 'AM', 'PA', 'RO', 'RR', 'TO'].includes(stateCode)
+      ? 'porto-amazonico.jpg'
+      : mode === 'career' || mode === 'party' ? 'campanha-praca-v2.jpg'
+        : mode === 'presidency' ? 'brasilia-mandato-v2.jpg' : 'campanha-praca-v2.jpg';
+  const setupCopy = {
+    presidency: ['POSSE DIRETA', 'Prepare o início do mandato', 'Crie um personagem fictício e dê um nome à sua partida. Depois, você começa em Brasília no primeiro dia de governo.'],
+    career: ['CAMPANHA E CARREIRA', 'Monte sua candidatura', 'Escolha cargo, território, partido e personagem. O calendário eleitoral e os poderes mudam conforme o cargo.'],
+    party: ['TRAJETÓRIA PARTIDÁRIA', 'Comece pela vida partidária', 'Configure seu ponto de partida e construa uma trajetória até a pré-candidatura.'],
+    elector: ['MODO ELEITOR', 'Consulte um pleito', 'Escolha um ano e território para consultar candidaturas e registrar um voto apenas na simulação.'],
+  }[mode];
   const initialSupport = { ...spectrumSupport[character.political_spectrum], ...{} };
   Object.entries(familySupport[character.family_background] || {}).forEach(([group, amount]) => { initialSupport[group] = (initialSupport[group] || 0) + amount; });
   const setCharacterField = (key, value) => setCharacter((current) => ({ ...current, [key]: value }));
-  const updateMode = (next) => setMode((current) => current === next ? '' : next);
+  const updateMode = (next) => {
+    if (next && next !== 'elector' && window.matchMedia('(min-width: 900px)').matches && !new URLSearchParams(window.location.search).has('novo')) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('novo', next);
+      const opened = window.open(url.toString(), '_blank');
+      if (opened) { opened.opener = null; return; }
+    }
+    if (!next && new URLSearchParams(window.location.search).has('novo')) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('novo');
+      window.history.replaceState(null, '', url);
+    }
+    setMode(next);
+    setSetupStep(0);
+    setNotice('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const characterForRequest = () => ({ ...character,
     birth_state_code: character.birth_municipality_id ? character.birth_state_code : '',
     birth_municipality_id: character.birth_municipality_id || null,
@@ -213,13 +243,17 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   return <main className="game-setup-screen">
     <header className="game-setup-header">
       <Brand />
-      <span className="game-setup-caption">ESCOLHA UMA PARTIDA</span>
-      {authConfig?.enabled && (authUser?.isGuest
-        ? <button className="secondary-button" onClick={onSignIn}>Entrar ou criar conta</button>
-        : <button className="secondary-button" onClick={onAccount}>Minha conta</button>)}
+      <span className="game-setup-caption">{mode ? 'NOVA PARTIDA · CONFIGURAÇÃO' : 'ESCOLHA UMA PARTIDA'}</span>
+      <div className="game-setup-header-actions">
+        {mode && <button className="secondary-button setup-back-button" type="button" onClick={() => updateMode('')}>← Todos os modos</button>}
+        {authConfig?.enabled && (authUser?.isGuest
+          ? <button className="secondary-button" onClick={onSignIn}>Entrar / criar conta</button>
+          : <button className="secondary-button" onClick={onAccount}>Minha conta</button>)}
+      </div>
     </header>
     <div className="game-setup-content">
-      <section className="game-setup-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,24,21,.84), rgba(9,24,21,.22)), url('/assets/backgrounds/${heroImage}')` }}>
+      {!mode ? <>
+      <section className="game-setup-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,24,21,.82), rgba(9,24,21,.16)), url('/assets/backgrounds/${heroImage}')` }}>
         <span className="eyebrow">UM BRASIL, VÁRIOS CAMINHOS</span><h1>Onde começa sua história?</h1>
         <p>Escolha o ponto de partida. Você pode entrar direto no governo ou construir uma carreira desde a campanha.</p>
       </section>
@@ -233,57 +267,73 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
 
       <div className="game-setup-toolbar">
         {hasSavedGame ? <button className="primary-button" onClick={onContinue}>Continuar partida salva <b>→</b></button> : <span className="setup-new-label">Nenhuma partida ativa. Escolha um modo para começar.</span>}
-        <label className="setup-difficulty">Dificuldade<select value={difficulty} onChange={(event) => setDifficulty(event.target.value)}>{difficultyOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><small>{difficultyDescriptions[difficulty]}</small></label>
       </div>
 
       {campaigns.length > 0 && <details className="saved-campaign-list"><summary>Minhas partidas salvas ({campaigns.length})</summary><div className="saved-campaign-grid">{campaigns.map((item) => <article className={item.active ? 'active' : ''} key={item.campaign_id}><div><b>{item.name}</b><small>{item.office} · {item.phase.replaceAll('_', ' ')} · {item.date ? new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR') : 'sem data'} · {difficultyOptions.find(([value]) => value === item.difficulty)?.[1] || item.difficulty}</small></div><button className="secondary-button" disabled={busy || item.active} onClick={() => activateCampaign(item.campaign_id)}>{item.active ? 'Em andamento' : 'Abrir'}</button></article>)}</div></details>}
 
       <section className="game-mode-grid" aria-label="Modos de jogo">
         <article className={`game-mode-card presidency-mode ${mode === 'presidency' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/brasilia-amanhecer.jpg')" }} />
+          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/brasilia-mandato-v2.jpg')" }} />
           <span className="game-mode-kicker">GOVERNO FEDERAL · 48 MESES</span><h2>Tomar posse no primeiro dia</h2>
           <p>Comece em 1º de janeiro de 2027 como presidente e conduza o governo pelos quatro anos.</p>
           <ul><li>Sem etapa de campanha</li><li>Pronunciamento de posse obrigatório</li><li>Orçamento, Congresso e agenda nacional</li></ul>
-          <button className="secondary-button" disabled={busy} onClick={() => updateMode('presidency')}>{mode === 'presidency' ? 'Fechar configuração' : 'Configurar posse direta'}</button>
+          <button className="secondary-button" disabled={busy} onClick={() => updateMode('presidency')}>Configurar posse direta <b>→</b></button>
         </article>
         <article className={`game-mode-card career-mode ${mode === 'career' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/praca-campanha.jpg')" }} />
+          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/campanha-praca-v2.jpg')" }} />
           <span className="game-mode-kicker">CAMPANHA E CARREIRA</span><h2>Disputar uma eleição</h2>
           <p>Escolha cargo e território. Faça campanha, dispute a eleição e exerça o mandato se vencer.</p>
           <ul><li>De vereador a presidente</li><li>Calendário e poderes próprios de cada cargo</li><li>Estado e município definem o cenário local</li></ul>
-          <button className="secondary-button" disabled={!catalog || busy} onClick={() => updateMode('career')}>{mode === 'career' ? 'Fechar configuração' : 'Escolher cargo e lugar'}</button>
+          <button className="secondary-button" disabled={!catalog || busy} onClick={() => updateMode('career')}>Escolher cargo e lugar <b>→</b></button>
         </article>
         <article className={`game-mode-card elector-mode ${mode === 'elector' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/plenario-civiciclo.png')" }} />
+          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/plenario-jogo-v2.jpg')" }} />
           <span className="game-mode-kicker">MODO ELEITOR · 2014 A 2030</span><h2>Consultar e votar em simulação</h2>
           <p>Veja os candidatos oficiais de um pleito e escolha seu voto simulado, sem criar partida.</p>
           <ul><li>Dados oficiais do TSE com fonte</li><li>2028 e 2030 são cenários futuros simulados</li><li>Nunca envia voto a uma eleição real</li></ul>
-          <button className="secondary-button" disabled={busy} onClick={() => updateMode('elector')}>{mode === 'elector' ? 'Fechar modo eleitor' : 'Abrir Modo Eleitor'}</button>
+          <button className="secondary-button" disabled={busy} onClick={() => updateMode('elector')}>Abrir Modo Eleitor <b>→</b></button>
         </article>
         <article className={`game-mode-card party-mode ${mode === 'party' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/praca-campanha-civiciclo.png')" }} />
+          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/campanha-praca-v2.jpg')" }} />
           <span className="game-mode-kicker">MILITÂNCIA E PARTIDO</span><h2>Começar como militante</h2>
           <p>Comece como eleitor engajado, ganhe espaço no partido e chegue à candidatura a vereador.</p>
           <ul><li>Militância, filiação e vida partidária</li><li>Acontecimentos de bairro e de diretório</li><li>Pré-candidatura leva à campanha</li></ul>
-          <button className="secondary-button" disabled={busy} onClick={() => updateMode('party')}>{mode === 'party' ? 'Fechar configuração' : 'Começar trajetória'}</button>
+          <button className="secondary-button" disabled={busy} onClick={() => updateMode('party')}>Começar trajetória <b>→</b></button>
         </article>
       </section>
+      </> : <>
+        <section className="game-setup-hero game-config-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,24,21,.84), rgba(9,24,21,.20)), url('/assets/backgrounds/${heroImage}')` }}>
+          <span className="eyebrow">{setupCopy[0]}</span>
+          <h1>{setupCopy[1]}</h1>
+          <p>{setupCopy[2]}</p>
+          {mode !== 'elector' && <div className="setup-step-label"><span>ETAPA {setupStep + 1} DE {mode === 'career' ? 3 : 2}</span><b>{setupStep === 0 ? 'Escolha a dificuldade' : setupStep === 2 ? 'Crie seu personagem' : 'Configure sua partida'}</b></div>}
+        </section>
+        {mode !== 'elector' && setupStep === 0 && <section className="setup-difficulty-choice" aria-label="Escolha a dificuldade da partida">
+          <div className="setup-choice-heading"><div><span className="eyebrow">ANTES DE COMEÇAR</span><h2>Qual será o desafio?</h2><p>O nível altera a pressão dos eventos, da oposição e da economia. Você o escolhe uma vez para esta partida.</p><small className="setup-swipe-hint">Deslize para ver os cinco níveis →</small></div></div>
+          <div className="setup-difficulty-grid">{difficultyOptions.map(([value, label]) => <button key={value} type="button" className={'setup-difficulty-option' + (difficulty === value ? ' selected' : '')} aria-pressed={difficulty === value} onClick={() => setDifficulty(value)}>
+            <img src={'/assets/backgrounds/difficulty/' + value + '.png'} alt="" loading="lazy" />
+            <span className="setup-difficulty-copy"><b>{label}</b><small>{difficultyDescriptions[value]}</small></span><span className="setup-difficulty-check" aria-hidden="true">{difficulty === value ? '✓' : ''}</span>
+          </button>)}</div>
+          <div className="setup-choice-footer"><span>Selecionado: <b>{difficultyOptions.find(([value]) => value === difficulty)?.[1]}</b></span><button className="primary-button" type="button" onClick={() => { setSetupStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Continuar <b>→</b></button></div>
+        </section>}
+        {mode !== 'elector' && setupStep > 0 && <div className="setup-step-nav"><button className="secondary-button" type="button" onClick={() => { setSetupStep((step) => step - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>← {setupStep === 1 ? 'Alterar dificuldade' : 'Voltar ao cargo e território'}</button><span>{difficultyOptions.find(([value]) => value === difficulty)?.[1]} · {difficultyDescriptions[difficulty]}</span></div>}
+      </>}
 
-      {mode === 'party' && <PartyStartForm request={request} onState={onState} onContinue={onContinue} busy={busy} setBusy={setBusy} setNotice={setNotice} />}
+      {mode === 'party' && setupStep === 1 && <PartyStartForm request={request} onState={onState} onContinue={onContinue} busy={busy} setBusy={setBusy} setNotice={setNotice} difficulty={difficulty} />}
 
       {mode === 'elector' && <ElectorPanel request={request} />}
 
-      {mode === 'presidency' && <form className="career-start-form" onSubmit={startPresidency}>
+      {mode === 'presidency' && setupStep === 1 && <form className="career-start-form" onSubmit={startPresidency}>
         <div className="career-start-heading"><div><span className="eyebrow">POSSE DIRETA</span><h2>Configure sua personagem</h2></div><span className="career-start-date">Brasília · 1º de janeiro de 2027</span></div>
         <label className="campaign-name-field">Nome desta partida<input value={campaignName} onChange={(event) => setCampaignName(event.target.value.slice(0, 80))} maxLength={80} placeholder={`Mandato de ${character.name || 'seu personagem'}`} /></label>
         {characterFields}
         <button className="primary-button" disabled={busy || character.name.trim().length < 2}>Assumir a Presidência no primeiro dia <b>→</b></button>
       </form>}
 
-      {mode === 'career' && <form className="career-start-form" onSubmit={startCareer}>
-        <div className="career-start-heading"><div><span className="eyebrow">CAMINHO ELEITORAL</span><h2>Escolha cargo e território</h2></div><span className="career-start-date">Calendário eleitoral simulado</span></div>
-        <label className="campaign-name-field">Nome desta partida<input value={campaignName} onChange={(event) => setCampaignName(event.target.value.slice(0, 80))} maxLength={80} placeholder={`Campanha de ${character.name || 'seu personagem'}`} /></label>
-        {!catalog ? <p>Carregando cargos e estados…</p> : <>
+      {mode === 'career' && setupStep > 0 && <form className="career-start-form" onSubmit={startCareer}>
+        <div className="career-start-heading"><div><span className="eyebrow">CAMINHO ELEITORAL</span><h2>{setupStep === 1 ? 'Escolha cargo e território' : 'Crie seu personagem'}</h2></div><span className="career-start-date">Calendário eleitoral simulado</span></div>
+        {setupStep === 1 && <label className="campaign-name-field">Nome desta partida<input value={campaignName} onChange={(event) => setCampaignName(event.target.value.slice(0, 80))} maxLength={80} placeholder={`Campanha de ${character.name || 'seu personagem'}`} /></label>}
+        {setupStep === 1 && (!catalog ? <p>Carregando cargos e estados…</p> : <>
           <div className="career-start-fields">
             <label>Cargo<select value={office} onChange={(event) => setOffice(event.target.value)}>{catalog.offices.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
             {!isPresidentialCampaign && <label>Estado da candidatura<select value={stateCode} onChange={(event) => { setStateCode(event.target.value); setMunicipality(''); setMunicipalityId(''); }}>{catalog.states.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</select></label>}
@@ -294,14 +344,18 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
             {party === '__custom__' && <label>Nome do partido fictício<input value={customParty} onChange={(event) => setCustomParty(event.target.value.slice(0, 60))} minLength={3} maxLength={60} placeholder="Ex.: Movimento Cívico" /><small className={invalidCustomParty ? 'field-error' : ''}>{invalidCustomParty ? 'Esse nome não está disponível.' : 'Evite nomes de ideologias extremistas ou ataques a grupos.'}</small></label>}
           </div>
           <p className="party-data-note">Partidos reais aparecem apenas como referência factual, conforme a lista do TSE ({catalog.party_source?.checked_on || 'data não informada'}). A linha ideológica é uma escolha da simulação e não descreve oficialmente o partido. {catalog.party_source?.url && <a href={catalog.party_source.url} target="_blank" rel="noreferrer">Fonte TSE</a>}</p>
-          {alignmentGap > 0 && <label className="party-alignment-warning"><span>O personagem está {alignmentGap} posição(ões) distante da linha escolhida para a legenda. Isso reduz levemente o apoio inicial e cria atrito interno fictício; o jogo não afirma que essa seja a posição real do partido.</span><input type="checkbox" checked={alignmentConfirmed} onChange={(event) => setAlignmentConfirmed(event.target.checked)} /> Confirmo essa divergência para a simulação</label>}
           {chosenOffice && <div className="career-start-preview"><b>{chosenOffice.label} · mandato de {chosenOffice.term_years} anos</b><span>{chosenOffice.powers.join(' · ')}</span>{preview && <small>Eleição prevista: {new Date(`${preview.election_date}T12:00:00`).toLocaleDateString('pt-BR')} · campanha abre em {new Date(`${preview.campaign_start}T12:00:00`).toLocaleDateString('pt-BR')} · posse prevista em {new Date(`${preview.inauguration_date}T12:00:00`).toLocaleDateString('pt-BR')}</small>}</div>}
+          <button className="primary-button setup-next-button" type="button" disabled={busy || (requiresCampaignCity && !municipalityId) || !partyReady} onClick={() => { setSetupStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Continuar para o personagem <b>→</b></button>
+        </>)}
+        {setupStep === 2 && <>
+          <p className="setup-summary">{chosenOffice?.label} · {isPresidentialCampaign ? 'Brasil' : municipality || catalog?.states.find((item) => item.code === stateCode)?.name} · {selectedParty}</p>
           {characterFields}
+          {alignmentGap > 0 && <label className="party-alignment-warning"><span>O personagem está {alignmentGap} posição(ões) distante da linha escolhida para a legenda. Isso reduz levemente o apoio inicial e cria atrito interno fictício; o jogo não afirma que essa seja a posição real do partido.</span><input type="checkbox" checked={alignmentConfirmed} onChange={(event) => setAlignmentConfirmed(event.target.checked)} /> Confirmo essa divergência para a simulação</label>}
           <button className="primary-button" disabled={busy || (requiresCampaignCity && !municipalityId) || character.name.trim().length < 2 || !partyReady || (alignmentGap > 0 && !alignmentConfirmed)}>Criar personagem e iniciar campanha <b>→</b></button>
         </>}
       </form>}
 
-      {archives.length > 0 && <details className="game-archives"><summary>Restaurar uma partida arquivada ({archives.length})</summary><div><select value={selectedArchive} onChange={(event) => setSelectedArchive(event.target.value)}><option value="">Escolha uma partida salva</option>{archives.map((item) => <option key={item.id} value={item.id}>{item.title} · {new Date(`${item.archived_at.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}</option>)}</select><button className="secondary-button" disabled={busy || !selectedArchive} onClick={restore}>Restaurar</button></div></details>}
+      {!mode && archives.length > 0 && <details className="game-archives"><summary>Restaurar uma partida arquivada ({archives.length})</summary><div><select value={selectedArchive} onChange={(event) => setSelectedArchive(event.target.value)}><option value="">Escolha uma partida salva</option>{archives.map((item) => <option key={item.id} value={item.id}>{item.title} · {new Date(`${item.archived_at.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}</option>)}</select><button className="secondary-button" disabled={busy || !selectedArchive} onClick={restore}>Restaurar</button></div></details>}
       {notice && <p className="game-setup-notice" role="status">{notice}</p>}
     </div>
     <footer className="game-setup-footer">Civiciclo é um simulador fictício e satírico, sem afiliação ou endosso de partidos, pessoas ou instituições. A referência a nomes partidários não transforma resultados simulados em fatos. Não use dados pessoais reais no perfil livre.</footer>

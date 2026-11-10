@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8 — 10 nov. 2026 (fluxo de início e identidade visual)
+
+- A criação de partida ganhou etapas curtas: escolha visual da dificuldade, configuração do caminho e, na carreira, personagem separado de cargo e território. No celular, os cinco níveis podem ser percorridos horizontalmente.
+- Cada dificuldade recebeu uma cena de Brasília com luz e clima próprios. A escolha fica fixa na partida e é mostrada no cabeçalho como informação.
+- No computador, configurar uma partida nova abre outra guia; no celular, o fluxo permanece na mesma guia.
+- A escolha do modo e a configuração de uma partida agora são telas separadas; voltar aos modos preserva os campos preenchidos.
+- Nova marca raster transparente aplicada ao cabeçalho, às telas de carregamento e ao favicon. O app não depende mais do SVG antigo para exibir a marca.
+- Três cenários visuais novos para abertura, carreira, plenário e posse; as imagens de fundo foram otimizadas para carregar melhor no celular.
+- Ajustes globais de contraste e cores do cabeçalho, alvos de toque, navegação horizontal móvel, formulários, cartões e espaçamento responsivo.
+- `npm run build` concluído. O Vite mantém o aviso já conhecido sobre o bundle JavaScript principal acima de 500 kB.
+
 ## 0.7 — 10 nov. 2026 (continuidade da carreira partidária)
 
 - A trajetória partidária agora pode lançar pré-candidaturas a vereador, prefeito, deputado estadual e deputado federal, com exigências próprias de prestígio, contatos e reputação.

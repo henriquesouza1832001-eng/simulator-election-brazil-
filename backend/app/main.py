@@ -782,6 +782,8 @@ def tse_data_status() -> dict[str, Any]:
 @app.patch("/api/game/difficulty")
 def set_difficulty(request: DifficultyRequest) -> dict[str, Any]:
     state = game_state()
+    if not state.get("setup_pending"):
+        raise HTTPException(status_code=409, detail="A dificuldade é definida ao criar a partida.")
     state["difficulty"] = request.difficulty
     save_state(state)
     return public_state(state)

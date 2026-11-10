@@ -10,7 +10,7 @@ const CAUSES = [['moradia', 'Moradia'], ['saude', 'Saúde'], ['educacao', 'Educa
 const STAGES = [['eleitor', 'Eleitor engajado'], ['militante', 'Militante'], ['filiado', 'Filiado(a)'], ['quadro', 'Quadro do partido'], ['pre_candidato', 'Pré-candidato(a)']];
 
 /* Formulário de início: cartão "Militante e partidário" da tela inicial. */
-export function PartyStartForm({ request, onState, onContinue, busy, setBusy, setNotice }) {
+export function PartyStartForm({ request, onState, onContinue, busy, setBusy, setNotice, difficulty }) {
   const [name, setName] = useState('');
   const [uf, setUf] = useState('');
   const [city, setCity] = useState({ id: '', name: '' });
@@ -21,7 +21,7 @@ export function PartyStartForm({ request, onState, onContinue, busy, setBusy, se
     event.preventDefault();
     setBusy(true); setNotice('');
     try {
-      const data = await request('/api/party-path/start', { method: 'POST', body: JSON.stringify({ name: name.trim(), state_code: uf, municipality_id: city.id, spectrum, cause }) });
+      const data = await request('/api/party-path/start', { method: 'POST', body: JSON.stringify({ name: name.trim(), state_code: uf, municipality_id: city.id, spectrum, cause, difficulty }) });
       onState(data); onContinue();
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }

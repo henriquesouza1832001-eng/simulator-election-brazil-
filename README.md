@@ -1,6 +1,6 @@
 # Civiciclo 0.1 — simulador político
 
-Civiciclo é o nome de trabalho do jogo fictício de política brasileira, jogado no navegador. O símbolo vetorial está em `public/assets/brand/civiciclo.svg`; a busca de disponibilidade da marca no INPI ainda não foi feita. O tempo avança por dia; decisões, campanhas, eleições, crises e projetos alteram uma simulação determinística. O projeto não representa previsões oficiais nem atribui fatos inventados a pessoas ou empresas reais.
+Civiciclo é o nome de trabalho do jogo fictício de política brasileira, jogado no navegador. A marca usada pelo app e pelo ícone do navegador é `public/assets/brand/civiciclo-marca.png`; a busca de disponibilidade da marca no INPI ainda não foi feita. O tempo avança por dia; decisões, campanhas, eleições, crises e projetos alteram uma simulação determinística. O projeto não representa previsões oficiais nem atribui fatos inventados a pessoas ou empresas reais.
 
 ## Estado da versão
 
