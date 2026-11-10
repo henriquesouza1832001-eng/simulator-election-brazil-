@@ -1,0 +1,131 @@
+/* Camada final de design do Civiciclo (modo "operar": consistência, contraste e leitura).
+   Carregada por último. Não altera a marca: regras de .brand e .brand-mark ficam fora daqui. */
+:root{
+  --ink:#1b2b25;--ink-2:#46564f;--paper:#fbfaf6;--paper-2:#f1f0e9;--ground:#eceae2;--line:#cdd2ca;--line-strong:#9aa59f;
+  --brand:#14342d;--accent:#17613f;--accent-2:#1f7a4f;--accent-tint:#e4f2ea;
+  --warn:#7a4f00;--warn-tint:#fbf0d9;--danger:#a4262c;--danger-tint:#fbe4e2;--info:#1f4f8a;--focus:#1d4ed8;
+  --radius:10px;--font:"DM Sans",system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  /* escala fixa (razão ~1.2) */
+  --t-xs:.8125rem;--t-sm:.9375rem;--t-md:1rem;--t-lg:1.1875rem;--t-xl:1.4375rem;--t-2xl:1.75rem;
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.5rem;--space-6:2.25rem;
+}
+html{font-size:16px;scrollbar-color:#8f9a94 var(--ground)}
+:root,body{font-family:var(--font);color:var(--ink)}
+body{background:var(--ground);line-height:1.5;font-size:var(--t-md);-webkit-font-smoothing:antialiased}
+::selection{background:#bfe3cf;color:var(--ink)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;color:var(--ink);font-family:var(--font);letter-spacing:-.01em}
+p{max-width:75ch}
+.eyebrow{display:block;font-size:var(--t-xs);font-weight:700;letter-spacing:0;color:var(--ink-2);text-transform:lowercase}
+.eyebrow::first-letter{text-transform:uppercase}
+.eyebrow:has(+ :is(h1,h2,h3)){display:none}   /* etiqueta acima de um título é redundante; quando é o único título, vira rótulo normal */
+.num,.metric-value,.score,.mini-stats b,td,th,output{font-variant-numeric:tabular-nums}
+
+/* ---- controles ---- */
+button,input,select,textarea{font:inherit}
+input,select,textarea{min-height:44px;padding:.5rem .75rem;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--ink);font-size:var(--t-md)}
+textarea{min-height:7rem;line-height:1.5}
+input::placeholder,textarea::placeholder{color:#5d6d66;opacity:1}
+input:hover,select:hover,textarea:hover{border-color:var(--ink-2)}
+input:disabled,select:disabled,textarea:disabled{background:var(--paper-2);color:#6b7872;cursor:not-allowed}
+input[type=checkbox],input[type=radio]{min-height:0;width:1.1rem;height:1.1rem;accent-color:var(--accent-2)}
+label{color:var(--ink)}
+.primary-button,.secondary-button,.danger-button,.quiet-button{min-height:44px;border-radius:8px;font-size:var(--t-sm);font-weight:650;cursor:pointer;transition:background-color .15s ease-out,border-color .15s ease-out}
+.primary-button{background:var(--accent-2);color:#fff;border:1px solid var(--accent-2);padding:.6rem 1.1rem}
+.primary-button:hover:not(:disabled){background:var(--accent);border-color:var(--accent)}
+.primary-button:disabled{background:#c9d2cc;border-color:#c9d2cc;color:#48574f;opacity:1;cursor:not-allowed}
+.secondary-button{background:var(--paper);color:var(--ink);border:1px solid var(--line-strong);padding:.55rem 1rem}
+.secondary-button:hover:not(:disabled){background:var(--accent-tint);border-color:var(--accent-2)}
+.secondary-button:disabled{background:var(--paper-2);color:#5d6d66;border-color:var(--line);opacity:1}
+.danger-button{background:var(--danger);color:#fff;border:1px solid var(--danger);padding:.6rem 1.1rem}
+.danger-button:disabled{opacity:.6}
+
+/* ---- superfícies ---- */
+.panel,.metric,.term-card,.investment-grid article,.operating-lines article,.cadence-summary,.election-summary article,.institution-grid article,.compact-panel,.preview-card{
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:none;color:var(--ink)}
+.panel{padding:var(--space-5)}
+.muted,.metric-detail,.empty-state,.page-description,.panel-heading p,.welcome-row p{color:var(--ink-2)}
+.page-description{font-size:var(--t-sm);margin:.25rem 0 var(--space-4)}
+.subheading{font-size:var(--t-lg);margin:var(--space-5) 0 var(--space-2)}
+.green{color:var(--accent)!important}.amber{color:var(--warn)!important}.red{color:var(--danger)!important}
+
+/* ---- cabeçalho do app (marca fora) ---- */
+.topbar{min-height:64px;height:auto;gap:var(--space-5);padding-block:.5rem}
+.date-block{font-size:var(--t-md)}
+.date-block small,.live-dot{font-size:var(--t-xs);color:#c8dad2}
+.top-actions{gap:.6rem;flex-wrap:nowrap}
+.topbar .quiet-button{color:#fff;background:rgba(255,255,255,.08);border:1px solid #8fb5a6;opacity:1;padding:.45rem .9rem;min-height:40px}
+.topbar .quiet-button:hover:not(:disabled){background:rgba(255,255,255,.18)}
+.topbar .quiet-button:disabled{color:#d3e4dc;border-color:#5f8576;opacity:.75}
+.topbar .quiet-button b{color:#bfeed7}
+.difficulty-picker span{font-size:var(--t-xs);color:#c8dad2;letter-spacing:0;text-transform:none}
+.topbar select{min-height:40px;background:#0f2a23;color:#fff;border-color:#8fb5a6}
+
+/* ---- abas (dois níveis) ---- */
+.tabs{background:var(--paper);border-bottom:1px solid var(--line);min-height:52px;height:auto;gap:var(--space-4);overflow-x:auto;scrollbar-width:thin}
+.tab{color:var(--ink-2);font-size:var(--t-sm);font-weight:600;padding:.75rem .35rem;white-space:nowrap;border-bottom:3px solid transparent;opacity:1}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--ink);border-bottom-color:var(--accent-2);background:transparent}
+.tab-sub{border-radius:8px;border-bottom:0;padding:.45rem .8rem;margin:.4rem 0}
+.tab-sub.active{background:var(--brand);color:#fff}
+.advance-link{color:var(--ink);font-size:var(--t-sm);font-weight:600;white-space:nowrap}
+.advance-link span{color:var(--accent)}
+
+/* ---- faixa de abertura de cada aba: compacta ---- */
+.content{padding-top:var(--space-5)}
+.welcome-row{margin-bottom:var(--space-4);gap:var(--space-4);align-items:flex-start}
+.welcome-row h1{font-size:var(--t-2xl);margin:0 0 .25rem;letter-spacing:-.02em}
+.welcome-row p{font-size:var(--t-sm);margin:0}
+.term-card{width:auto;min-width:11rem;padding:.6rem .9rem}
+.term-card>span{font-size:var(--t-xs);letter-spacing:0;text-transform:none;color:var(--ink-2)}
+.term-card strong{font-size:var(--t-xl)}
+.character-nameplate{margin-top:.5rem}
+
+/* ---- indicadores ---- */
+.indicator-grid{grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr));gap:var(--space-3)}
+.metric{min-height:0;padding:.85rem 1rem;background:var(--paper)}
+.metric-label{font-size:var(--t-xs);color:var(--ink-2);font-weight:600}
+.metric-value{font-size:var(--t-xl);margin-top:.2rem;color:var(--ink)}
+.metric-value small{font-size:var(--t-xs);color:var(--ink-2);margin-left:.25rem}
+.indicator-toolbar span{font-size:var(--t-sm);font-weight:600;letter-spacing:0;color:var(--ink-2)}
+
+/* ---- barras de progresso: trilha e preenchimento legíveis ---- */
+.progress,.bar{background:#d7ddd6}
+.progress i,.bar i{background:var(--accent-2)}
+
+/* ---- rodapé ---- */
+.footer{color:var(--ink-2);font-size:var(--t-xs)}
+
+/* ---- celular ---- */
+@media (max-width:760px){
+  .top-actions{flex-wrap:wrap}
+  .topbar{flex-wrap:wrap;gap:.4rem;padding:.5rem 1rem}
+  .date-block{border-left:0;padding-left:0;width:100%}
+  .top-actions{margin-left:0;width:100%}
+  .live-dot{display:none}
+  .difficulty-picker span{display:none}
+  .content{padding-inline:1rem}
+  .welcome-row{flex-direction:column}
+  .term-card{width:100%}
+  .panel{padding:var(--space-4)}
+  .tabs{padding-inline:.5rem;gap:var(--space-2)}
+  .advance-link{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- seções recolhíveis (details) padronizadas ---- */
+details.agenda-more,details.diplomacy-section{border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);padding:.25rem 1rem;margin:var(--space-3) 0}
+details.agenda-more>summary,details.diplomacy-section>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650;color:var(--ink);list-style:revert}
+details.agenda-more[open]>summary{border-bottom:1px solid var(--line);margin-bottom:var(--space-3)}
+details.agenda-more>summary:hover{color:var(--accent)}
+
+/* ---- texto auxiliar, links e sub-abas: contraste mínimo 4,5:1 ---- */
+.content small,.content .hint,.content .muted{color:var(--ink-2)}
+.content a{color:var(--accent);text-decoration:underline;text-underline-offset:.15em}
+.content a:hover{color:var(--ink)}
+.tabs.tabs-grouped .tab-sub{color:var(--ink-2)}
+.tabs.tabs-grouped .tab-sub.active{color:#fff;background:var(--brand)}
+.topbar .quiet-button,.topbar .quiet-button b{white-space:nowrap}
+
+/* nos cartões laterais da visão geral a etiqueta é o próprio título (o h2 é o valor) */
+.side-column .eyebrow{display:block!important}

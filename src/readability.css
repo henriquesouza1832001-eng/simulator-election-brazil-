@@ -1,7 +1,7 @@
 /* Keep secondary text readable without flattening the visual hierarchy. */
-:root { font-size: 16px; }
-body { font-size: 16px; line-height: 1.55; }
-small { font-size: 13px !important; line-height: 1.5 !important; }
+:root { font-size:16px; }
+body { font-size:16px; line-height:1.55; }
+small { font-size:13px !important; line-height:1.5 !important; }
 .eyebrow,
 .metric-label,
 .metric-detail,
@@ -31,10 +31,10 @@ small { font-size: 13px !important; line-height: 1.5 !important; }
 [class$="-detail"],
 [class$="-meta"],
 [class$="-status"] {
-  font-size: 13px !important;
-  line-height: 1.5;
+  font-size:13px !important;
+  line-height:1.5;
 }
-.eyebrow { font-size: 12px !important; letter-spacing: .08em; }
+.eyebrow { font-size:12px !important; letter-spacing:.08em; }
 .work-card p,
 .work-running p,
 .work-costs span,
@@ -45,7 +45,7 @@ small { font-size: 13px !important; line-height: 1.5 !important; }
 .operating-lines small,
 .operating-lines span,
 .operating-footer small,
-.indicator-line > span { font-size: 13px !important; line-height: 1.5; }
+.indicator-line > span { font-size:13px !important; line-height:1.5; }
 
 /* Text and controls in the initial setup are used before any game knowledge. */
 .game-setup-screen p,
@@ -53,8 +53,8 @@ small { font-size: 13px !important; line-height: 1.5 !important; }
 .content > p,
 .agenda-page p,
 .learning-page p {
-  font-size: 14px !important;
-  line-height: 1.6;
+  font-size:14px !important;
+  line-height:1.6;
 }
 .game-setup-screen label,
 .game-setup-screen select,
@@ -63,34 +63,34 @@ small { font-size: 13px !important; line-height: 1.5 !important; }
 .game-setup-screen button,
 .tabs .tab,
 .advance-link {
-  font-size: 14px;
+  font-size:14px;
 }
 .game-setup-screen input,
 .game-setup-screen select,
 .game-setup-screen textarea {
-  min-height: 44px;
+  min-height:44px;
 }
-.game-setup-screen small { font-size: 13px !important; }
+.game-setup-screen small { font-size:13px !important; }
 
 /* Legacy panels used many 9–11 px captions; keep all supporting copy legible. */
 .app-shell .panel :is(p, label, summary, li, span, small) {
-  font-size: 13px !important;
-  line-height: 1.5 !important;
+  font-size:13px !important;
+  line-height:1.5 !important;
 }
 .app-shell :is(button, .tab, .advance-link, .quiet-button) {
-  font-size: 14px !important;
-  min-height: 40px;
+  font-size:14px !important;
+  min-height:40px;
 }
-.app-shell button.primary-button { min-height: 44px; }
+.app-shell button.primary-button { min-height:44px; }
 
 /* Expanded indicator groups should size to their own contents, not their row. */
 .all-indicators .indicator-groups {
-  align-items: start;
-  grid-auto-rows: max-content;
+  align-items:start;
+  grid-auto-rows:max-content;
 }
-.all-indicators .indicator-group { align-self: start; }
-.all-indicators .indicator-group > summary { font-size: 14px; }
-.all-indicators .indicator-line b { font-size: 13px; }
-.all-indicators .indicator-line > div small { font-size: 12px; }
-.all-indicators .indicator-line > strong { font-size: 13px; }
-.all-indicators .indicator-line > strong small { font-size: 12px; }
+.all-indicators .indicator-group { align-self:start; }
+.all-indicators .indicator-group > summary { font-size:14px; }
+.all-indicators .indicator-line b { font-size:13px; }
+.all-indicators .indicator-line > div small { font-size:12px; }
+.all-indicators .indicator-line > strong { font-size:13px; }
+.all-indicators .indicator-line > strong small { font-size:12px; }

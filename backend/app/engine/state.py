@@ -44,10 +44,10 @@ def new_game() -> dict[str, Any]:
                    "pipeline": [], "outcomes": {"education": 50.0, "health": 50.0, "security": 50.0,
                      "infrastructure": 50.0, "productivity": 50.0, "rural_resilience": 50.0},
                     "operating": {"last_review": None, "travel_cut_pct": 0, "residence_cut_pct": 0,
-                        "lines": {"official_travel": {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
-                            "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."},
-                            "official_residence": {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
-                            "description": "Manutencao, servicos e funcionamento das residencias oficiais."}}}},
+                        "lines": {"official_travel": {"label": "Viagens oficiais e delegações", "annual_cost_bi": 2.4,
+                            "description": "Deslocamentos institucionais, missões e delegações do Executivo."},
+                            "official_residence": {"label": "Residência oficial e manutenção", "annual_cost_bi": 0.6,
+                            "description": "Manutenção, serviços e funcionamento das residências oficiais."}}}},
         "regional_metrics": {key: dict(value) for key, value in REGION_BASELINES.items()},
         "metrics": {"gdp_growth": 2.1, "inflation": 4.5, "unemployment": 7.2, "debt_gdp": 78.0,
                     "primary_balance": -1.5, "approval": 52.0, "governability": 55, "congress_support": 52,
@@ -86,9 +86,9 @@ def refresh_calendar_fields(state: dict[str, Any]) -> dict[str, Any]:
     operating.setdefault("travel_cut_pct", 0)
     operating.setdefault("residence_cut_pct", 0)
     lines = operating.setdefault("lines", {})
-    lines.setdefault("official_travel", {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
-        "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."})
-    lines.setdefault("official_residence", {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
+    lines.setdefault("official_travel", {"label": "Viagens oficiais e delegações", "annual_cost_bi": 2.4,
+        "description": "Deslocamentos institucionais, missões e delegações do Executivo."})
+    lines.setdefault("official_residence", {"label": "Residência oficial e manutenção", "annual_cost_bi": 0.6,
         "description": "Manutenção, serviços e funcionamento das residências oficiais."})
     ensure_fiscal_state(state)
     ensure_diplomacy_state(state)

@@ -8,16 +8,16 @@ BASE_EFFECTIVE_INTEREST_RATE = 0.045
 
 REVENUE_LINES = {
     "income_profit": {"label": "Renda e lucro", "annual_bi": 920.0},
-    "consumption": {"label": "Consumo e producao", "annual_bi": 940.0},
-    "social_contributions": {"label": "Contribuicoes sociais", "annual_bi": 820.0},
+    "consumption": {"label": "Consumo e produção", "annual_bi": 940.0},
+    "social_contributions": {"label": "Contribuições sociais", "annual_bi": 820.0},
     "other_revenue": {"label": "Outras receitas", "annual_bi": 320.0},
 }
 
 MANDATORY_LINES = {
-    "social_and_pensions": {"label": "Previdencia e assistencia", "share": 0.50},
+    "social_and_pensions": {"label": "Previdência e assistência", "share": 0.50},
     "payroll": {"label": "Folha e encargos", "share": 0.155},
-    "state_transfers": {"label": "Transferencias federativas", "share": 0.1725},
-    "essential_services": {"label": "Servicos essenciais e pisos", "share": 0.1725},
+    "state_transfers": {"label": "Transferências federativas", "share": 0.1725},
+    "essential_services": {"label": "Serviços essenciais e pisos", "share": 0.1725},
 }
 
 
@@ -28,10 +28,10 @@ def _ensure_operating_price_lines(state: dict[str, Any]) -> dict[str, Any]:
     operating.setdefault("residence_cut_pct", 0)
     lines = operating.setdefault("lines", {})
     defaults = {
-        "official_travel": {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
-                            "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."},
-        "official_residence": {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
-                                "description": "Manutencao, servicos e funcionamento das residencias oficiais."},
+        "official_travel": {"label": "Viagens oficiais e delegações", "annual_cost_bi": 2.4,
+                            "description": "Deslocamentos institucionais, missões e delegações do Executivo."},
+        "official_residence": {"label": "Residência oficial e manutenção", "annual_cost_bi": 0.6,
+                                "description": "Manutenção, serviços e funcionamento das residências oficiais."},
     }
     for key, default in defaults.items():
         line = lines.setdefault(key, dict(default))
@@ -58,9 +58,9 @@ def ensure_fiscal_state(state: dict[str, Any]) -> dict[str, Any]:
     operating.setdefault("travel_cut_pct", 0)
     operating.setdefault("residence_cut_pct", 0)
     lines = operating.setdefault("lines", {})
-    lines.setdefault("official_travel", {"label": "Viagens oficiais e delegacoes", "annual_cost_bi": 2.4,
-        "description": "Deslocamentos institucionais, missoes e delegacoes do Executivo."})
-    lines.setdefault("official_residence", {"label": "Residencia oficial e manutencao", "annual_cost_bi": 0.6,
+    lines.setdefault("official_travel", {"label": "Viagens oficiais e delegações", "annual_cost_bi": 2.4,
+        "description": "Deslocamentos institucionais, missões e delegações do Executivo."})
+    lines.setdefault("official_residence", {"label": "Residência oficial e manutenção", "annual_cost_bi": 0.6,
         "description": "Manutenção, serviços e funcionamento das residências oficiais."})
 
     # For old saves, derive a residual mandatory-spending baseline that exactly
@@ -152,7 +152,7 @@ def fiscal_overview(state: dict[str, Any]) -> dict[str, Any]:
         {"key": "procurement", "label": "Compras e contratos", "annual_bi": float(fiscal["procurement_bi"])},
         {"key": "investment", "label": "Investimentos", "annual_bi": float(budget.get("annual_investment_bi", 100))},
         {"key": "official_travel", "label": "Viagens oficiais", "annual_bi": float(lines.get("official_travel", {}).get("annual_cost_bi", 0)) * (1 - travel_cut / 100)},
-        {"key": "official_residence", "label": "Residencias oficiais", "annual_bi": float(lines.get("official_residence", {}).get("annual_cost_bi", 0)) * (1 - residence_cut / 100)},
+        {"key": "official_residence", "label": "Residências oficiais", "annual_bi": float(lines.get("official_residence", {}).get("annual_cost_bi", 0)) * (1 - residence_cut / 100)},
     ])
     executive_investment = None
     career = state.get("career") or {}
@@ -184,8 +184,8 @@ def fiscal_overview(state: dict[str, Any]) -> dict[str, Any]:
             "fiscal_credibility": float(state["metrics"]["fiscal_credibility"]),
             "country_risk": float(state["metrics"]["country_risk"]),
             "executive_investment": executive_investment,
-            "note": "Estimativas simplificadas do simulador; nao sao execucao oficial do orcamento."
-                    + (" Programas presidenciais comprometidos estao incluidos na rubrica Investimentos e nao sao somados novamente." if executive_investment else "")}
+            "note": "Estimativas simplificadas do simulador; não sao execução oficial do orçamento."
+                    + (" Programas presidenciais comprometidos estao incluidos na rubrica Investimentos e não sao somados novamente." if executive_investment else "")}
 
 
 def record_policy_balance_delta(state: dict[str, Any], delta_pct_gdp: float) -> None:

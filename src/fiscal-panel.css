@@ -1,10 +1,10 @@
-.fiscal-line > span { min-width: 0; }
+.fiscal-line > span { min-width:0; }
 .fiscal-investment-note {
-  display: block;
-  max-width: 360px;
-  margin-top: 4px;
-  color: var(--muted, #95a6b4);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.45;
+  display:block;
+  max-width:360px;
+  margin-top:4px;
+  color:var(--muted, #4a5b55);
+  font-size:12px;
+  font-weight:400;
+  line-height:1.45;
 }

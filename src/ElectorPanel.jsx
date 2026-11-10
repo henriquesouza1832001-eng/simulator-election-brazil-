@@ -59,7 +59,6 @@ export default function ElectorPanel({ request }) {
 
   const data = rules?.data;
   return <section className="panel meta-page elector" aria-label="Modo Eleitor">
-    <div className="eyebrow">MODO ELEITOR · DADOS OFICIAIS DO TSE</div>
     <h2>Consulte um pleito e vote em simulação</h2>
     <p className="elector-banner" role="note"><b>{NOTICE}</b> O jogo é uma sátira e não é um serviço eleitoral.</p>
     {error && <p className="meta-status meta-error" role="alert">{error}</p>}

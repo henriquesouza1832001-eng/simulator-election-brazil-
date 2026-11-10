@@ -32,6 +32,8 @@ export function CongressPanel({ request, state }) {
   const [party, setParty] = useState('todos');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(null);
+  const [shown, setShown] = useState(20);
+  useEffect(() => { setShown(20); }, [house, party, query]);
   const members = useMemo(() => {
     if (!data) return [];
     const list = house === 'camara' ? data.parlamentares : data.senadores;
@@ -39,7 +41,6 @@ export function CongressPanel({ request, state }) {
   }, [data, house, party, query]);
   const maxSeats = data ? Math.max(...data.partidos.map((p) => p[house])) : 1;
   return <section className="panel meta-page">
-    <div className="eyebrow">CONGRESSO FICTÍCIO · VOTAÇÃO NOMINAL</div>
     <h2>Câmara e Senado</h2>
     <p className="page-description">513 deputados e 81 senadores inventados, gerados pela semente da partida. Projetos de lei e PECs enviados na aba Medidas são votados um a um quando chega a data da decisão.</p>
     <Status loading={loading} error={error}>{data && <>
@@ -63,8 +64,8 @@ export function CongressPanel({ request, state }) {
           {party !== 'todos' && <button className="quiet-button" onClick={() => setParty('todos')}>Limpar partido {party}</button>}</div>
         <p className="meta-count">{members.length} parlamentar(es)</p>
         {members.length === 0 ? <p className="meta-status">Nenhum parlamentar com esse filtro.</p> :
-          <ul className="member-grid">{members.slice(0, 120).map((m) => <li key={m.id}><b>{m.name}</b><span>{m.party} · {m.state}</span><small>adesão {Math.round(m.loyalty * 100)}% · posição {m.ideology > 0.2 ? 'direita' : m.ideology < -0.2 ? 'esquerda' : 'centro'}</small></li>)}</ul>}
-        {members.length > 120 && <p className="meta-count">Mostrando 120 de {members.length}. Refine pelo partido ou nome.</p>}
+          <ul className="member-list">{members.slice(0, shown).map((m) => <li key={m.id}><b>{m.name}</b><span>{m.party} · {m.state}</span><small>adesão {Math.round(m.loyalty * 100)}% · {m.ideology > 0.2 ? 'direita' : m.ideology < -0.2 ? 'esquerda' : 'centro'}</small></li>)}</ul>}
+        {members.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 20)}>Mostrar mais ({members.length - shown} restantes)</button>}
       </>}
       {house === 'votacoes' && <>
         <h3 className="subheading">Em tramitação</h3>
@@ -153,7 +154,6 @@ export function StoryPanel({ request, state, onNotice }) {
   }
   const fmt = (d) => `${d.delta > 0 ? '+' : ''}${d.delta} ${d.label}`;
   return <section className="panel meta-page">
-    <div className="eyebrow">ACONTECIMENTOS · SIMULAÇÃO</div>
     <h2>O que está acontecendo</h2>
     <p className="page-description">Decisões têm prazo: se você não responder, vale a opção padrão. Oportunidades esperam mais. Tudo é fictício e as consequências são calculadas pelo motor.</p>
     <Status loading={loading} error={error}>{data && <>
@@ -162,18 +162,18 @@ export function StoryPanel({ request, state, onNotice }) {
         data.pending.map((ev) => <article className="story-card" key={ev.id}>
           <div className="story-head"><span className={`tag t-${ev.kind === 'decisao' ? 'correcao' : ev.kind === 'oportunidade' ? 'melhor' : 'novo'}`}>{ev.kind === 'decisao' ? 'Decisão' : 'Oportunidade'}</span>
             {ev.days_left != null && <small>{ev.days_left <= 0 ? 'Último dia' : `${ev.days_left} dia(s) para responder`}</small>}</div>
-          <h3>{ev.title}</h3><p>{ev.text}</p>
+          <h3>{ev.title}</h3>{ev.inspired_by_real_event && <p className="meta-count">Versão fictícia inspirada em um episódio real{ev.remix?.label ? ` · intensidade ${ev.remix.label}` : ''}.</p>}<p>{ev.text}</p>
           <div className="story-choices">{ev.choices.map((c) => <button key={c.id} className="secondary-button" disabled={busy} onClick={() => choose(ev, c.id)}>
             <b>{c.label}</b><small>{c.hint}{c.cost_bi ? ` · R$ ${c.cost_bi} bi` : ''} · {TONE_LABEL[c.tone] || c.tone}</small></button>)}</div>
         </article>)}
       {last && <p className="meta-status" role="status"><b>{last.title}:</b> {last.outcome} <small>({last.deltas.map(fmt).join(' · ') || 'sem efeito numérico'})</small></p>}
       {Object.keys(data.profile).length > 0 && <><h3 className="subheading">Seu estilo de governo</h3>
         <ul className="meta-notes">{Object.entries(data.profile).map(([k, v]) => <li key={k}>{TONE_LABEL[k] || k}: {v}</li>)}{data.unanswered > 0 && <li>Sem resposta no prazo: {data.unanswered}</li>}</ul></>}
-      <h3 className="subheading">Histórico</h3>
+      <details className="agenda-more" open={data.pending.length === 0}><summary>Histórico ({data.history.length})</summary>
       {data.history.length === 0 ? <p className="meta-status">Ainda não há histórico.</p> :
         <ul className="vote-list">{data.history.map((h) => <li key={h.id}><b>{h.title}</b>
           <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
-          <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></li>)}</ul>}
+          <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></li>)}</ul>}</details>
     </>}</Status>
   </section>;
 }
@@ -205,7 +205,6 @@ export function CampaignWeekPanel({ request, onNotice }) {
     } catch (e) { onNotice?.(e.message); } finally { setBusy(false); }
   }
   return <section className="panel meta-page">
-    <div className="eyebrow">CAMPANHA · SEMANA A SEMANA · SIMULAÇÃO</div>
     <h2>Palanque</h2>
     <p className="page-description">Cada semana você tem algumas ações livres. Ações gastam energia e caixa; repetir a mesma ação no mesmo lugar rende menos, e abaixo de 35 de energia tudo rende 60%.</p>
     <Status loading={loading} error={error}>{data && <>
@@ -220,9 +219,11 @@ export function CampaignWeekPanel({ request, onNotice }) {
       <p className="meta-count">{data.location ? `Você está em: ${data.regions.find((r) => r.key === data.location)?.label}. ` : 'Você ainda não saiu da capital. '}Mudar de região custa {data.travel.other_region_energy} de energia; de jatinho, {data.travel.jet_energy} de energia e R$ {data.travel.jet_mi} mi.</p>
       <label className="week-region"><input type="checkbox" checked={jet} onChange={(e) => setJet(e.target.checked)} /> Ir de jatinho quando mudar de região</label>
       {last && <p className="meta-status" role="status">Último resultado: {last.label} em {last.region}, {last.refused ? `recusado (faltaram ${last.shortfall} pontos)` : `+${last.gain}`}{last.travel_energy ? ` · viagem −${last.travel_energy} energia` : ''}{last.low_energy_penalty ? ' (energia baixa)' : ''}{last.repeat_factor < 1 ? ` · repetição ×${last.repeat_factor}` : ''}{last.raised_mi ? ` · arrecadou R$ ${last.raised_mi} mi` : ''}.</p>}
-      <ul className="week-actions">{data.catalog.map((a) => <li key={a.key} className={a.available ? '' : 'blocked'}>
+      <ul className="week-actions">{data.catalog.filter((a) => a.available).map((a) => <li key={a.key}>
         <div><b>{a.label}</b><small>{a.money_mi ? `R$ ${a.money_mi} mi` : 'sem custo'} · {a.energy < 0 ? `+${-a.energy} energia` : `${a.energy} energia`}{a.scope === 'regiao' ? ' · região' : ' · nacional'}</small><small>{a.text}</small>{!a.available && <small className="neg">{a.reason}</small>}</div>
-        <button className="secondary-button" disabled={busy || !a.available} onClick={() => act(a.key)}>Fazer</button></li>)}</ul>
+        <button className="secondary-button" disabled={busy} onClick={() => act(a.key)}>Fazer</button></li>)}</ul>
+      {data.catalog.some((a) => !a.available) && <details className="agenda-more"><summary>Indisponíveis agora ({data.catalog.filter((a) => !a.available).length})</summary>
+        <ul className="week-actions">{data.catalog.filter((a) => !a.available).map((a) => <li key={a.key} className="blocked"><div><b>{a.label}</b><small>{a.reason}</small></div></li>)}</ul></details>}
       {data.this_week.length > 0 && <><h3 className="subheading">Nesta semana</h3><ul className="meta-notes">{data.this_week.map((u, i) => <li key={i}>{u.label} · {u.region} · +{u.gain}</li>)}</ul></>}
       <DebateBlock request={request} version={data.week} onNotice={onNotice} onWeek={setData} />
       <Commitments request={request} version={`${data.week}-${data.used_actions}`} onNotice={onNotice} />
@@ -236,6 +237,7 @@ export function CampaignWeekPanel({ request, onNotice }) {
 const QUADROS = [['geral', 'Todos os tempos'], ['aprovacao', 'Aprovação'], ['economia', 'Economia'], ['campanhas', 'Campanhas']];
 
 export function RankingPanel({ request, state, onNotice }) {
+  const [rankShown, setRankShown] = useState(10);
   const [quadro, setQuadro] = useState('geral');
   const [nota, setNota] = useState('todas');
   const [version, setVersion] = useState(0);
@@ -248,7 +250,6 @@ export function RankingPanel({ request, state, onNotice }) {
     catch (e) { onNotice?.(e.message); } finally { setBusy(false); }
   }
   return <section className="panel meta-page">
-    <div className="eyebrow">PLACAR DA HISTÓRIA · TODO MANDATO VIRA NOTA</div>
     <h2>Ranking de mandatos</h2>
     <p className="page-description">Entradas marcadas como <em>simulado</em> são exemplos fictícios. O placar mostra só o presidente da ficção, nunca quem joga.</p>
     <Status loading={score.loading} error={score.error}>{score.data && <div className="score-box">
@@ -263,12 +264,13 @@ export function RankingPanel({ request, state, onNotice }) {
       <div className="meta-tabs">{['todas', 'S', 'A', 'B', 'C', 'D', 'F'].map((n) => <button key={n} className={nota === n ? 'meta-tab active' : 'meta-tab'} aria-pressed={nota === n} onClick={() => setNota(n)}>{n === 'todas' ? 'Todas' : n}</button>)}</div>
     </div>
     <Status loading={loading} error={error} empty={data && data.linhas.length === 0}>{data && <>
-      <ol className="rank-list">{data.linhas.map((l) => <li key={l.chave}>
+      <ol className="rank-list">{data.linhas.slice(0, rankShown).map((l) => <li key={l.chave}>
         <span className="pos">{l.posicao}</span>
         <span className={`grade small ${GRADE_CLASS[l.nota]}`}>{l.nota}</span>
         <div><b>{l.presidente} <small>({l.partido})</small></b><small>{l.desfechoTitulo} · aprovação {l.aprovacao}% · {l.dificuldade}{l.simulado ? ' · simulado' : ` · jogador ${l.jogador}`}</small></div>
         <strong>{l.pontos}</strong></li>)}</ol>
-      <ul className="meta-notes">{data.regras.map((r) => <li key={r}>{r}</li>)}</ul></>}</Status>
+      {data.linhas.length > rankShown && <button className="secondary-button" onClick={() => setRankShown(rankShown + 10)}>Mostrar mais ({data.linhas.length - rankShown})</button>}
+      <details className="agenda-more"><summary>Como a nota é calculada e regras do placar</summary><ul className="meta-notes">{data.regras.map((r) => <li key={r}>{r}</li>)}</ul></details></>}</Status>
   </section>;
 }
 
@@ -278,7 +280,6 @@ export function CollectionPanel({ request, state }) {
   const [filter, setFilter] = useState('todos');
   const list = data ? data.carimbos.filter((c) => filter === 'todos' || (filter === 'obtidos' ? c.obtido : !c.obtido)) : [];
   return <section className="panel meta-page">
-    <div className="eyebrow">COLEÇÃO · CARIMBOS</div>
     <h2>Carimbos do mandato</h2>
     <p className="page-description">Cada mandato carimba o que você fez, inclusive o absurdo. Os carimbos são desbloqueados pelo estado da partida e ficam guardados na sua conta.</p>
     <Status loading={loading} error={error}>{data && <>
@@ -297,7 +298,6 @@ export function DiaryPanel({ request }) {
   const { data, error, loading } = useLoad(request, '/api/diary');
   const TAG = { novo: 'Novo', melhor: 'Melhor', correcao: 'Correção' };
   return <section className="panel meta-page">
-    <div className="eyebrow">DIÁRIO OFICIAL · O QUE MUDOU</div>
     <h2>Diário de atualizações</h2>
     <Status loading={loading} error={error} empty={data && !data.edicoes.length}>{data && data.edicoes.map((e) => <article className="diary-edition" key={e.versao}>
       <h3>Versão {e.versao} <small>{new Date(`${e.data}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</small></h3>

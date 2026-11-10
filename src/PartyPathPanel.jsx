@@ -84,7 +84,6 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
   const canAffiliate = ov.stage === 'militante' && ov.next.ready && ov.affiliation.status !== 'analise';
 
   return <section className="panel meta-page party-path">
-    <div className="eyebrow">TRAJETÓRIA PARTIDÁRIA · SIMULAÇÃO</div>
     <h2>{ov.name} · {ov.stage_label}</h2>
     <p className="page-description">{ov.municipality} ({ov.state_code}) · causa: {ov.cause}. {ov.party ? `Filiado(a) a ${ov.party}${ov.post ? `, ${ov.post}` : ''}.` : 'Sem partido.'} Faltam {ov.days_to_municipal_election} dias para a eleição municipal de 2028.</p>
 

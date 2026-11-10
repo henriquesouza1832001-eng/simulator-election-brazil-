@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6 — 10 nov. 2026 (redesenho das telas antigas)
+
+- Sistema de design único (`src/theme.css`, `docs/DESIGN_SISTEMA.md`): tema claro, DM Sans, escala tipográfica fixa, contraste e foco verificados, controles de 44 px.
+- Painéis escuros legados (Diplomacia, Orçamento, Carreira, Eleição, Nomeações) migrados para o tema claro.
+- Listas longas recolhidas ou paginadas (Congresso 12.078 → 3.234 px no celular).
+- Corrigidos: números dos 6 indicadores da Visão geral (já ausentes no repositório), status em inglês, textos sem acento, botões do topo ilegíveis.
+- **Logos e marca não foram alterados** (a cargo do Codex).
+
 ## 0.5 — 9 nov. 2026 (biblioteca de eventos e trajetória partidária)
 
 ### Também nesta versão

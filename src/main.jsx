@@ -5,5 +5,6 @@ import './styles.css';
 import './views.css';
 import './editorial.css';
 import './readability.css';
+import './theme.css';
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);

@@ -46,7 +46,7 @@
 .week-actions li{display:flex;justify-content:space-between;gap:.8rem;align-items:flex-start;border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:.7rem}
 .week-actions li.blocked{opacity:.6}
 .week-actions small{display:block;opacity:.8}
-.elector-banner{padding:.7rem 1rem;border-left:4px solid #b45309;background:rgba(180,83,9,.12);border-radius:6px}
+.elector-banner{padding:.75rem 1rem;border:1px solid #d9b777;background:#fbf0d9;color:#3d2a00;border-radius:8px}
 .elector-filters{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;margin:.6rem 0}
 .elector-filters select{margin-left:.4rem;padding:.4rem;min-height:40px}
 .candidate-list{list-style:none;padding:0;display:grid;gap:.5rem}
@@ -75,3 +75,17 @@
 .elector details.elector-rules{border:1px solid rgba(128,128,128,.45);border-radius:10px;padding:.6rem .9rem;margin:.8rem 0;background:rgba(128,128,128,.06)}
 .elector details.elector-rules summary{cursor:pointer;font-weight:650;font-size:1rem;color:inherit;background:none;padding:.3rem 0;min-height:40px;display:flex;align-items:center}
 .elector details.elector-rules summary:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+
+/* listas compactas */
+.member-list{list-style:none;padding:0;margin:.5rem 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+.member-list li{display:grid;grid-template-columns:1.6fr 1fr auto;gap:.5rem;align-items:baseline;padding:.55rem .9rem;border-bottom:1px solid var(--line)}
+.member-list li:last-child{border-bottom:0}
+.member-list small{color:var(--ink-2)}
+@media (max-width:640px){.member-list li{grid-template-columns:1fr auto}.member-list li small{grid-column:1/-1}}
+.stamp-grid{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.5rem}
+.stamp{padding:.6rem .7rem;gap:.1rem;opacity:1;background:var(--paper)}
+.stamp:not(.got){background:var(--paper-2);border-style:dashed}
+.stamp:not(.got) b,.stamp:not(.got) small{color:var(--ink-2)}
+.stamp-mark{font-size:1.1rem}
+@media (max-width:640px){.stamp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stamp small{display:none}.stamp.got small{display:block;font-size:.8rem}}
+.week-actions{grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))}
