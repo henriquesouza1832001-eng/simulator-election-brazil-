@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DATABASE_PATH: ${{ runner.temp }}/events.sqlite3
+      DATABASE_PATH: /tmp/events.sqlite3
     steps:
       - name: Check out the repository
         uses: actions/checkout@v5
