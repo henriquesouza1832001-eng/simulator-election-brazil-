@@ -150,3 +150,23 @@ def get_library(reload: bool = False) -> Library:
     if _cache is None or reload:
         _cache = build_library()
     return _cache
+
+
+def _main() -> int:
+    """`python -m app.engine.event_library`: valida a biblioteca e sai com erro se houver evento inválido."""
+    import sys
+    lib = build_library()
+    stats = lib.stats()
+    print(json.dumps({k: stats[k] for k in ("total", "entry_events", "chained_events", "families", "by_source", "by_level")}, ensure_ascii=False))
+    problems = stats["report"]
+    if problems["invalid"] or problems["dropped_follow"] or problems["rejected_real_person"]:
+        print("Eventos inválidos:", json.dumps(problems, ensure_ascii=False), file=sys.stderr)
+        return 1
+    if stats["total"] < 2000:
+        print("A biblioteca tem menos de 2.000 eventos válidos.", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())

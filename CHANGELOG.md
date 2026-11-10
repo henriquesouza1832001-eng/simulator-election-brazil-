@@ -2,6 +2,12 @@
 
 ## 0.5 — 9 nov. 2026 (biblioteca de eventos e trajetória partidária)
 
+### Também nesta versão
+- **Corpus de 67 fatos e temas** e **124 eventos inspirados em fatos reais**, gerados localmente e aprovados por validação automática (sem revisão humana; fontes a anexar).
+- **Remix fora de época:** esses eventos mudam de lugar, intensidade e redação a cada partida (`engine/event_remix.py`).
+- **Workflows:** `ci.yml` (validação antes do merge, sem AWS) e `events-generate.yml` (gera eventos e abre PR de revisão). Ver `docs/WORKFLOWS_E_AWS.md`.
+- O gerador recusa rodar sem a trava de nomes reais; a importação do TSE confirma por lote.
+
 ### Novo
 - **Biblioteca de acontecimentos em dados:** 2.276 eventos válidos (28 famílias, 230 encadeamentos), esquema com condições declarativas e limites de efeito, ritmo por família e níveis (`federal`, `estadual`, `municipal`, `legislativo`, `partido`, `militante`). Ver `docs/BIBLIOTECA_DE_EVENTOS.md`.
 - **Gerador de eventos** com Gemini opcional e adaptação local, a partir de um corpus histórico com fonte; saída **pendente de revisão**; trava contra nomes de candidatos reais do TSE (`python -m app.ai.event_generator`).

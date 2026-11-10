@@ -156,6 +156,15 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(gen.approve(Path(report["file"]))["approved"], 1)
         self.assertTrue(any(e.startswith(("gemini:", "local:")) for e in build_library().events))
 
+    def test_generator_refuses_to_run_without_the_real_name_guard(self):
+        lib_mod._real_names = set()
+        report = asyncio.run(gen.generate(self.corpus, 10, use_gemini=False))
+        self.assertEqual(report["mode"], "recusado")
+        self.assertIn("trava", report["error"])
+        self.assertIsNone(report["file"])
+        override = asyncio.run(gen.generate(self.corpus, 10, use_gemini=False, require_guard=False))
+        self.assertGreater(override["accepted_pending_review"], 0)
+
     def test_local_fallback_works_without_api_key(self):
         with mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
             report = asyncio.run(gen.generate(self.corpus, 10, use_gemini=True))

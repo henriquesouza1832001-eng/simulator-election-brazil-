@@ -1,0 +1,61 @@
+name: CI (validação antes do merge)
+
+# Roda em pull requests para main e em pushes para qualquer outra branch.
+# Não usa segredos e não toca na AWS: só valida o jogo. O deploy continua em aws-deploy.yml (somente main).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Build, testes e biblioteca de eventos
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build the browser game
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install API dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements.txt
+
+      - name: Validate the event library
+        working-directory: backend
+        env:
+          DATABASE_PATH: ${{ runner.temp }}/ci-events.sqlite3
+        run: python -m app.engine.event_library
+
+      - name: Run the API tests
+        working-directory: backend
+        env:
+          DATABASE_PATH: ${{ runner.temp }}/ci-tests.sqlite3
+        run: python -m unittest discover -s tests -v

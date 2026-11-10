@@ -1,0 +1,102 @@
+name: Gerar acontecimentos (manual, com revisão por PR)
+
+# Gera eventos novos a partir de um corpus histórico e abre um PULL REQUEST para revisão humana.
+# - Só roda por disparo manual.
+# - Usa o segredo GEMINI_API_KEY (opcional; sem ele, usa a adaptação local, sem IA).
+# - Os eventos saem com review="pendente": NÃO entram no jogo até alguém revisar e aprovar.
+# - Nunca escreve em main e nunca faz deploy.
+# Privacidade: com o Gemini ligado, os resumos do corpus são enviados à API do Google.
+# Requisito do repositório: Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+on:
+  workflow_dispatch:
+    inputs:
+      corpus:
+        description: Caminho do corpus JSONL no repositório
+        default: backend/data/events/corpus/fatos_brasil_2014_2026.jsonl
+        required: true
+      limit:
+        description: Quantidade máxima de fatos do corpus
+        default: '20'
+        required: true
+      use_gemini:
+        description: Usar o Gemini (se o segredo existir)
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: events-generate
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Gerar e abrir PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_PATH: ${{ runner.temp }}/events.sqlite3
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install API dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements.txt
+
+      - name: Import TSE candidates for the real-name guard
+        working-directory: backend
+        # A trava contra nomes de pessoas reais lê os candidatos de eleições gerais do TSE (2014 a 2026).
+        run: python -m app.data.tse_candidacies --years 2014 2018 2022 2026
+
+      - name: Generate events (pending review)
+        id: gen
+        working-directory: backend
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CORPUS: ${{ inputs.corpus }}
+          LIMIT: ${{ inputs.limit }}
+          USE_GEMINI: ${{ inputs.use_gemini }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          flag=""
+          if [[ "$USE_GEMINI" != "true" || -z "${GEMINI_API_KEY:-}" ]]; then flag="--local"; fi
+          python -m app.ai.event_generator generate --corpus "../$CORPUS" --limit "$LIMIT" $flag | tee "$RUNNER_TEMP/report.json"
+          if python - <<'PY'
+          import json, os
+          r = json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "report.json"), encoding="utf-8"))
+          raise SystemExit(0 if r.get("accepted_pending_review", 0) > 0 else 1)
+          PY
+          then echo "has_events=true" >> "$GITHUB_OUTPUT"; else echo "has_events=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Open a pull request for review
+        if: steps.gen.outputs.has_events == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="events/auto-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add backend/data/events/generated
+          git commit -m "chore(events): lote gerado, pendente de revisão"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "Eventos gerados (pendentes de revisão)" \
+            --body "Lote gerado por workflow manual. Todos os eventos têm review=pendente e NÃO entram no jogo até serem aprovados.
+
+          Para aprovar depois de revisar o texto e as fontes: python -m app.ai.event_generator approve <arquivo> --reviewer \"seu nome\"
+
+          Checklist: sem pessoas reais; fonte anexada; efeitos plausíveis; texto claro."

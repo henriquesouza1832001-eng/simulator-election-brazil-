@@ -13,6 +13,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from .event_library import get_library
+from .event_remix import is_historical, remap_places, remix, scale_effects
 
 EXPIRES_DAYS = {"decisao": 5, "oportunidade": 14, "info": 0}
 BASE_DAILY_CHANCE = 0.05
@@ -113,6 +114,17 @@ def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | Non
                      "cost_bi": c.get("cost_bi", 0.0)} for c in definition["choices"]],
         "fallback": definition.get("fallback") or definition["choices"][-1]["id"], "simulated": True,
     }
+    if is_historical(definition):
+        # Fato real "fora de época": lugar, intensidade e redação próprios desta partida (ver event_remix).
+        r = remix(definition, state, day.isoformat())
+        ev["title"], ev["text"] = r["title"], r["text"]
+        ev["remix"] = {"places": r["places"], "intensity": r["intensity"], "label": r["intensity_label"]}
+        key = f"{def_id}|{day.isoformat()}"
+        for c in ev["choices"]:
+            c["label"] = remap_places(c["label"], state, key, ev["remix"]["places"])
+            c["hint"] = remap_places(c["hint"], state, key, ev["remix"]["places"])
+            c["cost_bi"] = round(c["cost_bi"] * r["intensity"], 2)
+        ev["inspired_by_real_event"] = True
     story["seen"][def_id] = {"n": number, "last": day.isoformat()}
     story.setdefault("seen_family", {})[definition.get("family", "base")] = day.isoformat()
     story["last_event"] = day.isoformat()
@@ -130,12 +142,19 @@ def _resolve(state: dict[str, Any], ev: dict[str, Any], choice_id: str, day: dat
     choice = next((c for c in definition["choices"] if c["id"] == choice_id), None)
     if choice is None:
         raise ValueError("Opção inválida.")
-    deltas = _apply_effects(state, dict(choice.get("effects", {})), float(choice.get("cost_bi", 0.0)))
+    effects, cost, outcome = dict(choice.get("effects", {})), float(choice.get("cost_bi", 0.0)), choice.get("outcome", "")
+    remixed = ev.get("remix")
+    if remixed:  # a intensidade desta instância escala efeitos e custo; o desfecho usa os mesmos lugares
+        effects = scale_effects(effects, remixed["intensity"])
+        cost = round(cost * remixed["intensity"], 3)
+        outcome = remap_places(outcome, state, f"{ev['def']}|{ev['on']}", remixed["places"])
+    deltas = _apply_effects(state, effects, cost)
     for follow_id, days in choice.get("follow", []):
         story["queue"].append({"def": follow_id, "on": (day + timedelta(days=days)).isoformat()})
     entry = {"id": ev["id"], "def": ev["def"], "title": ev["title"], "kind": ev["kind"], "on": day.isoformat(),
-             "choice": choice_id, "choice_label": choice["label"], "outcome": choice.get("outcome", ""),
-             "deltas": deltas, "auto": auto, "tags": ev.get("tags", [])}
+             "choice": choice_id, "choice_label": choice["label"] if not remixed else next((c["label"] for c in ev["choices"] if c["id"] == choice_id), choice["label"]),
+             "outcome": outcome, "deltas": deltas, "auto": auto, "tags": ev.get("tags", []),
+             "inspired_by_real_event": bool(ev.get("inspired_by_real_event")), "intensity": (remixed or {}).get("label")}
     story["history"].insert(0, entry)
     del story["history"][HISTORY_LIMIT:]
     story["pending"] = [p for p in story["pending"] if p["id"] != ev["id"]]

@@ -6,14 +6,28 @@ Os acontecimentos do jogo são **dados**, não código: cada evento é um objeto
 
 | Medida | Valor |
 | --- | ---: |
-| Eventos válidos | 2.276 |
-| Eventos de entrada (disparam sozinhos) | 2.046 |
+| Eventos válidos | 2.400 |
+| Eventos de entrada (disparam sozinhos) | 2.170 |
 | Eventos que só entram por encadeamento | 230 |
-| Famílias de acontecimento | 28 |
-| Por nível | federal 2.180 · militante 60 · partido 48 · estadual 36 · municipal 36 |
+| Famílias de acontecimento | 69 |
+| Por nível | federal 2.226 · estadual 66 · municipal 64 · militante 61 · partido 54 · legislativo 13 |
+| Inspirados em fatos reais (corpus) | 124 (67 fatos e temas, um evento por nível) |
 | Inválidos descartados | 0 |
 
 **Honestidade sobre o que isso é:** 2.260 vêm de **geradores por famílias** (arquétipos com encaixes de setor, estado, gravidade...). Têm texto e efeitos distintos por combinação, mas são variações de um mesmo arquétipo; não são 2.260 histórias independentes. A camada de variedade real vem do corpus histórico + Gemini (abaixo). Os níveis estadual e municipal ainda têm poucos eventos (só preços de alimentos).
+
+## Fatos reais fora de época (remix)
+
+Os 124 eventos inspirados em fatos reais **não pertencem a uma época**: não têm data nem condição de calendário. Quando um deles dispara, a instância é **remixada** de forma determinística pela semente da partida (`engine/event_remix.py`):
+
+- estados reais citados são trocados por outro (preposição ajustada): o mesmo episódio cai em lugares diferentes em cada partida;
+- cidades específicas viram referências genéricas e anos explícitos são removidos;
+- a **intensidade** (leve, média, grave) escala efeitos e custo, respeitando os limites do esquema;
+- a mesma partida e o mesmo dia reproduzem o mesmo remix; outro dia, outro resultado.
+
+Assim quem conhece a história real não prevê o que vem, e cada partida tem um episódio único.
+
+O corpus (`backend/data/events/corpus/fatos_brasil_2014_2026.jsonl`, 67 itens) foi escrito por mim com resumos neutros de episódios de grande repercussão e temas recorrentes de gestão. **As fontes primárias não foram anexadas** (cada linha tem `source_verified: false`); os eventos gerados foram aprovados por validação automática, sem revisão editorial humana (`reviewed_by`).
 
 ## Esquema (resumo)
 
@@ -33,11 +47,11 @@ Os acontecimentos do jogo são **dados**, não código: cada evento é um objeto
 
 Validação automática (reprova antes de gravar): esquema e limites de efeito; **nome de qualquer candidato de maior visibilidade do TSE** (presidente, governador, senador, deputado federal desde 2014) no texto; opção padrão inexistente; tom inválido. O prompt também exige ficção inspirada, sem pessoas reais, mas a validação não depende do prompt.
 
-A chave do Gemini fica só no backend. Nada é enviado a um serviço externo sem a chave configurada. O corpus de fatos reais **ainda não foi carregado** (precisa do arquivo do autor do projeto).
+A trava de nomes reais depende dos candidatos do TSE importados no banco; o gerador **recusa rodar** se ela estiver vazia. A chave do Gemini fica só no backend. Nada é enviado a um serviço externo sem a chave configurada. Para ampliar o corpus, acrescente linhas ao JSONL (ou outro arquivo) e rode o gerador; há também um workflow manual (`docs/WORKFLOWS_E_AWS.md`).
 
 ## Pendente
 
-- Carregar o corpus histórico e gerar o primeiro lote para revisão.
+- Anexar fontes primárias ao corpus e fazer revisão editorial humana dos 124 eventos históricos.
 - Gemini como narrador em tempo de jogo (hoje só gera eventos fora do jogo).
 - Eventos estaduais, municipais e legislativos em volume; hoje a Presidência concentra quase tudo.
 - Interface de revisão (hoje é por arquivo e linha de comando).

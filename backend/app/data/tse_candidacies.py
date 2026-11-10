@@ -216,6 +216,7 @@ def _flush(db, batch: list[tuple]) -> None:
             source_generated_at=excluded.source_generated_at, collected_at=excluded.collected_at
     """, batch)
     batch.clear()
+    db.commit()  # libera o bloqueio de escrita entre lotes: o jogo continua gravando saves durante a importação
 
 
 def main() -> None:
