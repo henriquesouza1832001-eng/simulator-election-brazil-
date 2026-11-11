@@ -25,3 +25,13 @@
 .powers-structure small { display: block; opacity: .75; }
 .legal-alto { color: #e07070; }
 .legal-medio { color: #e0b050; }
+
+.crisis-options { display: grid; gap: .4rem; margin-top: .5rem; }
+.crisis-options button { text-align: left; min-height: 44px; }
+.crisis-options button small { display: block; opacity: .75; }
+.mapper-box { margin: 1rem 0; padding: .8rem; border: 1px solid rgba(128,128,128,.35); border-radius: 10px; }
+.mapper-match { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; padding: .5rem 0; border-top: 1px solid rgba(128,128,128,.25); }
+.mapper-match > div:first-child { min-width: 0; flex: 1 1 auto; }
+.mapper-match small { display: block; }
+.mapper-question { font-weight: 600; }
+@media (max-width: 760px) { .mapper-match { flex-direction: column; } }

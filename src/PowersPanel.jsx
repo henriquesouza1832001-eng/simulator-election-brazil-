@@ -27,6 +27,8 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const [busy, setBusy] = useState('');
   const [ledger, setLedger] = useState([]);
   const [fiscal, setFiscal] = useState(null);
+  const [text, setText] = useState('');
+  const [mapped, setMapped] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -38,6 +40,26 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   useEffect(() => { request('/api/ledger').then((r) => setLedger(r.entries || [])).catch(() => {}); }, [state?.date, data?.history?.length]);
 
   useEffect(() => { request('/api/fiscal/local').then((r) => setFiscal(r.fiscal)).catch(() => setFiscal(null)); }, [state?.date, ledger.length]);
+
+  async function understand(e) {
+    e.preventDefault();
+    if (text.trim().length < 4) return;
+    try {
+      const r = await request('/api/powers/interpret', { method: 'POST', body: JSON.stringify({ text }) });
+      setMapped(r);
+      const guesses = {};
+      r.matches.forEach((m) => { if (m.option_guess) guesses[m.id] = m.option_guess; });
+      setOptions((o) => ({ ...guesses, ...o }));
+    } catch (err) { onNotice?.(err.message); }
+  }
+
+  async function runMapped(match) {
+    const chosen = data.actions.find((a) => a.id === match.id);
+    if (!chosen) return;
+    try { await request(`/api/powers/confirm?action=${encodeURIComponent(match.id)}${options[match.id] ? `&option=${encodeURIComponent(options[match.id])}` : ''}`, { method: 'POST', body: JSON.stringify({ text }) }); } catch { /* aprendizado é opcional */ }
+    await run(chosen);
+    setMapped(null);
+  }
 
   async function narrate(entry) {
     try {
@@ -77,6 +99,26 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
       <article><span>Blocos</span><b>{Object.entries(data.blocs).filter(([, on]) => on === true).map(([k]) => k.toUpperCase()).join(', ') || 'nenhum'}</b></article>
       <article><span>Empresas controladas pela União</span><b>{Object.entries(data.companies).filter(([, v]) => v !== 'privada').map(([k]) => k).join(', ')}</b></article>
     </div>}
+
+    {(data.actions || []).length > 0 && <form className="mapper-box" onSubmit={understand}>
+      <label htmlFor="mapper-text"><b>Diga o que quer fazer</b></label>
+      <small className="meta-count">O motor entende a frase pelas regras do jogo e mostra as ações do seu cargo que combinam. A IA (Gemini), se estiver ativa, só ajuda a desempatar e a fazer perguntas.</small>
+      <div className="territory-search"><input id="mapper-text" value={text} maxLength={400} onChange={(e) => setText(e.target.value)} placeholder="Ex.: duplicar a BR-381, liberar o porte de arma, sair do BRICS" />
+        <button className="secondary-button" type="submit">Entender</button></div>
+      {mapped && <div className="mapper-result">
+        {mapped.matches.length === 0 && <p className="meta-status">Nenhuma ação do seu cargo combina com essa frase.</p>}
+        {mapped.matches.map((m) => <div className="mapper-match" key={m.id}>
+          <div><b>{m.title}</b> <small>({m.basis})</small>
+            {m.legal && <small className={`legal-${m.legal.level}`}>Risco jurídico {m.legal.level}</small>}
+            {!m.available && <small className="neg">{m.reason}</small>}</div>
+          {m.available && data.executable && <div className="powers-actions">
+            {m.options.length > 0 && <select aria-label={`Opção para ${m.title}`} value={options[m.id] || ''} onChange={(e) => setOptions({ ...options, [m.id]: e.target.value })}><option value="">Escolher…</option>{m.options.map((o) => <option key={o} value={o}>{o}</option>)}</select>}
+            <button className="secondary-button" disabled={m.options.length > 0 && !options[m.id]} onClick={() => runMapped(m)}>Usar esta ação</button></div>}
+        </div>)}
+        {mapped.questions.map((q) => <p className="mapper-question" key={q}>{q}</p>)}
+        <small className="meta-count">Leitura: {mapped.source === 'gemini' ? 'regras do jogo + Gemini (desempate)' : 'regras do jogo'}. {mapped.note}</small>
+      </div>}
+    </form>}
 
     {fiscal && <div className="fiscal-box" aria-label="Contas do cargo e LRF">
       <h3 className="subheading">Contas do cargo e Lei de Responsabilidade Fiscal</h3>
