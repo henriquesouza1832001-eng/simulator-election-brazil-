@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './powers.css';
+import './territory.css';
 
 const APPROVAL = {
   decreto: ['Decreto', 'Vale na hora'],
@@ -25,6 +26,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const [options, setOptions] = useState({});
   const [busy, setBusy] = useState('');
   const [ledger, setLedger] = useState([]);
+  const [fiscal, setFiscal] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -34,6 +36,8 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   }, [state?.date, state?.career_overview?.office, state?.party_path?.stage]);
 
   useEffect(() => { request('/api/ledger').then((r) => setLedger(r.entries || [])).catch(() => {}); }, [state?.date, data?.history?.length]);
+
+  useEffect(() => { request('/api/fiscal/local').then((r) => setFiscal(r.fiscal)).catch(() => setFiscal(null)); }, [state?.date, ledger.length]);
 
   async function narrate(entry) {
     try {
@@ -72,6 +76,20 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
       {Object.entries(data.structure).map(([k, v]) => <article key={k}><span>{STRUCTURE_NAMES[k]}</span><b>{v.label}</b></article>)}
       <article><span>Blocos</span><b>{Object.entries(data.blocs).filter(([, on]) => on === true).map(([k]) => k.toUpperCase()).join(', ') || 'nenhum'}</b></article>
       <article><span>Empresas controladas pela União</span><b>{Object.entries(data.companies).filter(([, v]) => v !== 'privada').map(([k]) => k).join(', ')}</b></article>
+    </div>}
+
+    {fiscal && <div className="fiscal-box" aria-label="Contas do cargo e LRF">
+      <h3 className="subheading">Contas do cargo e Lei de Responsabilidade Fiscal</h3>
+      <div className="powers-structure">
+        <article><span>Reserva disponível no ano</span><b>R$ {Number(fiscal.reserve_available_mi).toLocaleString('pt-BR')} mi</b><small>de R$ {Number(fiscal.annual_reserve_mi).toLocaleString('pt-BR')} mi</small></article>
+        <article className={`lrf-${fiscal.personnel_level}`}><span>Despesa com pessoal</span><b>{fiscal.personnel_pct}% da RCL</b><small>limite {fiscal.personnel_limit}% · situação: {fiscal.personnel_level}</small></article>
+        <article><span>Dívida</span><b>{fiscal.debt_pct}% da RCL</b><small>limite {fiscal.debt_limit}%</small></article>
+        <article><span>Receita corrente líquida (modelo)</span><b>R$ {Number(fiscal.rcl_mi).toLocaleString('pt-BR')} mi/ano</b></article>
+      </div>
+      {fiscal.commitments.length > 0 && <p className="meta-count">Obras comprometendo a reserva: {fiscal.commitments.map((c) => `${c.name} (R$ ${c.annual_mi} mi/ano até ${c.end})`).join('; ')}.</p>}
+      {fiscal.summaries.length > 0 && <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Mês</th><th>Executado (mi)</th><th>Folha %RCL</th><th>Dívida %RCL</th><th>Situação</th></tr></thead>
+        <tbody>{fiscal.summaries.map((m) => <tr key={m.month}><td>{m.month}</td><td>{m.executed_mi}</td><td>{m.personnel_pct}</td><td>{m.debt_pct}</td><td>{m.level}</td></tr>)}</tbody></table></div>}
+      <p className="meta-count">{fiscal.basis}. {fiscal.note}</p>
     </div>}
 
     {data.reference?.length > 0 && <>

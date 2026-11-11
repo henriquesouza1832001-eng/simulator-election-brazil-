@@ -24,6 +24,7 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Ações executáveis para vereador, prefeito, deputados, governador e senador** (`engine/office_powers.py`): custo em reserva ou capital político, votação simulada com chance mostrada, efeitos em confiança, reputação e indicadores do território.
 - **Livro-razão previsto × realizado** (`engine/ledger.py`): toda ação de competência e toda obra registram previsão, resultado e a explicação da diferença.
 - **Narrador** (`ai/narrator.py`): texto local por padrão; Gemini (se `GEMINI_API_KEY` no servidor) só reescreve os fatos do motor e é descartado se inventar números ou nomes.
+- **Contas locais e LRF** (`engine/subnational_fiscal.py`): folha, dívida, limites, resumo mensal e obras pagas pela reserva do cargo.
 - **Trajetória partidária** leva também a governador, senador e presidente, após ao menos um mandato cumprido.
 
 ## Parcial (existe, mas incompleto ou raso)

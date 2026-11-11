@@ -11,7 +11,7 @@ from datetime import date
 from typing import Any
 
 from .career import is_career_governing, _clamp  # noqa: F401
-from . import ledger
+from . import ledger, subnational_fiscal
 from .indicator_registry import REGISTRY
 
 # kind: exec (reserva) | leg (capital político); cost: fração da reserva (exec) ou pontos de capital (leg)
@@ -19,9 +19,9 @@ _A: list[dict[str, Any]] = []
 
 
 def _a(id: str, offices: list[str], title: str, kind: str, basis: str, text: str, cost: float, effects: dict[str, float], territory: dict[str, float],
-       scope: str = "city", domain: str = "geral", p: float = 0.6) -> None:
+       scope: str = "city", domain: str = "geral", p: float = 0.6, fiscal: dict[str, float] | None = None, spend: str = "programa") -> None:
     _A.append({"id": id, "offices": offices, "title": title, "kind": kind, "basis": basis, "text": text, "cost": cost, "effects": effects,
-               "territory": territory, "scope": scope, "domain": domain, "p": p})
+               "territory": territory, "scope": scope, "domain": domain, "p": p, "fiscal": fiscal or {}, "spend": spend})
 
 
 V, P, DE, G, DF, S = "vereador", "prefeito", "deputado_estadual", "governador", "deputado_federal", "senador"
@@ -41,6 +41,20 @@ _a("p_guarda", [P], "Fortalecer guarda municipal e iluminação", "exec", "CF ar
 _a("p_onibus", [P], "Renovar concessão do ônibus", "exec", "CF art. 175; Lei 8.987/1995", "Nova licitação com metas de frota e tarifa.", 0.05, {"trust": 0.6}, {"mobilidade": 2.5}, domain="mobilidade")
 _a("p_habitacao", [P], "Programa de habitação popular", "exec", "CF art. 182 e 23, IX", "Moradias e regularização fundiária.", 0.18, {"trust": 1.6}, {"adensamento": -1.5, "gini": -0.002}, domain="saneamento")
 _a("p_iptu", [P], "Reajustar o IPTU", "exec", "CF art. 156, I; art. 150, III", "Aumenta a receita; custa popularidade.", -0.15, {"trust": -3.0}, {}, domain="fiscal")
+_a("p_reajuste", [P], "Reajustar o salário dos servidores", "exec", "CF art. 37, X; LRF art. 20 e 22", "Aumenta a folha (LRF: acima do limite prudencial, não pode).", 0.0,
+   {"trust": 2.2}, {}, domain="fiscal", fiscal={"personnel": 2.5}, spend="pessoal")
+_a("p_concurso", [P], "Abrir concurso para saúde e educação", "exec", "CF art. 37, II; LRF art. 20", "Contrata equipes; amplia a folha de forma permanente.", 0.05,
+   {"trust": 1.4}, {"saude_atencao": 1.5, "educacao_fundamental": 0.4}, domain="saude", fiscal={"personnel": 1.6}, spend="pessoal")
+_a("p_reduzir_folha", [P], "Reduzir despesa com pessoal", "exec", "LRF art. 23 (recondução ao limite)", "Corta cargos em comissão e gratificações; custa popularidade.", 0.0,
+   {"trust": -2.0}, {}, domain="fiscal", fiscal={"personnel": -2.5})
+_a("p_credito", [P], "Contratar operação de crédito", "exec", "LRF art. 32; Res. Senado 43/2001", "Antecipa recursos para obras; aumenta a dívida.", 0.0,
+   {"trust": 0.4}, {}, domain="fiscal", fiscal={"debt": 8.0, "reserve_pct": 0.2}, spend="credito")
+_a("g_reajuste", [G], "Reajustar o salário dos servidores", "exec", "CF art. 37, X; LRF art. 20 e 22", "Aumenta a folha estadual.", 0.0,
+   {"trust": 2.2}, {}, "uf", "fiscal", fiscal={"personnel": 2.0}, spend="pessoal")
+_a("g_reduzir_folha", [G], "Reduzir despesa com pessoal", "exec", "LRF art. 23", "Recondução da folha ao limite.", 0.0,
+   {"trust": -2.0}, {}, "uf", "fiscal", fiscal={"personnel": -2.0})
+_a("g_credito", [G], "Contratar operação de crédito", "exec", "LRF art. 32; Res. Senado 43/2001", "Financia obras; aumenta a dívida estadual.", 0.0,
+   {"trust": 0.4}, {}, "uf", "fiscal", fiscal={"debt": 12.0, "reserve_pct": 0.2}, spend="credito")
 # ---------------- Deputado estadual
 _a("de_lei_estadual", [DE], "Lei estadual de ensino integral", "leg", "CF art. 24, IX e 25", "Amplia escolas de tempo integral no estado.", 14, {"trust": 1.2}, {"educacao_medio": 0.5}, "uf", "educacao", 0.55)
 _a("de_saude", [DE], "Emenda para hospital regional", "leg", "CF art. 25 e 196", "Direciona recursos a um hospital do interior.", 14, {"trust": 1.4}, {"saude_atencao": 0.8}, "uf", "saude", 0.55)
@@ -101,6 +115,8 @@ def catalog(state: dict[str, Any], office: str) -> list[dict[str, Any]]:
             reason = "Capital político insuficiente."
         elif a["kind"] == "exec" and a["cost"] > 0 and float(gov.get("budget_mi", 0)) <= 0:
             reason = "Reserva do cargo insuficiente."
+        elif a["kind"] == "exec" and a["spend"] != "programa" and subnational_fiscal.check_can_spend(state, a["spend"]):
+            reason = subnational_fiscal.check_can_spend(state, a["spend"])
         row = {"id": a["id"], "title": a["title"], "domain": a["domain"], "instrument": "Votação no plenário" if a["kind"] == "leg" else "Ato do Executivo",
                "approval": "pl" if a["kind"] == "leg" else "decreto", "basis": a["basis"], "summary": a["text"], "options": [], "precedent": None, "cost_bi": 0,
                "effects": {**{k: v for k, v in a["effects"].items()}, **{k: v for k, v in a["territory"].items()}},
@@ -122,7 +138,10 @@ def execute(state: dict[str, Any], action_id: str) -> dict[str, Any]:
     gov = _governance(state)
     if _wait(state, gov):
         raise RuntimeError(f"A agenda do cargo abre em {_wait(state, gov)} dia(s).")
-    forecast = {**action["effects"], **action["territory"]}
+    blocked = subnational_fiscal.check_can_spend(state, action["spend"]) if action["spend"] != "programa" else None
+    if blocked:
+        raise RuntimeError(blocked)
+    forecast = {**action["effects"], **action["territory"], **{f"lrf_{k}": v for k, v in action["fiscal"].items()}}
     approved = True
     chance = None
     if action["kind"] == "leg":
@@ -156,6 +175,10 @@ def execute(state: dict[str, Any], action_id: str) -> dict[str, Any]:
     else:
         gov["trust"] = round(_clamp(float(gov.get("trust", 50)) - 0.8), 2)
         applied["trust"] = -0.8
+    if approved and action["fiscal"]:
+        for key, value in subnational_fiscal.apply(state, **action["fiscal"]).items():
+            if value:
+                applied[f"lrf_{key}"] = value
     gov["last_action_date"] = state["date"]
     entry = {"id": f"office-{state['date']}-{len(gov.get('actions', [])) + 1}", "date": state["date"], "action": action_id, "title": action["title"],
              "summary": ("Aprovado no plenário." if approved else "Rejeitado no plenário; capital político gasto.") if action["kind"] == "leg" else "Executado.",

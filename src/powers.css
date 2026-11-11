@@ -20,3 +20,6 @@
 @media (max-width: 760px) { .powers-list li { flex-direction: column; } .powers-actions { width: 100%; } }
 
 .powers-narrative { font-style: normal; border-left: 0; background: rgba(128,128,128,.12); padding: .4rem .6rem; border-radius: 8px; margin-top: .3rem; }
+.lrf-prudencial, .lrf-excedido { border-color: #d9534f !important; }
+.lrf-alerta { border-color: #e0a030 !important; }
+.powers-structure small { display: block; opacity: .75; }

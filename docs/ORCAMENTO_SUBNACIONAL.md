@@ -23,3 +23,14 @@ Esta regra nao inclui transferencias federativas, receita propria, folha, divida
 
 - [IBGE SIDRA, estimativa municipal de populacao 2026](https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2026/variaveis/9324?localidades=N6%5Ball%5D)
 - [Catalogo municipal e proveniencia](ATRIBUICAO_E_FONTES.md)
+
+## Contas locais e LRF (10 nov. 2026)
+
+`engine/subnational_fiscal.py` acrescenta ao prefeito e ao governador:
+- **RCL do modelo** = reserva anual x 8 (parâmetro de design).
+- **Despesa com pessoal** (limites da LRF art. 20: 54% da RCL no Executivo municipal, 49% no estadual; alerta a 90% e limite prudencial a 95%, art. 22 e 59) e **dívida** (Resolução 40/2001 do Senado: 1,2 RCL município, 2,0 RCL estado). Valores iniciais são parâmetros do jogo.
+- Acima do limite prudencial, o jogo bloqueia reajuste e concurso; acima do limite, a confiança cai todo mês até a recondução (art. 23). Operação de crédito aumenta a reserva e a dívida e é bloqueada no limite.
+- **Obras do território** deixam de usar a dívida nacional: a parcela anual sai da reserva do cargo e se repete a cada ano até a entrega.
+- **Resumo mensal** (executado, folha, dívida, situação) em `/api/fiscal/local` e na aba Competências.
+
+Ainda não há receita própria detalhada, transferências (FPM, FPE, ICMS), empenho por programa nem Câmara/Assembleia aprovando o orçamento.

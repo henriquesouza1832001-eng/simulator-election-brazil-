@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14 — 10 nov. 2026 (contas locais e LRF)
+
+- Prefeito e governador passam a ter folha, dívida e limites da Lei de Responsabilidade Fiscal, com alerta, limite prudencial e penalidade de confiança; operação de crédito, reajuste, concurso e corte de folha como ações.
+- Obras do território são pagas pela reserva do cargo (parcela anual recomprometida a cada ano) e recusadas quando a reserva não cobre.
+- Resumo fiscal mensal na aba Competências. Ver `docs/ORCAMENTO_SUBNACIONAL.md`.
+
 ## 0.13 — 10 nov. 2026 (motor unificado, ações por cargo, previsto x realizado)
 
 - Motor de indicadores: o painel nacional lê do registro e propaga efeitos pelo grafo a cada avanço do calendário, inclusive para os municípios.

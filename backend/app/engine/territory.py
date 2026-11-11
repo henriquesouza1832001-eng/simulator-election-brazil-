@@ -215,9 +215,17 @@ def start(state: dict[str, Any], project_id: str, office: str, uf: str, city: st
     price = float(state.get("budget", {}).get("works", {}).get("price_index", 1.0))
     cost = round(p["cost_bi"] * price, 2)
     today = date.fromisoformat(state["date"])
-    record_one_off_spending(state, cost)
+    local = office in {"prefeito", "governador"}
+    if not local:
+        record_one_off_spending(state, cost)
     item = {"id": f"terr-{project_id}-{len(t['projects']) + 1}", "project_id": project_id, "name": p["name"], "uf": uf, "city": city,
             "cost_bi": cost, "start": today.isoformat(), "end": (today + timedelta(days=30 * p["months"])).isoformat(), "status": "em obra"}
+    if local:
+        from . import subnational_fiscal
+        probe = {"id": item["id"], "name": item["name"], "end": item["end"]}
+        refusal = subnational_fiscal.commit_project(state, probe, p["months"], cost * 1000)
+        if refusal:
+            raise PermissionError(refusal)
     entry = ledger.record(state, "território", f"{p['name']} ({uf})", dict(p["effects"]), None, status="em andamento", cost=f"R$ {cost} bi")
     item["ledger_id"] = entry["id"]
     t["projects"].append(item)

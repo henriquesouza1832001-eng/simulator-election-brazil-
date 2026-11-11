@@ -61,6 +61,12 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         save(state)
         return {**result, "state": public(state), "catalog": powers.catalog_for(state, office, governing)}
 
+    @router.get("/api/fiscal/local")
+    def local_fiscal() -> dict[str, Any]:
+        from .engine import subnational_fiscal
+        status = subnational_fiscal.status(get_state())
+        return {"available": status is not None, "fiscal": status}
+
     @router.get("/api/ledger")
     def ledger_overview() -> dict[str, Any]:
         return {"entries": ledger.overview(get_state())}
