@@ -5,7 +5,7 @@ import random
 from datetime import date, timedelta
 from typing import Any
 
-from . import ledger
+from . import ledger, regulators
 from .fiscal import ensure_fiscal_state, record_one_off_spending, record_policy_balance_delta
 from .powers_catalog import ACTIONS, OTHER_OFFICE_ACTIONS, ROLES
 
@@ -93,7 +93,7 @@ def catalog_for(state: dict[str, Any], office: str, governing: bool) -> dict[str
     out: dict[str, Any] = {"office": office, "role": role, "executable": office == "presidente" and governing}
     if office == "presidente":
         out["actions"] = [{**{k: a[k] for k in ("id", "title", "domain", "instrument", "approval", "basis", "summary", "options", "precedent", "cost_bi")},
-                           **status(state, a), "effects": a["effects"]} for a in ACTIONS]
+                           **status(state, a), "effects": a["effects"], "legal": regulators.opinion(a["id"], a["approval"], state)} for a in ACTIONS]
         st = structure(state)
         out["structure"] = {k: {"value": st[k], "label": STRUCTURE_LABELS[k].get(st[k], str(st[k]))} for k in STRUCTURE_LABELS}
         out["blocs"] = st["blocs"]
@@ -190,6 +190,8 @@ def execute(state: dict[str, Any], action_id: str, option: str | None = None) ->
         entry = ledger.record(state, "presidencia", action["title"] + (f" — {option}" if option else ""), dict(action["effects"]),
                               {r["key"]: r["delta"] for r in effects if r["key"] != "cost_bi"}, status="em vigor",
                               cost=(f"R$ {abs(action['cost_bi'])} bi" if action["cost_bi"] else None))
+        regulators.schedule_review(state, action_id=action["id"], approval=approval, title=entry["title"], ledger_id=entry["id"],
+                                   sets=action["sets"], effects=action["effects"])
         message = f"{action['title']}: em vigor desde hoje."
         if approval == "mp":
             bill = _bill(state, action, option, today)
@@ -244,6 +246,8 @@ def resolve_bill(state: dict[str, Any], bill: dict[str, Any], approved: bool) ->
     if bill.get("ledger_id"):
         got = {r["key"]: r["delta"] for r in rows if r["key"] != "cost_bi"}
         ledger.settle(state, bill["ledger_id"], got, "aprovado", ledger.explain_gap(action["effects"], got))
+    regulators.schedule_review(state, action_id=action["id"], approval=action["approval"], title=bill.get("title", action["title"]),
+                               ledger_id=bill.get("ledger_id"), sets=action["sets"], effects=action["effects"])
     return rows
 
 

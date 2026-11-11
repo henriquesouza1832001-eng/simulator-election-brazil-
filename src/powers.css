@@ -23,3 +23,5 @@
 .lrf-prudencial, .lrf-excedido { border-color: #d9534f !important; }
 .lrf-alerta { border-color: #e0a030 !important; }
 .powers-structure small { display: block; opacity: .75; }
+.legal-alto { color: #e07070; }
+.legal-medio { color: #e0b050; }

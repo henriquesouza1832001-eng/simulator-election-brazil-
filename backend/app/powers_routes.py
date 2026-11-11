@@ -61,6 +61,11 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         save(state)
         return {**result, "state": public(state), "catalog": powers.catalog_for(state, office, governing)}
 
+    @router.get("/api/regulators")
+    def regulators_overview() -> dict[str, Any]:
+        from .engine import regulators
+        return regulators.overview(get_state())
+
     @router.get("/api/fiscal/local")
     def local_fiscal() -> dict[str, Any]:
         from .engine import subnational_fiscal

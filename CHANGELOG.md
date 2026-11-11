@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15 — 10 nov. 2026 (reguladores)
+
+- STF, AGU, tribunais de contas, PF/MP e TSE passam a agir como reguladores: parecer de risco antes de assinar, suspensão ou manutenção de atos pelo STF, auditorias e inquéritos. Aba Reguladores e `docs/REGULADORES.md`.
+
 ## 0.14 — 10 nov. 2026 (contas locais e LRF)
 
 - Prefeito e governador passam a ter folha, dívida e limites da Lei de Responsabilidade Fiscal, com alerta, limite prudencial e penalidade de confiança; operação de crédito, reajuste, concurso e corte de folha como ações.

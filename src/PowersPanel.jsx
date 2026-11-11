@@ -109,6 +109,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
             <b>{a.title}</b>
             <small>{a.summary}</small>
             <small className="powers-meta"><span className={`powers-kind ${a.approval}`}>{kind}</span> {rule} · {a.basis}</small>
+            {a.legal && <small className={`powers-meta legal-${a.legal.level}`}>Parecer da AGU: risco jurídico {a.legal.level} ({a.legal.risk_pct}% de chance de o STF suspender). {a.legal.note}</small>}
             {a.cost_text && <small className="powers-meta">Custo: {a.cost_text}{a.chance != null ? ` · chance de aprovação ${Math.round(a.chance * 100)}%` : ''}</small>}
             {effectText(a.effects) && <small className="powers-effects">Efeito estimado: {effectText(a.effects)}{a.cost_bi ? ` · ${a.cost_bi > 0 ? 'custo' : 'receita'} R$ ${Math.abs(a.cost_bi)} bi` : ''}</small>}
             {a.precedent && <small className="powers-precedent">Precedente: {a.precedent}</small>}

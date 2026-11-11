@@ -137,6 +137,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(process_investments(state, before, after))
     from .territory import advance as territory_advance
     messages.extend(territory_advance(state, before, after))
+    from .regulators import tick as regulators_tick
+    messages.extend(regulators_tick(state, before, after))
     from .subnational_fiscal import tick as fiscal_tick
     messages.extend(fiscal_tick(state, before, after))
     if state.get("party_path"):

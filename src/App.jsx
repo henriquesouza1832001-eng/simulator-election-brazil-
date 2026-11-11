@@ -21,6 +21,7 @@ import MeasureForecast from './MeasureForecast';
 import LearningPanel from './LearningPanel';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
+import RegulatorsPanel from './RegulatorsPanel';
 import TerritoryPanel from './TerritoryPanel';
 import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel, InfoPanel } from './MetaPanels';
 import './diplomacy.css';
@@ -441,7 +442,7 @@ export default function App() {
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
     { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Território'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências'] : []) : ['Medidas', 'Competências', 'Orçamento', 'Crises'] },
-    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Acontecimentos', 'Aprendizado'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
@@ -532,6 +533,8 @@ export default function App() {
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
       {activeTab === 'Território' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
+
+      {activeTab === 'Reguladores' && <RegulatorsPanel request={request} state={state} />}
 
       {activeTab === 'Competências' && <PowersPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 

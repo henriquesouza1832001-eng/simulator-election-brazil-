@@ -25,6 +25,7 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Livro-razão previsto × realizado** (`engine/ledger.py`): toda ação de competência e toda obra registram previsão, resultado e a explicação da diferença.
 - **Narrador** (`ai/narrator.py`): texto local por padrão; Gemini (se `GEMINI_API_KEY` no servidor) só reescreve os fatos do motor e é descartado se inventar números ou nomes.
 - **Contas locais e LRF** (`engine/subnational_fiscal.py`): folha, dívida, limites, resumo mensal e obras pagas pela reserva do cargo.
+- **Reguladores** (`engine/regulators.py`, `docs/REGULADORES.md`): STF suspende ou mantém atos de risco, AGU emite parecer prévio, tribunais de contas auditam obras, PF/MP abrem inquérito quando a integridade cai e o TSE mostra a conduta de campanha.
 - **Trajetória partidária** leva também a governador, senador e presidente, após ao menos um mandato cumprido.
 
 ## Parcial (existe, mas incompleto ou raso)
