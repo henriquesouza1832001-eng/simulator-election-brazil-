@@ -169,9 +169,11 @@ def process_legislation(state: dict[str, Any], before: date, after: date) -> lis
             del history[40:]
             bill["vote"] = {"camara": {k: v for k, v in result["camara"].items() if k not in {"votos", "por_partido"}},
                             "senado": result.get("senado") and {k: v for k, v in result["senado"].items() if k != "por_partido"}}
+            from .powers import resolve_bill
             if result["aprovado"]:
                 from .rules import apply_effects
-                effects = apply_effects(state, bill["interpretation"])
+                power_effects = resolve_bill(state, bill, True) if bill.get("power_id") else None
+                effects = power_effects if power_effects is not None else apply_effects(state, bill["interpretation"])
                 calendar["laws_enacted"] = int(calendar.get("laws_enacted", 0)) + 1
                 bill["status"] = "approved"
                 bill["effects"] = effects
@@ -179,6 +181,8 @@ def process_legislation(state: dict[str, Any], before: date, after: date) -> lis
             else:
                 calendar["laws_failed"] = int(calendar.get("laws_failed", 0)) + 1
                 bill["status"] = "rejected"
+                if bill.get("power_id"):
+                    resolve_bill(state, bill, False)
                 messages.append(f"Congresso rejeitou, na simulação, o projeto: {bill['title']}.")
             state.setdefault("simulated_news", []).insert(0, {"id": bill["id"], "date": decision_day.isoformat(), "title": f"Votação: {bill['title']}", "region": "Nacional", "description": f"Resultado fictício: {bill['status']}.", "simulated": True})
             state["simulated_news"] = state["simulated_news"][:20]

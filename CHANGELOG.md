@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11 — 10 nov. 2026 (competências por cargo)
+
+- Nova aba Competências: para cada papel (eleitor a presidente), o que pode, o que não pode e a base constitucional. Ver `docs/COMPETENCIAS_E_PODERES.md`.
+- Presidência com 46 ações: Banco Central (autonomia, meta, indicação), empresas (privatizar, estatizar), rodovias, ferrovias e portos, defesa (Alcântara, nuclear civil, GLO, intervenção), armas e polícia, BRICS/OTAN/OPEP+, sistema de governo e reforma de regras. Decreto, medida provisória, lei, PEC e tratado seguem caminhos diferentes; cláusulas pétreas aparecem como vedadas.
+- O estado do país passa a guardar essas mudanças (Banco Central, armas, polícia, blocos, empresas).
+
 ## 0.10 — 10 nov. 2026 (dados reais de partidos e Congresso)
 
 - Congresso com a composição real (513 deputados, 81 senadores) importada de dados abertos oficiais, com proveniência (`app/data/parliament.py`, `backend/data/parliament.json`). O voto de cada um continua simulado e é descrito como tal.
