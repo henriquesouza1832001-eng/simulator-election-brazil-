@@ -8,7 +8,7 @@ const COLS = [['idhm', 'IDHM', 3], ['gini', 'Gini', 3], ['pobreza', 'Pobreza %',
 const fmt = (v, d = 1) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');
 
 export default function TerritoryPanel({ request, state, onState, onNotice }) {
-  const [view, setView] = useState('mapa');
+  const [view, setView] = useState('nacional');
   const [overview, setOverview] = useState(null);
   const [error, setError] = useState('');
   const [level, setLevel] = useState('states');
@@ -48,8 +48,15 @@ export default function TerritoryPanel({ request, state, onState, onNotice }) {
   return <section className="panel powers-page territory-page">
     <h2>Território e indicadores</h2>
     <div className="powers-filter" role="group" aria-label="Visões">
-      {[['mapa', 'Estados e regiões'], ['cidade', 'Cidades'], ['obras', 'Obras e transporte'], ['indicadores', 'Como os indicadores se ligam']].map(([k, l]) => <button key={k} className={view === k ? 'meta-tab active' : 'meta-tab'} onClick={() => setView(k)}>{l}</button>)}
+      {[['nacional', 'Brasil hoje'], ['mapa', 'Estados e regiões'], ['cidade', 'Cidades'], ['obras', 'Obras e transporte'], ['indicadores', 'Como os indicadores se ligam']].map(([k, l]) => <button key={k} className={view === k ? 'meta-tab active' : 'meta-tab'} onClick={() => setView(k)}>{l}</button>)}
     </div>
+
+    {view === 'nacional' && overview.nation && <>
+      <p className="page-description">Indicadores do país ligados ao grafo de influências: quando PIB, inflação, emprego ou contas mudam, os demais se ajustam a cada avanço do calendário e chegam aos municípios. {overview.nation.months_recorded} mês(es) registrados.</p>
+      {Object.entries(overview.nation.indicators.reduce((a, i) => { (a[i.domain] ||= []).push(i); return a; }, {})).map(([d, items]) => <div key={d}><h3 className="territory-domain">{DOMAIN_NAMES[d] || d}</h3>
+        <ul className="territory-indicators">{items.map((i) => <li key={i.id}><span>{i.label}</span><b>{fmt(i.value, i.unit === '0 a 1' ? 3 : 1)}<small> {i.unit}</small></b>
+          {i.change_since_start !== 0 && <small className={(i.change_since_start > 0) === (i.better === 'up') ? 'pos' : 'neg'}>{i.change_since_start > 0 ? '+' : ''}{fmt(i.change_since_start, i.unit === '0 a 1' ? 3 : 2)} desde o início</small>}</li>)}</ul></div>)}
+    </>}
 
     {view === 'mapa' && <>
       <div className="powers-filter">

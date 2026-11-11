@@ -11,7 +11,7 @@ const APPROVAL = {
   blocked: ['Vedado', 'A Constituição não permite'],
 };
 const DOMAINS = { banco: 'Banco e moeda', empresas: 'Empresas e patrimônio', infraestrutura: 'Infraestrutura', defesa: 'Defesa e Forças Armadas', seguranca: 'Segurança e armas', exterior: 'Relações exteriores', regime: 'Regime e instituições', economia: 'Economia e tributos' };
-const EFFECT = { approval: 'aprovação', gdp_growth: 'PIB', inflation: 'inflação', unemployment: 'desemprego', institutional_trust: 'confiança institucional', integrity: 'integridade', governability: 'governabilidade', congress_support: 'base no Congresso', primary_balance: 'resultado primário', military_loyalty: 'lealdade militar' };
+const EFFECT = { trust: 'confiança', reputation: 'reputação', mobilidade: 'mobilidade', seguranca: 'segurança', saude_atencao: 'saúde', educacao_fundamental: 'educação básica', educacao_medio: 'ensino médio', saneamento_basico: 'saneamento', agua_encanada: 'água', esgoto_inadequado: 'esgoto inadequado', adensamento: 'adensamento', logistica: 'custo logístico', homicidios: 'homicídios', mortalidade_infantil: 'mortalidade infantil', idhm_educacao: 'IDHM educação', gini: 'Gini', divida_pib: 'dívida', approval: 'aprovação', gdp_growth: 'PIB', inflation: 'inflação', unemployment: 'desemprego', institutional_trust: 'confiança institucional', integrity: 'integridade', governability: 'governabilidade', congress_support: 'base no Congresso', primary_balance: 'resultado primário', military_loyalty: 'lealdade militar' };
 const STRUCTURE_NAMES = { central_bank: 'Banco Central', guns: 'Armas', police_model: 'Polícia', government_system: 'Sistema de governo', currency: 'Moeda' };
 
 function effectText(effects) {
@@ -38,7 +38,8 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
       const result = await request('/api/powers/execute', { method: 'POST', body: JSON.stringify({ action: action.id, option: options[action.id] || null }) });
       setData(result.catalog);
       if (result.state) onState?.(result.state);
-      onNotice?.(result.message);
+      const gained = result.result ? Object.entries(result.result).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${EFFECT[k] || k}`).join(' · ') : '';
+      onNotice?.(`${result.message}${result.chance != null ? ` (chance estimada ${Math.round(result.chance * 100)}%)` : ''}${gained ? ` Resultado: ${gained}.` : ''}`);
     } catch (e) { onNotice?.(e.message); } finally { setBusy(''); }
   }
 
@@ -80,6 +81,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
             <b>{a.title}</b>
             <small>{a.summary}</small>
             <small className="powers-meta"><span className={`powers-kind ${a.approval}`}>{kind}</span> {rule} · {a.basis}</small>
+            {a.cost_text && <small className="powers-meta">Custo: {a.cost_text}{a.chance != null ? ` · chance de aprovação ${Math.round(a.chance * 100)}%` : ''}</small>}
             {effectText(a.effects) && <small className="powers-effects">Efeito estimado: {effectText(a.effects)}{a.cost_bi ? ` · ${a.cost_bi > 0 ? 'custo' : 'receita'} R$ ${Math.abs(a.cost_bi)} bi` : ''}</small>}
             {a.precedent && <small className="powers-precedent">Precedente: {a.precedent}</small>}
             {!a.available && <small className="neg">{a.reason}</small>}
@@ -87,7 +89,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
           {data.executable && a.available && <div className="powers-actions">
             {a.options.length > 0 && <select aria-label={`Opções de ${a.title}`} value={options[a.id] || ''} onChange={(e) => setOptions({ ...options, [a.id]: e.target.value })}>
               <option value="">Escolher…</option>{a.options.map((o) => <option key={o} value={o}>{o}</option>)}</select>}
-            <button className="secondary-button" disabled={busy === a.id || (a.options.length > 0 && !options[a.id])} onClick={() => run(a)}>{busy === a.id ? 'Enviando…' : (['decreto', 'mp'].includes(a.approval) ? 'Assinar' : 'Enviar ao Congresso')}</button>
+            <button className="secondary-button" disabled={busy === a.id || (a.options.length > 0 && !options[a.id])} onClick={() => run(a)}>{busy === a.id ? 'Enviando…' : (a.kind === 'leg' ? 'Levar à votação' : (['decreto', 'mp'].includes(a.approval) ? 'Assinar' : 'Enviar ao Congresso'))}</button>
           </div>}
         </li>;
       })}</ul>

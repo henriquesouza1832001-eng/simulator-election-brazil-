@@ -70,7 +70,17 @@ def _atlas_values(code: str) -> dict[str, float]:
     return {ind["id"]: row[ind["atlas"]] for ind in REGISTRY.values() if ind.get("atlas") and ind["atlas"] in row}
 
 
+_BASE_CACHE: dict[str, dict[str, float]] = {}
+
+
 def _base(city: dict[str, Any]) -> dict[str, float]:
+    cached = _BASE_CACHE.get(city["ibge_code"])
+    if cached is None:
+        cached = _BASE_CACHE[city["ibge_code"]] = _compute_base(city)
+    return cached
+
+
+def _compute_base(city: dict[str, Any]) -> dict[str, float]:
     """Índices-base do município: dado real do Atlas quando existe; o restante é estimado."""
     profile = city.get("economic_profile") or {}
     pc = float(profile.get("gdp_per_capita_brl") or 25000)
@@ -103,8 +113,8 @@ def ensure(state: dict[str, Any]) -> dict[str, Any]:
 def _deltas_for(state: dict[str, Any], city: dict[str, Any]) -> dict[str, float]:
     t = ensure(state)
     out: dict[str, float] = {}
-    for scope in (f"city:{city['ibge_code']}", f"uf:{city['state_code']}"):
-        weight = 1.0 if scope.startswith("city") else 0.35
+    for scope in (f"city:{city['ibge_code']}", f"uf:{city['state_code']}", "nation"):
+        weight = 1.0 if scope.startswith("city") or scope == "nation" else 0.35
         for k, v in t["deltas"].get(scope, {}).items():
             out[k] = out.get(k, 0.0) + v * weight
     return out

@@ -7,7 +7,7 @@ from typing import Any, Callable
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from .engine import territory
+from .engine import indicator_engine, territory
 from .engine.career import is_career_governing
 from .engine.indicator_registry import DOMAINS, REGISTRY, explain, for_office
 
@@ -43,7 +43,14 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
 
     @router.get("/api/territory")
     def overview() -> dict[str, Any]:
-        return territory.overview(get_state())
+        state = get_state()
+        return {**territory.overview(state), "nation": indicator_engine.snapshot(state)}
+
+    @router.get("/api/indicators/nation/history")
+    def nation_history(keys: str = Query(default="", max_length=300)) -> dict[str, Any]:
+        wanted = [k for k in keys.split(",") if k in REGISTRY]
+        nation = indicator_engine.ensure(get_state())
+        return {"series": [{"month": h["month"], **{k: h["values"].get(k) for k in wanted}} for h in nation["history"]]}
 
     @router.get("/api/territory/search")
     def search(q: str = Query(min_length=2, max_length=60), uf: str | None = Query(default=None, max_length=2)) -> dict[str, Any]:

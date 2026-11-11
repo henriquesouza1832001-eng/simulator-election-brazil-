@@ -108,6 +108,8 @@ def refresh_calendar_fields(state: dict[str, Any]) -> dict[str, Any]:
 def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str]:
     days = max(1, min(int(days), 90))
     before = date.fromisoformat(state["date"])
+    from .indicator_engine import ensure as _ensure_nation
+    _ensure_nation(state)
     after = before + timedelta(days=days)
     next_election = election_date(state)
     if before < next_election < after:
@@ -144,6 +146,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     from .story import tick as story_tick
     messages.extend(story_tick(state, before, after))
     advance_social_indicators(state, elapsed)
+    from .indicator_engine import tick as nation_tick
+    messages.extend(nation_tick(state, before, after))
     event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
     if event_names:
         messages.append("Agenda simulada: " + ", ".join(event_names) + ".")

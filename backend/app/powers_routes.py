@@ -43,10 +43,15 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
     def execute(body: PowerBody) -> dict[str, Any]:
         state = get_state()
         office, governing = _office(state)
-        if office != "presidente" or not governing:
-            raise HTTPException(status_code=403, detail="As ações deste catálogo exigem estar no exercício da Presidência.")
+        if not governing:
+            raise HTTPException(status_code=403, detail="Estas ações exigem estar empossado no cargo.")
         try:
-            result = powers.execute(state, body.action, body.option)
+            if office != "presidente":
+                from .engine import office_powers
+                result = office_powers.execute(state, body.action)
+                result.setdefault("status", "applied")
+            else:
+                result = powers.execute(state, body.action, body.option)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except PermissionError as exc:

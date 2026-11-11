@@ -99,8 +99,10 @@ def catalog_for(state: dict[str, Any], office: str, governing: bool) -> dict[str
         out["companies"] = st["companies"]
         out["history"] = st["history"][:15]
     else:
-        out["actions"] = []
-        out["reference"] = OTHER_OFFICE_ACTIONS.get(office, [])
+        from . import office_powers
+        out["actions"] = office_powers.catalog(state, office) if office in office_powers.OFFICES else []
+        out["executable"] = governing and bool(out["actions"])
+        out["reference"] = [] if out["actions"] else OTHER_OFFICE_ACTIONS.get(office, [])
     return out
 
 
