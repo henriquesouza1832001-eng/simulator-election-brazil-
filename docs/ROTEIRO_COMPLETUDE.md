@@ -28,6 +28,22 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Reguladores** (`engine/regulators.py`, `docs/REGULADORES.md`): STF suspende ou mantém atos de risco, AGU emite parecer prévio, tribunais de contas auditam obras, PF/MP abrem inquérito quando a integridade cai e o TSE mostra a conduta de campanha.
 - **Trajetória partidária** leva também a governador, senador e presidente, após ao menos um mandato cumprido.
 
+- **Mapeador de texto para ações** (`engine/action_mapper.py`, `ai/mapper_ai.py`): regras locais, sinônimos e aprendizado das escolhas confirmadas; o Gemini entra por último, só para desempatar entre candidatos e sugerir até duas perguntas, e sua saída é validada contra a lista de candidatos.
+- **Reações persistentes e crises encadeadas** (`engine/consequences.py`): imprensa, bancadas (por posição ideológica), mercado e crises que exigem resposta com prazo; reguladores usam o mesmo mecanismo (defesa no STF, resposta a inquérito e a auditoria).
+
+## Lista de pendências do protótipo (revisão de 10 nov. 2026)
+Ainda faltam, em ordem de impacto:
+1. **Sabatinas e entrevistas** com avaliação clara (coerência, dados, tom) e efeito persistente.
+2. **Debates em etapas** (abertura, blocos, direito de resposta, finais) com pesquisa antes e depois.
+3. **Alianças e votação legislativa detalhadas:** comissões, relator, emendas, urgência, negociação por bancada.
+4. **Resultados eleitorais nominais completos** (votos por candidato, TSE) e jogar eleições passadas.
+5. **Confirmar em produção que as candidaturas do TSE foram importadas.** Verifique com `GET /api/data/tse/status`; se vier vazio, rode o importador no servidor (`python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`).
+6. **Histórico mais profundo de eventos, orçamento e obras** (previsto × realizado por mês e por função).
+7. **Multiplayer e votação entre jogadores:** apenas documentados (`docs/MULTIPLAYER_ARQUITETURA.md`).
+8. Chave Gemini em produção (variável `GEMINI_API_KEY` no servidor; sem ela tudo funciona em modo local).
+
+As telas propostas estão em `docs/NOVAS_TELAS.md`.
+
 ## Parcial (existe, mas incompleto ou raso)
 1. **Competências só executam na Presidência.** Vereador, prefeito, governador, deputados e senador só leem o que cabe ao cargo. Falta o catálogo executável de cada um (lei municipal, CPI, ICMS, polícia estadual, sabatina…).
 2. **O grafo de indicadores ainda não move o jogo.** `propagate()` é usado só pelas obras. Os indicadores nacionais do painel (`metrics`) seguem fórmulas antigas separadas do registro.

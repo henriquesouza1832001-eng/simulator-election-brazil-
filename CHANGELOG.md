@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16 — 10 nov. 2026 (texto livre, reações e respostas aos reguladores)
+
+- Caixa "Diga o que quer fazer" na aba Competências: o motor mapeia a frase para ações do cargo (porte de arma, Alcântara, BRICS, rodoanel, privatizações etc.), identifica a opção (rodovia, empresa), pergunta o que falta e aprende com as escolhas confirmadas. O Gemini só entra se houver ambiguidade e apenas escolhe entre candidatos e sugere perguntas.
+- Aba Imprensa: notícias, reações de bancadas por posição ideológica e do mercado, e crises encadeadas com opções de resposta e prazo.
+- Reguladores agora pedem resposta: defesa no STF (AGU ou base), inquérito da PF/MP e auditoria do tribunal de contas.
+- Documentos: `docs/NOVAS_TELAS.md` e pendências atualizadas em `docs/ROTEIRO_COMPLETUDE.md`.
+
 ## 0.16 — 11 nov. 2026 (mesas de mandato por cargo)
 
 - Painéis de mandato e ações próprias para cada cargo eletivo, respeitando as competências simuladas.

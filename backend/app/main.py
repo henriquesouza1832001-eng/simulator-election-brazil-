@@ -320,6 +320,8 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         "/api/learning/train",
         "/api/career/start",
         "/api/game/difficulty",
+        "/api/powers/interpret",
+        "/api/powers/confirm",
     }:
         return None
     if request.url.path.startswith("/api/campaigns/") and request.url.path.endswith("/activate"):
