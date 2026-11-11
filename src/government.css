@@ -345,3 +345,57 @@ input:disabled, select:disabled, textarea:disabled { background: #213236; color:
   .agenda-event:has(> .event-art) { grid-template-columns: 76px minmax(0, 1fr); gap: 2px 10px; }
   .agenda-event > .event-art { width: 76px; height: 72px; }
 }
+
+/* Abertura: foto visível, título mais curto e acesso à conta em painel próprio. */
+.welcome-stage { min-height: min(570px, calc(100vh - 150px)); }
+.welcome-stage::before {
+  top: 4%;
+  right: max(-5vw, calc((1100px - 100vw) / 2));
+  bottom: 4%;
+  width: 57%;
+  background:
+    linear-gradient(90deg, #0b171b 0%, rgba(11, 23, 27, .76) 14%, rgba(11, 23, 27, .18) 60%, rgba(11, 23, 27, .08) 100%),
+    url('/assets/backgrounds/campanha-praca-v2.jpg') center / cover;
+  opacity: 1;
+}
+.welcome-copy { max-width: 620px; }
+.welcome-copy h1 {
+  max-width: 610px;
+  margin-block: 12px 18px;
+  font-size: clamp(42px, 5vw, 58px);
+  line-height: 1.06;
+  letter-spacing: -.04em;
+}
+.welcome-copy > p { max-width: 500px; font-size: 16px; line-height: 1.65; }
+.welcome-play { min-height: 54px; box-shadow: 0 5px 16px #0004; }
+.welcome-account-card {
+  align-self: end;
+  margin: 0 0 22px;
+  padding: 24px;
+  border-color: #78918c;
+  background: #142a30;
+  box-shadow: 0 18px 44px #0007;
+}
+.welcome-account-card .eyebrow { color: #e2bd7a; }
+.welcome-account-card h2 { margin-top: 10px; }
+.welcome-account-card p { font-size: 14px; }
+.welcome-account-card .secondary-button { min-height: 46px; }
+.welcome-save-note { max-width: 430px; font-size: 13px; }
+.welcome-footer { max-width: 980px; margin-inline: auto; line-height: 1.6; }
+@media (max-width: 760px) {
+  .welcome-stage { min-height: 0; padding-block: 42px 32px; }
+  .welcome-stage::before {
+    top: auto;
+    right: -16px;
+    bottom: 0;
+    width: calc(100% + 32px);
+    height: 43%;
+    border-radius: 16px;
+    background:
+      linear-gradient(0deg, rgba(11, 23, 27, .2), #0b171b 96%),
+      url('/assets/backgrounds/campanha-praca-v2.jpg') center / cover;
+    opacity: .82;
+  }
+  .welcome-copy h1 { max-width: 520px; font-size: clamp(40px, 10vw, 52px); }
+  .welcome-account-card { position: relative; margin: 0; padding: 20px; }
+}
