@@ -5,7 +5,7 @@ import random
 from datetime import date, timedelta
 from typing import Any
 
-from . import ledger, regulators
+from . import consequences, ledger, regulators
 from .fiscal import ensure_fiscal_state, record_one_off_spending, record_policy_balance_delta
 from .powers_catalog import ACTIONS, OTHER_OFFICE_ACTIONS, ROLES
 
@@ -192,6 +192,7 @@ def execute(state: dict[str, Any], action_id: str, option: str | None = None) ->
                               cost=(f"R$ {abs(action['cost_bi'])} bi" if action["cost_bi"] else None))
         regulators.schedule_review(state, action_id=action["id"], approval=approval, title=entry["title"], ledger_id=entry["id"],
                                    sets=action["sets"], effects=action["effects"])
+        consequences.schedule(state, action_id=action["id"], title=entry["title"], domain=action["domain"], effects=action["effects"], ledger_id=entry["id"])
         message = f"{action['title']}: em vigor desde hoje."
         if approval == "mp":
             bill = _bill(state, action, option, today)
@@ -246,6 +247,8 @@ def resolve_bill(state: dict[str, Any], bill: dict[str, Any], approved: bool) ->
     if bill.get("ledger_id"):
         got = {r["key"]: r["delta"] for r in rows if r["key"] != "cost_bi"}
         ledger.settle(state, bill["ledger_id"], got, "aprovado", ledger.explain_gap(action["effects"], got))
+    consequences.schedule(state, action_id=action["id"], title=bill.get("title", action["title"]), domain=action["domain"], effects=action["effects"],
+                          ledger_id=bill.get("ledger_id"))
     regulators.schedule_review(state, action_id=action["id"], approval=action["approval"], title=bill.get("title", action["title"]),
                                ledger_id=bill.get("ledger_id"), sets=action["sets"], effects=action["effects"])
     return rows

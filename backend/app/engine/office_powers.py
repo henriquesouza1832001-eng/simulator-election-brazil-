@@ -11,7 +11,7 @@ from datetime import date
 from typing import Any
 
 from .career import is_career_governing, _clamp  # noqa: F401
-from . import ledger, subnational_fiscal
+from . import consequences, ledger, subnational_fiscal
 from .indicator_registry import REGISTRY
 
 # kind: exec (reserva) | leg (capital político); cost: fração da reserva (exec) ou pontos de capital (leg)
@@ -185,6 +185,8 @@ def execute(state: dict[str, Any], action_id: str) -> dict[str, Any]:
              "forecast": forecast, "result": applied, "approved": approved, "chance": chance, "status": "active", "simulated": True}
     gov.setdefault("actions", []).append(entry)
     gov["actions"] = gov["actions"][-50:]
+    if approved:
+        consequences.schedule(state, action_id=action_id, title=action["title"], domain=action["domain"], effects=action["effects"], source="cargo", local=True)
     led = ledger.record(state, "cargo", action["title"], forecast, applied, status="aprovado" if approved else "rejeitado",
                         cost=(f"{action['cost']:.0f} pontos de capital político" if action["kind"] == "leg" else f"{action['cost'] * 100:.0f}% da reserva"),
                         reason=ledger.explain_gap(forecast, applied, approved if action["kind"] == "leg" else None))

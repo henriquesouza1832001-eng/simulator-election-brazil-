@@ -10,7 +10,7 @@ import hashlib
 from datetime import date, timedelta
 from typing import Any
 
-from . import ledger
+from . import consequences, ledger
 
 REGULATORS: dict[str, dict[str, Any]] = {
     "stf": {"name": "Supremo Tribunal Federal", "basis": "CF art. 101 a 103-B",
@@ -92,7 +92,23 @@ def schedule_review(state: dict[str, Any], *, action_id: str, approval: str, tit
             "risk": risk, "ledger_id": ledger_id, "sets": dict(sets), "effects": dict(effects), "filed": today.isoformat(),
             "decide_on": (today + timedelta(days=45 + int(_roll(f"{action_id}:{state['date']}:when") * 75))).isoformat(), "status": "em julgamento"}
     r["cases"].append(case)
+    if risk >= 0.2:
+        consequences.open_crisis(
+            state, crisis_id=f"stf-{case['id']}", action_id=action_id, regulator="stf", ledger_id=ledger_id, deadline_days=40,
+            title=f"Processo no STF contra: {title}",
+            text="Um legitimado ajuizou ação contra o ato. Você pode reforçar a defesa antes do julgamento.",
+            options=[{"id": "agu", "label": "Acionar a AGU para defender o ato (reduz o risco em 30%, custa capital político)",
+                      "effects": {"congress_support": -0.5}, "hook": {"stf_risk_factor": 0.7, "case": case["id"]}},
+                     {"id": "base", "label": "Mobilizar a base no Congresso (reduz o risco em 15%)",
+                      "effects": {"governability": -0.5}, "hook": {"stf_risk_factor": 0.85, "case": case["id"]}},
+                     {"id": "aguardar", "label": "Aguardar o julgamento", "effects": {}}])
     return case
+
+
+def adjust_case_risk(state: dict[str, Any], case_id: str, factor: float) -> None:
+    for case in _st(state)["cases"]:
+        if case["id"] == case_id:
+            case["risk"] = round(max(0.0, case["risk"] * factor), 3)
 
 
 def _revert(state: dict[str, Any], case: dict[str, Any]) -> None:
@@ -157,8 +173,15 @@ def _audits(state: dict[str, Any], after: date) -> list[str]:
         if "integrity" in m:
             m["integrity"] = round(max(0, float(m["integrity"]) - 2), 2)
         m["approval"] = round(max(0, float(m.get("approval", 50)) - 1.5), 2)
-        out.append("PF e Ministério Público abriram inquérito sobre o governo, na simulação; a aprovação caiu.")
+        out.append("PF e Ministério Público abriram inquérito sobre o governo, na simulação; a aprovação caiu. Escolha como responder.")
         r["decisions"].insert(0, {"id": f"inq-{month}", "regulator": "pf_mp", "title": "Inquérito aberto", "status": "aberto", "decided": after.isoformat()})
+        consequences.open_crisis(
+            state, crisis_id=f"inq-{month}", action_id="inquerito", regulator="pf_mp", deadline_days=30, today=after,
+            title="Inquérito da PF e do Ministério Público",
+            text="Há suspeitas sobre contratos do governo. Como responder?",
+            options=[{"id": "colaborar", "label": "Colaborar com as investigações e abrir os dados", "effects": {"integrity": 2.0, "approval": -0.5}},
+                     {"id": "afastar", "label": "Afastar os envolvidos e auditar internamente", "effects": {"integrity": 3.0, "governability": -2.0}},
+                     {"id": "contestar", "label": "Contestar publicamente", "effects": {"integrity": -3.0, "approval": -3.0}}])
     # Tribunais de contas: obras em andamento com custo alto
     projects = [p for p in (state.get("territory", {}).get("projects", [])) if p.get("status") == "em obra"]
     if projects and _roll(f"{state.get('campaign_seed', 1)}:tc:{month}") < 0.10:
@@ -167,6 +190,12 @@ def _audits(state: dict[str, Any], after: date) -> list[str]:
         if gov is not None:
             gov["trust"] = round(max(0.0, float(gov.get("trust", 50)) - 1.0), 2)
         out.append(f"O Tribunal de Contas auditou a obra {p['name']}, na simulação, e apontou ressalvas.")
+        consequences.open_crisis(
+            state, crisis_id=f"tc-{month}", action_id="auditoria", regulator="tcu", deadline_days=30, today=after,
+            title=f"Auditoria do Tribunal de Contas: {p['name']}", text="O tribunal apontou ressalvas no contrato e pede providências.",
+            options=[{"id": "corrigir", "label": "Corrigir os apontamentos e republicar as contas", "effects": {"integrity": 1.0, "approval": -0.3}},
+                     {"id": "recorrer", "label": "Apresentar recurso e justificativas", "effects": {"approval": -0.2}},
+                     {"id": "ignorar", "label": "Não responder", "effects": {"integrity": -2.0, "approval": -1.0}}])
         r["decisions"].insert(0, {"id": f"tc-{month}", "regulator": "tcu", "title": f"Auditoria: {p['name']}", "status": "com ressalvas", "decided": after.isoformat()})
     del r["decisions"][40:]
     return out

@@ -4,11 +4,15 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Callable
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .engine import ledger, powers
 from .engine.career import is_career_governing
+
+
+class InterpretBody(BaseModel):
+    text: str = Field(min_length=4, max_length=400)
 
 
 class PowerBody(BaseModel):
@@ -60,6 +64,55 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         save(state)
         return {**result, "state": public(state), "catalog": powers.catalog_for(state, office, governing)}
+
+    @router.post("/api/powers/interpret")
+    async def interpret_text(body: InterpretBody) -> dict[str, Any]:
+        """Entende uma frase livre e a liga a ações do catálogo do cargo atual. O Gemini só entra se houver ambiguidade."""
+        from .ai.mapper_ai import refine
+        from .engine import action_mapper
+        from .learning_actions import similar_choices
+        state = get_state()
+        office, governing = _office(state)
+        catalog = powers.catalog_for(state, office, governing)
+        confirmed = similar_choices(body.text)
+        matches = action_mapper.rank(body.text, catalog.get("actions", []), confirmed)
+        questions = action_mapper.questions_for(body.text, matches)
+        source = "local"
+        if action_mapper.needs_ai(matches):
+            candidates = matches or [{"id": a["id"], "title": a["title"]} for a in catalog.get("actions", [])[:40]]
+            ai = await refine(body.text, candidates, confirmed)
+            if ai["source"] == "gemini":
+                source = "gemini"
+                if ai["choice"]:
+                    matches.sort(key=lambda m: m["id"] != ai["choice"])
+                questions = (ai["questions"] or questions)[:2]
+        learned = [{"text": c["text"], "action_id": c["action_id"]} for c in confirmed[:3]]
+        if learned and not questions and matches and matches[0]["id"] != learned[0]["action_id"]:
+            questions.append("Da última vez, uma frase parecida virou outra ação. Confirme qual você quer agora.")
+        return {"office": office, "matches": matches, "questions": questions, "source": source, "learned": learned,
+                "note": "O motor decide competência, aprovação e efeitos. A IA, quando usada, só escolhe entre as ações listadas e sugere perguntas."}
+
+    @router.post("/api/powers/confirm")
+    def confirm_choice(body: InterpretBody, action: str = Query(min_length=3, max_length=60), option: str | None = Query(default=None, max_length=80)) -> dict[str, Any]:
+        from .learning_actions import record_choice
+        record_choice(body.text, action, option)
+        return {"saved": True}
+
+    @router.get("/api/consequences")
+    def consequences_overview() -> dict[str, Any]:
+        from .engine import consequences
+        return consequences.overview(get_state())
+
+    @router.post("/api/consequences/{crisis_id}/respond")
+    def consequences_respond(crisis_id: str, option: str = Query(min_length=2, max_length=30)) -> dict[str, Any]:
+        from .engine import consequences
+        state = get_state()
+        try:
+            result = consequences.respond(state, crisis_id, option)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        save(state)
+        return {**result, "overview": consequences.overview(state), "state": public(state)}
 
     @router.get("/api/regulators")
     def regulators_overview() -> dict[str, Any]:

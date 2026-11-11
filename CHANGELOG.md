@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16 — 11 nov. 2026 (mesas de mandato por cargo)
+
+- Painéis de mandato e ações próprias para cada cargo eletivo, respeitando as competências simuladas.
+
 ## 0.15 — 10 nov. 2026 (reguladores)
 
 - STF, AGU, tribunais de contas, PF/MP e TSE passam a agir como reguladores: parecer de risco antes de assinar, suspensão ou manutenção de atos pelo STF, auditorias e inquéritos. Aba Reguladores e `docs/REGULADORES.md`.

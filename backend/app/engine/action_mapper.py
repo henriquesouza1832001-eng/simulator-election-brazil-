@@ -102,8 +102,14 @@ def _score(text_plain: str, text_tokens: set[str], candidate: dict[str, Any]) ->
     score = 0.0
     for phrase in SYNONYMS.get(candidate["id"], []):
         p = plain(phrase).strip()
-        if p and p in text_plain:
+        if not p:
+            continue
+        if p in text_plain:
             score += 3.0 + 0.5 * len(p.split())
+        else:
+            words = set(tokens(phrase))
+            if len(words) >= 2 and words <= text_tokens:
+                score += 2.8 + 0.5 * len(words)
     own = set(tokens(candidate["title"])) | set(tokens(candidate.get("summary", ""))[:12])
     score += 0.8 * len(text_tokens & own)
     return score
@@ -111,11 +117,10 @@ def _score(text_plain: str, text_tokens: set[str], candidate: dict[str, Any]) ->
 
 def _option_guess(text_plain: str, options: list[str]) -> str | None:
     for opt in options:
-        key = plain(opt).strip()
-        head = key.split("(")[0].strip()
+        head = plain(opt.split("(")[0]).strip()
         if head and head in text_plain:
             return opt
-        compact = re.sub(r"[^a-z0-9]", "", key.split("(")[0])
+        compact = re.sub(r"[^a-z0-9]", "", head)
         if compact and compact in re.sub(r"[^a-z0-9]", "", text_plain):
             return opt
     return None
