@@ -1112,3 +1112,7 @@ def train_interpreter_candidate() -> dict[str, Any]:
 from .powers_routes import build_router as build_powers_router  # noqa: E402
 
 app.include_router(build_powers_router(lambda: game_state(), lambda s: save_state(s), lambda s: public_state(s)))
+
+from .territory_routes import build_router as build_territory_router  # noqa: E402
+
+app.include_router(build_territory_router(lambda: game_state(), lambda s: save_state(s), lambda s: public_state(s)))

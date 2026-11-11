@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12 — 10 nov. 2026 (indicadores por território e obras de transporte)
+
+- Dados públicos: 35 séries municipais do Atlas do Desenvolvimento Humano (IDHM, Gini, pobreza, saúde, educação, saneamento, emprego, renda) via Ipeadata. Ver `docs/INDICADORES_E_TERRITORIO.md`.
+- Registro central de ~65 indicadores com fonte, escopo, influências entre eles e quais cargos agem em cada um.
+- Aba Território: país, regiões, 27 estados e qualquer município; obras de transporte e urbanismo (Rodoanel de BH/SP, metrô, BRT, VLT, trem, tarifa zero, saneamento, habitação) com custo, prazo e competência por cargo.
+
 ## 0.11 — 10 nov. 2026 (competências por cargo)
 
 - Nova aba Competências: para cada papel (eleitor a presidente), o que pode, o que não pode e a base constitucional. Ver `docs/COMPETENCIAS_E_PODERES.md`.

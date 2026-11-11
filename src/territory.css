@@ -1,0 +1,14 @@
+.territory-table-wrap { overflow-x: auto; max-width: 100%; }
+.territory-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.territory-table th, .territory-table td { padding: .4rem .6rem; text-align: right; border-bottom: 1px solid rgba(128,128,128,.3); white-space: nowrap; }
+.territory-table th:first-child, .territory-table td:first-child { text-align: left; position: sticky; left: 0; background: var(--paper, #14262c); }
+.territory-table tr.country td { font-weight: 700; }
+.territory-search { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .6rem 0; }
+.territory-search input { flex: 1 1 14rem; min-height: 44px; }
+.territory-found { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.territory-domain { margin: 1rem 0 .3rem; }
+.territory-indicators { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .5rem; }
+.territory-indicators li { border: 1px solid rgba(128,128,128,.35); border-radius: 10px; padding: .5rem .7rem; }
+.territory-indicators li span { display: block; font-size: .85rem; opacity: .85; }
+.territory-indicators li small { display: block; opacity: .75; }
+.powers-actions input { min-height: 40px; }

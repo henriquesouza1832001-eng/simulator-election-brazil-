@@ -133,6 +133,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(process_election(state, before, after))
     messages.extend(process_legislation(state, before, after))
     messages.extend(process_investments(state, before, after))
+    from .territory import advance as territory_advance
+    messages.extend(territory_advance(state, before, after))
     if state.get("party_path"):
         from .party_path import sync_with_career
         messages.extend(sync_with_career(state))

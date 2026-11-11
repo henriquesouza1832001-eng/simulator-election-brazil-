@@ -21,6 +21,7 @@ import MeasureForecast from './MeasureForecast';
 import LearningPanel from './LearningPanel';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
+import TerritoryPanel from './TerritoryPanel';
 import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel, InfoPanel } from './MetaPanels';
 import './diplomacy.css';
 import './ai-status.css';
@@ -434,11 +435,11 @@ export default function App() {
   })[careerOffice] || 'Mandato';
   const tabGroups = partyMode ? [
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
-    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Acontecimentos'] },
+    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Território', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Território', 'Acontecimentos'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ] : [
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
-    { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
+    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Território'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências'] : []) : ['Medidas', 'Competências', 'Orçamento', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
@@ -529,6 +530,8 @@ export default function App() {
       {activeTab === 'Agenda' && <section className="panel agenda-page"><div className="eyebrow">CALENDÁRIO DO MANDATO</div><h2>Agenda e acontecimentos</h2><p className="page-description">A linha do tempo acompanha o calendário real da campanha simulada. Avance um dia, uma semana ou um mês.</p>{state.events?.length ? <>{state.events.slice(0, 5).map((event) => <div className="agenda-event" key={event.id}><EventArtwork event={event} compact /><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>)}{state.events.length > 5 && <details className="agenda-more"><summary>Ver mais {state.events.length - 5} compromisso(s)</summary>{state.events.slice(5).map((event) => <div className="agenda-event" key={event.id}><EventArtwork event={event} compact /><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>)}</details>}</> : <div className="empty-state">Não há eventos futuros cadastrados. Novos eventos aparecem conforme o conteúdo do jogo crescer.</div>}</section>}
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
+
+      {activeTab === 'Território' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
       {activeTab === 'Competências' && <PowersPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
