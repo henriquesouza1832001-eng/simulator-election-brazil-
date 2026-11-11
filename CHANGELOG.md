@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9 — 10 nov. 2026 (revisão tela a tela da carreira)
+
+- Corrigido o botão "Fazer" da Trajetória, que quebrava em "Fa/ze/r" em cartões estreitos.
+- Corrigida a rolagem horizontal em tablet (768 px): cabeçalho e abas agora quebram ou rolam dentro da própria faixa.
+- A Visão geral de cargos locais (vereador, prefeito, deputados) deixou de mostrar PIB, dívida, Congresso e crise federal: mostra intenção de voto, apoio local, reputação, fundo, embalo, promessas, calendário eleitoral e o próximo passo da fase.
+- O cartão de carreira conta os dias até a campanha na pré-campanha; a fase no cabeçalho aparece em português.
+- Auditoria no navegador em 390/768/1280 px sem rolagem horizontal e sem erros de console.
+
 ## 0.8 — 10 nov. 2026 (fluxo de início e identidade visual)
 
 - A criação de partida ganhou etapas curtas: escolha visual da dificuldade, configuração do caminho e, na carreira, personagem separado de cargo e território. No celular, os cinco níveis podem ser percorridos horizontalmente.

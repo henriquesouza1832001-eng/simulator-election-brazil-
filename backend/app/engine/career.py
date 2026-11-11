@@ -175,6 +175,28 @@ LEGISLATIVE_ACTIONS = [
     {"key": "oversight", "label": "Fiscalizar contrato ou programa", "capital": 12, "days": 30, "summary": "A fiscalização pode revelar falha, melhorar controle ou abrir um caso político."},
     {"key": "hearing", "label": "Convocar audiência pública", "capital": 8, "days": 1, "summary": "Escuta setores afetados e aumenta a confiança quando há resposta pública."},
 ]
+LEGISLATIVE_ACTIONS_BY_OFFICE = {
+    "vereador": [
+        {"key": "proposal", "label": "Apresentar projeto de lei municipal", "capital": 10, "days": 45, "summary": "A proposta segue para análise e votação simulada na Câmara Municipal."},
+        {"key": "oversight", "label": "Fiscalizar serviço ou contrato da prefeitura", "capital": 7, "days": 21, "summary": "A fiscalização acompanha um serviço municipal e pode revelar falhas ou gerar resposta pública."},
+        {"key": "hearing", "label": "Ouvir moradores em audiência pública", "capital": 5, "days": 1, "summary": "A audiência registra demandas do município e amplia a prestação de contas local."},
+    ],
+    "deputado_estadual": [
+        {"key": "proposal", "label": "Apresentar projeto de lei estadual", "capital": 14, "days": 50, "summary": "A proposta segue para comissão e votação simulada na Assembleia Legislativa."},
+        {"key": "oversight", "label": "Fiscalizar programa ou contrato estadual", "capital": 9, "days": 30, "summary": "A fiscalização acompanha a execução de uma política estadual e pode abrir cobrança pública."},
+        {"key": "hearing", "label": "Realizar audiência na Assembleia", "capital": 7, "days": 1, "summary": "A audiência reúne setores afetados por uma política estadual e registra encaminhamentos."},
+    ],
+    "deputado_federal": [
+        {"key": "proposal", "label": "Apresentar projeto de lei federal", "capital": 18, "days": 60, "summary": "A proposta segue para comissão e tramitação simulada na Câmara dos Deputados."},
+        {"key": "oversight", "label": "Fiscalizar ministério ou programa federal", "capital": 12, "days": 30, "summary": "A fiscalização acompanha uma política federal e pode gerar prestação de informações ou cobrança pública."},
+        {"key": "hearing", "label": "Convocar audiência em comissão", "capital": 8, "days": 1, "summary": "A comissão ouve setores afetados e registra encaminhamentos sobre a política federal."},
+    ],
+    "senador": [
+        {"key": "proposal", "label": "Apresentar projeto de lei no Senado", "capital": 20, "days": 75, "summary": "A proposta segue para comissão e tramitação simulada no Senado Federal."},
+        {"key": "oversight", "label": "Fiscalizar ato ou programa do Executivo", "capital": 14, "days": 45, "summary": "A fiscalização acompanha uma política federal e registra a cobrança institucional do Senado."},
+        {"key": "hearing", "label": "Realizar audiência de interesse nacional", "capital": 10, "days": 1, "summary": "A audiência reúne setores afetados e registra recomendações para a atuação do Senado."},
+    ],
+}
 
 
 def _norm(text: str) -> str:
@@ -990,7 +1012,7 @@ def perform_governance_action(state: dict[str, Any], action: str, service: str =
     public_report = None
     selected = None
     if career["office"] in LEGISLATIVE_OFFICES:
-        selected = next((item for item in LEGISLATIVE_ACTIONS if item["key"] == action), None)
+        selected = next((item for item in governance_actions_for(career, governance) if item["key"] == action), None)
         if not selected:
             raise ValueError("Esta ação não pertence às atribuições legislativas do cargo.")
         if governance.get("political_capital", 0) < selected["capital"]:
@@ -1112,7 +1134,7 @@ def _publish_governance_report(state: dict[str, Any], career: dict[str, Any],
 
 def governance_actions_for(career: dict[str, Any], governance: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     if career["office"] in LEGISLATIVE_OFFICES:
-        return [dict(item) for item in LEGISLATIVE_ACTIONS]
+        return [dict(item) for item in LEGISLATIVE_ACTIONS_BY_OFFICE.get(career["office"], LEGISLATIVE_ACTIONS)]
     office = career["office"]
     if office in EXECUTIVE_SERVICE_ACCESS:
         active_governance = governance or career.get("governance") or {}
