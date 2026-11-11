@@ -211,7 +211,7 @@ class MetaApiTests(unittest.TestCase):
             from app.main import app
             with TestClient(app) as client:
                 self.assertEqual(client.get("/api/legislature").json()["camara_total"], 513)
-                self.assertGreater(len(client.get("/api/ranking?quadro=geral").json()["linhas"]), 5)
+                self.assertEqual(client.get("/api/ranking?quadro=geral").json()["linhas"], [])  # sem entradas de exemplo
                 self.assertEqual(client.get("/api/ranking?quadro=xx").status_code, 422)
                 coll = client.get("/api/collection").json()
                 self.assertEqual(coll["total"], len(meta.STAMPS))

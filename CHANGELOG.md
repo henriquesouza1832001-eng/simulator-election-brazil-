@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10 — 10 nov. 2026 (dados reais de partidos e Congresso)
+
+- Congresso com a composição real (513 deputados, 81 senadores) importada de dados abertos oficiais, com proveniência (`app/data/parliament.py`, `backend/data/parliament.json`). O voto de cada um continua simulado e é descrito como tal.
+- Partidos fictícios substituídos pelos reais, com posição ideológica coerente: PSOL extrema-esquerda, PT e PCdoB esquerda, MDB/PSD centro, PP centro-direita, PL e NOVO direita. Ver `docs/PARTIDOS_E_IDEOLOGIA.md`.
+- Adversários e elencos de cenários futuros usam partidos reais e candidaturas genéricas, sem nomes inventados.
+- Placar sem entradas de exemplo (só mandatos registrados por quem joga); aba Placar agora é a primeira e a tela inicial. Planos de terceiros removidos da aba Planos.
+
 ## 0.9 — 10 nov. 2026 (revisão tela a tela da carreira)
 
 - Corrigido o botão "Fazer" da Trajetória, que quebrava em "Fa/ze/r" em cartões estreitos.

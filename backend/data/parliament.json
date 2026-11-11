@@ -1,0 +1,3576 @@
+{
+ "collected_on": "2026-11-10",
+ "sources": [
+  "https://dadosabertos.camara.leg.br/api/v2/deputados",
+  "https://legis.senado.leg.br/dadosabertos/senador/lista/atual"
+ ],
+ "license_note": "Dados abertos oficiais do Poder Legislativo; verifique os termos de uso nos portais de origem.",
+ "camara": [
+  {
+   "id": 204379,
+   "name": "Acácio Favacho",
+   "party": "MDB",
+   "state": "AP"
+  },
+  {
+   "id": 220714,
+   "name": "Adail Filho",
+   "party": "MDB",
+   "state": "AM"
+  },
+  {
+   "id": 221328,
+   "name": "Adilson Barroso",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 204560,
+   "name": "Adolfo Viana",
+   "party": "PSDB",
+   "state": "BA"
+  },
+  {
+   "id": 204528,
+   "name": "Adriana Ventura",
+   "party": "NOVO",
+   "state": "SP"
+  },
+  {
+   "id": 121948,
+   "name": "Adriano do Baldy",
+   "party": "PP",
+   "state": "GO"
+  },
+  {
+   "id": 74646,
+   "name": "Aécio Neves",
+   "party": "PSDB",
+   "state": "MG"
+  },
+  {
+   "id": 160508,
+   "name": "Afonso Florence",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 136811,
+   "name": "Afonso Hamm",
+   "party": "PP",
+   "state": "RS"
+  },
+  {
+   "id": 178835,
+   "name": "Afonso Motta",
+   "party": "PDT",
+   "state": "RS"
+  },
+  {
+   "id": 160527,
+   "name": "Aguinaldo Ribeiro",
+   "party": "PP",
+   "state": "PB"
+  },
+  {
+   "id": 204495,
+   "name": "Airton Faleiro",
+   "party": "PT",
+   "state": "PA"
+  },
+  {
+   "id": 204549,
+   "name": "AJ Albuquerque",
+   "party": "PP",
+   "state": "CE"
+  },
+  {
+   "id": 73579,
+   "name": "Alberto Fraga",
+   "party": "PL",
+   "state": "DF"
+  },
+  {
+   "id": 220538,
+   "name": "Albuquerque",
+   "party": "REPUBLICANOS",
+   "state": "RR"
+  },
+  {
+   "id": 160559,
+   "name": "Alceu Moreira",
+   "party": "MDB",
+   "state": "RS"
+  },
+  {
+   "id": 204501,
+   "name": "Alencar Santana",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 178972,
+   "name": "Alex Manente",
+   "party": "CIDADANIA",
+   "state": "SP"
+  },
+  {
+   "id": 220542,
+   "name": "Alexandre Guimarães",
+   "party": "MDB",
+   "state": "TO"
+  },
+  {
+   "id": 160545,
+   "name": "Alexandre Leite",
+   "party": "UNIÃO",
+   "state": "SP"
+  },
+  {
+   "id": 220554,
+   "name": "Alexandre Lindenmeyer",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 221148,
+   "name": "Alfredinho",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 220576,
+   "name": "Alfredo Gaspar",
+   "party": "PL",
+   "state": "AL"
+  },
+  {
+   "id": 74057,
+   "name": "Alice Portugal",
+   "party": "PCdoB",
+   "state": "BA"
+  },
+  {
+   "id": 178927,
+   "name": "Aliel Machado",
+   "party": "PV",
+   "state": "PR"
+  },
+  {
+   "id": 204353,
+   "name": "Aline Gurgel",
+   "party": "UNIÃO",
+   "state": "AP"
+  },
+  {
+   "id": 178937,
+   "name": "Altineu Côrtes",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 178881,
+   "name": "Aluisio Mendes",
+   "party": "REPUBLICANOS",
+   "state": "MA"
+  },
+  {
+   "id": 220707,
+   "name": "Amanda Gentil",
+   "party": "PP",
+   "state": "MA"
+  },
+  {
+   "id": 204356,
+   "name": "Amaro Neto",
+   "party": "PP",
+   "state": "ES"
+  },
+  {
+   "id": 220715,
+   "name": "Amom Mandel",
+   "party": "REPUBLICANOS",
+   "state": "AM"
+  },
+  {
+   "id": 107970,
+   "name": "Ana Paula Leão",
+   "party": "PP",
+   "state": "MG"
+  },
+  {
+   "id": 220556,
+   "name": "Ana Paula Lima",
+   "party": "PT",
+   "state": "SC"
+  },
+  {
+   "id": 220632,
+   "name": "Ana Pimentel",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 178831,
+   "name": "André Abdon",
+   "party": "PP",
+   "state": "AP"
+  },
+  {
+   "id": 220657,
+   "name": "André Fernandes",
+   "party": "PL",
+   "state": "CE"
+  },
+  {
+   "id": 204423,
+   "name": "André Ferreira",
+   "party": "PL",
+   "state": "PE"
+  },
+  {
+   "id": 133439,
+   "name": "André Figueiredo",
+   "party": "PDT",
+   "state": "CE"
+  },
+  {
+   "id": 178882,
+   "name": "André Fufuca",
+   "party": "PP",
+   "state": "MA"
+  },
+  {
+   "id": 204515,
+   "name": "André Janones",
+   "party": "REDE",
+   "state": "MG"
+  },
+  {
+   "id": 220676,
+   "name": "Andreia Siqueira",
+   "party": "PSB",
+   "state": "PA"
+  },
+  {
+   "id": 123756,
+   "name": "Antônia Lúcia",
+   "party": "MDB",
+   "state": "AC"
+  },
+  {
+   "id": 220544,
+   "name": "Antonio Andrade",
+   "party": "PSDB",
+   "state": "TO"
+  },
+  {
+   "id": 160553,
+   "name": "Antonio Brito",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 220638,
+   "name": "Antonio Carlos Rodrigues",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 220675,
+   "name": "Antônio Doido",
+   "party": "MDB",
+   "state": "PA"
+  },
+  {
+   "id": 220549,
+   "name": "Any Ortiz",
+   "party": "PP",
+   "state": "RS"
+  },
+  {
+   "id": 73433,
+   "name": "Arlindo Chinaglia",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 141391,
+   "name": "Arnaldo Jardim",
+   "party": "CIDADANIA",
+   "state": "SP"
+  },
+  {
+   "id": 160541,
+   "name": "Arthur Lira",
+   "party": "PP",
+   "state": "AL"
+  },
+  {
+   "id": 160600,
+   "name": "Arthur Oliveira Maia",
+   "party": "UNIÃO",
+   "state": "BA"
+  },
+  {
+   "id": 74090,
+   "name": "Átila Lins",
+   "party": "PSD",
+   "state": "AM"
+  },
+  {
+   "id": 123086,
+   "name": "Átila Lira",
+   "party": "PP",
+   "state": "PI"
+  },
+  {
+   "id": 160665,
+   "name": "Augusto Coutinho",
+   "party": "REPUBLICANOS",
+   "state": "PE"
+  },
+  {
+   "id": 160512,
+   "name": "Aureo Ribeiro",
+   "party": "SOLIDARIEDADE",
+   "state": "RJ"
+  },
+  {
+   "id": 69871,
+   "name": "Bacelar",
+   "party": "PV",
+   "state": "BA"
+  },
+  {
+   "id": 178975,
+   "name": "Baleia Rossi",
+   "party": "MDB",
+   "state": "SP"
+  },
+  {
+   "id": 220605,
+   "name": "Bandeira de Mello",
+   "party": "PV",
+   "state": "RJ"
+  },
+  {
+   "id": 220612,
+   "name": "Bebeto",
+   "party": "PP",
+   "state": "RJ"
+  },
+  {
+   "id": 73701,
+   "name": "Benedita da Silva",
+   "party": "PT",
+   "state": "RJ"
+  },
+  {
+   "id": 109429,
+   "name": "Benes Leocádio",
+   "party": "UNIÃO",
+   "state": "RN"
+  },
+  {
+   "id": 204358,
+   "name": "Beto Pereira",
+   "party": "REPUBLICANOS",
+   "state": "MS"
+  },
+  {
+   "id": 220698,
+   "name": "Beto Preto",
+   "party": "PSD",
+   "state": "PR"
+  },
+  {
+   "id": 220683,
+   "name": "Beto Richa",
+   "party": "PSDB",
+   "state": "PR"
+  },
+  {
+   "id": 204374,
+   "name": "Bia Kicis",
+   "party": "PL",
+   "state": "DF"
+  },
+  {
+   "id": 204388,
+   "name": "Bibo Nunes",
+   "party": "PL",
+   "state": "RS"
+  },
+  {
+   "id": 160538,
+   "name": "Bohn Gass",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 210989,
+   "name": "Bruno Farias",
+   "party": "REPUBLICANOS",
+   "state": "MG"
+  },
+  {
+   "id": 220635,
+   "name": "Bruno Ganem",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 220574,
+   "name": "Cabo Gilberto Silva",
+   "party": "PL",
+   "state": "PB"
+  },
+  {
+   "id": 220548,
+   "name": "Camila Jara",
+   "party": "PT",
+   "state": "MS"
+  },
+  {
+   "id": 204572,
+   "name": "Capitão Alberto Neto",
+   "party": "PL",
+   "state": "AM"
+  },
+  {
+   "id": 220690,
+   "name": "Capitão Alden",
+   "party": "PL",
+   "state": "BA"
+  },
+  {
+   "id": 178829,
+   "name": "Capitão Augusto",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 213762,
+   "name": "Carla Dickson",
+   "party": "PL",
+   "state": "RN"
+  },
+  {
+   "id": 204361,
+   "name": "Carlos Chiodini",
+   "party": "MDB",
+   "state": "SC"
+  },
+  {
+   "id": 178962,
+   "name": "Carlos Gomes",
+   "party": "REPUBLICANOS",
+   "state": "RS"
+  },
+  {
+   "id": 178993,
+   "name": "Carlos Henrique Gaguim",
+   "party": "UNIÃO",
+   "state": "TO"
+  },
+  {
+   "id": 204460,
+   "name": "Carlos Jordy",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 74262,
+   "name": "Carlos Sampaio",
+   "party": "PSD",
+   "state": "SP"
+  },
+  {
+   "id": 204426,
+   "name": "Carlos Veras",
+   "party": "PT",
+   "state": "PE"
+  },
+  {
+   "id": 141398,
+   "name": "Carlos Zarattini",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 220704,
+   "name": "Carol Dartora",
+   "party": "PT",
+   "state": "PR"
+  },
+  {
+   "id": 204369,
+   "name": "Caroline de Toni",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 220699,
+   "name": "Castro Neto",
+   "party": "MDB",
+   "state": "PI"
+  },
+  {
+   "id": 206018,
+   "name": "Célia Xakriabá",
+   "party": "PSOL",
+   "state": "MG"
+  },
+  {
+   "id": 178876,
+   "name": "Célio Silveira",
+   "party": "MDB",
+   "state": "GO"
+  },
+  {
+   "id": 204488,
+   "name": "Célio Studart",
+   "party": "PSD",
+   "state": "CE"
+  },
+  {
+   "id": 73441,
+   "name": "Celso Russomanno",
+   "party": "REPUBLICANOS",
+   "state": "SP"
+  },
+  {
+   "id": 204496,
+   "name": "Celso Sabino",
+   "party": "PDT",
+   "state": "PA"
+  },
+  {
+   "id": 204504,
+   "name": "Cezinha de Madureira",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 205476,
+   "name": "Charles Fernandes",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 74171,
+   "name": "Chico Alencar",
+   "party": "PSOL",
+   "state": "RJ"
+  },
+  {
+   "id": 204462,
+   "name": "Chris Tonietto",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 220665,
+   "name": "Clarissa Tércio",
+   "party": "PP",
+   "state": "PE"
+  },
+  {
+   "id": 74537,
+   "name": "Claudio Cajado",
+   "party": "PP",
+   "state": "BA"
+  },
+  {
+   "id": 141408,
+   "name": "Cleber Verde",
+   "party": "MDB",
+   "state": "MA"
+  },
+  {
+   "id": 88256,
+   "name": "Clodoaldo Magalhães",
+   "party": "PV",
+   "state": "PE"
+  },
+  {
+   "id": 98148,
+   "name": "Cobalchini",
+   "party": "MDB",
+   "state": "SC"
+  },
+  {
+   "id": 220594,
+   "name": "Coronel Assis",
+   "party": "PL",
+   "state": "MT"
+  },
+  {
+   "id": 204378,
+   "name": "Coronel Chrisóstomo",
+   "party": "PL",
+   "state": "RO"
+  },
+  {
+   "id": 220595,
+   "name": "Coronel Fernanda",
+   "party": "PL",
+   "state": "MT"
+  },
+  {
+   "id": 220666,
+   "name": "Coronel Meira",
+   "party": "PL",
+   "state": "PE"
+  },
+  {
+   "id": 220590,
+   "name": "Coronel Ulysses",
+   "party": "UNIÃO",
+   "state": "AC"
+  },
+  {
+   "id": 178963,
+   "name": "Covatti Filho",
+   "party": "PP",
+   "state": "RS"
+  },
+  {
+   "id": 220608,
+   "name": "Cristiane Lopes",
+   "party": "PODE",
+   "state": "RO"
+  },
+  {
+   "id": 204355,
+   "name": "Da Vitoria",
+   "party": "PP",
+   "state": "ES"
+  },
+  {
+   "id": 141411,
+   "name": "Dagoberto Nogueira",
+   "party": "PP",
+   "state": "MS"
+  },
+  {
+   "id": 220555,
+   "name": "Daiana Santos",
+   "party": "PCdoB",
+   "state": "RS"
+  },
+  {
+   "id": 220692,
+   "name": "Dal Barreto",
+   "party": "UNIÃO",
+   "state": "BA"
+  },
+  {
+   "id": 74467,
+   "name": "Damião Feliciano",
+   "party": "UNIÃO",
+   "state": "PB"
+  },
+  {
+   "id": 220629,
+   "name": "Dandara",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 220603,
+   "name": "Dani Cunha",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 220571,
+   "name": "Daniel Agrobom",
+   "party": "PSD",
+   "state": "GO"
+  },
+  {
+   "id": 74060,
+   "name": "Daniel Almeida",
+   "party": "PCdoB",
+   "state": "BA"
+  },
+  {
+   "id": 220582,
+   "name": "Daniel Barbosa",
+   "party": "PP",
+   "state": "AL"
+  },
+  {
+   "id": 204367,
+   "name": "Daniel Freitas",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 204409,
+   "name": "Daniel Trzeciak",
+   "party": "PSDB",
+   "state": "RS"
+  },
+  {
+   "id": 204459,
+   "name": "Daniela do Waguinho",
+   "party": "REPUBLICANOS",
+   "state": "RJ"
+  },
+  {
+   "id": 220557,
+   "name": "Daniela Reinehr",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 62881,
+   "name": "Danilo Forte",
+   "party": "PP",
+   "state": "CE"
+  },
+  {
+   "id": 160552,
+   "name": "Danrlei de Deus Hinterholz",
+   "party": "PSD",
+   "state": "RS"
+  },
+  {
+   "id": 204511,
+   "name": "David Soares",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 220539,
+   "name": "Defensor Stélio Dener",
+   "party": "UNIÃO",
+   "state": "RR"
+  },
+  {
+   "id": 220565,
+   "name": "Delegada Adriana Accorsi",
+   "party": "PT",
+   "state": "GO"
+  },
+  {
+   "id": 220625,
+   "name": "Delegada Ione",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 220561,
+   "name": "Delegada Katarina",
+   "party": "PSD",
+   "state": "SE"
+  },
+  {
+   "id": 220642,
+   "name": "Delegado Bruno Lima",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 220673,
+   "name": "Delegado Caveira",
+   "party": "PL",
+   "state": "PA"
+  },
+  {
+   "id": 220649,
+   "name": "Delegado da Cunha",
+   "party": "UNIÃO",
+   "state": "SP"
+  },
+  {
+   "id": 178908,
+   "name": "Delegado Éder Mauro",
+   "party": "PL",
+   "state": "PA"
+  },
+  {
+   "id": 220583,
+   "name": "Delegado Fabio Costa",
+   "party": "PP",
+   "state": "AL"
+  },
+  {
+   "id": 204512,
+   "name": "Delegado Marcelo Freitas",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 220701,
+   "name": "Delegado Matheus Laiola",
+   "party": "UNIÃO",
+   "state": "PR"
+  },
+  {
+   "id": 220652,
+   "name": "Delegado Palumbo",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 220654,
+   "name": "Delegado Paulo Bilynskyj",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 220553,
+   "name": "Denise Pessôa",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 220689,
+   "name": "Detinha",
+   "party": "PL",
+   "state": "MA"
+  },
+  {
+   "id": 160588,
+   "name": "Diego Andrade",
+   "party": "PSD",
+   "state": "MG"
+  },
+  {
+   "id": 220691,
+   "name": "Diego Coronel",
+   "party": "REPUBLICANOS",
+   "state": "BA"
+  },
+  {
+   "id": 178929,
+   "name": "Diego Garcia",
+   "party": "UNIÃO",
+   "state": "PR"
+  },
+  {
+   "id": 73768,
+   "name": "Dilceu Sperafico",
+   "party": "PP",
+   "state": "PR"
+  },
+  {
+   "id": 220671,
+   "name": "Dilvanda Faro",
+   "party": "PT",
+   "state": "PA"
+  },
+  {
+   "id": 160599,
+   "name": "Dimas Fabiano",
+   "party": "PP",
+   "state": "MG"
+  },
+  {
+   "id": 220602,
+   "name": "Dimas Gadelha",
+   "party": "PT",
+   "state": "RJ"
+  },
+  {
+   "id": 143632,
+   "name": "Domingos Neto",
+   "party": "PSD",
+   "state": "CE"
+  },
+  {
+   "id": 160758,
+   "name": "Domingos Sávio",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 220573,
+   "name": "Dorinaldo Malafaia",
+   "party": "PDT",
+   "state": "AP"
+  },
+  {
+   "id": 204450,
+   "name": "Doutor Luizinho",
+   "party": "PP",
+   "state": "RJ"
+  },
+  {
+   "id": 227991,
+   "name": "Dr Flávio",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 220614,
+   "name": "Dr. Daniel Soranz",
+   "party": "PSD",
+   "state": "RJ"
+  },
+  {
+   "id": 220610,
+   "name": "Dr. Fernando Máximo",
+   "party": "PL",
+   "state": "RO"
+  },
+  {
+   "id": 220688,
+   "name": "Dr. Francisco",
+   "party": "PT",
+   "state": "PI"
+  },
+  {
+   "id": 204518,
+   "name": "Dr. Frederico",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 220570,
+   "name": "Dr. Ismael Alexandrino",
+   "party": "PSD",
+   "state": "GO"
+  },
+  {
+   "id": 204481,
+   "name": "Dr. Jaziel",
+   "party": "PL",
+   "state": "CE"
+  },
+  {
+   "id": 204351,
+   "name": "Dr. Luiz Ovando",
+   "party": "PP",
+   "state": "MS"
+  },
+  {
+   "id": 220528,
+   "name": "Dr. Victor Linhalis",
+   "party": "PSB",
+   "state": "ES"
+  },
+  {
+   "id": 204412,
+   "name": "Dr. Zacharias Calil",
+   "party": "MDB",
+   "state": "GO"
+  },
+  {
+   "id": 220674,
+   "name": "Dra. Alessandra Haber",
+   "party": "PODE",
+   "state": "PA"
+  },
+  {
+   "id": 220686,
+   "name": "Duarte Jr.",
+   "party": "AVANTE",
+   "state": "MA"
+  },
+  {
+   "id": 220540,
+   "name": "Duda Ramos",
+   "party": "PODE",
+   "state": "RR"
+  },
+  {
+   "id": 220623,
+   "name": "Duda Salabert",
+   "party": "PSOL",
+   "state": "MG"
+  },
+  {
+   "id": 204541,
+   "name": "Eduardo Bismarck",
+   "party": "PV",
+   "state": "CE"
+  },
+  {
+   "id": 141421,
+   "name": "Eduardo da Fonte",
+   "party": "PP",
+   "state": "PE"
+  },
+  {
+   "id": 220589,
+   "name": "Eduardo Velloso",
+   "party": "SOLIDARIEDADE",
+   "state": "AC"
+  },
+  {
+   "id": 74075,
+   "name": "Elcione Barbalho",
+   "party": "MDB",
+   "state": "PA"
+  },
+  {
+   "id": 204364,
+   "name": "Eli Borges",
+   "party": "REPUBLICANOS",
+   "state": "TO"
+  },
+  {
+   "id": 178854,
+   "name": "Elmar Nascimento",
+   "party": "UNIÃO",
+   "state": "BA"
+  },
+  {
+   "id": 198783,
+   "name": "Emanuel Pinheiro Neto",
+   "party": "PSD",
+   "state": "MT"
+  },
+  {
+   "id": 161550,
+   "name": "Emidinho Madeira",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 230765,
+   "name": "Enfermeira Rejane",
+   "party": "PCdoB",
+   "state": "RJ"
+  },
+  {
+   "id": 220663,
+   "name": "Eriberto Medeiros",
+   "party": "PSB",
+   "state": "PE"
+  },
+  {
+   "id": 220645,
+   "name": "Erika Hilton",
+   "party": "PSOL",
+   "state": "SP"
+  },
+  {
+   "id": 160575,
+   "name": "Erika Kokay",
+   "party": "PT",
+   "state": "DF"
+  },
+  {
+   "id": 160640,
+   "name": "Eros Biondini",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 204482,
+   "name": "Euclydes Pettersen",
+   "party": "REPUBLICANOS",
+   "state": "MG"
+  },
+  {
+   "id": 74454,
+   "name": "Eunício Oliveira",
+   "party": "MDB",
+   "state": "CE"
+  },
+  {
+   "id": 178871,
+   "name": "Evair Vieira de Melo",
+   "party": "REPUBLICANOS",
+   "state": "ES"
+  },
+  {
+   "id": 178905,
+   "name": "Fabio Garcia",
+   "party": "UNIÃO",
+   "state": "MT"
+  },
+  {
+   "id": 220681,
+   "name": "Fábio Macedo",
+   "party": "PODE",
+   "state": "MA"
+  },
+  {
+   "id": 171623,
+   "name": "Fabio Reis",
+   "party": "PSD",
+   "state": "SE"
+  },
+  {
+   "id": 204368,
+   "name": "Fabio Schiochet",
+   "party": "UNIÃO",
+   "state": "SC"
+  },
+  {
+   "id": 220653,
+   "name": "Fábio Teruel",
+   "party": "MDB",
+   "state": "SP"
+  },
+  {
+   "id": 220712,
+   "name": "Fausto Jr.",
+   "party": "UNIÃO",
+   "state": "AM"
+  },
+  {
+   "id": 66828,
+   "name": "Fausto Pinato",
+   "party": "UNIÃO",
+   "state": "SP"
+  },
+  {
+   "id": 220646,
+   "name": "Felipe Becari",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 72442,
+   "name": "Felipe Carreras",
+   "party": "PSB",
+   "state": "PE"
+  },
+  {
+   "id": 204398,
+   "name": "Felipe Francischini",
+   "party": "PODE",
+   "state": "PR"
+  },
+  {
+   "id": 160666,
+   "name": "Félix Mendonça Júnior",
+   "party": "PDT",
+   "state": "BA"
+  },
+  {
+   "id": 204407,
+   "name": "Fernanda Melchionna",
+   "party": "PSOL",
+   "state": "RS"
+  },
+  {
+   "id": 220656,
+   "name": "Fernanda Pessoa",
+   "party": "PSD",
+   "state": "CE"
+  },
+  {
+   "id": 141431,
+   "name": "Fernando Coelho Filho",
+   "party": "UNIÃO",
+   "state": "PE"
+  },
+  {
+   "id": 204445,
+   "name": "Fernando Mineiro",
+   "party": "PT",
+   "state": "RN"
+  },
+  {
+   "id": 92699,
+   "name": "Fernando Monteiro",
+   "party": "PSD",
+   "state": "PE"
+  },
+  {
+   "id": 204427,
+   "name": "Fernando Rodolfo",
+   "party": "PRD",
+   "state": "PE"
+  },
+  {
+   "id": 204411,
+   "name": "Filipe Barros",
+   "party": "PL",
+   "state": "PR"
+  },
+  {
+   "id": 220545,
+   "name": "Filipe Martins",
+   "party": "PL",
+   "state": "TO"
+  },
+  {
+   "id": 160598,
+   "name": "Flávia Morais",
+   "party": "MDB",
+   "state": "GO"
+  },
+  {
+   "id": 191923,
+   "name": "Flávio Nogueira",
+   "party": "PT",
+   "state": "PI"
+  },
+  {
+   "id": 220700,
+   "name": "Florentino Neto",
+   "party": "PT",
+   "state": "PI"
+  },
+  {
+   "id": 220551,
+   "name": "Franciane Bayer",
+   "party": "REPUBLICANOS",
+   "state": "RS"
+  },
+  {
+   "id": 204494,
+   "name": "Fred Costa",
+   "party": "PRD",
+   "state": "MG"
+  },
+  {
+   "id": 220534,
+   "name": "Fred Linhares",
+   "party": "REPUBLICANOS",
+   "state": "DF"
+  },
+  {
+   "id": 224117,
+   "name": "Gabriel Mota",
+   "party": "UNIÃO",
+   "state": "RR"
+  },
+  {
+   "id": 220708,
+   "name": "Gabriel Nunes",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 204473,
+   "name": "General Girão",
+   "party": "PL",
+   "state": "RN"
+  },
+  {
+   "id": 220611,
+   "name": "General Pazuello",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 178966,
+   "name": "Geovania de Sá",
+   "party": "REPUBLICANOS",
+   "state": "SC"
+  },
+  {
+   "id": 220702,
+   "name": "Geraldo Mendes",
+   "party": "UNIÃO",
+   "state": "PR"
+  },
+  {
+   "id": 74374,
+   "name": "Geraldo Resende",
+   "party": "UNIÃO",
+   "state": "MS"
+  },
+  {
+   "id": 204394,
+   "name": "Gervásio Maia",
+   "party": "PCdoB",
+   "state": "PB"
+  },
+  {
+   "id": 204491,
+   "name": "Gilberto Abramo",
+   "party": "REPUBLICANOS",
+   "state": "MG"
+  },
+  {
+   "id": 74270,
+   "name": "Gilberto Nascimento",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 74581,
+   "name": "Gilmar Machado",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 220529,
+   "name": "Gilson Daniel",
+   "party": "PODE",
+   "state": "ES"
+  },
+  {
+   "id": 204365,
+   "name": "Gilson Marques",
+   "party": "NOVO",
+   "state": "SC"
+  },
+  {
+   "id": 220526,
+   "name": "Gilvan da Federal",
+   "party": "PL",
+   "state": "ES"
+  },
+  {
+   "id": 160673,
+   "name": "Giovani Cherini",
+   "party": "PL",
+   "state": "RS"
+  },
+  {
+   "id": 152605,
+   "name": "Glauber Braga",
+   "party": "PSOL",
+   "state": "RJ"
+  },
+  {
+   "id": 204419,
+   "name": "Glaustin da Fokus",
+   "party": "PODE",
+   "state": "GO"
+  },
+  {
+   "id": 107283,
+   "name": "Gleisi Hoffmann",
+   "party": "PT",
+   "state": "PR"
+  },
+  {
+   "id": 198197,
+   "name": "Greyce Elias",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 204531,
+   "name": "Guilherme Derrite",
+   "party": "PP",
+   "state": "SP"
+  },
+  {
+   "id": 220664,
+   "name": "Guilherme Uchoa",
+   "party": "PSD",
+   "state": "PE"
+  },
+  {
+   "id": 220568,
+   "name": "Gustavo Gayer",
+   "party": "PL",
+   "state": "GO"
+  },
+  {
+   "id": 204408,
+   "name": "Gustinho Ribeiro",
+   "party": "PP",
+   "state": "SE"
+  },
+  {
+   "id": 204456,
+   "name": "Gutemberg Reis",
+   "party": "MDB",
+   "state": "RJ"
+  },
+  {
+   "id": 178964,
+   "name": "Heitor Schuch",
+   "party": "PSD",
+   "state": "RS"
+  },
+  {
+   "id": 178873,
+   "name": "Helder Salomão",
+   "party": "PT",
+   "state": "ES"
+  },
+  {
+   "id": 220537,
+   "name": "Helena Lima",
+   "party": "PSD",
+   "state": "RR"
+  },
+  {
+   "id": 204444,
+   "name": "Helio Lopes",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 220672,
+   "name": "Henderson Pinto",
+   "party": "UNIÃO",
+   "state": "PA"
+  },
+  {
+   "id": 204539,
+   "name": "Hercílio Coelho Diniz",
+   "party": "MDB",
+   "state": "MG"
+  },
+  {
+   "id": 178884,
+   "name": "Hildo Rocha",
+   "party": "MDB",
+   "state": "MA"
+  },
+  {
+   "id": 141450,
+   "name": "Hugo Leal",
+   "party": "PSD",
+   "state": "RJ"
+  },
+  {
+   "id": 160674,
+   "name": "Hugo Motta",
+   "party": "REPUBLICANOS",
+   "state": "PB"
+  },
+  {
+   "id": 220563,
+   "name": "Icaro de Valmir",
+   "party": "REPUBLICANOS",
+   "state": "SE"
+  },
+  {
+   "id": 204533,
+   "name": "Idilvan Alencar",
+   "party": "PSB",
+   "state": "CE"
+  },
+  {
+   "id": 204508,
+   "name": "Igor Timo",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 74295,
+   "name": "Inácio Arruda",
+   "party": "PCdoB",
+   "state": "CE"
+  },
+  {
+   "id": 98615,
+   "name": "Ismael",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 204436,
+   "name": "Isnaldo Bulhões Jr.",
+   "party": "MDB",
+   "state": "AL"
+  },
+  {
+   "id": 225846,
+   "name": "Itamar Paim",
+   "party": "PL",
+   "state": "PR"
+  },
+  {
+   "id": 220696,
+   "name": "Ivoneide Caetano",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 220670,
+   "name": "Iza Arruda",
+   "party": "MDB",
+   "state": "PE"
+  },
+  {
+   "id": 220527,
+   "name": "Jack Rocha",
+   "party": "PT",
+   "state": "ES"
+  },
+  {
+   "id": 220697,
+   "name": "Jadyel Alencar",
+   "party": "REPUBLICANOS",
+   "state": "PI"
+  },
+  {
+   "id": 74848,
+   "name": "Jandira Feghali",
+   "party": "PCdoB",
+   "state": "RJ"
+  },
+  {
+   "id": 220567,
+   "name": "Jeferson Rodrigues",
+   "party": "PSDB",
+   "state": "GO"
+  },
+  {
+   "id": 74273,
+   "name": "Jefferson Campos",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 141456,
+   "name": "Jilmar Tatto",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 141458,
+   "name": "João Carlos Bacelar",
+   "party": "PL",
+   "state": "BA"
+  },
+  {
+   "id": 230957,
+   "name": "João Cury",
+   "party": "MDB",
+   "state": "SP"
+  },
+  {
+   "id": 178970,
+   "name": "João Daniel",
+   "party": "PT",
+   "state": "SE"
+  },
+  {
+   "id": 74550,
+   "name": "João Leão",
+   "party": "PP",
+   "state": "BA"
+  },
+  {
+   "id": 141459,
+   "name": "João Maia",
+   "party": "PP",
+   "state": "RN"
+  },
+  {
+   "id": 178910,
+   "name": "Joaquim Passarinho",
+   "party": "PL",
+   "state": "PA"
+  },
+  {
+   "id": 160548,
+   "name": "Jonas Donizette",
+   "party": "PSB",
+   "state": "SP"
+  },
+  {
+   "id": 205550,
+   "name": "Jorge Braz",
+   "party": "REPUBLICANOS",
+   "state": "RJ"
+  },
+  {
+   "id": 214694,
+   "name": "Jorge Goetten",
+   "party": "REPUBLICANOS",
+   "state": "SC"
+  },
+  {
+   "id": 178857,
+   "name": "Jorge Solla",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 141464,
+   "name": "José Airton Félix Cirilo",
+   "party": "PT",
+   "state": "CE"
+  },
+  {
+   "id": 204472,
+   "name": "José Medeiros",
+   "party": "PL",
+   "state": "MT"
+  },
+  {
+   "id": 204391,
+   "name": "José Nelto",
+   "party": "UNIÃO",
+   "state": "GO"
+  },
+  {
+   "id": 74079,
+   "name": "José Priante",
+   "party": "MDB",
+   "state": "PA"
+  },
+  {
+   "id": 74554,
+   "name": "José Rocha",
+   "party": "UNIÃO",
+   "state": "BA"
+  },
+  {
+   "id": 209189,
+   "name": "Joseildo Ramos",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 220578,
+   "name": "Josenildo",
+   "party": "PDT",
+   "state": "AP"
+  },
+  {
+   "id": 204563,
+   "name": "Josimar Maranhãozinho",
+   "party": "PL",
+   "state": "MA"
+  },
+  {
+   "id": 215043,
+   "name": "Josivaldo JP",
+   "party": "UNIÃO",
+   "state": "MA"
+  },
+  {
+   "id": 204474,
+   "name": "Juarez Costa",
+   "party": "REPUBLICANOS",
+   "state": "MT"
+  },
+  {
+   "id": 220559,
+   "name": "Julia Zanatta",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 220640,
+   "name": "Juliana Cardoso",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 66385,
+   "name": "Julio Arcoverde",
+   "party": "PP",
+   "state": "PI"
+  },
+  {
+   "id": 74317,
+   "name": "Júlio Cesar",
+   "party": "PSD",
+   "state": "PI"
+  },
+  {
+   "id": 204372,
+   "name": "Julio Cesar Ribeiro",
+   "party": "REPUBLICANOS",
+   "state": "DF"
+  },
+  {
+   "id": 74253,
+   "name": "Julio Lopes",
+   "party": "PP",
+   "state": "RJ"
+  },
+  {
+   "id": 204457,
+   "name": "Juninho do Pneu",
+   "party": "PSDB",
+   "state": "RJ"
+  },
+  {
+   "id": 204520,
+   "name": "Junio Amaral",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 204497,
+   "name": "Júnior Ferrari",
+   "party": "PSD",
+   "state": "PA"
+  },
+  {
+   "id": 204574,
+   "name": "Junior Lourenço",
+   "party": "MDB",
+   "state": "MA"
+  },
+  {
+   "id": 204550,
+   "name": "Júnior Mano",
+   "party": "PSB",
+   "state": "CE"
+  },
+  {
+   "id": 178886,
+   "name": "Juscelino Filho",
+   "party": "PSDB",
+   "state": "MA"
+  },
+  {
+   "id": 220677,
+   "name": "Keniston Braga",
+   "party": "MDB",
+   "state": "PA"
+  },
+  {
+   "id": 162067,
+   "name": "Kiko Celeguim",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 204536,
+   "name": "Kim Kataguiri",
+   "party": "MISSÃO",
+   "state": "SP"
+  },
+  {
+   "id": 98057,
+   "name": "Lafayette de Andrada",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 74856,
+   "name": "Laura Carneiro",
+   "party": "PSD",
+   "state": "RJ"
+  },
+  {
+   "id": 178832,
+   "name": "Leandre",
+   "party": "PSD",
+   "state": "PR"
+  },
+  {
+   "id": 220566,
+   "name": "Lêda Borges",
+   "party": "REPUBLICANOS",
+   "state": "GO"
+  },
+  {
+   "id": 80815,
+   "name": "Leo Prates",
+   "party": "REPUBLICANOS",
+   "state": "BA"
+  },
+  {
+   "id": 74156,
+   "name": "Leonardo Monteiro",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 92102,
+   "name": "Leur Lomanto Júnior",
+   "party": "UNIÃO",
+   "state": "BA"
+  },
+  {
+   "id": 139285,
+   "name": "Lídice da Mata",
+   "party": "PSB",
+   "state": "BA"
+  },
+  {
+   "id": 74585,
+   "name": "Lincoln Portela",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 74858,
+   "name": "Lindbergh Farias",
+   "party": "PT",
+   "state": "RJ"
+  },
+  {
+   "id": 220662,
+   "name": "Lucas Ramos",
+   "party": "PSB",
+   "state": "PE"
+  },
+  {
+   "id": 204404,
+   "name": "Lucas Redecker",
+   "party": "PSD",
+   "state": "RS"
+  },
+  {
+   "id": 220581,
+   "name": "Luciano Amaral",
+   "party": "PSD",
+   "state": "AL"
+  },
+  {
+   "id": 74478,
+   "name": "Luciano Bivar",
+   "party": "MDB",
+   "state": "PE"
+  },
+  {
+   "id": 178931,
+   "name": "Luciano Ducci",
+   "party": "PSB",
+   "state": "PR"
+  },
+  {
+   "id": 220616,
+   "name": "Luciano Vieira",
+   "party": "PSDB",
+   "state": "RJ"
+  },
+  {
+   "id": 178954,
+   "name": "Lucio Mosquini",
+   "party": "PL",
+   "state": "RO"
+  },
+  {
+   "id": 160510,
+   "name": "Luis Tibé",
+   "party": "AVANTE",
+   "state": "MG"
+  },
+  {
+   "id": 204410,
+   "name": "Luisa Canziani",
+   "party": "UNIÃO",
+   "state": "PR"
+  },
+  {
+   "id": 141485,
+   "name": "Luiz Carlos Busato",
+   "party": "UNIÃO",
+   "state": "RS"
+  },
+  {
+   "id": 73778,
+   "name": "Luiz Carlos Hauly",
+   "party": "PODE",
+   "state": "PR"
+  },
+  {
+   "id": 204485,
+   "name": "Luiz Carlos Motta",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 74041,
+   "name": "Luiz Couto",
+   "party": "PT",
+   "state": "PB"
+  },
+  {
+   "id": 141487,
+   "name": "Luiz Fernando Faria",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 220658,
+   "name": "Luiz Gastão",
+   "party": "PSD",
+   "state": "CE"
+  },
+  {
+   "id": 204455,
+   "name": "Luiz Lima",
+   "party": "NOVO",
+   "state": "RJ"
+  },
+  {
+   "id": 162332,
+   "name": "Luiz Nishimori",
+   "party": "PSD",
+   "state": "PR"
+  },
+  {
+   "id": 204526,
+   "name": "Luiz Philippe de Orleans e Bragança",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 74784,
+   "name": "Luiza Erundina",
+   "party": "PSOL",
+   "state": "SP"
+  },
+  {
+   "id": 178866,
+   "name": "Luizianne Lins",
+   "party": "REDE",
+   "state": "CE"
+  },
+  {
+   "id": 220669,
+   "name": "Lula da Fonte",
+   "party": "PP",
+   "state": "PE"
+  },
+  {
+   "id": 166402,
+   "name": "Magda Mofatto",
+   "party": "PL",
+   "state": "GO"
+  },
+  {
+   "id": 220648,
+   "name": "Marangoni",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 156190,
+   "name": "Marcel van Hattem",
+   "party": "NOVO",
+   "state": "RS"
+  },
+  {
+   "id": 179000,
+   "name": "Marcelo Álvaro Antônio",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 220599,
+   "name": "Marcelo Crivella",
+   "party": "REPUBLICANOS",
+   "state": "RJ"
+  },
+  {
+   "id": 133810,
+   "name": "Marcelo Moraes",
+   "party": "PL",
+   "state": "RS"
+  },
+  {
+   "id": 204558,
+   "name": "Marcelo Nilo",
+   "party": "REPUBLICANOS",
+   "state": "BA"
+  },
+  {
+   "id": 160161,
+   "name": "Marcelo Queiroz",
+   "party": "PSDB",
+   "state": "RJ"
+  },
+  {
+   "id": 178983,
+   "name": "Marcio Alvino",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 179001,
+   "name": "Márcio Biolchi",
+   "party": "MDB",
+   "state": "RS"
+  },
+  {
+   "id": 220687,
+   "name": "Márcio Honaiser",
+   "party": "SOLIDARIEDADE",
+   "state": "MA"
+  },
+  {
+   "id": 81055,
+   "name": "Márcio Jerry",
+   "party": "PCdoB",
+   "state": "MA"
+  },
+  {
+   "id": 150418,
+   "name": "Márcio Marinho",
+   "party": "REPUBLICANOS",
+   "state": "BA"
+  },
+  {
+   "id": 160535,
+   "name": "Marcon",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 204431,
+   "name": "Marcos Aurélio Sampaio",
+   "party": "MDB",
+   "state": "PI"
+  },
+  {
+   "id": 204506,
+   "name": "Marcos Pereira",
+   "party": "REPUBLICANOS",
+   "state": "SP"
+  },
+  {
+   "id": 220547,
+   "name": "Marcos Pollon",
+   "party": "PL",
+   "state": "MS"
+  },
+  {
+   "id": 178943,
+   "name": "Marcos Soares",
+   "party": "PSDB",
+   "state": "RJ"
+  },
+  {
+   "id": 220604,
+   "name": "Marcos Tavares",
+   "party": "PDT",
+   "state": "RJ"
+  },
+  {
+   "id": 220668,
+   "name": "Maria Arraes",
+   "party": "PSB",
+   "state": "PE"
+  },
+  {
+   "id": 74398,
+   "name": "Maria do Rosário",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 204540,
+   "name": "Maria Rosas",
+   "party": "REPUBLICANOS",
+   "state": "SP"
+  },
+  {
+   "id": 220637,
+   "name": "Marina Silva",
+   "party": "REDE",
+   "state": "SP"
+  },
+  {
+   "id": 220655,
+   "name": "Mario Frias",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 74158,
+   "name": "Mário Heringer",
+   "party": "PDT",
+   "state": "MG"
+  },
+  {
+   "id": 178858,
+   "name": "Mário Negromonte Jr.",
+   "party": "PSB",
+   "state": "BA"
+  },
+  {
+   "id": 204566,
+   "name": "Marreca Filho",
+   "party": "PRD",
+   "state": "MA"
+  },
+  {
+   "id": 220572,
+   "name": "Marussa Boldrin",
+   "party": "REPUBLICANOS",
+   "state": "GO"
+  },
+  {
+   "id": 178843,
+   "name": "Marx Beltrão",
+   "party": "UNIÃO",
+   "state": "AL"
+  },
+  {
+   "id": 220661,
+   "name": "Matheus Noronha",
+   "party": "PL",
+   "state": "CE"
+  },
+  {
+   "id": 220609,
+   "name": "Maurício Carvalho",
+   "party": "UNIÃO",
+   "state": "RO"
+  },
+  {
+   "id": 220628,
+   "name": "Mauricio do Vôlei",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 220550,
+   "name": "Mauricio Marcon",
+   "party": "PL",
+   "state": "RS"
+  },
+  {
+   "id": 220647,
+   "name": "Mauricio Neves",
+   "party": "PP",
+   "state": "SP"
+  },
+  {
+   "id": 204486,
+   "name": "Mauro Benevides Filho",
+   "party": "UNIÃO",
+   "state": "CE"
+  },
+  {
+   "id": 220607,
+   "name": "Max Lemos",
+   "party": "UNIÃO",
+   "state": "RJ"
+  },
+  {
+   "id": 220591,
+   "name": "Meire Serafim",
+   "party": "UNIÃO",
+   "state": "AC"
+  },
+  {
+   "id": 74428,
+   "name": "Mendonça Filho",
+   "party": "PL",
+   "state": "PE"
+  },
+  {
+   "id": 188097,
+   "name": "Merlong Solano",
+   "party": "PT",
+   "state": "PI"
+  },
+  {
+   "id": 220585,
+   "name": "Mersinho Lucena",
+   "party": "PSD",
+   "state": "PB"
+  },
+  {
+   "id": 220530,
+   "name": "Messias Donato",
+   "party": "UNIÃO",
+   "state": "ES"
+  },
+  {
+   "id": 171786,
+   "name": "Miguel Ângelo",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 178985,
+   "name": "Miguel Lombardi",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 154178,
+   "name": "Milton Vieira",
+   "party": "REPUBLICANOS",
+   "state": "SP"
+  },
+  {
+   "id": 178895,
+   "name": "Misael Varella",
+   "party": "PSD",
+   "state": "MG"
+  },
+  {
+   "id": 160561,
+   "name": "Missionário José Olimpio",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 178997,
+   "name": "Moses Rodrigues",
+   "party": "UNIÃO",
+   "state": "CE"
+  },
+  {
+   "id": 220617,
+   "name": "Murillo Gouvea",
+   "party": "PSDB",
+   "state": "RJ"
+  },
+  {
+   "id": 220584,
+   "name": "Murilo Galdino",
+   "party": "REPUBLICANOS",
+   "state": "PB"
+  },
+  {
+   "id": 204453,
+   "name": "Natália Bonavides",
+   "party": "PT",
+   "state": "RN"
+  },
+  {
+   "id": 204449,
+   "name": "Nelson Barbudo",
+   "party": "PODE",
+   "state": "MT"
+  },
+  {
+   "id": 220622,
+   "name": "Nely Aquino",
+   "party": "PODE",
+   "state": "MG"
+  },
+  {
+   "id": 220703,
+   "name": "Neto Carletto",
+   "party": "AVANTE",
+   "state": "BA"
+  },
+  {
+   "id": 178896,
+   "name": "Newton Cardoso Jr",
+   "party": "MDB",
+   "state": "MG"
+  },
+  {
+   "id": 204479,
+   "name": "Nicoletti",
+   "party": "PL",
+   "state": "RR"
+  },
+  {
+   "id": 209787,
+   "name": "Nikolas Ferreira",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 178986,
+   "name": "Nilto Tatto",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 204498,
+   "name": "Olival Marques",
+   "party": "PODE",
+   "state": "PA"
+  },
+  {
+   "id": 178987,
+   "name": "Orlando Silva",
+   "party": "PCdoB",
+   "state": "SP"
+  },
+  {
+   "id": 73692,
+   "name": "Osmar Terra",
+   "party": "PL",
+   "state": "RS"
+  },
+  {
+   "id": 204441,
+   "name": "Otoni de Paula",
+   "party": "PSD",
+   "state": "RJ"
+  },
+  {
+   "id": 220706,
+   "name": "Padovani",
+   "party": "PP",
+   "state": "PR"
+  },
+  {
+   "id": 160556,
+   "name": "Padre João",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 180214,
+   "name": "Pastor Diniz",
+   "party": "UNIÃO",
+   "state": "RR"
+  },
+  {
+   "id": 160642,
+   "name": "Pastor Eurico",
+   "party": "PSDB",
+   "state": "PE"
+  },
+  {
+   "id": 204570,
+   "name": "Pastor Gil",
+   "party": "PL",
+   "state": "MA"
+  },
+  {
+   "id": 220615,
+   "name": "Pastor Henrique Vieira",
+   "party": "PSOL",
+   "state": "RJ"
+  },
+  {
+   "id": 204553,
+   "name": "Pastor Sargento Isidório",
+   "party": "AVANTE",
+   "state": "BA"
+  },
+  {
+   "id": 74160,
+   "name": "Patrus Ananias",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 171617,
+   "name": "Paulão",
+   "party": "PT",
+   "state": "AL"
+  },
+  {
+   "id": 141518,
+   "name": "Paulinho da Força",
+   "party": "SOLIDARIEDADE",
+   "state": "SP"
+  },
+  {
+   "id": 141516,
+   "name": "Paulo Abi-Ackel",
+   "party": "PSDB",
+   "state": "MG"
+  },
+  {
+   "id": 220650,
+   "name": "Paulo Alexandre Barbosa",
+   "party": "PSD",
+   "state": "SP"
+  },
+  {
+   "id": 178860,
+   "name": "Paulo Azi",
+   "party": "UNIÃO",
+   "state": "BA"
+  },
+  {
+   "id": 160517,
+   "name": "Paulo Folletto",
+   "party": "PSB",
+   "state": "ES"
+  },
+  {
+   "id": 160558,
+   "name": "Paulo Freire Costa",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 204492,
+   "name": "Paulo Guedes",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 233592,
+   "name": "Paulo Lemos",
+   "party": "PT",
+   "state": "AP"
+  },
+  {
+   "id": 220685,
+   "name": "Paulo Litro",
+   "party": "UNIÃO",
+   "state": "PR"
+  },
+  {
+   "id": 74574,
+   "name": "Paulo Magalhães",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 74400,
+   "name": "Paulo Pimenta",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 141488,
+   "name": "Paulo Teixeira",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 220630,
+   "name": "Pedro Aihara",
+   "party": "PP",
+   "state": "MG"
+  },
+  {
+   "id": 220667,
+   "name": "Pedro Campos",
+   "party": "PSB",
+   "state": "PE"
+  },
+  {
+   "id": 122974,
+   "name": "Pedro Lucas Fernandes",
+   "party": "UNIÃO",
+   "state": "MA"
+  },
+  {
+   "id": 204395,
+   "name": "Pedro Lupion",
+   "party": "REPUBLICANOS",
+   "state": "PR"
+  },
+  {
+   "id": 122158,
+   "name": "Pedro Paulo",
+   "party": "PSD",
+   "state": "RJ"
+  },
+  {
+   "id": 160604,
+   "name": "Pedro Uczai",
+   "party": "PT",
+   "state": "SC"
+  },
+  {
+   "id": 204406,
+   "name": "Pedro Westphalen",
+   "party": "PP",
+   "state": "RS"
+  },
+  {
+   "id": 161440,
+   "name": "Pezenti",
+   "party": "MDB",
+   "state": "SC"
+  },
+  {
+   "id": 204524,
+   "name": "Pinheirinho",
+   "party": "PP",
+   "state": "MG"
+  },
+  {
+   "id": 73486,
+   "name": "Pompeo de Mattos",
+   "party": "PDT",
+   "state": "RS"
+  },
+  {
+   "id": 160601,
+   "name": "Pr. Marco Feliciano",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 226075,
+   "name": "Priscila Costa",
+   "party": "PL",
+   "state": "CE"
+  },
+  {
+   "id": 220533,
+   "name": "Prof. Reginaldo Veras",
+   "party": "PV",
+   "state": "DF"
+  },
+  {
+   "id": 204390,
+   "name": "Professor Alcides",
+   "party": "PSDB",
+   "state": "GO"
+  },
+  {
+   "id": 221338,
+   "name": "Professora Luciene Cavalcante",
+   "party": "PSOL",
+   "state": "SP"
+  },
+  {
+   "id": 160641,
+   "name": "Professora Marcivania",
+   "party": "PCdoB",
+   "state": "AP"
+  },
+  {
+   "id": 220586,
+   "name": "Rafael Brito",
+   "party": "MDB",
+   "state": "AL"
+  },
+  {
+   "id": 233594,
+   "name": "Rafael Fera",
+   "party": "PODE",
+   "state": "RO"
+  },
+  {
+   "id": 220532,
+   "name": "Rafael Prudente",
+   "party": "MDB",
+   "state": "DF"
+  },
+  {
+   "id": 220626,
+   "name": "Rafael Simoes",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 204567,
+   "name": "Raimundo Costa",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 74084,
+   "name": "Raimundo Santos",
+   "party": "PSD",
+   "state": "PA"
+  },
+  {
+   "id": 74161,
+   "name": "Reginaldo Lopes",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 220606,
+   "name": "Reimont",
+   "party": "PT",
+   "state": "RJ"
+  },
+  {
+   "id": 178989,
+   "name": "Renata Abreu",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 153423,
+   "name": "Renilce Nicodemos",
+   "party": "MDB",
+   "state": "PA"
+  },
+  {
+   "id": 73801,
+   "name": "Renildo Calheiros",
+   "party": "PCdoB",
+   "state": "PE"
+  },
+  {
+   "id": 175765,
+   "name": "Ribamar Silva",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 221329,
+   "name": "Ricardo Abrão",
+   "party": "PSDB",
+   "state": "RJ"
+  },
+  {
+   "id": 220543,
+   "name": "Ricardo Ayres",
+   "party": "REPUBLICANOS",
+   "state": "TO"
+  },
+  {
+   "id": 73788,
+   "name": "Ricardo Barros",
+   "party": "PP",
+   "state": "PR"
+  },
+  {
+   "id": 204362,
+   "name": "Ricardo Guidi",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 220694,
+   "name": "Ricardo Maia",
+   "party": "MDB",
+   "state": "BA"
+  },
+  {
+   "id": 220633,
+   "name": "Ricardo Salles",
+   "party": "NOVO",
+   "state": "SP"
+  },
+  {
+   "id": 204489,
+   "name": "Robério Monteiro",
+   "party": "PSB",
+   "state": "CE"
+  },
+  {
+   "id": 220693,
+   "name": "Roberta Roma",
+   "party": "PL",
+   "state": "BA"
+  },
+  {
+   "id": 220588,
+   "name": "Roberto Duarte",
+   "party": "REPUBLICANOS",
+   "state": "AC"
+  },
+  {
+   "id": 220613,
+   "name": "Roberto Monteiro Pai",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 220624,
+   "name": "Robinson Faria",
+   "party": "PP",
+   "state": "RN"
+  },
+  {
+   "id": 220546,
+   "name": "Rodolfo Nogueira",
+   "party": "PL",
+   "state": "MS"
+  },
+  {
+   "id": 230767,
+   "name": "Rodrigo da Zaeli",
+   "party": "PL",
+   "state": "MT"
+  },
+  {
+   "id": 141531,
+   "name": "Rodrigo de Castro",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 220641,
+   "name": "Rodrigo Gambale",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 141533,
+   "name": "Rodrigo Rollemberg",
+   "party": "PSB",
+   "state": "DF"
+  },
+  {
+   "id": 165470,
+   "name": "Rodrigo Valadares",
+   "party": "PL",
+   "state": "SE"
+  },
+  {
+   "id": 220695,
+   "name": "Rogéria Santos",
+   "party": "REPUBLICANOS",
+   "state": "BA"
+  },
+  {
+   "id": 204480,
+   "name": "Rogério Correia",
+   "party": "PT",
+   "state": "MG"
+  },
+  {
+   "id": 160629,
+   "name": "Romero Rodrigues",
+   "party": "PODE",
+   "state": "PB"
+  },
+  {
+   "id": 204525,
+   "name": "Rosana Valle",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 178945,
+   "name": "Rosangela Gomes",
+   "party": "REPUBLICANOS",
+   "state": "RJ"
+  },
+  {
+   "id": 220644,
+   "name": "Rosangela Moro",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 220620,
+   "name": "Rosângela Reis",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 74371,
+   "name": "Rubens Otoni",
+   "party": "PT",
+   "state": "GO"
+  },
+  {
+   "id": 178887,
+   "name": "Rubens Pereira Júnior",
+   "party": "PT",
+   "state": "MA"
+  },
+  {
+   "id": 73604,
+   "name": "Rui Falcão",
+   "party": "PT",
+   "state": "SP"
+  },
+  {
+   "id": 160635,
+   "name": "Ruy Carneiro",
+   "party": "PODE",
+   "state": "PB"
+  },
+  {
+   "id": 204535,
+   "name": "Sâmia Bomfim",
+   "party": "PSOL",
+   "state": "SP"
+  },
+  {
+   "id": 220631,
+   "name": "Samuel Viana",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 204416,
+   "name": "Sanderson",
+   "party": "PL",
+   "state": "RS"
+  },
+  {
+   "id": 160621,
+   "name": "Sandro Alex",
+   "party": "PSD",
+   "state": "PR"
+  },
+  {
+   "id": 204387,
+   "name": "Sargento Fahur",
+   "party": "PL",
+   "state": "PR"
+  },
+  {
+   "id": 220621,
+   "name": "Sargento Gonçalves",
+   "party": "PL",
+   "state": "RN"
+  },
+  {
+   "id": 220618,
+   "name": "Sargento Portugal",
+   "party": "PODE",
+   "state": "RJ"
+  },
+  {
+   "id": 220713,
+   "name": "Saullo Vianna",
+   "party": "MDB",
+   "state": "AM"
+  },
+  {
+   "id": 226837,
+   "name": "Saulo Pedroso",
+   "party": "PSD",
+   "state": "SP"
+  },
+  {
+   "id": 73808,
+   "name": "Sérgio Brito",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 178933,
+   "name": "Sergio Souza",
+   "party": "MDB",
+   "state": "PR"
+  },
+  {
+   "id": 204557,
+   "name": "Sidney Leite",
+   "party": "PSD",
+   "state": "AM"
+  },
+  {
+   "id": 74356,
+   "name": "Silas Câmara",
+   "party": "REPUBLICANOS",
+   "state": "AM"
+  },
+  {
+   "id": 204360,
+   "name": "Silvia Cristina",
+   "party": "PP",
+   "state": "RO"
+  },
+  {
+   "id": 204425,
+   "name": "Silvio Costa Filho",
+   "party": "REPUBLICANOS",
+   "state": "PE"
+  },
+  {
+   "id": 220569,
+   "name": "Silvye Alves",
+   "party": "UNIÃO",
+   "state": "GO"
+  },
+  {
+   "id": 220651,
+   "name": "Simone Marquetto",
+   "party": "PP",
+   "state": "SP"
+  },
+  {
+   "id": 104552,
+   "name": "Socorro Neri",
+   "party": "PP",
+   "state": "AC"
+  },
+  {
+   "id": 220643,
+   "name": "Sônia Guajajara",
+   "party": "PSOL",
+   "state": "SP"
+  },
+  {
+   "id": 178946,
+   "name": "Soraya Santos",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 178947,
+   "name": "Sóstenes Cavalcante",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 92776,
+   "name": "Stefano Aguiar",
+   "party": "PSD",
+   "state": "MG"
+  },
+  {
+   "id": 204534,
+   "name": "Tabata Amaral",
+   "party": "PSB",
+   "state": "SP"
+  },
+  {
+   "id": 220682,
+   "name": "Tadeu Veneri",
+   "party": "PT",
+   "state": "PR"
+  },
+  {
+   "id": 204464,
+   "name": "Talíria Petrone",
+   "party": "PSOL",
+   "state": "RJ"
+  },
+  {
+   "id": 220598,
+   "name": "Tarcísio Motta",
+   "party": "PSOL",
+   "state": "RJ"
+  },
+  {
+   "id": 220560,
+   "name": "Thiago de Joaldo",
+   "party": "REPUBLICANOS",
+   "state": "SE"
+  },
+  {
+   "id": 220597,
+   "name": "Thiago Flores",
+   "party": "UNIÃO",
+   "state": "RO"
+  },
+  {
+   "id": 143084,
+   "name": "Tiago Dimas",
+   "party": "PODE",
+   "state": "TO"
+  },
+  {
+   "id": 220684,
+   "name": "Tião Medeiros",
+   "party": "PP",
+   "state": "PR"
+  },
+  {
+   "id": 160976,
+   "name": "Tiririca",
+   "party": "PSD",
+   "state": "SP"
+  },
+  {
+   "id": 178934,
+   "name": "Toninho Wandscheer",
+   "party": "PP",
+   "state": "PR"
+  },
+  {
+   "id": 157130,
+   "name": "Túlio Gadêlha",
+   "party": "PSD",
+   "state": "PE"
+  },
+  {
+   "id": 160610,
+   "name": "Valmir Assunção",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 74376,
+   "name": "Vander Loubet",
+   "party": "PT",
+   "state": "MS"
+  },
+  {
+   "id": 204396,
+   "name": "Vermelho",
+   "party": "PL",
+   "state": "PR"
+  },
+  {
+   "id": 137070,
+   "name": "Vicentinho Júnior",
+   "party": "PSDB",
+   "state": "TO"
+  },
+  {
+   "id": 141555,
+   "name": "Vinicius Carvalho",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 160591,
+   "name": "Vinicius Gurgel",
+   "party": "PL",
+   "state": "AP"
+  },
+  {
+   "id": 178992,
+   "name": "Vitor Lippi",
+   "party": "PSD",
+   "state": "SP"
+  },
+  {
+   "id": 91228,
+   "name": "Waldemar Oliveira",
+   "party": "AVANTE",
+   "state": "PE"
+  },
+  {
+   "id": 160569,
+   "name": "Waldenor Pereira",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 160518,
+   "name": "Weliton Prado",
+   "party": "PSD",
+   "state": "MG"
+  },
+  {
+   "id": 74043,
+   "name": "Wellington Roberto",
+   "party": "PSD",
+   "state": "PB"
+  },
+  {
+   "id": 224333,
+   "name": "Welter",
+   "party": "PT",
+   "state": "PR"
+  },
+  {
+   "id": 74044,
+   "name": "Wilson Santiago",
+   "party": "REPUBLICANOS",
+   "state": "PB"
+  },
+  {
+   "id": 220564,
+   "name": "Yandra Moura",
+   "party": "UNIÃO",
+   "state": "SE"
+  },
+  {
+   "id": 220660,
+   "name": "Yury Bruno",
+   "party": "MDB",
+   "state": "CE"
+  },
+  {
+   "id": 230768,
+   "name": "Zé Adriano",
+   "party": "PP",
+   "state": "AC"
+  },
+  {
+   "id": 220536,
+   "name": "Zé Haroldo Cathedral",
+   "party": "UNIÃO",
+   "state": "RR"
+  },
+  {
+   "id": 204559,
+   "name": "Zé Neto",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 160632,
+   "name": "Zé Silva",
+   "party": "UNIÃO",
+   "state": "MG"
+  },
+  {
+   "id": 220558,
+   "name": "Zé Trovão",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 204517,
+   "name": "Zé Vitor",
+   "party": "PL",
+   "state": "MG"
+  },
+  {
+   "id": 160592,
+   "name": "Zeca Dirceu",
+   "party": "PT",
+   "state": "PR"
+  },
+  {
+   "id": 220592,
+   "name": "Zezinho Barbary",
+   "party": "PP",
+   "state": "AC"
+  },
+  {
+   "id": 220552,
+   "name": "Zucco",
+   "party": "PL",
+   "state": "RS"
+  }
+ ],
+ "senado": [
+  {
+   "id": 5672,
+   "name": "Alan Rick",
+   "party": "REPUBLICANOS",
+   "state": "AC"
+  },
+  {
+   "id": 5982,
+   "name": "Alessandro Vieira",
+   "party": "MDB",
+   "state": "SE"
+  },
+  {
+   "id": 6358,
+   "name": "Ana Paula Lobato",
+   "party": "PSB",
+   "state": "MA"
+  },
+  {
+   "id": 5967,
+   "name": "Angelo Coronel",
+   "party": "REPUBLICANOS",
+   "state": "BA"
+  },
+  {
+   "id": 6009,
+   "name": "Astronauta Marcos Pontes",
+   "party": "PL",
+   "state": "SP"
+  },
+  {
+   "id": 4639,
+   "name": "Beto Faro",
+   "party": "PT",
+   "state": "PA"
+  },
+  {
+   "id": 6336,
+   "name": "Camilo Santana",
+   "party": "PT",
+   "state": "CE"
+  },
+  {
+   "id": 6295,
+   "name": "Carlos Fávaro",
+   "party": "PSD",
+   "state": "MT"
+  },
+  {
+   "id": 5936,
+   "name": "Carlos Portinho",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 5990,
+   "name": "Carlos Viana",
+   "party": "PSD",
+   "state": "MG"
+  },
+  {
+   "id": 470,
+   "name": "Chico Rodrigues",
+   "party": "PSB",
+   "state": "RR"
+  },
+  {
+   "id": 5973,
+   "name": "Cid Gomes",
+   "party": "PSB",
+   "state": "CE"
+  },
+  {
+   "id": 739,
+   "name": "Ciro Nogueira",
+   "party": "PP",
+   "state": "PI"
+  },
+  {
+   "id": 6337,
+   "name": "Cleitinho",
+   "party": "REPUBLICANOS",
+   "state": "MG"
+  },
+  {
+   "id": 475,
+   "name": "Confúcio Moura",
+   "party": "MDB",
+   "state": "RO"
+  },
+  {
+   "id": 6335,
+   "name": "Damares Alves",
+   "party": "REPUBLICANOS",
+   "state": "DF"
+  },
+  {
+   "id": 5998,
+   "name": "Daniella Ribeiro",
+   "party": "PP",
+   "state": "PB"
+  },
+  {
+   "id": 3830,
+   "name": "Davi Alcolumbre",
+   "party": "UNIÃO",
+   "state": "AP"
+  },
+  {
+   "id": 5793,
+   "name": "Dr. Hiran",
+   "party": "PP",
+   "state": "RR"
+  },
+  {
+   "id": 5906,
+   "name": "Dra. Eudócia",
+   "party": "PSDB",
+   "state": "AL"
+  },
+  {
+   "id": 4994,
+   "name": "Eduardo Braga",
+   "party": "MDB",
+   "state": "AM"
+  },
+  {
+   "id": 3777,
+   "name": "Eduardo Gomes",
+   "party": "PL",
+   "state": "TO"
+  },
+  {
+   "id": 4642,
+   "name": "Efraim Filho",
+   "party": "PL",
+   "state": "PB"
+  },
+  {
+   "id": 5718,
+   "name": "Eliziane Gama",
+   "party": "PSD",
+   "state": "MA"
+  },
+  {
+   "id": 22,
+   "name": "Esperidião Amin",
+   "party": "PP",
+   "state": "SC"
+  },
+  {
+   "id": 5953,
+   "name": "Fabiano Contarato",
+   "party": "PT",
+   "state": "ES"
+  },
+  {
+   "id": 5917,
+   "name": "Fernando Dueire",
+   "party": "PSD",
+   "state": "PE"
+  },
+  {
+   "id": 345,
+   "name": "Flávio Arns",
+   "party": "PSB",
+   "state": "PR"
+  },
+  {
+   "id": 5894,
+   "name": "Flávio Bolsonaro",
+   "party": "PL",
+   "state": "RJ"
+  },
+  {
+   "id": 6008,
+   "name": "Giordano",
+   "party": "PODE",
+   "state": "SP"
+  },
+  {
+   "id": 6341,
+   "name": "Hamilton Mourão",
+   "party": "REPUBLICANOS",
+   "state": "RS"
+  },
+  {
+   "id": 5008,
+   "name": "Humberto Costa",
+   "party": "PT",
+   "state": "PE"
+  },
+  {
+   "id": 5385,
+   "name": "Irajá",
+   "party": "PSD",
+   "state": "TO"
+  },
+  {
+   "id": 6010,
+   "name": "Ivete da Silveira",
+   "party": "MDB",
+   "state": "SC"
+  },
+  {
+   "id": 4770,
+   "name": "Izalci Lucas",
+   "party": "PL",
+   "state": "DF"
+  },
+  {
+   "id": 35,
+   "name": "Jader Barbalho",
+   "party": "MDB",
+   "state": "PA"
+  },
+  {
+   "id": 6340,
+   "name": "Jaime Bagattoli",
+   "party": "PL",
+   "state": "RO"
+  },
+  {
+   "id": 581,
+   "name": "Jaques Wagner",
+   "party": "PT",
+   "state": "BA"
+  },
+  {
+   "id": 4531,
+   "name": "Jayme Campos",
+   "party": "UNIÃO",
+   "state": "MT"
+  },
+  {
+   "id": 5895,
+   "name": "Jorge Kajuru",
+   "party": "PSB",
+   "state": "GO"
+  },
+  {
+   "id": 6342,
+   "name": "Jorge Seif",
+   "party": "PL",
+   "state": "SC"
+  },
+  {
+   "id": 6369,
+   "name": "Jussara Lima",
+   "party": "PSD",
+   "state": "PI"
+  },
+  {
+   "id": 4811,
+   "name": "Laércio Oliveira",
+   "party": "PP",
+   "state": "SE"
+  },
+  {
+   "id": 5977,
+   "name": "Leany Lemos",
+   "party": "PSB",
+   "state": "DF"
+  },
+  {
+   "id": 5926,
+   "name": "Lucas Barreto",
+   "party": "PSD",
+   "state": "AP"
+  },
+  {
+   "id": 1186,
+   "name": "Luis Carlos Heinze",
+   "party": "PP",
+   "state": "RS"
+  },
+  {
+   "id": 631,
+   "name": "Magno Malta",
+   "party": "PL",
+   "state": "ES"
+  },
+  {
+   "id": 5376,
+   "name": "Mara Gabrilli",
+   "party": "PSD",
+   "state": "SP"
+  },
+  {
+   "id": 742,
+   "name": "Marcelo Castro",
+   "party": "MDB",
+   "state": "PI"
+  },
+  {
+   "id": 285,
+   "name": "Marcio Bittar",
+   "party": "PL",
+   "state": "AC"
+  },
+  {
+   "id": 5422,
+   "name": "Marcos Rogério",
+   "party": "PL",
+   "state": "RO"
+  },
+  {
+   "id": 5942,
+   "name": "Marcos do Val",
+   "party": "AVANTE",
+   "state": "ES"
+  },
+  {
+   "id": 5985,
+   "name": "Nelsinho Trad",
+   "party": "PSD",
+   "state": "MS"
+  },
+  {
+   "id": 5525,
+   "name": "Omar Aziz",
+   "party": "PSD",
+   "state": "AM"
+  },
+  {
+   "id": 5924,
+   "name": "Oriovisto Guimarães",
+   "party": "PSDB",
+   "state": "PR"
+  },
+  {
+   "id": 5523,
+   "name": "Otto Alencar",
+   "party": "PSD",
+   "state": "BA"
+  },
+  {
+   "id": 825,
+   "name": "Paulo Paim",
+   "party": "PT",
+   "state": "RS"
+  },
+  {
+   "id": 5502,
+   "name": "Plínio Valério",
+   "party": "PSDB",
+   "state": "AM"
+  },
+  {
+   "id": 5386,
+   "name": "Professora Dorinha Seabra",
+   "party": "UNIÃO",
+   "state": "TO"
+  },
+  {
+   "id": 5012,
+   "name": "Randolfe Rodrigues",
+   "party": "PT",
+   "state": "AP"
+  },
+  {
+   "id": 70,
+   "name": "Renan Calheiros",
+   "party": "MDB",
+   "state": "AL"
+  },
+  {
+   "id": 5207,
+   "name": "Renan Filho",
+   "party": "MDB",
+   "state": "AL"
+  },
+  {
+   "id": 5257,
+   "name": "Renzo Braz",
+   "party": "PP",
+   "state": "MG"
+  },
+  {
+   "id": 6025,
+   "name": "Roberta Acioly",
+   "party": "REPUBLICANOS",
+   "state": "RR"
+  },
+  {
+   "id": 4694,
+   "name": "Rogerio Marinho",
+   "party": "PL",
+   "state": "RN"
+  },
+  {
+   "id": 5352,
+   "name": "Rogério Carvalho",
+   "party": "PT",
+   "state": "SE"
+  },
+  {
+   "id": 5322,
+   "name": "Romário",
+   "party": "S/Partido",
+   "state": "RJ"
+  },
+  {
+   "id": 5974,
+   "name": "Sargento Reginauro",
+   "party": "PSDB",
+   "state": "CE"
+  },
+  {
+   "id": 6331,
+   "name": "Sergio Moro",
+   "party": "PL",
+   "state": "PR"
+  },
+  {
+   "id": 5988,
+   "name": "Soraya Thronicke",
+   "party": "PSB",
+   "state": "MS"
+  },
+  {
+   "id": 5959,
+   "name": "Styvenson Valentim",
+   "party": "PODE",
+   "state": "RN"
+  },
+  {
+   "id": 4560,
+   "name": "Sérgio Petecão",
+   "party": "PSD",
+   "state": "AC"
+  },
+  {
+   "id": 6338,
+   "name": "Teresa Leitão",
+   "party": "PT",
+   "state": "PE"
+  },
+  {
+   "id": 5736,
+   "name": "Tereza Cristina",
+   "party": "PP",
+   "state": "MS"
+  },
+  {
+   "id": 5899,
+   "name": "Vanderlan Cardoso",
+   "party": "PSD",
+   "state": "GO"
+  },
+  {
+   "id": 5748,
+   "name": "Veneziano Vital do Rêgo",
+   "party": "MDB",
+   "state": "PB"
+  },
+  {
+   "id": 1173,
+   "name": "Wellington Fagundes",
+   "party": "PL",
+   "state": "MT"
+  },
+  {
+   "id": 5411,
+   "name": "Weverton",
+   "party": "PDT",
+   "state": "MA"
+  },
+  {
+   "id": 5070,
+   "name": "Wilder Morais",
+   "party": "PL",
+   "state": "GO"
+  },
+  {
+   "id": 5783,
+   "name": "Zenaide Maia",
+   "party": "PSD",
+   "state": "RN"
+  },
+  {
+   "id": 3806,
+   "name": "Zequinha Marinho",
+   "party": "PODE",
+   "state": "PA"
+  }
+ ]
+}

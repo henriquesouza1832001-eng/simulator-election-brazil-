@@ -12,7 +12,7 @@ from typing import Any
 
 from ..db import connect, current_player_id
 from . import election_rules as er
-from .legislature import PARTIES, _FIRST, _LAST
+from .legislature import PARTIES
 
 SIMULATED_VOTE_NOTICE = "Voto simulado: não é enviado à Justiça Eleitoral e não altera uma eleição real."
 ELECTED_STATUSES = ("ELEITO", "ELEITO POR QP", "ELEITO POR MÉDIA")
@@ -90,7 +90,7 @@ def list_candidates(year: int, office: str, scope: dict[str, Any], query: str = 
 
 
 def fictional_cast(year: int, office: str, scope: dict[str, Any]) -> list[dict[str, Any]]:
-    """Elenco fictício determinístico para cenários futuros (sem pessoas reais)."""
+    """Elenco simulado para cenários futuros: partidos reais, sem pessoas reais."""
     key = f"{year}|{office}|{scope.get('uf')}|{scope.get('municipality_id')}"
     seed = int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], "big")
     parties = sorted(p["id"] for p in PARTIES)
@@ -98,10 +98,10 @@ def fictional_cast(year: int, office: str, scope: dict[str, Any]) -> list[dict[s
     out = []
     for i in range(size):
         a = (seed >> (i * 3)) & 0xFFFF
-        name = f"{_FIRST[a % len(_FIRST)]} {_LAST[(a // 7) % len(_LAST)]}"
         party = parties[(a // 11) % len(parties)]
+        name = f"Candidato(a) simulado(a) do {party}"
         out.append({"id": f"fic-{year}-{office}-{i + 1}", "name": name, "ballot_name": name, "number": str(10 + i * 7 + (a % 5)),
-                    "party": party, "party_name": "Partido fictício do cenário", "office": er.OFFICES[office]["label"],
+                    "party": party, "party_name": party, "office": er.OFFICES[office]["label"],
                     "uf": scope.get("uf"), "municipality": scope.get("municipality"), "candidacy_status": "cenário simulado",
                     "result": "não aplicável", "fictional": True})
     return out

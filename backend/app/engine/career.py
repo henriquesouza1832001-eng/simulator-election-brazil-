@@ -103,12 +103,15 @@ DEBATE_REPLIES = {
     "integridade": "Publicar dados ajuda, mas é preciso explicar quem verifica a informação e o que acontece diante de irregularidade.",
 }
 OPPONENT_CANDIDATE_POOL = [
-    {"name": "Lia Sabiá", "party": "Movimento Horizonte", "ideology": "Centro-esquerda", "issue_focus": "educacao"},
-    {"name": "Bento do Vale", "party": "Frente do Trabalho", "ideology": "Esquerda", "issue_focus": "economia"},
-    {"name": "Nara Campos", "party": "União Cívica", "ideology": "Centro", "issue_focus": "saude"},
-    {"name": "Raul Monteiro", "party": "Aliança Regional", "ideology": "Centro-direita", "issue_focus": "mobilidade"},
-    {"name": "Ivo Nascimento", "party": "Partido Popular Renovador", "ideology": "Direita", "issue_focus": "seguranca"},
-    {"name": "Dora Veredas", "party": "Rede da Comunidade", "ideology": "Centro-esquerda", "issue_focus": "integridade"},
+    # Partidos reais; os adversários são candidaturas simuladas, sem pessoas reais.
+    {"party": "PSB", "ideology": "Centro-esquerda", "issue_focus": "educacao"},
+    {"party": "PT", "ideology": "Esquerda", "issue_focus": "economia"},
+    {"party": "MDB", "ideology": "Centro", "issue_focus": "saude"},
+    {"party": "PSD", "ideology": "Centro", "issue_focus": "mobilidade"},
+    {"party": "PP", "ideology": "Centro-direita", "issue_focus": "mobilidade"},
+    {"party": "PL", "ideology": "Direita", "issue_focus": "seguranca"},
+    {"party": "NOVO", "ideology": "Direita", "issue_focus": "economia"},
+    {"party": "PSOL", "ideology": "Esquerda", "issue_focus": "integridade"},
 ]
 ACTIVITIES = {
     "comicio": {"label": "Comício", "days": 2, "cost": 0.045, "reach": 1.35, "channel": "presencial"},
@@ -314,6 +317,7 @@ def _ensure_opponents(career: dict[str, Any]) -> list[dict[str, Any]]:
     opponents = [
         {
             "id": f"opponent-{index + 1}",
+            "name": f"Candidato(a) do {profile['party']}",
             **profile,
             "support_weight": round(rng.uniform(0.85, 1.15), 2),
             "simulated": True,
@@ -1526,13 +1530,7 @@ TURNOUT_VALID = 0.70           # comparecimento × votos válidos (estimativa do
 
 
 def _list_mate_names(rng: random.Random, count: int) -> list[str]:
-    from .legislature import _FIRST, _LAST
-    names: list[str] = []
-    while len(names) < count:
-        name = f"{rng.choice(_FIRST)} {rng.choice(_LAST)}"
-        if name not in names:
-            names.append(name)
-    return names
+    return [f"Candidato(a) simulado(a) {i}" for i in range(1, count + 1)]
 
 
 def _proportional_electorate(career: dict[str, Any]) -> int | None:

@@ -68,7 +68,7 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
             raise HTTPException(status_code=422, detail="Quadro desconhecido.")
         with connect() as db:
             rows = db.execute("SELECT entry_json FROM hall_entries ORDER BY points DESC LIMIT 200").fetchall()
-        entries = [json.loads(r["entry_json"]) for r in rows] + [dict(e) for e in meta.SEED_HALL]
+        entries = [json.loads(r["entry_json"]) for r in rows]
         entries = [e for e in entries if e.get("ranqueavel", True)]
         if nota != "todas":
             entries = [e for e in entries if e.get("nota") == nota.upper()]

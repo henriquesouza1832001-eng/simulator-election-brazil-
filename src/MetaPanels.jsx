@@ -256,7 +256,7 @@ export function RankingPanel({ request, state, onNotice }) {
   }
   return <section className="panel meta-page">
     <h2>Ranking de mandatos</h2>
-    <p className="page-description">Entradas marcadas como <em>simulado</em> são exemplos fictícios. O placar mostra só o presidente da ficção, nunca quem joga.</p>
+    <p className="page-description">O placar guarda somente mandatos que você concluiu e registrou nesta conta; não há entradas de exemplo.</p>
     <Status loading={score.loading} error={score.error}>{score.data && <div className="score-box">
       <div className={`grade ${GRADE_CLASS[score.data.grade]}`} aria-label={`Nota ${score.data.grade}`}>{score.data.grade}</div>
       <div><b>{score.data.points} pontos · {score.data.title}</b>
@@ -272,7 +272,7 @@ export function RankingPanel({ request, state, onNotice }) {
       <ol className="rank-list">{data.linhas.slice(0, rankShown).map((l) => <li key={l.chave}>
         <span className="pos">{l.posicao}</span>
         <span className={`grade small ${GRADE_CLASS[l.nota]}`}>{l.nota}</span>
-        <div><b>{l.presidente} <small>({l.partido})</small></b><small>{l.desfechoTitulo} · aprovação {l.aprovacao}% · {l.dificuldade}{l.simulado ? ' · simulado' : ` · jogador ${l.jogador}`}</small></div>
+        <div><b>{l.presidente} <small>({l.partido})</small></b><small>{l.desfechoTitulo} · aprovação {l.aprovacao}% · {l.dificuldade}{` · jogador ${l.jogador}`}</small></div>
         <strong>{l.pontos}</strong></li>)}</ol>
       {data.linhas.length > rankShown && <button className="secondary-button" onClick={() => setRankShown(rankShown + 10)}>Mostrar mais ({data.linhas.length - rankShown})</button>}
       <details className="agenda-more"><summary>Como a nota é calculada e regras do placar</summary><ul className="meta-notes">{data.regras.map((r) => <li key={r}>{r}</li>)}</ul></details></>}</Status>
@@ -315,11 +315,8 @@ export function InfoPanel({ section }) {
   const content = {
     Planos: <>
       <h2>Modos e limites</h2>
-      <p className="page-description">Esta reconstrução roda localmente e não cobra nada. A tabela abaixo descreve os planos observados no site de referência, apenas como informação; nenhuma compra é feita aqui.</p>
+      <p className="page-description">O Civiciclo roda sem cobrança e sem limite de meses. Nenhuma compra é feita aqui.</p>
       <div className="meta-cards plans">
-        <article><span>LIVRE · referência</span><strong>R$ 0</strong><small>Primeiro ano de mandato, um mandato guardado.</small></article>
-        <article><span>PRO · referência</span><strong>R$ 19,99/30 dias</strong><small>Meses 13 a 48 do mandato (valor observado no site público).</small></article>
-        <article><span>ESTADISTA · referência</span><strong>R$ 49,99/30 dias</strong><small>Sandbox fora do ranking, chave própria de IA e 10 mandatos guardados.</small></article>
         <article><span>NESTA VERSÃO LOCAL</span><strong>Tudo liberado</strong><small>Sem limite de meses. A chave de IA (Gemini) é sua, no arquivo backend/.env.</small></article>
       </div></>,
     Legado: <>

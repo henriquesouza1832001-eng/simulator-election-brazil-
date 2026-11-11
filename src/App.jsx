@@ -198,7 +198,7 @@ export default function App() {
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
-  const [activeTab, setActiveTab] = useState('Visão geral');
+  const [activeTab, setActiveTab] = useState('Placar');
   const [gameGuideOpen, setGameGuideOpen] = useState(false);
   const [gameGuideStep, setGameGuideStep] = useState(0);
   const [ruptureInfo, setRuptureInfo] = useState(null);
@@ -231,7 +231,6 @@ export default function App() {
       window.localStorage.setItem('mandato.activeCampaign', nextState.campaign_id);
     }
     setState(nextState);
-    if (nextState?.mode === 'party_path' && nextState?.party_path?.active) setActiveTab('Trajetória');
   }
   async function refresh() { acceptCampaignState(await request('/api/game')); }
   async function startGuest() {
@@ -433,16 +432,16 @@ export default function App() {
     presidente: 'Presidência',
   })[careerOffice] || 'Mandato';
   const tabGroups = partyMode ? [
-    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Acontecimentos'] : ['Trajetória', 'Acontecimentos'] },
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
+    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Acontecimentos'] : ['Trajetória', 'Acontecimentos'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ] : [
+    { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
     { label: 'Painel', items: ['Visão geral', 'Indicadores'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato'] : []) : ['Medidas', 'Orçamento', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Instituições', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Acontecimentos', 'Aprendizado'] },
-    { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
   const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || tabGroups[0];
@@ -475,7 +474,7 @@ export default function App() {
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SIMULAÇÃO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-divider"/>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>
 
     <main className="content">

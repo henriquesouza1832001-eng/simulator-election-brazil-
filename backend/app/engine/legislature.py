@@ -1,38 +1,77 @@
-"""Câmara (513) e Senado (81) fictícios, com votação nominal determinística.
+"""Câmara (513) e Senado (81) com a composição real e votação nominal simulada.
 
-Todos os parlamentares são inventados: nomes são sorteados de listas genéricas e
-as siglas são partidos fictícios do cenário. Nenhum parlamentar real é representado.
-As regras ficam em constantes ajustáveis; a semente da partida torna o resultado
-reprodutível.
+Nomes, partidos e UFs vêm dos dados abertos oficiais (``app/data/parliament.py``).
+O voto de cada parlamentar é uma simulação do jogo, feita por regras e semente da
+partida; não representa nem prevê o voto de pessoas reais. A posição ideológica de
+cada partido segue a classificação usual da ciência política brasileira e é uma
+escolha editorial aproximada (ver docs/PARTIDOS_E_IDEOLOGIA.md).
 """
 from __future__ import annotations
 
+import json
 import random
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 CHAMBER_SIZE = 513
 SENATE_SIZE = 81
+ROSTER_PATH = Path(__file__).resolve().parents[2] / "data" / "parliament.json"
 
-# sigla, nome, posição (-1 esquerda … +1 direita), cadeiras na Câmara, cadeiras no Senado, ponto de partida de adesão ao governo (0-1)
-PARTIES: list[dict[str, Any]] = [
-    {"id": "PTR", "name": "Partido Trabalhista Renovador", "ideology": -0.8, "seats": 68, "senate": 9, "base": 0.45},
-    {"id": "PSU", "name": "Partido Social Unido", "ideology": -0.6, "seats": 41, "senate": 6, "base": 0.45},
-    {"id": "PVE", "name": "Partido Verde Ecológico", "ideology": -0.4, "seats": 22, "senate": 3, "base": 0.5},
-    {"id": "MDC", "name": "Movimento Democrático do Centro", "ideology": 0.0, "seats": 62, "senate": 10, "base": 0.55},
-    {"id": "PSN", "name": "Partido Social Nacional", "ideology": 0.1, "seats": 54, "senate": 8, "base": 0.55},
-    {"id": "PRP", "name": "Partido Republicano Progressista", "ideology": 0.3, "seats": 58, "senate": 9, "base": 0.5},
-    {"id": "UDB", "name": "União Democrática Brasileira", "ideology": 0.4, "seats": 59, "senate": 9, "base": 0.5},
-    {"id": "PLB", "name": "Partido Liberal Brasileiro", "ideology": 0.6, "seats": 81, "senate": 12, "base": 0.4},
-    {"id": "PAG", "name": "Partido do Agro e Trabalho", "ideology": 0.5, "seats": 38, "senate": 6, "base": 0.5},
-    {"id": "NVO", "name": "Novo Caminho", "ideology": 0.7, "seats": 15, "senate": 2, "base": 0.4},
-    {"id": "PDE", "name": "Partido Democrata Evangélico", "ideology": 0.4, "seats": 15, "senate": 7, "base": 0.5},
-]
+# sigla -> (posição de -1 esquerda … +1 direita, rótulo, adesão inicial ao governo 0-1)
+PARTY_PROFILE: dict[str, tuple[float, str, float]] = {
+    "PSOL": (-0.95, "extrema-esquerda", 0.30),
+    "PCdoB": (-0.85, "esquerda", 0.45),
+    "PT": (-0.75, "esquerda", 0.45),
+    "REDE": (-0.60, "esquerda", 0.45),
+    "PSB": (-0.50, "centro-esquerda", 0.50),
+    "PV": (-0.50, "centro-esquerda", 0.50),
+    "PDT": (-0.45, "centro-esquerda", 0.50),
+    "CIDADANIA": (-0.10, "centro", 0.50),
+    "PSDB": (-0.05, "centro", 0.50),
+    "SOLIDARIEDADE": (0.00, "centro", 0.55),
+    "MDB": (0.05, "centro", 0.58),
+    "PSD": (0.10, "centro", 0.58),
+    "AVANTE": (0.10, "centro", 0.55),
+    "PODE": (0.15, "centro", 0.55),
+    "UNIÃO": (0.40, "centro-direita", 0.52),
+    "PRD": (0.45, "centro-direita", 0.52),
+    "PP": (0.55, "centro-direita", 0.55),
+    "REPUBLICANOS": (0.60, "direita", 0.50),
+    "PL": (0.80, "direita", 0.40),
+    "NOVO": (0.85, "direita", 0.35),
+    "MISSÃO": (0.80, "direita", 0.35),
+    "S/Partido": (0.00, "sem partido", 0.50),
+}
 
-_FIRST = ["Ana", "Carlos", "Marta", "João", "Luiza", "Paulo", "Helena", "Rui", "Sônia", "Tiago", "Bianca", "Otávio",
-          "Cláudia", "Henrique", "Lídia", "Murilo", "Nádia", "Fábio", "Regina", "Vicente", "Alice", "Dante", "Elisa", "Jorge"]
-_LAST = ["Albuquerque", "Barreto", "Cardoso", "Duarte", "Esteves", "Falcão", "Guedes", "Heredia", "Ivo", "Jardim",
-         "Klein", "Lacerda", "Moura", "Nogueira", "Ornelas", "Paiva", "Queiroz", "Rangel", "Sampaio", "Tavares",
-         "Uchoa", "Vasconcelos", "Werneck", "Ximenes", "Yamada", "Zanetti"]
+
+@lru_cache(maxsize=1)
+def roster() -> dict[str, Any]:
+    return json.loads(ROSTER_PATH.read_text(encoding="utf-8"))
+
+
+def _party_name(acronym: str) -> str:
+    path = Path(__file__).resolve().parents[1] / "data" / "parties.json"
+    for item in json.loads(path.read_text(encoding="utf-8"))["parties"]:
+        if item["acronym"] == acronym:
+            return item["name"]
+    return acronym
+
+
+@lru_cache(maxsize=1)
+def _parties() -> list[dict[str, Any]]:
+    data = roster()
+    out = []
+    for acronym in sorted({m["party"] for m in data["camara"]} | {m["party"] for m in data["senado"]}):
+        ideology, label, base = PARTY_PROFILE.get(acronym, (0.0, "centro", 0.5))
+        out.append({"id": acronym, "name": _party_name(acronym), "ideology": ideology, "spectrum": label, "base": base,
+                    "seats": sum(m["party"] == acronym for m in data["camara"]),
+                    "senate": sum(m["party"] == acronym for m in data["senado"])})
+    return out
+
+
+PARTIES = _parties()
+
 STATES = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",
           "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"]
 
@@ -118,31 +157,29 @@ def _seed(state: dict[str, Any]) -> int:
 
 def _build(chamber: str, seed: int) -> list[dict[str, Any]]:
     rng = random.Random(f"{seed}:{chamber}")
-    key = "seats" if chamber == "camara" else "senate"
+    profiles = {p["id"]: p for p in PARTIES}
     members: list[dict[str, Any]] = []
-    for party in PARTIES:
-        for _ in range(party[key]):
-            ideology = round(max(-1, min(1, party["ideology"] + rng.uniform(-0.25, 0.25))), 2)
-            axes = _axes(ideology, party, rng)
-            members.append({
-                "name": f"{rng.choice(_FIRST)} {rng.choice(_LAST)}",
-                "party": party["id"],
-                "state": rng.choice(STATES),
-                "ideology": ideology,
-                "loyalty": round(max(0.0, min(1.0, party["base"] + rng.uniform(-0.18, 0.18))), 2),
-                "ministry_seats": 0,
-                # Modelo inspirado no esquema observado (eixos, disciplina, fisiologismo…); fórmulas próprias.
-                "eixos": axes,
-                "disciplina": round(rng.uniform(0.35, 0.95), 2),
-                "fisiologismo": round(rng.uniform(0.0, 1.0), 2),
-                "imprevisibilidade": round(rng.uniform(0.0, 0.5), 2),
-                "relacao": round(max(-1.0, min(1.0, (party["base"] - 0.5) * 2 + rng.uniform(-0.3, 0.3))), 2),
-                "sensibilidadeEleitoral": round(rng.uniform(0.1, 0.9), 2),
-                "bancadas": _caucuses(axes, rng),
-            })
-    rng.shuffle(members)
-    for i, member in enumerate(members, start=1):
-        member["id"] = f"{'dep' if chamber == 'camara' else 'sen'}-{i:03d}"
+    for person in roster()[chamber]:
+        party = profiles[person["party"]]
+        ideology = round(max(-1, min(1, party["ideology"] + rng.uniform(-0.25, 0.25))), 2)
+        axes = _axes(ideology, party, rng)
+        members.append({
+            "id": f"{'dep' if chamber == 'camara' else 'sen'}-{person['id']}",
+            "name": person["name"],
+            "party": party["id"],
+            "state": person["state"],
+            "ideology": ideology,
+            "loyalty": round(max(0.0, min(1.0, party["base"] + rng.uniform(-0.18, 0.18))), 2),
+            "ministry_seats": 0,
+            # Atributos de simulação (não são dados oficiais): eixos, disciplina, fisiologismo etc.
+            "eixos": axes,
+            "disciplina": round(rng.uniform(0.35, 0.95), 2),
+            "fisiologismo": round(rng.uniform(0.0, 1.0), 2),
+            "imprevisibilidade": round(rng.uniform(0.0, 0.5), 2),
+            "relacao": round(max(-1.0, min(1.0, (party["base"] - 0.5) * 2 + rng.uniform(-0.3, 0.3))), 2),
+            "sensibilidadeEleitoral": round(rng.uniform(0.1, 0.9), 2),
+            "bancadas": _caucuses(axes, rng),
+        })
     return members
 
 

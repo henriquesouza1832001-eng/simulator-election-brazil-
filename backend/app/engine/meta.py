@@ -94,21 +94,6 @@ def build_entry(state: dict[str, Any], campaign_id: str, player_name: str) -> di
     }
 
 
-# Entradas de exemplo, claramente fictícias, para o placar não nascer vazio.
-SEED_HALL = [
-    {"presidente": n, "partido": p, "jogador": "Simulado", "nota": g, "pontos": pts, "aprovacao": a, "dificuldade": d,
-     "desfecho": "reeleito" if pts > 1300 else "ex", "desfechoTitulo": "Entrada de exemplo", "meses": 48, "mandato": 1,
-     "ranqueavel": True, "simulado": True, "chave": f"seed:{i}"}
-    for i, (n, p, g, pts, a, d) in enumerate([
-        ("Aurora Menezes", "MDC", "S", 1642, 78, "realismo_puro"), ("Bento Salgado", "PRP", "S", 1588, 74, "complicado"),
-        ("Clarice Veiga", "PTR", "A", 1431, 69, "dificil"), ("Domingos Reis", "PSN", "A", 1390, 66, "normal"),
-        ("Eunice Prado", "UDB", "A", 1302, 63, "complicado"), ("Fausto Leme", "PLB", "B", 1188, 58, "normal"),
-        ("Gláucia Torres", "PSU", "B", 1104, 55, "dificil"), ("Heitor Alcântara", "PAG", "B", 1041, 52, "normal"),
-        ("Irene Bastos", "PVE", "C", 890, 47, "normal"), ("Joaquim Pestana", "NVO", "C", 812, 44, "dificil"),
-        ("Kátia Macedo", "PDE", "D", 640, 36, "normal"), ("Lauro Siqueira", "PLB", "F", 310, 22, "complicado"),
-    ])
-]
-
 # Carimbos (coleção). id, título, descrição, raridade (0-100 % de jogadores, estimativa de design), teste.
 Test = Callable[[dict[str, Any]], bool]
 
