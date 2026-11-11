@@ -13,6 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from . import ledger
 from .fiscal import record_one_off_spending
 from .indicator_registry import REGISTRY, propagate
 
@@ -217,6 +218,8 @@ def start(state: dict[str, Any], project_id: str, office: str, uf: str, city: st
     record_one_off_spending(state, cost)
     item = {"id": f"terr-{project_id}-{len(t['projects']) + 1}", "project_id": project_id, "name": p["name"], "uf": uf, "city": city,
             "cost_bi": cost, "start": today.isoformat(), "end": (today + timedelta(days=30 * p["months"])).isoformat(), "status": "em obra"}
+    entry = ledger.record(state, "território", f"{p['name']} ({uf})", dict(p["effects"]), None, status="em andamento", cost=f"R$ {cost} bi")
+    item["ledger_id"] = entry["id"]
     t["projects"].append(item)
     return item
 
@@ -238,5 +241,7 @@ def advance(state: dict[str, Any], before: date, after: date) -> list[str]:
             metrics = state.setdefault("metrics", {})
             metrics["gdp_growth"] = round(float(metrics.get("gdp_growth", 0)) + p["gdp_pct"] * 0.1, 2)
             item["status"] = "concluída"
+            if item.get("ledger_id"):
+                ledger.settle(state, item["ledger_id"], dict(p["effects"]), "concluído", "Obra entregue no prazo; efeitos aplicados ao território.")
             msgs.append(f"Obra concluída: {item['name']}.")
     return msgs

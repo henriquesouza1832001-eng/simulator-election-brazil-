@@ -5,6 +5,7 @@ import random
 from datetime import date, timedelta
 from typing import Any
 
+from . import ledger
 from .fiscal import ensure_fiscal_state, record_one_off_spending, record_policy_balance_delta
 from .powers_catalog import ACTIONS, OTHER_OFFICE_ACTIONS, ROLES
 
@@ -186,12 +187,16 @@ def execute(state: dict[str, Any], action_id: str, option: str | None = None) ->
         calendar["last_action"] = today.isoformat()
         calendar["cooldown_days"] = cooldown
         effects = apply(state, action, option)
+        entry = ledger.record(state, "presidencia", action["title"] + (f" — {option}" if option else ""), dict(action["effects"]),
+                              {r["key"]: r["delta"] for r in effects if r["key"] != "cost_bi"}, status="em vigor",
+                              cost=(f"R$ {abs(action['cost_bi'])} bi" if action["cost_bi"] else None))
         message = f"{action['title']}: em vigor desde hoje."
         if approval == "mp":
             bill = _bill(state, action, option, today)
             bill["status"] = "medida provisória — conversão em lei"
             bill["decision_date"] = (today + timedelta(days=120)).isoformat()
             bill["power_revert"] = True
+            bill["ledger_id"] = entry["id"]
             message += " A medida provisória precisa ser convertida em lei em até 120 dias."
         return {"status": "applied", "effects": effects, "message": message}
     # pl, plp, pec, tratado: precisam do Congresso
@@ -201,6 +206,9 @@ def execute(state: dict[str, Any], action_id: str, option: str | None = None) ->
     if last and (today - date.fromisoformat(last)).days < interval:
         raise RuntimeError(f"A pauta legislativa já tem proposta recente. Aguarde {interval - (today - date.fromisoformat(last)).days} dia(s).")
     bill = _bill(state, action, option, today)
+    entry = ledger.record(state, "presidencia", bill["title"], dict(action["effects"]), None, status="em tramitação",
+                          cost=(f"R$ {abs(action['cost_bi'])} bi" if action["cost_bi"] else None))
+    bill["ledger_id"] = entry["id"]
     return {"status": "pending_legislature", "effects": [], "decision_date": bill["decision_date"],
             "message": f"{action['title']} foi enviado ao Congresso; a votação simulada será em {bill['decision_date']}."}
 
@@ -220,6 +228,8 @@ def resolve_bill(state: dict[str, Any], bill: dict[str, Any], approved: bool) ->
             st["done"] = [d for d in st["done"] if not d.startswith(action["id"])]
         return []
     if not approved:
+        if bill.get("ledger_id"):
+            ledger.settle(state, bill["ledger_id"], {}, "rejeitado", ledger.explain_gap(action["effects"], {}, False))
         return []
     if action["popular_vote"]:
         rng = random.Random(f"{state.get('campaign_seed', 1)}:popular:{action['id']}")
@@ -227,8 +237,14 @@ def resolve_bill(state: dict[str, Any], bill: dict[str, Any], approved: bool) ->
         if rng.random() > support:
             state.setdefault("simulated_news", []).insert(0, {"id": f"plebiscito-{action['id']}", "date": state["date"], "title": "Plebiscito rejeita a mudança", "region": "Nacional",
                                                               "description": f"A população rejeitou, na simulação: {action['title']}."})
+            if bill.get("ledger_id"):
+                ledger.settle(state, bill["ledger_id"], {}, "rejeitado no plebiscito", "O povo rejeitou a mudança na consulta popular.")
             return []
-    return apply(state, action, option)
+    rows = apply(state, action, option)
+    if bill.get("ledger_id"):
+        got = {r["key"]: r["delta"] for r in rows if r["key"] != "cost_bi"}
+        ledger.settle(state, bill["ledger_id"], got, "aprovado", ledger.explain_gap(action["effects"], got))
+    return rows
 
 
 def _default_for(path: str) -> Any:

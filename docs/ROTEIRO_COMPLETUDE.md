@@ -19,6 +19,13 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 | Território | País, regiões, 27 estados, municípios; obras de transporte e urbanismo com custo, prazo e competência |
 | Design | Tema único, responsivo, Placar como tela inicial |
 
+## Entregue depois da primeira versão deste roteiro (10 nov. 2026)
+- **Motor unificado** (`engine/indicator_engine.py`): métricas nacionais alimentam o grafo do registro; efeitos se espalham pelos indicadores do país e chegam aos municípios a cada avanço do calendário. Aba Território > Brasil hoje.
+- **Ações executáveis para vereador, prefeito, deputados, governador e senador** (`engine/office_powers.py`): custo em reserva ou capital político, votação simulada com chance mostrada, efeitos em confiança, reputação e indicadores do território.
+- **Livro-razão previsto × realizado** (`engine/ledger.py`): toda ação de competência e toda obra registram previsão, resultado e a explicação da diferença.
+- **Narrador** (`ai/narrator.py`): texto local por padrão; Gemini (se `GEMINI_API_KEY` no servidor) só reescreve os fatos do motor e é descartado se inventar números ou nomes.
+- **Trajetória partidária** leva também a governador, senador e presidente, após ao menos um mandato cumprido.
+
 ## Parcial (existe, mas incompleto ou raso)
 1. **Competências só executam na Presidência.** Vereador, prefeito, governador, deputados e senador só leem o que cabe ao cargo. Falta o catálogo executável de cada um (lei municipal, CPI, ICMS, polícia estadual, sabatina…).
 2. **O grafo de indicadores ainda não move o jogo.** `propagate()` é usado só pelas obras. Os indicadores nacionais do painel (`metrics`) seguem fórmulas antigas separadas do registro.

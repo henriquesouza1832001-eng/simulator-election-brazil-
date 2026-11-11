@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13 — 10 nov. 2026 (motor unificado, ações por cargo, previsto x realizado)
+
+- Motor de indicadores: o painel nacional lê do registro e propaga efeitos pelo grafo a cada avanço do calendário, inclusive para os municípios.
+- Ações executáveis para vereador, prefeito, deputado estadual e federal, governador e senador, com custo, chance de aprovação e efeito em indicadores do território.
+- Livro-razão de decisões: previsto e realizado lado a lado, com explicação da diferença (aprovado, rejeitado, obra concluída).
+- Narrador: texto local ou Gemini, restrito aos fatos do motor (números e nomes inventados são descartados).
+- Trajetória partidária chega a governador, senador e presidente depois de um mandato cumprido.
+
 ## 0.12 — 10 nov. 2026 (indicadores por território e obras de transporte)
 
 - Dados públicos: 35 séries municipais do Atlas do Desenvolvimento Humano (IDHM, Gini, pobreza, saúde, educação, saneamento, emprego, renda) via Ipeadata. Ver `docs/INDICADORES_E_TERRITORIO.md`.

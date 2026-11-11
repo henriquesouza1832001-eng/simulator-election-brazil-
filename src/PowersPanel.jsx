@@ -24,6 +24,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const [domain, setDomain] = useState('todos');
   const [options, setOptions] = useState({});
   const [busy, setBusy] = useState('');
+  const [ledger, setLedger] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -31,6 +32,15 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.date, state?.career_overview?.office, state?.party_path?.stage]);
+
+  useEffect(() => { request('/api/ledger').then((r) => setLedger(r.entries || [])).catch(() => {}); }, [state?.date, data?.history?.length]);
+
+  async function narrate(entry) {
+    try {
+      const out = await request(`/api/ledger/${entry.id}/narrate`, { method: 'POST', body: '{}' });
+      setLedger((rows) => rows.map((r) => (r.id === entry.id ? { ...r, narrative: out } : r)));
+    } catch (e) { onNotice?.(e.message); }
+  }
 
   async function run(action) {
     setBusy(action.id);
@@ -94,6 +104,16 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
         </li>;
       })}</ul>
       {data.history?.length > 0 && <><h3 className="subheading">Atos recentes</h3><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{h.date} — {h.title}</li>)}</ul></>}
+    </>}
+    {ledger.length > 0 && <>
+      <h3 className="subheading">Previsto e realizado</h3>
+      <ul className="powers-list ledger-list">{ledger.slice(0, 12).map((e) => <li key={e.id}><div>
+        <b>{e.title}</b> <small>{e.date} · {e.status}{e.cost ? ` · ${e.cost}` : ''}</small>
+        <small>Previsto: {effectText(e.forecast) || 'sem efeito numérico'}</small>
+        <small>Realizado: {e.result ? (effectText(e.result) || 'nenhum efeito') : 'aguardando'}</small>
+        {e.reason && <small className="powers-precedent">{e.reason}</small>}
+        {e.narrative && <small className="powers-narrative">{e.narrative.text} <em>({e.narrative.source === 'gemini' ? 'Gemini, a partir dos fatos do motor' : 'texto local'})</em></small>}
+      </div>{!e.narrative && <div className="powers-actions"><button className="secondary-button" onClick={() => narrate(e)}>Narrar</button></div>}</li>)}</ul>
     </>}
   </section>;
 }

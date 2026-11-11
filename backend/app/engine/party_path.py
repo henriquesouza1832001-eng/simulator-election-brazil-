@@ -26,6 +26,9 @@ LAUNCH_OFFICES: dict[str, dict[str, Any]] = {
     "deputado_estadual": {"label": "Deputado(a) estadual", "standing": 62, "network": 45, "reputation": 52, "cycle": "geral"},
     "prefeito": {"label": "Prefeito(a)", "standing": 70, "network": 55, "reputation": 60, "cycle": "municipal"},
     "deputado_federal": {"label": "Deputado(a) federal", "standing": 72, "network": 58, "reputation": 60, "cycle": "geral"},
+    "governador": {"label": "Governador(a)", "terms": 1, "standing": 78, "network": 65, "reputation": 68, "cycle": "geral"},
+    "senador": {"label": "Senador(a)", "terms": 1, "standing": 80, "network": 66, "reputation": 70, "cycle": "geral"},
+    "presidente": {"label": "Presidente(a) da República", "terms": 1, "standing": 88, "network": 75, "reputation": 78, "cycle": "geral"},
 }
 
 ENERGY_MAX = 100
@@ -156,9 +159,10 @@ def next_stage_requirements(state: dict[str, Any]) -> dict[str, Any]:
         offices = []
         for key, req in LAUNCH_OFFICES.items():
             ok = (pp["standing"] >= req["standing"] and pp["network"] >= req["network"] and pp["reputation"] >= req["reputation"]
-                  and days >= MIN_DAYS_AS_MEMBER_TO_LAUNCH)
+                  and days >= MIN_DAYS_AS_MEMBER_TO_LAUNCH and int(pp.get("terms_won", 0)) >= int(req.get("terms", 0)))
             offices.append({"key": key, "label": req["label"], "ready": ok, "cycle": req["cycle"],
-                            "needs": {"standing": req["standing"], "network": req["network"], "reputation": req["reputation"]}})
+                            "needs": {"standing": req["standing"], "network": req["network"], "reputation": req["reputation"],
+                                      "terms": int(req.get("terms", 0))}})
         base = LAUNCH_OFFICES["vereador"]
         return {"goal": "Lançar uma pré-candidatura", "items": [{"label": "Prestígio no partido", "value": round(pp["standing"], 1), "need": base["standing"]},
                                                                 {"label": "Contatos", "value": round(pp["network"], 1), "need": base["network"]},
@@ -311,7 +315,8 @@ def launch_candidacy(state: dict[str, Any], office: str = "vereador") -> dict[st
     option = next(o for o in next_stage_requirements(state)["offices"] if o["key"] == office)
     if not option["ready"]:
         raise ValueError(f"O partido ainda não dá a legenda para {option['label']}: cumpra prestígio {option['needs']['standing']}, "
-                         f"contatos {option['needs']['network']}, reputação {option['needs']['reputation']} e {MIN_DAYS_AS_MEMBER_TO_LAUNCH} dias de casa.")
+                         f"contatos {option['needs']['network']}, reputação {option['needs']['reputation']}, {MIN_DAYS_AS_MEMBER_TO_LAUNCH} dias de casa"
+                         + (f" e {option['needs']['terms']} mandato(s) cumprido(s)." if option["needs"]["terms"] else "."))
     character = dict(state.get("player_character") or {})
     character.setdefault("name", pp["name"])
     character["political_spectrum"] = pp["spectrum"]
@@ -357,6 +362,8 @@ def sync_with_career(state: dict[str, Any]) -> list[str]:
     pp["reputation"] = round(_clamp(max(pp["reputation"], float(career.get("reputation", 0)) * 0.9) + (0 if lost else 4)), 2)
     pp["network"] = round(_clamp(pp["network"] + 5), 2)                             # a campanha deixa contatos
     pp["returns"] = int(pp.get("returns", 0)) + 1
+    if not lost:
+        pp["terms_won"] = int(pp.get("terms_won", 0)) + 1      # mandato cumprido abre os cargos de escada mais alta
     _log(pp, today, "Depois da derrota, você volta ao diretório como quadro do partido." if lost
          else "Mandato concluído: você volta ao diretório com mais prestígio.")
     return ["Você volta à vida partidária: reconstrua prestígio e escolha a próxima disputa na aba Trajetória."]

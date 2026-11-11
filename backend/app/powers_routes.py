@@ -7,7 +7,7 @@ from typing import Any, Callable
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from .engine import powers
+from .engine import ledger, powers
 from .engine.career import is_career_governing
 
 
@@ -60,5 +60,22 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         save(state)
         return {**result, "state": public(state), "catalog": powers.catalog_for(state, office, governing)}
+
+    @router.get("/api/ledger")
+    def ledger_overview() -> dict[str, Any]:
+        return {"entries": ledger.overview(get_state())}
+
+    @router.post("/api/ledger/{entry_id}/narrate")
+    async def narrate_entry(entry_id: str) -> dict[str, Any]:
+        from .ai.narrator import narrate
+        state = get_state()
+        entry = next((e for e in ledger.overview(state, 200) if e["id"] == entry_id), None)
+        if entry is None:
+            raise HTTPException(status_code=404, detail="Registro não encontrado.")
+        facts = {k: entry.get(k) for k in ("title", "status", "forecast", "result", "cost", "reason", "date")}
+        out = await narrate(facts)
+        entry["narrative"] = out
+        save(state)
+        return out
 
     return router

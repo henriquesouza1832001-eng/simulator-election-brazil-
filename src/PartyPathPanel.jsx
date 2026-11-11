@@ -125,7 +125,7 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
       {ov.returns > 0 && <p className="meta-status" role="status">Você voltou ao diretório depois da última disputa. O resultado está na aba Carreira; aqui você reconstrói prestígio e escolhe a próxima eleição.</p>}
       <p className="meta-count">Ao lançar, a campanha começa no módulo de carreira, levando a reputação que você construiu. Cargos maiores exigem mais do partido.</p>
       <ul className="launch-offices">{(ov.next.offices || []).map((o) => <li key={o.key} className={o.ready ? 'ready' : ''}>
-        <div><b>{o.label}</b><small>Eleição {o.cycle === 'municipal' ? 'municipal' : 'geral'} · exige prestígio {o.needs.standing}, contatos {o.needs.network}, reputação {o.needs.reputation}</small></div>
+        <div><b>{o.label}</b><small>Eleição {o.cycle === 'municipal' ? 'municipal' : 'geral'} · exige prestígio {o.needs.standing}, contatos {o.needs.network}, reputação {o.needs.reputation}{o.needs.terms ? `, ${o.needs.terms} mandato(s) cumprido(s)` : ''}</small></div>
         <button className={o.ready ? 'primary-button' : 'secondary-button'} disabled={busy || !o.ready} onClick={() => launch(o.key)}>{o.ready ? 'Lançar' : 'Ainda não'}</button></li>)}</ul></section>}
 
     {last && <p className="meta-status" role="status">{last.label}: {Object.entries(last.applied).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${({ reputation: 'reputação', network: 'contatos', militancy: 'militância', standing: 'prestígio' })[k] || k}`).join(' · ') || 'recuperou energia'}{last.gaffe ? ' · deu errado' : ''}{last.repeat_factor < 1 ? ` · repetição ×${last.repeat_factor}` : ''}.</p>}

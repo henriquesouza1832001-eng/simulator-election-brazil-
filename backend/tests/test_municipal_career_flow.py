@@ -119,6 +119,24 @@ class MunicipalCareerFlowTests(unittest.TestCase):
         self.assertEqual(len(co2["history"]), 1)
         self.assertEqual(co2["history"][0]["result"], "lost")
 
+    def test_state_wide_offices_need_a_completed_term(self):
+        from app.engine import party_path
+        from app.engine.state import new_game
+        state = new_game()
+        party_path.init_state(state, name="Teste Escada", state_code="SP", municipality_id="3550308", municipality="São Paulo", spectrum="centro", cause="educacao")
+        pp = state["party_path"]
+        pp.update(stage="quadro", standing=95, network=95, reputation=95, party="PSB", ideology="Centro-esquerda", party_since="2026-01-01", terms_won=0)
+        state["date"] = "2027-12-01"
+        offices = {o["key"]: o for o in party_path.next_stage_requirements(state)["offices"]}
+        self.assertTrue(offices["vereador"]["ready"])
+        for key in ("governador", "senador", "presidente"):
+            self.assertIn(key, offices)
+            self.assertFalse(offices[key]["ready"], key)
+        pp["terms_won"] = 1
+        offices = {o["key"]: o for o in party_path.next_stage_requirements(state)["offices"]}
+        self.assertTrue(offices["senador"]["ready"])
+        self.assertTrue(offices["presidente"]["ready"])
+
     def test_campaign_leads_to_result_and_office_or_opposition(self):
         self.reach_launch("vereador")
         g, phases = self.run_until_result(campaign=True)
