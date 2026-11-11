@@ -44,6 +44,8 @@
 .week-region select{margin-left:.5rem;padding:.4rem;min-height:40px}
 .week-actions{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.6rem}
 .week-actions li{display:flex;justify-content:space-between;gap:.8rem;align-items:flex-start;border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:.7rem}
+.week-actions li > div{min-width:0;flex:1 1 auto}
+.week-actions li > button{flex:0 0 auto;white-space:nowrap;min-width:5.5rem;padding-inline:1rem}
 .week-actions li.blocked{opacity:.6}
 .week-actions small{display:block;opacity:.8}
 .elector-banner{padding:.75rem 1rem;border:1px solid #d9b777;background:#fbf0d9;color:#3d2a00;border-radius:8px}
