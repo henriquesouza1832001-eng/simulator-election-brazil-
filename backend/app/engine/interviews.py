@@ -57,6 +57,7 @@ def _fact_questions(state: dict[str, Any], ctx: dict[str, Any]) -> list[dict[str
                     "prompt": f"O desemprego está em {unemp:.1f}%. Qual é o plano para gerar vagas e de onde sairão os recursos?"})
         out.append({"topic": "dívida", "terms": ["divida", "fiscal", "gasto", "receita"], "fact": debt,
                     "prompt": f"A dívida pública é de {debt:.0f}% do PIB. Como equilibrar as contas sem cortar o que a população mais precisa?"})
+        out.extend(_national_extra(state))
     else:
         from . import territory
         mid = (state.get("career") or {}).get("municipality_id")
@@ -76,10 +77,41 @@ def _fact_questions(state: dict[str, Any], ctx: dict[str, Any]) -> list[dict[str
     return out
 
 
+def _national_extra(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """Perguntas a mais para o nível nacional: Congresso, integridade, território, desigualdade e empresas."""
+    out: list[dict[str, Any]] = []
+    m = state.get("metrics", {})
+    base = float(m.get("congress_support", 50))
+    out.append({"topic": "Congresso", "terms": ["congresso", "base", "partido", "apoio", "negociacao"], "fact": base,
+                "prompt": f"Sua base no Congresso está em {base:.0f}%. Com quais partidos o senhor ou a senhora pretende negociar e o que oferece em troca?"})
+    integ = float(m.get("integrity", 70))
+    if integ < 65:
+        out.append({"topic": "integridade", "terms": ["integridade", "transparencia", "controle", "investigacao", "corrupcao"], "fact": integ,
+                    "prompt": f"O índice de integridade pública está em {integ:.0f} de 100. Que medidas concretas o governo adotará para recuperar a confiança?"})
+    nation = (state.get("nation") or {}).get("values", {})
+    if "gini" in nation:
+        out.append({"topic": "desigualdade", "terms": ["desigualdade", "renda", "pobreza", "transferencia", "salario"], "fact": float(nation["gini"]),
+                    "prompt": f"O índice de Gini está em {float(nation['gini']):.2f}. O que o governo fará para reduzir a desigualdade e como medir o avanço?"})
+    try:
+        from . import territory
+        worst = min(territory.overview(state)["states"], key=lambda s: s["indicators"].get("idhm", 1))
+        out.append({"topic": "regiões", "terms": ["regiao", "estado", "desenvolvimento", "investimento", "infraestrutura"], "fact": float(worst["indicators"].get("idhm", 0)),
+                    "prompt": f"O estado com menor IDHM é {worst['name']}, com {float(worst['indicators'].get('idhm', 0)):.2f}. Qual é o plano para reduzir essa distância?"})
+    except (ValueError, KeyError):
+        pass
+    comp = state.get("company_state") or {}
+    sick = sorted(((v["health"], k) for k, v in comp.items() if not v["control"].startswith("privada")))[:1]
+    if sick and sick[0][0] < 50:
+        from .companies import CATALOG
+        out.append({"topic": "empresas públicas", "terms": ["empresa", "gestao", "investimento", "dividendos", "estatal"], "fact": float(sick[0][0]),
+                    "prompt": f"A {CATALOG[sick[0][1]]['name']} está com índice de saúde {sick[0][0]:.0f} de 100. Vai capitalizar, reestruturar ou vender?"})
+    return out
+
+
 def _decision_questions(state: dict[str, Any]) -> list[dict[str, Any]]:
     out = []
     for e in (state.get("ledger") or [])[:3]:
-        if e.get("source") in {"presidencia", "cargo", "território"} and e.get("title"):
+        if e.get("source") in {"presidencia", "cargo", "território", "empresa"} and e.get("title"):
             fc = ", ".join(f"{k} {v:+g}" for k, v in (e.get("forecast") or {}).items()) or "sem efeito numérico"
             res = ", ".join(f"{k} {v:+g}" for k, v in (e.get("result") or {}).items()) if e.get("result") else None
             gap = f" O previsto era {fc}; o realizado foi {res}." if res else f" O previsto era {fc}."

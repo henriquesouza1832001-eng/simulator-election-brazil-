@@ -33,6 +33,10 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 
 - **Entrevistas, sabatinas e debates em etapas** (`engine/interviews.py`, aba Agenda > Entrevistas): perguntas montadas com fatos do jogo (indicadores, sua última decisão com previsto × realizado, crises e processos), resposta livre avaliada por tema, dados, compromisso e tom com feedback por critério, e efeito persistente em aprovação/confiança, momentum, notícia e livro-razão. Debate em cinco etapas (abertura, dois blocos, direito de resposta, considerações finais) só na campanha.
 
+- **Debate no formato de TV** (`engine/debate.py`): mediador, dois adversários (partidos reais e ideologia), réplica com ataque ao ponto fraco, pergunta ao adversário, checagem de dados e pesquisa antes e depois. Respostas de até 6.000 caracteres, com tamanho sugerido por etapa.
+- **Gateway do Gemini na Cloudflare** (`cloudflare/gemini-gateway/`): Worker próprio com a chave só lá, validação de saída e testes; o backend usa `GEMINI_GATEWAY_URL` e `GEMINI_GATEWAY_TOKEN`. Gera perguntas de entrevista a partir dos temas em que o jogador foi mal.
+- **Empresas** (`engine/companies.py`, aba Empresas): 12 empresas e bancos reais com saúde, relação com o governo, visitas, reuniões, dividendos, preços de combustíveis, comando e crises quando a saúde cai; privatização leva à lei na aba Competências.
+
 ## Lista de pendências do protótipo (revisão de 10 nov. 2026)
 Ainda faltam, em ordem de impacto:
 1. **Entrevistas e debates:** falta a pesquisa de opinião antes e depois, o oponente responder de volta, e perguntas geradas com apoio do Gemini a partir do aprendizado.

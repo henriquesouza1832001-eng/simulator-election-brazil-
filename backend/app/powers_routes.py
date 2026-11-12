@@ -23,6 +23,12 @@ class StartInterviewBody(BaseModel):
     kind: str = Field(min_length=3, max_length=20)
 
 
+class CompanyActBody(BaseModel):
+    company: str = Field(min_length=2, max_length=30)
+    action: str = Field(min_length=3, max_length=20)
+    option: str | None = Field(default=None, max_length=60)
+
+
 class PowerBody(BaseModel):
     action: str = Field(min_length=3, max_length=60)
     option: str | None = Field(default=None, max_length=80)
@@ -105,6 +111,24 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         from .learning_actions import record_choice
         record_choice(body.text, action, option)
         return {"saved": True}
+
+    @router.get("/api/companies")
+    def companies_overview() -> dict[str, Any]:
+        from .engine import companies
+        return companies.overview(get_state())
+
+    @router.post("/api/companies/act")
+    def companies_act(body: CompanyActBody) -> dict[str, Any]:
+        from .engine import companies
+        state = get_state()
+        try:
+            out = companies.act(state, body.company, body.action, body.option)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except (PermissionError, RuntimeError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        save(state)
+        return {**out, "overview": companies.overview(state), "state": public(state)}
 
     @router.get("/api/interviews")
     def interviews_overview() -> dict[str, Any]:

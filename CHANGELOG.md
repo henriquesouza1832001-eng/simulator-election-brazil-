@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18 — 12 nov. 2026 (debate real, gateway do Gemini e empresas)
+
+- Debate em formato de TV com mediador, dois adversários que respondem, réplica, pergunta ao adversário, checagem de dados e pesquisa antes e depois; respostas de até 6.000 caracteres.
+- Gateway do Gemini como Worker da Cloudflare (`cloudflare/gemini-gateway/`), com chave só no Worker e saídas validadas; perguntas de entrevista geradas a partir do aprendizado do jogador.
+- Aba Empresas: 12 empresas e bancos com saúde e relação com o governo, visitas, reuniões, dividendos, preços, comando e crises; mais perguntas de entrevista (Congresso, integridade, desigualdade, regiões, empresas).
+
 ## 0.17 — 12 nov. 2026 (entrevistas, sabatinas e debates)
 
 - Nova aba Entrevistas: entrevista (3 perguntas), sabatina (5, com cobrança das suas decisões) e debate em cinco etapas na campanha. Perguntas nascem de fatos do jogo; a nota vem de regras públicas (tema, dados, compromisso, tom) com feedback por critério; o resultado altera aprovação ou confiança, momentum, imprensa e o livro-razão.

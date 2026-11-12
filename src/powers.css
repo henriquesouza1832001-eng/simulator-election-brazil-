@@ -47,3 +47,10 @@
 .debate-transcript li.me { background: rgba(60,160,110,.18); }
 .debate-transcript li.mod { font-style: italic; opacity: .9; }
 .debate-transcript li b { font-size: .85rem; opacity: .8; }
+
+.company-meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .4rem; margin: .5rem 0; }
+.company-meters label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; flex-wrap: wrap; }
+.company-meters meter { width: 8rem; }
+.company-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; align-items: center; }
+.company-action { display: inline-flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.company-action select { min-height: 40px; }
