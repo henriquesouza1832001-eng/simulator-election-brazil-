@@ -53,8 +53,10 @@ def _line(opp: dict[str, Any], step: str, topic: str, fact: float | None, seed: 
 
 
 def attack(opp: dict[str, Any], weakest: str, last_decision: dict[str, Any] | None) -> str:
-    base = {"tema": "O senhor ou a senhora não respondeu ao que foi perguntado.", "dados": "Faltaram números: quanto custa e de onde vem o dinheiro?",
-            "compromisso": "Fala bonita, mas sem prazo nem responsável. Quem cobra depois?", "tom": "O tom da resposta mostra falta de preparo para o debate."}[weakest]
+    base = {"relevancia": "O senhor ou a senhora não ligou a resposta ao problema que foi perguntado.",
+            "viabilidade": "Isso não é atribuição do seu cargo ou não passa pela lei. Como pretende fazer?",
+            "dados": "Faltaram números: quanto custa e de onde vem o dinheiro?",
+            "compromisso": "Fala bonita, mas sem prazo nem responsável. Quem cobra depois?"}.get(weakest, "A resposta não convenceu.")
     if last_decision and last_decision.get("result") is not None:
         return f"{opp['name']}: {base} E sobre “{last_decision['title']}”, o governo prometeu um resultado e entregou outro."
     return f"{opp['name']}: {base}"

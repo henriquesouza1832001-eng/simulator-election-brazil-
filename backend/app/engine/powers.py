@@ -5,7 +5,7 @@ import random
 from datetime import date, timedelta
 from typing import Any
 
-from . import consequences, ledger, regulators
+from . import congress_process, consequences, ledger, regulators
 from .fiscal import ensure_fiscal_state, record_one_off_spending, record_policy_balance_delta
 from .powers_catalog import ACTIONS, OTHER_OFFICE_ACTIONS, ROLES
 
@@ -162,6 +162,8 @@ def _bill(state: dict[str, Any], action: dict[str, Any], option: str | None, tod
     calendar["last_submission"] = today.isoformat()
     calendar["cooldown_days"] = 180 if action["approval"] == "pec" else 60
     calendar.setdefault("pending_bills", []).append(bill)
+    if action["approval"] != "mp":
+        congress_process.attach(state, bill)
     return bill
 
 
@@ -243,7 +245,9 @@ def resolve_bill(state: dict[str, Any], bill: dict[str, Any], approved: bool) ->
             if bill.get("ledger_id"):
                 ledger.settle(state, bill["ledger_id"], {}, "rejeitado no plebiscito", "O povo rejeitou a mudança na consulta popular.")
             return []
-    rows = apply(state, action, option)
+    dilution = float((bill.get("process") or {}).get("dilution", 1.0))
+    scaled = action if dilution >= 1.0 else {**action, "effects": {k: round(v * dilution, 4) for k, v in action["effects"].items()}}
+    rows = apply(state, scaled, option)
     if bill.get("ledger_id"):
         got = {r["key"]: r["delta"] for r in rows if r["key"] != "cost_bi"}
         ledger.settle(state, bill["ledger_id"], got, "aprovado", ledger.explain_gap(action["effects"], got))

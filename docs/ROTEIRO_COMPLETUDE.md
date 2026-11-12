@@ -37,10 +37,14 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Gateway do Gemini na Cloudflare** (`cloudflare/gemini-gateway/`): Worker próprio com a chave só lá, validação de saída e testes; o backend usa `GEMINI_GATEWAY_URL` e `GEMINI_GATEWAY_TOKEN`. Gera perguntas de entrevista a partir dos temas em que o jogador foi mal.
 - **Empresas** (`engine/companies.py`, aba Empresas): 12 empresas e bancos reais com saúde, relação com o governo, visitas, reuniões, dividendos, preços de combustíveis, comando e crises quando a saúde cai; privatização leva à lei na aba Competências.
 
+- **Avaliação de respostas por contexto** (`engine/answer_context.py`): em vez de palavras-chave, a resposta é lida contra o país modelado: relevância causal pelo grafo de indicadores, viabilidade e competência do cargo (inclusive promessas impossíveis, como decretar a Selic), dados coerentes com o fato e compromisso/tom. Mostra o que o jogo entendeu da resposta.
+- **Perguntas que reproduzem o funcionamento do país** (`engine/question_bank.py`): nascem das alavancas reais de cada cargo no registro, dos valores atuais dos indicadores, da tramitação no Congresso (quórum e base) e de perguntas de competência (ex.: prefeito e Selic), em que a boa resposta reconhece o limite.
+- **Tramitação detalhada** (`engine/congress_process.py`, aba Política > Tramitação): etapas por comissão e CCJ, relator real, chance de passar nas comissões, perspectiva de voto por partido, negociação por bancada (emendas, cargo, concessão no texto), urgência constitucional e diluição do texto.
+
 ## Lista de pendências do protótipo (revisão de 10 nov. 2026)
 Ainda faltam, em ordem de impacto:
 1. **Entrevistas e debates:** falta a pesquisa de opinião antes e depois, o oponente responder de volta, e perguntas geradas com apoio do Gemini a partir do aprendizado.
-3. **Alianças e votação legislativa detalhadas:** comissões, relator, emendas, urgência, negociação por bancada.
+3. **Congresso:** obstrução, destaques, veto e derrubada de veto, CPI em etapas e calendário de sessões (comissões, relator, urgência e negociação por bancada já existem para projetos do Presidente; falta para projetos de outros cargos).
 4. **Resultados eleitorais nominais completos** (votos por candidato, TSE) e jogar eleições passadas.
 5. **Confirmar em produção que as candidaturas do TSE foram importadas.** Verifique com `GET /api/data/tse/status`; se vier vazio, rode o importador no servidor (`python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`).
 6. **Histórico mais profundo de eventos, orçamento e obras** (previsto × realizado por mês e por função).

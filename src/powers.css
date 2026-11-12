@@ -54,3 +54,10 @@
 .company-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; align-items: center; }
 .company-action { display: inline-flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
 .company-action select { min-height: 40px; }
+
+.bill-card { border: 1px solid rgba(128,128,128,.35); border-radius: 10px; padding: .8rem 1rem; margin: .8rem 0; }
+.bill-stages { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .4rem; margin: .6rem 0; }
+.bill-stages li { border-radius: 8px; padding: .4rem .6rem; background: rgba(128,128,128,.12); display: grid; gap: .1rem; }
+.bill-stages li.stage-concluída, .bill-stages li.stage-aprovada { background: rgba(60,160,110,.2); }
+.bill-stages li.stage-rejeitada { background: rgba(217,83,79,.25); }
+.bill-stages li small { opacity: .8; }

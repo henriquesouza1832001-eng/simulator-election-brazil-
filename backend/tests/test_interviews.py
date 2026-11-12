@@ -26,14 +26,45 @@ class InterviewsTest(unittest.TestCase):
         self.assertIn(f"{s['metrics']['inflation']:.1f}%", " ".join(q["prompt"] for q in interviews._fact_questions(s, interviews._context(s))))
         self.assertTrue("decisão" in {q["topic"] for q in qs} or "crise" in {q["topic"] for q in qs}, joined)
 
-    def test_scoring_rewards_theme_data_commitment_and_tone(self):
-        q = {"topic": "inflação", "terms": ["inflacao", "preco", "juros", "meta"], "fact": 4.5}
-        good = interviews.score_answer(GOOD, q)
-        bad = interviews.score_answer(INSULT, q)
+    def test_scoring_reads_context_not_keywords(self):
+        q = {"topic": "inflação", "target": "inflacao", "fact": 4.5}
+        good = interviews.score_answer(GOOD, q, "presidente")
+        bad = interviews.score_answer(INSULT, q, "presidente")
         self.assertGreater(good["total"], 75)
-        self.assertLess(bad["total"], 20)
-        self.assertEqual(good["criteria"]["compromisso"], 25.0)
-        self.assertIn("ataques", bad["feedback"]["tom"])
+        self.assertLess(bad["total"], 40)
+        self.assertEqual(good["criteria"]["relevancia"], 25.0)
+        self.assertIn("influencia", good["feedback"]["relevancia"])
+        # palavras do tema sem ligação causal não bastam
+        stuffed = interviews.score_answer("Inflação, inflação, inflação, preço, preço, preço, ipca, ipca, ipca e mais inflação sempre.", q, "presidente")
+        self.assertLess(stuffed["criteria"]["viabilidade"], 25.0)
+
+    def test_impossible_promises_are_penalized_by_institutional_design(self):
+        q = {"topic": "inflação", "target": "inflacao", "fact": 4.5}
+        decree = interviews.score_answer("Vou reduzir a Selic por decreto já na próxima semana, a fazenda executa em 30 dias e a inflação cai para 4%.", q, "presidente")
+        self.assertLess(decree["criteria"]["viabilidade"], 15.0)
+        self.assertIn("Copom", decree["feedback"]["viabilidade"])
+
+    def test_competence_trap_rewards_acknowledging_the_limit(self):
+        trap = {"topic": "competência", "target": "inflacao", "trap": True, "fact": None}
+        honest = interviews.score_answer("Isso não é competência do prefeito: a meta de inflação é do Conselho Monetário. Na prefeitura posso ampliar investimento em obras e transporte em 12 meses.", trap, "prefeito")
+        promise = interviews.score_answer("Vou fixar a meta de inflação do país já no primeiro mês de mandato, com a secretaria.", trap, "prefeito")
+        self.assertEqual(honest["criteria"]["viabilidade"], 25.0)
+        self.assertLess(promise["criteria"]["viabilidade"], 12.0)
+        self.assertGreater(honest["total"], promise["total"] + 30)
+
+    def test_country_questions_follow_office_levers_and_competence(self):
+        from app.engine import question_bank
+        s = president()
+        qs = question_bank.country_questions(s, interviews._context(s))
+        targets = {q["target"] for q in qs}
+        self.assertTrue({"juros", "mobilidade", "gini"} & targets)
+        self.assertTrue(any(q["trap"] for q in qs))
+        self.assertTrue(any("o cargo age por" in q["prompt"] for q in qs))
+        mayor = career_state("prefeito")
+        mayor["career"].update(municipality_id="3550308")
+        local = question_bank.country_questions(mayor, interviews._context(mayor))
+        self.assertTrue(any(q["trap"] for q in local))
+        self.assertTrue(any(q["target"] in {"saneamento_basico", "mobilidade", "seguranca", "saude_atencao"} for q in local))
 
     def test_full_interview_applies_persistent_effects_and_cooldown(self):
         s = president()
@@ -43,7 +74,7 @@ class InterviewsTest(unittest.TestCase):
             out = interviews.answer(s, GOOD)
         self.assertTrue(out["done"])
         self.assertGreater(s["metrics"]["approval"], approval)
-        self.assertEqual(s["interviews"]["history"][0]["grade"], "forte")
+        self.assertIn(s["interviews"]["history"][0]["grade"], {"forte", "boa"})
         self.assertTrue(any(f["action_id"] == "entrevista" for f in s["consequences"]["feed"]))
         self.assertEqual(s["ledger"][0]["source"], "imprensa")
         with self.assertRaises(PermissionError):

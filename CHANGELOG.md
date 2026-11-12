@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19 — 12 nov. 2026 (contexto, funcionamento do país e tramitação)
+
+- Respostas avaliadas por contexto: relevância causal pelo grafo de indicadores, viabilidade e competência do cargo (promessas impossíveis perdem pontos), dados e compromisso/tom; o jogo mostra o que entendeu da resposta.
+- Perguntas montadas a partir de como o país funciona: alavancas reais de cada cargo, valores atuais, quórum e base no Congresso, e perguntas de competência.
+- Tramitação detalhada no Congresso: comissões, relator, negociação por bancada, urgência e texto diluído.
+
 ## 0.18 — 12 nov. 2026 (debate real, gateway do Gemini e empresas)
 
 - Debate em formato de TV com mediador, dois adversários que respondem, réplica, pergunta ao adversário, checagem de dados e pesquisa antes e depois; respostas de até 6.000 caracteres.

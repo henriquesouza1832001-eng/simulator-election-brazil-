@@ -51,11 +51,11 @@ def _fact_questions(state: dict[str, Any], ctx: dict[str, Any]) -> list[dict[str
     m = state.get("metrics", {})
     if not ctx["local"]:
         infl, unemp, debt = float(m.get("inflation", 0)), float(m.get("unemployment", 0)), float(m.get("debt_gdp", 0))
-        out.append({"topic": "inflação", "terms": ["inflacao", "preco", "juros", "meta"], "fact": infl,
+        out.append({"topic": "inflação", "target": "inflacao", "terms": ["inflacao", "preco", "juros", "meta"], "fact": infl,
                     "prompt": f"A inflação está em {infl:.1f}% ao ano. Que medidas concretas o senhor ou a senhora adotará e em quanto tempo o cidadão sente a diferença?"})
-        out.append({"topic": "emprego", "terms": ["emprego", "desemprego", "renda", "vagas"], "fact": unemp,
+        out.append({"topic": "emprego", "target": "desemprego", "terms": ["emprego", "desemprego", "renda", "vagas"], "fact": unemp,
                     "prompt": f"O desemprego está em {unemp:.1f}%. Qual é o plano para gerar vagas e de onde sairão os recursos?"})
-        out.append({"topic": "dívida", "terms": ["divida", "fiscal", "gasto", "receita"], "fact": debt,
+        out.append({"topic": "dívida", "target": "divida_pib", "terms": ["divida", "fiscal", "gasto", "receita"], "fact": debt,
                     "prompt": f"A dívida pública é de {debt:.0f}% do PIB. Como equilibrar as contas sem cortar o que a população mais precisa?"})
         out.extend(_national_extra(state))
     else:
@@ -74,7 +74,8 @@ def _fact_questions(state: dict[str, Any], ctx: dict[str, Any]) -> list[dict[str
                     v = float(ind[key]["value"])
                     out.append({"topic": topic, "terms": terms, "fact": v,
                                 "prompt": f"Em {ctx['territory']}, {label} está em {v:.0f} de 100. O que muda na sua gestão e quando?"})
-    return out
+    from .question_bank import country_questions
+    return out + country_questions(state, ctx)
 
 
 def _national_extra(state: dict[str, Any]) -> list[dict[str, Any]]:
@@ -82,20 +83,20 @@ def _national_extra(state: dict[str, Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     m = state.get("metrics", {})
     base = float(m.get("congress_support", 50))
-    out.append({"topic": "Congresso", "terms": ["congresso", "base", "partido", "apoio", "negociacao"], "fact": base,
+    out.append({"topic": "Congresso", "target": "base_legislativa", "terms": ["congresso", "base", "partido", "apoio", "negociacao"], "fact": base,
                 "prompt": f"Sua base no Congresso está em {base:.0f}%. Com quais partidos o senhor ou a senhora pretende negociar e o que oferece em troca?"})
     integ = float(m.get("integrity", 70))
     if integ < 65:
-        out.append({"topic": "integridade", "terms": ["integridade", "transparencia", "controle", "investigacao", "corrupcao"], "fact": integ,
+        out.append({"topic": "integridade", "target": "integridade", "terms": ["integridade", "transparencia", "controle", "investigacao", "corrupcao"], "fact": integ,
                     "prompt": f"O índice de integridade pública está em {integ:.0f} de 100. Que medidas concretas o governo adotará para recuperar a confiança?"})
     nation = (state.get("nation") or {}).get("values", {})
     if "gini" in nation:
-        out.append({"topic": "desigualdade", "terms": ["desigualdade", "renda", "pobreza", "transferencia", "salario"], "fact": float(nation["gini"]),
+        out.append({"topic": "desigualdade", "target": "gini", "terms": ["desigualdade", "renda", "pobreza", "transferencia", "salario"], "fact": float(nation["gini"]),
                     "prompt": f"O índice de Gini está em {float(nation['gini']):.2f}. O que o governo fará para reduzir a desigualdade e como medir o avanço?"})
     try:
         from . import territory
         worst = min(territory.overview(state)["states"], key=lambda s: s["indicators"].get("idhm", 1))
-        out.append({"topic": "regiões", "terms": ["regiao", "estado", "desenvolvimento", "investimento", "infraestrutura"], "fact": float(worst["indicators"].get("idhm", 0)),
+        out.append({"topic": "regiões", "target": "idhm", "terms": ["regiao", "estado", "desenvolvimento", "investimento", "infraestrutura"], "fact": float(worst["indicators"].get("idhm", 0)),
                     "prompt": f"O estado com menor IDHM é {worst['name']}, com {float(worst['indicators'].get('idhm', 0)):.2f}. Qual é o plano para reduzir essa distância?"})
     except (ValueError, KeyError):
         pass
@@ -103,9 +104,20 @@ def _national_extra(state: dict[str, Any]) -> list[dict[str, Any]]:
     sick = sorted(((v["health"], k) for k, v in comp.items() if not v["control"].startswith("privada")))[:1]
     if sick and sick[0][0] < 50:
         from .companies import CATALOG
-        out.append({"topic": "empresas públicas", "terms": ["empresa", "gestao", "investimento", "dividendos", "estatal"], "fact": float(sick[0][0]),
+        out.append({"topic": "empresas públicas", "target": "investimento_publico", "terms": ["empresa", "gestao", "investimento", "dividendos", "estatal"], "fact": float(sick[0][0]),
                     "prompt": f"A {CATALOG[sick[0][1]]['name']} está com índice de saúde {sick[0][0]:.0f} de 100. Vai capitalizar, reestruturar ou vender?"})
     return out
+
+
+def _target_of(forecast: dict[str, float]) -> str | None:
+    from .answer_context import METRIC_TO_REGISTRY
+    from .indicator_registry import REGISTRY
+    for key in forecast:
+        if key in REGISTRY:
+            return key
+        if key in METRIC_TO_REGISTRY:
+            return METRIC_TO_REGISTRY[key][0]
+    return None
 
 
 def _decision_questions(state: dict[str, Any]) -> list[dict[str, Any]]:
@@ -115,7 +127,7 @@ def _decision_questions(state: dict[str, Any]) -> list[dict[str, Any]]:
             fc = ", ".join(f"{k} {v:+g}" for k, v in (e.get("forecast") or {}).items()) or "sem efeito numérico"
             res = ", ".join(f"{k} {v:+g}" for k, v in (e.get("result") or {}).items()) if e.get("result") else None
             gap = f" O previsto era {fc}; o realizado foi {res}." if res else f" O previsto era {fc}."
-            out.append({"topic": "decisão", "terms": tokens(e["title"])[:4] + ["resultado", "decisao"], "fact": None,
+            out.append({"topic": "decisão", "target": _target_of(e.get("forecast") or {}), "terms": tokens(e["title"])[:4] + ["resultado", "decisao"], "fact": None,
                         "prompt": f"Sobre a decisão “{e['title']}”:{gap} Como o senhor ou a senhora avalia o resultado e o que corrige?"})
     return out
 
@@ -147,6 +159,10 @@ def build_questions(state: dict[str, Any], kind: str) -> list[dict[str, Any]]:
         pool = _fact_questions(state, ctx) + _decision_questions(state)
     pool = sorted(pool, key=lambda q: _roll(seed + q["prompt"][:20]))
     n = KINDS[kind]["questions"]
+    if kind == "sabatina":
+        # sabatina cobra o que o jogador decidiu: decisões e processos entram primeiro, depois o resto do pool
+        priority = (_decision_questions(state) + _institution_questions(state))[:2]
+        pool = priority + [q for q in pool if q not in priority]
     if kind == "debate":
         return _debate_steps(state, ctx, pool)
     if kind == "debate_legacy":
@@ -227,36 +243,10 @@ def _after_debate_answer(state: dict[str, Any], cur: dict[str, Any], q: dict[str
         nxt["prompt"] = f"Pergunta do adversário. {quest} Responda com dados."
 
 
-def score_answer(text: str, q: dict[str, Any]) -> dict[str, Any]:
-    t = plain(text)
-    words = set(tokens(text))
-    terms = [plain(x) for x in q.get("terms", [])]
-    hits = sum(1 for term in terms if term in t or term in words)
-    tema = round(25 * min(1.0, (hits / max(len(terms), 1)) * 1.6), 1)
-    nums = [float(x.replace(",", ".")) for x in NUMBER.findall(text)]
-    fact = q.get("fact")
-    if nums and fact:
-        near = any(abs(n - fact) <= max(abs(fact) * 0.3, 1.5) for n in nums)
-        dados = 25.0 if near else 17.0
-    elif nums:
-        dados = 20.0
-    else:
-        dados = 0.0
-    has_deadline, has_owner = bool(PRAZO.search(t)), bool(RESPONSAVEL.search(t))
-    compromisso = (12.5 if has_deadline else 0.0) + (12.5 if has_owner else 0.0)
-    tom = 25.0 - 8.0 * sum(1 for w in INSULTS if w in t)
-    if text.isupper() and len(text) > 20:
-        tom -= 6
-    tom = max(0.0, tom)
-    total = round(tema + dados + compromisso + tom, 1)
-    feedback = {
-        "tema": "Respondeu ao ponto da pergunta." if tema >= 18 else "Faltou tratar do tema da pergunta; use os termos do assunto.",
-        "dados": "Usou números coerentes com o fato citado." if dados >= 25 else ("Citou números, mas longe do dado apresentado." if dados >= 17 else ("Citou um número; relacione-o ao dado da pergunta." if dados > 0 else "Sem números: cite dados ou metas.")),
-        "compromisso": ("Deu prazo e responsável." if has_deadline and has_owner else "Faltou o responsável." if has_deadline
-                        else "Faltou o prazo." if has_owner else "Faltaram prazo e responsável."),
-        "tom": "Tom adequado." if tom >= 25 else "O tom atrapalhou: evite ataques pessoais e caixa alta.",
-    }
-    return {"total": total, "criteria": {"tema": tema, "dados": dados, "compromisso": compromisso, "tom": tom}, "feedback": feedback}
+def score_answer(text: str, q: dict[str, Any], office: str = "presidente") -> dict[str, Any]:
+    """Avaliação por contexto: relevância causal, viabilidade e competência, dados e compromisso/tom."""
+    from .answer_context import score
+    return score(text, q, office)
 
 
 def grade(avg: float) -> str:
@@ -341,7 +331,7 @@ def answer(state: dict[str, Any], text: str) -> dict[str, Any]:
     if len(text) > MAX_CHARS:
         raise ValueError(f"A resposta passa de {MAX_CHARS} caracteres.")
     q = cur["questions"][cur["index"]]
-    result = score_answer(text, q)
+    result = score_answer(text, q, _context(state)["office"])
     if cur["kind"] == "debate":
         _after_debate_answer(state, cur, q, text, result)
     cur["answers"].append({"stage": q.get("stage"), "topic": q["topic"], "prompt": q["prompt"], "text": text.strip()[:6000], **result})

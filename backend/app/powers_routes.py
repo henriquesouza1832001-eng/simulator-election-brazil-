@@ -29,6 +29,16 @@ class CompanyActBody(BaseModel):
     option: str | None = Field(default=None, max_length=60)
 
 
+class NegotiateBody(BaseModel):
+    bill: str = Field(min_length=3, max_length=80)
+    party: str = Field(min_length=2, max_length=20)
+    offer: str = Field(min_length=3, max_length=20)
+
+
+class UrgencyBody(BaseModel):
+    bill: str = Field(min_length=3, max_length=80)
+
+
 class PowerBody(BaseModel):
     action: str = Field(min_length=3, max_length=60)
     option: str | None = Field(default=None, max_length=80)
@@ -111,6 +121,37 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         from .learning_actions import record_choice
         record_choice(body.text, action, option)
         return {"saved": True}
+
+    @router.get("/api/congress/process")
+    def congress_overview() -> dict[str, Any]:
+        from .engine import congress_process
+        return congress_process.overview(get_state())
+
+    @router.post("/api/congress/negotiate")
+    def congress_negotiate(body: NegotiateBody) -> dict[str, Any]:
+        from .engine import congress_process
+        state = get_state()
+        try:
+            out = congress_process.negotiate(state, body.bill, body.party, body.offer)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        save(state)
+        return {**out, "overview": congress_process.overview(state), "state": public(state)}
+
+    @router.post("/api/congress/urgency")
+    def congress_urgency(body: UrgencyBody) -> dict[str, Any]:
+        from .engine import congress_process
+        state = get_state()
+        try:
+            out = congress_process.request_urgency(state, body.bill)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        save(state)
+        return {**out, "overview": congress_process.overview(state), "state": public(state)}
 
     @router.get("/api/companies")
     def companies_overview() -> dict[str, Any]:

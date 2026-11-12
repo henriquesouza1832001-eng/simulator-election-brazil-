@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './powers.css';
 
-const CRITERIA = { tema: 'Tema', dados: 'Dados', compromisso: 'Compromisso', tom: 'Tom' };
+const CRITERIA = { relevancia: 'Relevância causal', viabilidade: 'Viabilidade e competência', dados: 'Dados', compromisso: 'Compromisso e tom' };
 const GRADE = { forte: 'Desempenho forte', boa: 'Boa participação', regular: 'Participação irregular', fraca: 'Desempenho fraco' };
 
 export default function InterviewsPanel({ request, state, onState, onNotice }) {
@@ -51,7 +51,7 @@ export default function InterviewsPanel({ request, state, onState, onNotice }) {
       <p className="meta-count">{cur.kind} · pergunta {cur.index + 1} de {cur.questions.length}{cur.question.stage ? ` · ${cur.question.stage}` : ''}</p>
       <blockquote className="interview-question">{cur.question.prompt}</blockquote>
       <label htmlFor="answer"><b>Sua resposta</b></label>
-      <textarea id="answer" rows={8} maxLength={data.max_chars} value={text} onChange={(e) => setText(e.target.value)} placeholder="Responda ao tema, cite números, dê prazo e responsável, com tom respeitoso." />
+      <textarea id="answer" rows={8} maxLength={data.max_chars} value={text} onChange={(e) => setText(e.target.value)} placeholder="Explique o que muda, com que instrumento do seu cargo, em que prazo e com que dados. Se a pergunta fugir da sua competência, diga quem decide e o que você faz." />
       <small className="meta-count">Mínimo de 40 caracteres; limite de {data.max_chars}. Você escreveu {text.trim().length}. Tamanho sugerido para esta etapa: cerca de {cur.question.suggested_chars} caracteres (um debate real dá poucos minutos por fala; respostas mais longas não ganham pontos por tamanho).</small>
       <button className="primary-button" type="submit" disabled={busy || text.trim().length < 40}>{busy ? 'Enviando…' : 'Responder'}</button>
     </form>}
@@ -59,6 +59,7 @@ export default function InterviewsPanel({ request, state, onState, onNotice }) {
     {feedback && <div className="interview-feedback" role="status">
       <h3 className="subheading">Avaliação da última resposta: {feedback.total} de 100</h3>
       <ul>{Object.entries(feedback.criteria).map(([k, v]) => <li key={k}><b>{CRITERIA[k]}</b> {v}/25 — {feedback.feedback[k]}</li>)}</ul>
+      {feedback.read && (feedback.read.acoes.length > 0 || feedback.read.indicadores.length > 0) && <p className="meta-count">O que o jogo entendeu da sua resposta: {feedback.read.acoes.length > 0 ? `ações (${feedback.read.acoes.join('; ')})` : 'nenhuma ação do cargo'}{feedback.read.fora_do_cargo.length > 0 ? `; fora do seu cargo (${feedback.read.fora_do_cargo.join('; ')})` : ''}; indicadores tocados: {feedback.read.indicadores.join(', ') || 'nenhum'}.</p>}
     </div>}
 
     {summary && summary.transcript && <div className="interview-summary"><h3 className="subheading">Resultado do debate</h3>
