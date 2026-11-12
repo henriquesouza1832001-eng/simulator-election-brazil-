@@ -200,7 +200,7 @@ def _disposition(member: dict[str, Any], state: dict[str, Any], instrument: str,
     except Exception:
         pass
     ministry_bonus = 0.04 * min(3, _party_ministries(state).get(member["party"], 0))
-    p = 0.12 + 0.55 * support + 0.18 * (member["loyalty"] - 0.5) + 0.08 * (approval - 0.5)
+    p = 0.235 + 0.55 * support + 0.18 * (member["loyalty"] - 0.5) + 0.08 * (approval - 0.5)
     p += ministry_bonus + INSTRUMENT_PENALTY.get(instrument, 0.0)
     # Afinidade ideológica com o conteúdo da medida (produto escalar nos eixos que a medida toca).
     weights = bill_axes or {}

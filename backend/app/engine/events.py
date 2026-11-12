@@ -150,6 +150,9 @@ def _add_news(state: dict[str, Any], event: dict[str, Any]) -> None:
     state["event_history"] = state["event_history"][-100:]
 
 
+CRISIS_MAX_DAYS = 180
+
+
 def _adjust(target: dict[str, Any], key: str, delta: float, lower: float = 0, upper: float = 100) -> None:
     target[key] = round(max(lower, min(upper, float(target.get(key, 50)) + delta)), 2)
 
@@ -199,6 +202,14 @@ def process_events(state: dict[str, Any], before: date, after: date) -> list[str
             for key, monthly_delta in crisis.get("regional_monthly_effects", {}).items():
                 maximum = 150 if key == "economic_activity" else 100
                 _adjust(region, key, monthly_delta * scale, 0, maximum)
+        # Uma crise sem resposta não drena o país para sempre: depois de seis meses ela perde força
+        # (a pressão se dissipa), mas deixa o registro de que o governo não agiu.
+        if int(crisis.get("days_active", 0)) >= CRISIS_MAX_DAYS:
+            crisis["status"] = "expired"
+            for entry in state.get("event_history", []):
+                if entry.get("id") == crisis["id"]:
+                    entry["outcome"] = "encerrada sem resposta do governo"
+            messages.append(f"A crise perdeu força depois de seis meses sem resposta: {crisis['title'].lower()}.")
     return messages
 
 

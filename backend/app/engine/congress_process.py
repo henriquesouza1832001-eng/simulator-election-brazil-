@@ -24,7 +24,7 @@ OFFERS = {
     "cargo": {"label": "Oferecer cargo na administração", "relation": 0.18, "integrity": -0.3, "text": "Pesa mais, mas arranha a integridade."},
     "concessao": {"label": "Aceitar concessão no texto", "relation": 0.10, "dilution": 0.9, "text": "Reduz em 10% os efeitos do projeto."},
 }
-COMMITTEE_BASE = 0.58
+COMMITTEE_BASE = 0.80
 
 
 def _roll(seed: str) -> float:
@@ -141,6 +141,12 @@ def request_urgency(state: dict[str, Any], bill_id: str) -> dict[str, Any]:
 
 def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
     msgs: list[str] = []
+    # a base no Congresso volta devagar ao ponto de equilíbrio: reações passam e alianças se refazem (3% ao mês)
+    metrics = state.get("metrics", {})
+    if "congress_support" in metrics:
+        elapsed = max(0, (after - before).days)
+        cs = float(metrics["congress_support"])
+        metrics["congress_support"] = round(cs + (50.0 - cs) * min(1.0, 0.03 * elapsed / 30), 2)
     calendar = state.get("legislative_calendar", {})
     keep = []
     for bill in calendar.get("pending_bills", []):
