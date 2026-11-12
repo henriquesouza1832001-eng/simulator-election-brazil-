@@ -189,6 +189,9 @@ def respond(state: dict[str, Any], crisis_id: str, option_id: str) -> dict[str, 
         raise ValueError("Opção inválida.")
     _apply(state, option["effects"])
     hook = option.get("hook") or {}
+    if hook.get("veto"):
+        from . import congress_agenda
+        congress_agenda.schedule_override(state, hook["veto"], hook["scope"], hook.get("author", ""))
     if hook.get("stf_risk_factor") and hook.get("case"):
         from . import regulators
         regulators.adjust_case_risk(state, hook["case"], float(hook["stf_risk_factor"]))

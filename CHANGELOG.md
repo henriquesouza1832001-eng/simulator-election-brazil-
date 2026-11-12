@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20 — 12 nov. 2026 (regras calibradas, veto e histórico)
+
+- Calibração por simulação de mandatos de 48 meses: o Congresso passa a aprovar projetos com base padrão (antes quase nenhum), crises sem resposta expiram em seis meses e a base volta ao equilíbrio.
+- Sanção, veto parcial ou total e derrubada de veto para projetos que nascem no Congresso, com sanção tácita.
+- Aba Histórico com séries mensais dos indicadores e decisões.
+
 ## 0.19 — 12 nov. 2026 (contexto, funcionamento do país e tramitação)
 
 - Respostas avaliadas por contexto: relevância causal pelo grafo de indicadores, viabilidade e competência do cargo (promessas impossíveis perdem pontos), dados e compromisso/tom; o jogo mostra o que entendeu da resposta.

@@ -133,6 +133,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     appointment_messages = advance_appointments(state, before, after)
     messages = work_messages + diplomacy_messages + appointment_messages + process_events(state, before, after)
     messages.extend(process_election(state, before, after))
+    from .congress_agenda import tick as agenda_tick
+    messages.extend(agenda_tick(state, before, after))
     from .congress_process import tick as congress_tick
     messages.extend(congress_tick(state, before, after))
     messages.extend(process_legislation(state, before, after))

@@ -61,3 +61,9 @@
 .bill-stages li.stage-concluída, .bill-stages li.stage-aprovada { background: rgba(60,160,110,.2); }
 .bill-stages li.stage-rejeitada { background: rgba(217,83,79,.25); }
 .bill-stages li small { opacity: .8; }
+
+.history-grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .6rem; }
+.history-grid li { border: 1px solid rgba(128,128,128,.35); border-radius: 10px; padding: .6rem .8rem; display: grid; gap: .2rem; }
+.history-grid li span { font-size: .85rem; opacity: .85; }
+.history-grid small { opacity: .75; }
+.spark { width: 100%; height: 2.2rem; color: #6fd1a0; }

@@ -41,10 +41,14 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Perguntas que reproduzem o funcionamento do país** (`engine/question_bank.py`): nascem das alavancas reais de cada cargo no registro, dos valores atuais dos indicadores, da tramitação no Congresso (quórum e base) e de perguntas de competência (ex.: prefeito e Selic), em que a boa resposta reconhece o limite.
 - **Tramitação detalhada** (`engine/congress_process.py`, aba Política > Tramitação): etapas por comissão e CCJ, relator real, chance de passar nas comissões, perspectiva de voto por partido, negociação por bancada (emendas, cargo, concessão no texto), urgência constitucional e diluição do texto.
 
+- **Sanção, veto e derrubada de veto** (`engine/congress_agenda.py`): o Congresso aprova projetos próprios; o Presidente sanciona, veta em parte ou em tudo, ou deixa virar lei por sanção tácita em 21 dias; um veto volta ao plenário e a derrubada depende da base.
+- **Histórico do mandato** (aba Painel > Histórico): série mensal dos indicadores com gráficos e a lista de decisões e resultados.
+- **Calibração por simulação** (rodadas de 48 meses com estratégias passiva, ativa, populista e austera): a aprovação de projetos no Congresso estava em 0% com a base padrão e passou a cerca de 59% para um projeto neutro; crises sem resposta agora expiram em seis meses em vez de drenar o país por quatro anos; a base no Congresso volta ao equilíbrio (3% ao mês); as comissões arquivam cerca de um quarto dos projetos em condições normais.
+
 ## Lista de pendências do protótipo (revisão de 10 nov. 2026)
 Ainda faltam, em ordem de impacto:
 1. **Entrevistas e debates:** falta a pesquisa de opinião antes e depois, o oponente responder de volta, e perguntas geradas com apoio do Gemini a partir do aprendizado.
-3. **Congresso:** obstrução, destaques, veto e derrubada de veto, CPI em etapas e calendário de sessões (comissões, relator, urgência e negociação por bancada já existem para projetos do Presidente; falta para projetos de outros cargos).
+3. **Congresso:** obstrução, destaques, CPI em etapas e calendário de sessões (comissões, relator, urgência e negociação por bancada já existem para projetos do Presidente; falta para projetos de outros cargos).
 4. **Resultados eleitorais nominais completos** (votos por candidato, TSE) e jogar eleições passadas.
 5. **Confirmar em produção que as candidaturas do TSE foram importadas.** Verifique com `GET /api/data/tse/status`; se vier vazio, rode o importador no servidor (`python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`).
 6. **Histórico mais profundo de eventos, orçamento e obras** (previsto × realizado por mês e por função).

@@ -122,6 +122,11 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         record_choice(body.text, action, option)
         return {"saved": True}
 
+    @router.get("/api/congress/agenda")
+    def congress_agenda_overview() -> dict[str, Any]:
+        from .engine import congress_agenda
+        return congress_agenda.overview(get_state())
+
     @router.get("/api/congress/process")
     def congress_overview() -> dict[str, Any]:
         from .engine import congress_process

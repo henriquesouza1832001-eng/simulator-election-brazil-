@@ -26,6 +26,8 @@ import NewsPanel from './NewsPanel';
 import InterviewsPanel from './InterviewsPanel';
 import CompaniesPanel from './CompaniesPanel';
 import CongressProcessPanel from './CongressProcessPanel';
+import HistoryPanel from './HistoryPanel';
+import './territory.css';
 import TerritoryPanel from './TerritoryPanel';
 import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel, InfoPanel } from './MetaPanels';
 import './diplomacy.css';
@@ -444,7 +446,7 @@ export default function App() {
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ] : [
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
-    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Território'] },
+    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Território', 'Histórico'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
@@ -537,6 +539,8 @@ export default function App() {
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
       {activeTab === 'Território' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
+
+      {activeTab === 'Histórico' && <HistoryPanel request={request} state={state} />}
 
       {activeTab === 'Tramitação' && <CongressProcessPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
