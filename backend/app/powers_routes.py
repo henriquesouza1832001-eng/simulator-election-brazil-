@@ -16,7 +16,7 @@ class InterpretBody(BaseModel):
 
 
 class AnswerBody(BaseModel):
-    text: str = Field(min_length=4, max_length=1200)
+    text: str = Field(min_length=4, max_length=6000)
 
 
 class StartInterviewBody(BaseModel):

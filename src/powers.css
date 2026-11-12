@@ -41,3 +41,9 @@
 .interview-question { margin: 0; padding: .8rem 1rem; background: rgba(128,128,128,.12); border-radius: 10px; font-size: 1.05rem; }
 .interview-feedback, .interview-summary { margin: 1rem 0; padding: .8rem 1rem; border: 1px solid rgba(128,128,128,.35); border-radius: 10px; }
 .interview-feedback ul { padding-left: 1.1rem; }
+
+.debate-transcript { list-style: none; padding: 0; display: grid; gap: .4rem; max-height: 22rem; overflow-y: auto; }
+.debate-transcript li { display: grid; gap: .1rem; padding: .5rem .7rem; border-radius: 10px; background: rgba(128,128,128,.12); }
+.debate-transcript li.me { background: rgba(60,160,110,.18); }
+.debate-transcript li.mod { font-style: italic; opacity: .9; }
+.debate-transcript li b { font-size: .85rem; opacity: .8; }

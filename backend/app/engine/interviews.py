@@ -12,15 +12,16 @@ import re
 from datetime import date, timedelta
 from typing import Any
 
-from . import consequences, ledger
+from . import consequences, debate as deb, ledger
 from .action_mapper import plain, tokens
 
 KINDS = {
     "entrevista": {"label": "Entrevista", "questions": 3, "cooldown": 21, "text": "Conversa mais aberta; perguntas diretas sobre o momento do governo ou da campanha."},
     "sabatina": {"label": "Sabatina", "questions": 5, "cooldown": 45, "text": "Perguntas duras e sobre suas decisões anteriores; vale mais, arrisca mais."},
-    "debate": {"label": "Debate", "questions": 5, "cooldown": 30, "text": "Cinco etapas: abertura, dois blocos, direito de resposta e considerações finais. Só na campanha."},
+    "debate": {"label": "Debate", "questions": 7, "cooldown": 30, "text": "Formato de TV com mediador e dois adversários: abertura, dois blocos, réplica, pergunta ao adversário, resposta e considerações finais. Os adversários respondem, o mediador checa os dados e a pesquisa se move. Só na campanha."},
 }
 INSULTS = {"idiota", "burro", "mentiroso", "canalha", "ladrao", "vagabundo", "corrupto", "imbecil", "safado", "bandido"}
+MAX_CHARS = 6000
 PRAZO = re.compile(r"\b(em|ate|dentro de|nos proximos|ao longo de)\s+\w*\s*\d*\s*(dias|dia|semanas|meses|mes|ano|anos|trimestre)\b|\bprazo\b|\bmeta\b")
 RESPONSAVEL = re.compile(r"\b(secretaria|ministerio|prefeitura|governo|comite|orgao|agencia|controladoria|tribunal|congresso|camara|comissao)\b")
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
@@ -115,6 +116,8 @@ def build_questions(state: dict[str, Any], kind: str) -> list[dict[str, Any]]:
     pool = sorted(pool, key=lambda q: _roll(seed + q["prompt"][:20]))
     n = KINDS[kind]["questions"]
     if kind == "debate":
+        return _debate_steps(state, ctx, pool)
+    if kind == "debate_legacy":
         facts = _fact_questions(state, ctx) or pool
         themes = (facts + pool)[:2] or [{"topic": "projeto de governo", "terms": ["governo", "proposta", "prioridade"], "fact": None, "prompt": "Qual é a sua prioridade central e como será financiada?"}]
         opp = _opponent(state)
@@ -134,6 +137,62 @@ def build_questions(state: dict[str, Any], kind: str) -> list[dict[str, Any]]:
     for i in range(n):
         out.append(dict(pool[i % len(pool)]))
     return out
+
+
+def _debate_steps(state: dict[str, Any], ctx: dict[str, Any], pool: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    facts = _fact_questions(state, ctx) or pool
+    default = {"topic": "projeto de governo", "terms": ["governo", "proposta", "prioridade"], "fact": None, "prompt": "Qual é a sua prioridade central e como será financiada?"}
+    themes = (facts + pool)[:2] or [default]
+    t2 = themes[1] if len(themes) > 1 else themes[0]
+    return [
+        {"stage": "Abertura", "topic": "projeto", "terms": ["governo", "proposta", "prioridade", "compromisso"], "fact": None,
+         "prompt": "Mediador: cada candidato tem até um minuto. Apresente-se, diga a sua prioridade e um compromisso que pode ser cobrado."},
+        {"stage": "Bloco 1", **themes[0], "prompt": "Mediador: primeiro bloco temático. " + themes[0]["prompt"]},
+        {"stage": "Réplica", "topic": "réplica", "terms": ["resposta", "dados", "proposta", "plano"], "fact": None, "prompt": "(preenchido após o bloco 1)"},
+        {"stage": "Bloco 2", **t2, "prompt": "Mediador: segundo bloco temático. " + t2["prompt"]},
+        {"stage": "Pergunta ao adversário", "topic": "pergunta", "terms": ["pergunta", "proposta", "plano", "dado", "como"], "fact": None,
+         "prompt": "Mediador: agora o senhor ou a senhora pergunta ao adversário. Faça uma pergunta objetiva sobre o plano ou o histórico dele."},
+        {"stage": "Resposta ao adversário", "topic": "resposta", "terms": ["resposta", "plano", "dados", "proposta"], "fact": None, "prompt": "(preenchido após a pergunta)"},
+        {"stage": "Considerações finais", "topic": "compromisso", "terms": ["compromisso", "prazo", "povo", "governo"], "fact": None,
+         "prompt": "Mediador: considerações finais. Diga o que o eleitor pode cobrar de você e em que prazo."},
+    ]
+
+
+def _weakest(criteria: dict[str, float]) -> str:
+    return min(criteria, key=lambda k: criteria[k])
+
+
+def _after_debate_answer(state: dict[str, Any], cur: dict[str, Any], q: dict[str, Any], text: str, result: dict[str, Any]) -> None:
+    """Falas do mediador e dos adversários depois da fala do jogador; prepara o prompt da próxima etapa."""
+    seed = f"{state.get('campaign_seed', 1)}:{cur['id']}"
+    tr = cur["transcript"]
+    opps = cur["opponents"]
+    stage = q["stage"]
+    tr.append({"who": "Você", "stage": stage, "text": text.strip()[:600]})
+    check = deb.fact_check(text, q.get("fact"))
+    if check:
+        tr.append({"who": "Mediador", "stage": stage, "text": check})
+        result["total"] = max(0.0, round(result["total"] - 10, 1))
+        result["feedback"]["dados"] += " Checagem do mediador: dado divergente (−10)."
+    for o in opps:
+        cur["opp_scores"].setdefault(o["party"], []).append(deb.opponent_score(o, stage, seed))
+    nxt = cur["questions"][cur["index"] + 1] if cur["index"] + 1 < len(cur["questions"]) else None
+    if stage in {"Abertura", "Bloco 1", "Bloco 2", "Considerações finais"}:
+        for o in opps:
+            tr.append({"who": o["name"], "stage": stage, "text": deb._line(o, stage, q["topic"], q.get("fact"), seed)})
+    if stage == "Bloco 1" and nxt:
+        last = next((e for e in (state.get("ledger") or []) if e.get("source") in {"presidencia", "cargo"} and e.get("result") is not None), None)
+        line = deb.attack(opps[0], _weakest(result["criteria"]), last)
+        tr.append({"who": opps[0]["name"], "stage": "Réplica", "text": line.split(": ", 1)[1]})
+        nxt["prompt"] = f"Direito de resposta. {line} Responda."
+    if stage == "Réplica":
+        tr.append({"who": "Mediador", "stage": stage, "text": "Mediador: o tempo de réplica terminou. Vamos ao segundo bloco."})
+    if stage == "Pergunta ao adversário" and nxt:
+        o = opps[1 % len(opps)]
+        tr.append({"who": o["name"], "stage": stage, "text": f"({o['party']}) Respondo com o meu plano: " + deb._line(o, "Bloco 1", q["topic"], None, seed).split(") ", 1)[1]})
+        quest = f"{o['name']} pergunta: em que ponto o seu plano difere do que já foi tentado e quanto ele custa?"
+        tr.append({"who": o["name"], "stage": "Resposta ao adversário", "text": quest.split(": ", 1)[1]})
+        nxt["prompt"] = f"Pergunta do adversário. {quest} Responda com dados."
 
 
 def score_answer(text: str, q: dict[str, Any]) -> dict[str, Any]:
@@ -189,7 +248,8 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
             reason = f"Disponível em {wait} dia(s)."
         kinds.append({"key": key, "label": info["label"], "text": info["text"], "questions": info["questions"], "available": reason is None, "reason": reason})
     cur = i["current"]
-    return {"kinds": kinds, "current": cur and {**cur, "question": cur["questions"][cur["index"]] if cur["index"] < len(cur["questions"]) else None},
+    question = cur["questions"][cur["index"]] if cur and cur["index"] < len(cur["questions"]) else None
+    return {"kinds": kinds, "max_chars": MAX_CHARS, "current": cur and {**cur, "question": question and {**question, "suggested_chars": deb.TEMPO.get(question.get("stage"), 700)}},
             "history": i["history"][:10],
             "note": "A nota usa regras públicas (tema, dados, compromisso e tom). Textos de pergunta usam só fatos do jogo."}
 
@@ -202,7 +262,21 @@ def start(state: dict[str, Any], kind: str) -> dict[str, Any]:
         raise PermissionError(info["reason"])
     i = _st(state)
     i["current"] = {"id": f"{kind}-{state['date']}-{len(i['history']) + 1}", "kind": kind, "index": 0, "questions": build_questions(state, kind), "answers": [], "started": state["date"]}
+    if kind == "debate":
+        cur = i["current"]
+        cur["opponents"] = deb.pick_opponents(state)
+        cur["opp_scores"] = {}
+        cur["poll_before"] = _poll(state)
+        cur["transcript"] = [{"who": "Mediador", "stage": "Abertura", "text": f"Mediador: boa noite. Estão no palco você, {cur['opponents'][0]['name']} e {cur['opponents'][1]['name']}. Cada fala tem tempo marcado; o tempo sugerido aparece em cada etapa."}]
     return overview(state)
+
+
+def _poll(state: dict[str, Any]) -> float:
+    career = state.get("career") or {}
+    if career.get("mode"):
+        return round(float(career.get("poll_support", 0)), 1)
+    from .campaign import ensure_campaign_state
+    return round(50 + float(ensure_campaign_state(state).get("momentum", 0)) * 2, 1)
 
 
 def answer(state: dict[str, Any], text: str) -> dict[str, Any]:
@@ -212,9 +286,13 @@ def answer(state: dict[str, Any], text: str) -> dict[str, Any]:
         raise PermissionError("Nenhuma sessão em andamento.")
     if len(text.strip()) < 40:
         raise ValueError("Escreva ao menos 40 caracteres para responder.")
+    if len(text) > MAX_CHARS:
+        raise ValueError(f"A resposta passa de {MAX_CHARS} caracteres.")
     q = cur["questions"][cur["index"]]
     result = score_answer(text, q)
-    cur["answers"].append({"stage": q.get("stage"), "topic": q["topic"], "prompt": q["prompt"], "text": text.strip()[:800], **result})
+    if cur["kind"] == "debate":
+        _after_debate_answer(state, cur, q, text, result)
+    cur["answers"].append({"stage": q.get("stage"), "topic": q["topic"], "prompt": q["prompt"], "text": text.strip()[:6000], **result})
     cur["index"] += 1
     if cur["index"] < len(cur["questions"]):
         return {"done": False, "feedback": result, "overview": overview(state)}
@@ -252,7 +330,21 @@ def _finish(state: dict[str, Any], cur: dict[str, Any]) -> dict[str, Any]:
                                     "regular": "Participação irregular em " + KINDS[kind]["label"].lower(), "fraca": "Desempenho fraco em " + KINDS[kind]["label"].lower()}[g],
                        "body": f"Na simulação, a avaliação final foi {avg:.0f} pontos. Comentaristas destacam pontos fortes e lacunas nas respostas.",
                        "tone": "positivo" if avg >= 55 else "negativo", "action_id": kind})
-    summary = {"id": cur["id"], "kind": kind, "avg": avg, "grade": g, "effects": applied, "date": state["date"], "ledger_id": entry["id"],
+    extra: dict[str, Any] = {}
+    if kind == "debate":
+        opp_avgs = {o["name"]: round(sum(cur["opp_scores"].get(o["party"], [60])) / max(len(cur["opp_scores"].get(o["party"], [60])), 1), 1) for o in cur["opponents"]}
+        move = deb.poll_move(avg, list(opp_avgs.values()))
+        if career.get("mode") and career.get("phase") == "campaign":
+            career["poll_support"] = round(max(0, min(100, float(career.get("poll_support", 0)) + move)), 2)
+        else:
+            from .campaign import ensure_campaign_state
+            camp = ensure_campaign_state(state)
+            camp["momentum"] = round(max(-10, min(10, float(camp.get("momentum", 0)) + move / 2)), 2)
+        winner = max([("Você", avg)] + [(n, v) for n, v in opp_avgs.items()], key=lambda t: t[1])[0]
+        extra = {"poll_before": cur.get("poll_before"), "poll_after": _poll(state), "opponent_scores": opp_avgs, "winner": winner, "poll_move": move,
+                 "transcript": cur["transcript"]}
+        applied["pesquisa"] = move
+    summary = {"id": cur["id"], "kind": kind, "avg": avg, "grade": g, "effects": applied, "date": state["date"], "ledger_id": entry["id"], **extra,
                "answers": [{"stage": a.get("stage"), "topic": a["topic"], "total": a["total"]} for a in cur["answers"]]}
     i["history"].insert(0, summary)
     del i["history"][20:]

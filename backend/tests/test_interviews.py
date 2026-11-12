@@ -57,17 +57,39 @@ class InterviewsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             interviews.answer(s, "curto")
 
-    def test_debate_has_five_stages_in_campaign_and_moves_momentum(self):
+    def test_debate_is_a_real_format_with_opponents_checks_and_poll(self):
         s = career_state("vereador")
-        s["career"].update(phase="campaign", momentum=0.0, poll_support=30.0, opponents=[{"name": "Candidato(a) do PL", "party": "PL"}])
+        s["career"].update(phase="campaign", momentum=0.0, poll_support=30.0, opponents=[{"name": "Candidato(a) do PL", "party": "PL"}, {"name": "Candidato(a) do PT", "party": "PT"}])
         interviews.start(s, "debate")
-        stages = [q["stage"] for q in s["interviews"]["current"]["questions"]]
-        self.assertEqual(stages, ["Abertura", "Bloco 1", "Direito de resposta", "Bloco 2", "Considerações finais"])
-        self.assertIn("Candidato(a) do PL", s["interviews"]["current"]["questions"][2]["prompt"])
+        cur = s["interviews"]["current"]
+        self.assertEqual([q["stage"] for q in cur["questions"]], ["Abertura", "Bloco 1", "Réplica", "Bloco 2", "Pergunta ao adversário", "Resposta ao adversário", "Considerações finais"])
+        self.assertEqual([o["party"] for o in cur["opponents"]], ["PL", "PT"])
+        self.assertEqual(cur["transcript"][0]["who"], "Mediador")
+        out = interviews.answer(s, GOOD)
+        self.assertTrue(any(t["who"] == "Candidato(a) do PL" for t in cur["transcript"]))   # adversário fala após a abertura
+        interviews.answer(s, GOOD)                                                         # bloco 1
+        replica = s["interviews"]["current"]["questions"][2]["prompt"]
+        self.assertIn("Direito de resposta", replica)                                       # ataque montado após o bloco 1
         for _ in range(5):
-            out = interviews.answer(s, GOOD)
+            out = interviews.answer(s, GOOD + " Pergunto: como o seu plano será financiado e em que prazo?")
+        self.assertTrue(out["done"])
+        summary = out["summary"]
+        self.assertEqual(set(summary["opponent_scores"]), {"Candidato(a) do PL", "Candidato(a) do PT"})
+        self.assertIn("poll_before", summary)
         self.assertGreater(s["career"]["momentum"], 0)
-        self.assertGreater(s["career"]["poll_support"], 30.0)
+        self.assertTrue(len(summary["transcript"]) > 8)
+
+    def test_fact_check_penalizes_wrong_numbers_and_long_answers_are_accepted(self):
+        from app.engine import debate
+        self.assertIsNotNone(debate.fact_check("a inflação está em 40% hoje", 4.5))
+        self.assertIsNone(debate.fact_check("a inflação está em 4,6% hoje", 4.5))
+        s = president()
+        interviews.start(s, "sabatina")
+        long_text = ("Vamos reduzir a inflação com juros responsáveis, a secretaria publica o plano em 90 dias. " * 40)[:5000]
+        out = interviews.answer(s, long_text)
+        self.assertFalse(out["done"])
+        with self.assertRaises(ValueError):
+            interviews.answer(s, "x" * 6001)
 
 
 if __name__ == "__main__":
