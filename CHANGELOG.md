@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17 — 12 nov. 2026 (entrevistas, sabatinas e debates)
+
+- Nova aba Entrevistas: entrevista (3 perguntas), sabatina (5, com cobrança das suas decisões) e debate em cinco etapas na campanha. Perguntas nascem de fatos do jogo; a nota vem de regras públicas (tema, dados, compromisso, tom) com feedback por critério; o resultado altera aprovação ou confiança, momentum, imprensa e o livro-razão.
+
 ## 0.16 — 10 nov. 2026 (texto livre, reações e respostas aos reguladores)
 
 - Caixa "Diga o que quer fazer" na aba Competências: o motor mapeia a frase para ações do cargo (porte de arma, Alcântara, BRICS, rodoanel, privatizações etc.), identifica a opção (rodovia, empresa), pergunta o que falta e aprende com as escolhas confirmadas. O Gemini só entra se houver ambiguidade e apenas escolhe entre candidatos e sugere perguntas.

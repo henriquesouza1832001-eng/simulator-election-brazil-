@@ -31,10 +31,11 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Mapeador de texto para ações** (`engine/action_mapper.py`, `ai/mapper_ai.py`): regras locais, sinônimos e aprendizado das escolhas confirmadas; o Gemini entra por último, só para desempatar entre candidatos e sugerir até duas perguntas, e sua saída é validada contra a lista de candidatos.
 - **Reações persistentes e crises encadeadas** (`engine/consequences.py`): imprensa, bancadas (por posição ideológica), mercado e crises que exigem resposta com prazo; reguladores usam o mesmo mecanismo (defesa no STF, resposta a inquérito e a auditoria).
 
+- **Entrevistas, sabatinas e debates em etapas** (`engine/interviews.py`, aba Agenda > Entrevistas): perguntas montadas com fatos do jogo (indicadores, sua última decisão com previsto × realizado, crises e processos), resposta livre avaliada por tema, dados, compromisso e tom com feedback por critério, e efeito persistente em aprovação/confiança, momentum, notícia e livro-razão. Debate em cinco etapas (abertura, dois blocos, direito de resposta, considerações finais) só na campanha.
+
 ## Lista de pendências do protótipo (revisão de 10 nov. 2026)
 Ainda faltam, em ordem de impacto:
-1. **Sabatinas e entrevistas** com avaliação clara (coerência, dados, tom) e efeito persistente.
-2. **Debates em etapas** (abertura, blocos, direito de resposta, finais) com pesquisa antes e depois.
+1. **Entrevistas e debates:** falta a pesquisa de opinião antes e depois, o oponente responder de volta, e perguntas geradas com apoio do Gemini a partir do aprendizado.
 3. **Alianças e votação legislativa detalhadas:** comissões, relator, emendas, urgência, negociação por bancada.
 4. **Resultados eleitorais nominais completos** (votos por candidato, TSE) e jogar eleições passadas.
 5. **Confirmar em produção que as candidaturas do TSE foram importadas.** Verifique com `GET /api/data/tse/status`; se vier vazio, rode o importador no servidor (`python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`).

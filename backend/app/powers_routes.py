@@ -15,6 +15,14 @@ class InterpretBody(BaseModel):
     text: str = Field(min_length=4, max_length=400)
 
 
+class AnswerBody(BaseModel):
+    text: str = Field(min_length=4, max_length=1200)
+
+
+class StartInterviewBody(BaseModel):
+    kind: str = Field(min_length=3, max_length=20)
+
+
 class PowerBody(BaseModel):
     action: str = Field(min_length=3, max_length=60)
     option: str | None = Field(default=None, max_length=80)
@@ -97,6 +105,37 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         from .learning_actions import record_choice
         record_choice(body.text, action, option)
         return {"saved": True}
+
+    @router.get("/api/interviews")
+    def interviews_overview() -> dict[str, Any]:
+        from .engine import interviews
+        return interviews.overview(get_state())
+
+    @router.post("/api/interviews/start")
+    def interviews_start(body: StartInterviewBody) -> dict[str, Any]:
+        from .engine import interviews
+        state = get_state()
+        try:
+            out = interviews.start(state, body.kind)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        save(state)
+        return out
+
+    @router.post("/api/interviews/answer")
+    def interviews_answer(body: AnswerBody) -> dict[str, Any]:
+        from .engine import interviews
+        state = get_state()
+        try:
+            out = interviews.answer(state, body.text)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        save(state)
+        return {**out, "state": public(state)}
 
     @router.get("/api/consequences")
     def consequences_overview() -> dict[str, Any]:

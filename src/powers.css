@@ -35,3 +35,9 @@
 .mapper-match small { display: block; }
 .mapper-question { font-weight: 600; }
 @media (max-width: 760px) { .mapper-match { flex-direction: column; } }
+
+.interview-box { display: grid; gap: .5rem; margin: 1rem 0; }
+.interview-box textarea { width: 100%; min-height: 8rem; font: inherit; padding: .6rem; }
+.interview-question { margin: 0; padding: .8rem 1rem; background: rgba(128,128,128,.12); border-radius: 10px; font-size: 1.05rem; }
+.interview-feedback, .interview-summary { margin: 1rem 0; padding: .8rem 1rem; border: 1px solid rgba(128,128,128,.35); border-radius: 10px; }
+.interview-feedback ul { padding-left: 1.1rem; }
