@@ -9,10 +9,10 @@ const OPTIONS = [
 
 function Spark({ values }) {
   const pts = values.filter((v) => Number.isFinite(v));
-  if (pts.length < 2) return <svg className="spark" viewBox="0 0 120 32" role="img" aria-label="Sem série suficiente"><line x1="0" y1="16" x2="120" y2="16" stroke="currentColor" strokeOpacity=".3" /></svg>;
+  if (pts.length < 2) return <svg className="spark" viewBox="0 0 120 32" preserveAspectRatio="none" role="img" aria-label="Sem série suficiente"><line x1="0" y1="16" x2="120" y2="16" stroke="currentColor" strokeOpacity=".3" /></svg>;
   const min = Math.min(...pts), max = Math.max(...pts), span = max - min || 1;
   const d = pts.map((v, i) => `${i ? 'L' : 'M'}${(i / (pts.length - 1)) * 120},${30 - ((v - min) / span) * 28}`).join(' ');
-  return <svg className="spark" viewBox="0 0 120 32" role="img" aria-label={`De ${pts[0]} a ${pts[pts.length - 1]}`}><path d={d} fill="none" stroke="currentColor" strokeWidth="2" /></svg>;
+  return <svg className="spark" viewBox="0 0 120 32" preserveAspectRatio="none" role="img" aria-label={`De ${pts[0]} a ${pts[pts.length - 1]}`}><path d={d} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>;
 }
 
 export default function HistoryPanel({ request, state }) {
@@ -40,7 +40,6 @@ export default function HistoryPanel({ request, state }) {
         return <li key={k}><span>{l}</span><b>{fmt(last)}<small> {u}</small></b><Spark values={vals} /><small>{series[0].month} a {series[series.length - 1].month} · {last - first >= 0 ? '+' : ''}{fmt(last - first)} no período</small></li>;
       })}</ul>}
     <h3 className="subheading">Decisões e resultados</h3>
-    {ledger.length === 0 ? <p className="meta-status">Nenhuma decisão registrada ainda.</p> : <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Data</th><th>Decisão</th><th>Situação</th><th>Custo</th></tr></thead>
-      <tbody>{ledger.slice(0, 25).map((e) => <tr key={e.id}><td>{e.date}</td><td>{e.title}</td><td>{e.status}</td><td>{e.cost || '—'}</td></tr>)}</tbody></table></div>}
+    {ledger.length === 0 ? <p className="meta-status">Nenhuma decisão registrada ainda.</p> : <ul className="meta-notes ledger-brief">{ledger.slice(0, 25).map((e) => <li key={e.id}><b>{e.date}</b> — {e.title} <small>({e.status}{e.cost ? ` · ${e.cost}` : ''})</small></li>)}</ul>}
   </section>;
 }

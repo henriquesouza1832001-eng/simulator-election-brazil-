@@ -22,7 +22,8 @@ function effectText(effects) {
 export default function PowersPanel({ request, state, onState, onNotice }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [domain, setDomain] = useState('todos');
+  const [domain, setDomain] = useState('');
+  const [shown, setShown] = useState(8);
   const [options, setOptions] = useState({});
   const [busy, setBusy] = useState('');
   const [ledger, setLedger] = useState([]);
@@ -82,8 +83,10 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   if (error) return <section className="panel"><p className="meta-status meta-error" role="alert">{error}</p></section>;
   if (!data) return <section className="panel"><p className="meta-status" role="status">Carregando…</p></section>;
   const { role } = data;
-  const actions = (data.actions || []).filter((a) => domain === 'todos' || a.domain === domain);
   const domains = [...new Set((data.actions || []).map((a) => a.domain))];
+  const activeDomain = domain || domains[0] || 'todos';
+  const allActions = (data.actions || []).filter((a) => activeDomain === 'todos' || a.domain === activeDomain);
+  const actions = allActions.slice(0, shown);
 
   return <section className="panel powers-page">
     <h2>{role.label}: o que cabe a este papel</h2>
@@ -141,8 +144,8 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
 
     {data.actions?.length > 0 && <>
       <div className="powers-filter" role="group" aria-label="Áreas">
-        <button className={domain === 'todos' ? 'meta-tab active' : 'meta-tab'} onClick={() => setDomain('todos')}>Todas</button>
-        {domains.map((d) => <button key={d} className={domain === d ? 'meta-tab active' : 'meta-tab'} onClick={() => setDomain(d)}>{DOMAINS[d] || d}</button>)}
+        {domains.map((d) => <button key={d} className={activeDomain === d ? 'meta-tab active' : 'meta-tab'} aria-pressed={activeDomain === d} onClick={() => { setDomain(d); setShown(8); }}>{DOMAINS[d] || d}</button>)}
+        <button className={activeDomain === 'todos' ? 'meta-tab active' : 'meta-tab'} onClick={() => { setDomain('todos'); setShown(8); }}>Todas</button>
       </div>
       <ul className="powers-list">{actions.map((a) => {
         const [kind, rule] = APPROVAL[a.approval];
@@ -164,6 +167,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
           </div>}
         </li>;
       })}</ul>
+      {allActions.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 8)}>Mostrar mais ({allActions.length - shown})</button>}
       {data.history?.length > 0 && <><h3 className="subheading">Atos recentes</h3><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{h.date} — {h.title}</li>)}</ul></>}
     </>}
     {ledger.length > 0 && <>
