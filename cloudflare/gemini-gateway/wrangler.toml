@@ -1,0 +1,12 @@
+name = "civiciclo-gemini-gateway"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+workers_dev = true
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+RATE_PER_MINUTE = "60"
+
+# Segredos (NÃO ficam neste arquivo). Defina com:
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put GATEWAY_TOKEN

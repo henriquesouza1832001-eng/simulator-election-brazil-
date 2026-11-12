@@ -13,6 +13,8 @@ from typing import Any
 
 import httpx
 
+from . import gateway
+
 logger = logging.getLogger("civiciclo.narrator")
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,80}$")
 DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
@@ -63,6 +65,10 @@ def _acceptable(output: str, facts: dict[str, Any]) -> bool:
 async def narrate(facts: dict[str, Any]) -> dict[str, str]:
     key = os.getenv("GEMINI_API_KEY", "").strip()
     fallback = {"text": local(facts), "source": "local"}
+    if gateway.configured():
+        via = await gateway.post("/v1/narrate", {"facts": facts})
+        text = (via or {}).get("text")
+        return {"text": text.strip(), "source": "gemini"} if isinstance(text, str) and _acceptable(text.strip(), facts) else fallback
     if not key:
         return fallback
     model = os.getenv("GEMINI_MODEL", DEFAULT_MODEL).strip()

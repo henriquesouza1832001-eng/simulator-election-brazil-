@@ -112,11 +112,18 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         return interviews.overview(get_state())
 
     @router.post("/api/interviews/start")
-    def interviews_start(body: StartInterviewBody) -> dict[str, Any]:
+    async def interviews_start(body: StartInterviewBody) -> dict[str, Any]:
+        from .ai.question_ai import generate
         from .engine import interviews
         state = get_state()
+        extra: list[dict[str, str]] = []
+        source = "local"
+        if body.kind in {"entrevista", "sabatina"}:
+            made = await generate(interviews.facts_for_ai(state), interviews.weak_topics(state), body.kind, _office(state)[0], 2)
+            extra, source = made["questions"], made["source"]
         try:
-            out = interviews.start(state, body.kind)
+            out = interviews.start(state, body.kind, extra)
+            out["question_source"] = source
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except PermissionError as exc:

@@ -254,7 +254,23 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
             "note": "A nota usa regras públicas (tema, dados, compromisso e tom). Textos de pergunta usam só fatos do jogo."}
 
 
-def start(state: dict[str, Any], kind: str) -> dict[str, Any]:
+def facts_for_ai(state: dict[str, Any]) -> list[dict[str, str]]:
+    """Fatos que o gerador de perguntas pode usar: cada texto traz os números que a pergunta poderá citar."""
+    ctx = _context(state)
+    pool = _fact_questions(state, ctx) + _decision_questions(state) + _institution_questions(state)
+    return [{"topic": q["topic"], "text": q["prompt"]} for q in pool][:8]
+
+
+def weak_topics(state: dict[str, Any]) -> list[str]:
+    """Aprendizado: temas em que as últimas sessões renderam menos de 55 pontos."""
+    scores: dict[str, list[float]] = {}
+    for h in _st(state)["history"][:5]:
+        for a in h.get("answers", []):
+            scores.setdefault(a["topic"], []).append(float(a["total"]))
+    return [t for t, v in sorted(scores.items(), key=lambda kv: sum(kv[1]) / len(kv[1])) if sum(v) / len(v) < 55][:3]
+
+
+def start(state: dict[str, Any], kind: str, extra: list[dict[str, str]] | None = None) -> dict[str, Any]:
     if kind not in KINDS:
         raise ValueError("Tipo desconhecido.")
     info = next(k for k in overview(state)["kinds"] if k["key"] == kind)
@@ -262,6 +278,10 @@ def start(state: dict[str, Any], kind: str) -> dict[str, Any]:
         raise PermissionError(info["reason"])
     i = _st(state)
     i["current"] = {"id": f"{kind}-{state['date']}-{len(i['history']) + 1}", "kind": kind, "index": 0, "questions": build_questions(state, kind), "answers": [], "started": state["date"]}
+    if extra and kind != "debate":
+        qs = i["current"]["questions"]
+        for k, item in enumerate(extra[: max(1, len(qs) // 2)]):
+            qs[len(qs) - 1 - k] = {"topic": item["topic"], "terms": tokens(item["topic"] + " " + item["prompt"])[:6], "fact": None, "prompt": item["prompt"], "ai": True}
     if kind == "debate":
         cur = i["current"]
         cur["opponents"] = deb.pick_opponents(state)

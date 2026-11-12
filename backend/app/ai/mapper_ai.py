@@ -14,6 +14,8 @@ from typing import Any
 
 import httpx
 
+from . import gateway
+
 logger = logging.getLogger("civiciclo.mapper_ai")
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,80}$")
 DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
@@ -42,6 +44,11 @@ async def refine(text: str, candidates: list[dict[str, Any]], confirmed: list[di
     empty = {"choice": None, "questions": [], "source": "local"}
     key = os.getenv("GEMINI_API_KEY", "").strip()
     ids = [c["id"] for c in candidates]
+    if ids and gateway.configured():
+        via = await gateway.post("/v1/interpret-action", {"text": text[:400], "candidates": [{"id": c["id"], "title": c["title"]} for c in candidates[:8]],
+                                                           "confirmed": [{"texto": e["text"][:120], "id": e["action_id"]} for e in confirmed[:3]]})
+        out = validate(via, ids) if via else {"choice": None, "questions": []}
+        return {**out, "source": "gemini"} if (out["choice"] or out["questions"]) else empty
     if not key or not ids:
         return empty
     model = os.getenv("GEMINI_MODEL", DEFAULT_MODEL).strip()
