@@ -207,8 +207,11 @@ def _norm(text: str) -> str:
     return "".join(ch for ch in raw if unicodedata.category(ch) != "Mn")
 
 
-def _regular_election_day(office: str, after: date, minimum_year: int | None = None) -> date:
+def _regular_election_day(office: str, after: date, minimum_year: int | None = None, force_year: int | None = None) -> date:
     """Return the next simulated Brazilian regular-election date for an office."""
+    if force_year:  # eleição passada jogável: primeiro domingo de outubro do ano pedido
+        october_first = date(force_year, 10, 1)
+        return october_first + timedelta(days=(6 - october_first.weekday()) % 7)
     municipal = office in {"vereador", "prefeito"}
     anchor_year = 2028 if municipal else 2026
     cycle = 4
@@ -464,7 +467,7 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
 def start_career(state: dict[str, Any], office: str, state_code: str, municipality: str,
                  party: str, ideology: str, candidate_name: str,
                  character: dict[str, Any] | None = None,
-                 municipality_id: str | None = None) -> dict[str, Any]:
+                 municipality_id: str | None = None, election_year: int | None = None) -> dict[str, Any]:
     if office not in OFFICES:
         raise ValueError("Escolha um cargo eletivo disponível.")
     if state_code not in STATE_NAMES:
@@ -540,7 +543,7 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
         candidate_name = candidate_name.strip() or previous.get("candidate_name", "")
         party = party.strip() or previous.get("party", "")
         ideology = ideology or previous.get("ideology", "Centro")
-    election_day = _regular_election_day(office, today)
+    election_day = _regular_election_day(office, today, force_year=election_year)
     campaign_start = election_day - timedelta(days=90)
     inauguration = _inauguration_date(office, election_day)
     term_end = _term_end_date(office, inauguration, role["term_years"])
@@ -924,6 +927,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "campaign_territory": career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career["state_name"]),
         "municipality_id": career.get("municipality_id"), "municipality_profile": municipality_profile,
         "reference_election": _reference_election(career),
+        "historical_compare": _historical_compare(career),
         "campaign_team_location": ({
             "municipality_id": team_city_profile["ibge_code"], "name": team_city_profile["name"],
             "state_code": team_city_profile["state_code"], "macroregion": team_city_profile["macroregion"],
@@ -1220,6 +1224,14 @@ def _ensure_scaled_governance_budget(career: dict[str, Any], governance: dict[st
         "budget_population_reference_year": basis["reference_year"],
         "budget_scale_version": 1,
     })
+
+
+def _historical_compare(career: dict[str, Any]) -> dict[str, Any] | None:
+    try:
+        from .historical_play import compare
+        return compare(career)
+    except Exception:
+        return None
 
 
 def _reference_election(career: dict[str, Any]) -> dict[str, Any] | None:

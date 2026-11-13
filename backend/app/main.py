@@ -321,6 +321,7 @@ def _inauguration_gate(request: Request) -> JSONResponse | None:
         "/api/career/start",
         "/api/game/difficulty",
         "/api/powers/interpret",
+        "/api/historical/start",
         "/api/powers/confirm",
     }:
         return None
@@ -487,6 +488,45 @@ def restore_game_archive(archive_id: int) -> dict[str, Any]:
     snapshot = refresh_calendar_fields(snapshot)
     save_state(snapshot)
     return {"state": public_state(snapshot), "archives": list_archives()}
+
+
+class HistoricalStartRequest(CareerStartRequest):
+    year: int = Field(ge=2014, le=2024)
+
+
+@app.get("/api/historical/options")
+def historical_options() -> dict[str, Any]:
+    from .engine import historical_play
+    return {"years": {office: historical_play.eligible_years(office) for office in ("vereador", "prefeito", "deputado_estadual", "deputado_federal", "senador", "governador", "presidente")},
+            "note": "Só aparecem anos cujos votos do TSE foram importados no servidor (python -m app.data.tse_votes)."}
+
+
+@app.post("/api/historical/start")
+def begin_historical_election(request: HistoricalStartRequest) -> dict[str, Any]:
+    from .engine import historical_play
+    if request.year not in historical_play.eligible_years(request.office):
+        raise HTTPException(status_code=422, detail="Esta eleição passada não está disponível: os votos oficiais do ano ainda não foram importados para este cargo.")
+    token = set_campaign_id(uuid4().hex)
+    try:
+        state = new_game()
+        state["difficulty"] = request.difficulty
+        state["date"] = f"{request.year}-06-15"
+        state["career"] = {}
+        character = request.character.model_dump()
+        try:
+            start_career(state, request.office, request.state_code.upper(), request.municipality, request.party, request.ideology,
+                         request.candidate_name or character["name"], character, request.municipality_id, election_year=request.year)
+            historical_play.decorate(state, request.year, request.state_code.upper(), state["career"].get("municipality_id"))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        candidate_name = state.get("player_character", {}).get("name") or request.candidate_name or "Candidatura"
+        state["campaign_name"] = request.campaign_name.strip() or f"{candidate_name} · {state['career']['office_label']} {request.year}"
+        state.pop("setup_pending", None)
+        refresh_calendar_fields(state)
+        save_state(state)
+        return {"state": public_state(state), "year": request.year}
+    finally:
+        reset_campaign_id(token)
 
 
 @app.post("/api/career/start")

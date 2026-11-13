@@ -78,3 +78,8 @@
 .results-list { list-style: none; padding: 0; display: grid; gap: .3rem; }
 .results-list li { display: grid; grid-template-columns: 1fr auto; gap: .1rem .8rem; padding: .4rem .6rem; border-radius: 8px; background: rgba(128,128,128,.1); }
 .results-list li small { grid-column: 1 / -1; opacity: .75; }
+
+.historical-start { display: grid; gap: .5rem; margin: 1rem 0; padding: .8rem 1rem; border: 1px solid rgba(128,128,128,.35); border-radius: 10px; }
+.historical-start label { display: grid; gap: .2rem; font-size: .9rem; }
+.historical-start input, .historical-start select { min-height: 44px; }
+.historical-compare { margin: .8rem 0; padding: .7rem 1rem; }

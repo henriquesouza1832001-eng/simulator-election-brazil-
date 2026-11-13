@@ -6,7 +6,44 @@ const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', '
 const NOTICE = 'Voto simulado: não é enviado à Justiça Eleitoral e não altera uma eleição real.';
 const fmtDate = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR');
 
-export default function ElectorPanel({ request }) {
+function HistoricalStart({ request, year, office, uf, cityId, cityName, onState, onContinue }) {
+  const [opts, setOpts] = useState(null);
+  const [career, setCareer] = useState(null);
+  const [name, setName] = useState('');
+  const [party, setParty] = useState('');
+  const [ideology, setIdeology] = useState('Centro');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    request('/api/historical/options').then(setOpts).catch(() => setOpts(null));
+    request('/api/career/options').then((d) => { setCareer(d); setParty(d.parties[0]); setIdeology(d.ideologies[0]); }).catch(() => {});
+  }, []); // eslint-disable-line
+  if (!opts || !career || !(opts.years[office] || []).includes(year)) return null;
+  const needsCity = ['vereador', 'prefeito'].includes(office);
+  const needsUf = office !== 'presidente';
+  const disabled = busy || name.trim().length < 3 || (needsUf && !uf) || (needsCity && !cityId);
+
+  async function start(e) {
+    e.preventDefault();
+    setBusy(true); setError('');
+    try {
+      const data = await request('/api/historical/start', { method: 'POST', body: JSON.stringify({ year, office, state_code: uf || 'DF', municipality: needsCity ? cityName : '', municipality_id: needsCity ? cityId : null, party, ideology, candidate_name: name.trim(), character: { name: name.trim() } }) });
+      onState?.(data.state); onContinue?.();
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
+  }
+  return <form className="historical-start" onSubmit={start}>
+    <h4 className="subheading">Disputar esta eleição de {year} como candidato(a)</h4>
+    <p className="meta-count">A campanha começa em junho de {year}. Os adversários usam o partido e a força dos mais votados de verdade; depois da apuração o jogo mostra o resultado oficial ao lado do seu.</p>
+    <label>Nome do personagem <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} /></label>
+    <label>Partido <select value={party} onChange={(e) => setParty(e.target.value)}>{career.parties.map((p) => <option key={p} value={p}>{p}</option>)}</select></label>
+    <label>Linha partidária <select value={ideology} onChange={(e) => setIdeology(e.target.value)}>{career.ideologies.map((i) => <option key={i} value={i}>{i}</option>)}</select></label>
+    {(needsUf && !uf) || (needsCity && !cityId) ? <small className="neg">Escolha {needsCity ? 'o município' : 'a UF'} acima para disputar.</small> : null}
+    {error && <small className="neg" role="alert">{error}</small>}
+    <button className="primary-button" type="submit" disabled={disabled}>{busy ? 'Criando…' : 'Disputar esta eleição'}</button>
+  </form>;
+}
+
+export default function ElectorPanel({ request, onState, onContinue }) {
   const [scenarios, setScenarios] = useState(null);
   const [error, setError] = useState('');
   const [year, setYear] = useState(null);
@@ -126,6 +163,7 @@ export default function ElectorPanel({ request }) {
           {official.rounds.map((r) => <div key={r.round}><h4 className="subheading">{official.rounds.length > 1 ? `${r.round}º turno · ` : ''}{r.nominal_votes.toLocaleString('pt-BR')} votos nominais · {r.candidates_count} candidaturas</h4>
             <ol className="results-list">{r.candidates.map((c) => <li key={c.id}><span>{c.name} <small>({c.party})</small></span><b>{c.votes.toLocaleString('pt-BR')}</b><small>{c.share_pct}% · {c.result}</small></li>)}</ol></div>)}
           <small className="meta-count">{official.note}</small></details>}
+        {official && official.available && year < 2028 && office && <HistoricalStart request={request} year={year} office={office} uf={uf} cityId={city.id} cityName={city.name} onState={onState} onContinue={onContinue} />}
         {official && !official.available && official.message && year < 2028 && <p className="meta-status">{official.message}</p>}
 
         {list && list.items.length > 0 && <ul className="candidate-list">{list.items.map((c) => <li key={c.id} className={c.fictional ? 'fictional' : ''}>

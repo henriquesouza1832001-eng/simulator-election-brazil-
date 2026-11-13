@@ -321,7 +321,7 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
 
       {mode === 'party' && setupStep === 1 && <PartyStartForm request={request} onState={onState} onContinue={onContinue} busy={busy} setBusy={setBusy} setNotice={setNotice} difficulty={difficulty} />}
 
-      {mode === 'elector' && <ElectorPanel request={request} />}
+      {mode === 'elector' && <ElectorPanel request={request} onState={onState} onContinue={onContinue} />}
 
       {mode === 'presidency' && setupStep === 1 && <form className="career-start-form" onSubmit={startPresidency}>
         <div className="career-start-heading"><div><span className="eyebrow">POSSE DIRETA</span><h2>Configure sua personagem</h2></div><span className="career-start-date">Brasília · 1º de janeiro de 2027</span></div>
