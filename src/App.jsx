@@ -448,7 +448,7 @@ export default function App() {
     { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
     { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Território', 'Histórico'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Crises'] },
-    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Entrevistas', 'Acontecimentos', 'Aprendizado'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },

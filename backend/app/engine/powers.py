@@ -131,6 +131,8 @@ def apply(state: dict[str, Any], action: dict[str, Any], option: str | None, *, 
             rows.append({"key": key, "delta": round(_bump(state, key, delta), 2)})
     if action["cost_bi"]:
         record_one_off_spending(state, float(action["cost_bi"]))
+        from . import budget_history
+        budget_history.add_extra(state, action["domain"], float(action["cost_bi"]))
         rows.append({"key": "cost_bi", "delta": float(action["cost_bi"])})
     st = structure(state)
     for path, value in action["sets"].items():

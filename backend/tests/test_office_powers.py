@@ -34,7 +34,8 @@ class OfficePowersTest(unittest.TestCase):
         s = career_state("vereador", capital=60)
         r = op.execute(s, "v_cpi")
         self.assertEqual(s["career"]["governance"]["political_capital"], 42.0)
-        self.assertIn(r["approved"], (True, False))
+        self.assertIsNone(r["approved"])          # agora tramita: a decisão vem depois
+        self.assertTrue(r["pending"])
         self.assertIsNotNone(r["chance"])
         low = career_state("vereador", capital=5)
         with self.assertRaises(RuntimeError):

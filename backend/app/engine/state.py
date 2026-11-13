@@ -135,6 +135,10 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(process_election(state, before, after))
     from .congress_agenda import tick as agenda_tick
     messages.extend(agenda_tick(state, before, after))
+    from .budget_history import tick as budget_tick
+    messages.extend(budget_tick(state, before, after))
+    from .office_powers import local_tick
+    messages.extend(local_tick(state, before, after))
     from .congress_process import tick as congress_tick
     messages.extend(congress_tick(state, before, after))
     messages.extend(process_legislation(state, before, after))

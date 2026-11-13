@@ -19,10 +19,12 @@ export default function HistoryPanel({ request, state }) {
   const [picked, setPicked] = useState(['aprovacao', 'inflacao', 'desemprego', 'divida_pib']);
   const [series, setSeries] = useState(null);
   const [ledger, setLedger] = useState([]);
+  const [budget, setBudget] = useState(null);
   const [error, setError] = useState('');
   const keys = useMemo(() => picked.join(','), [picked]);
 
   useEffect(() => { request(`/api/indicators/nation/history?keys=${keys}`).then((r) => setSeries(r.series)).catch((e) => setError(e.message)); }, [keys, state?.date]);
+  useEffect(() => { request('/api/budget/history').then(setBudget).catch(() => setBudget(null)); }, [state?.date]);
   useEffect(() => { request('/api/ledger').then((r) => setLedger(r.entries || [])).catch(() => {}); }, [state?.date]);
 
   if (error) return <section className="panel"><p className="meta-status meta-error" role="alert">{error}</p></section>;
@@ -39,6 +41,11 @@ export default function HistoryPanel({ request, state }) {
         const first = vals.find((v) => Number.isFinite(v)), last = [...vals].reverse().find((v) => Number.isFinite(v));
         return <li key={k}><span>{l}</span><b>{fmt(last)}<small> {u}</small></b><Spark values={vals} /><small>{series[0].month} a {series[series.length - 1].month} · {last - first >= 0 ? '+' : ''}{fmt(last - first)} no período</small></li>;
       })}</ul>}
+    {budget && budget.ytd.length > 0 && <>
+      <h3 className="subheading">Orçamento de investimento por função em {budget.year}: previsto × executado</h3>
+      <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Função</th><th>Previsto (R$ bi)</th><th>Executado (R$ bi)</th><th>Diferença</th></tr></thead>
+        <tbody>{budget.ytd.map((r) => <tr key={r.function}><td>{r.label}</td><td>{fmt(r.planned_bi)}</td><td>{fmt(r.executed_bi)}</td><td className={r.difference_bi > 0 ? 'neg' : ''}>{r.difference_bi > 0 ? '+' : ''}{fmt(r.difference_bi)}</td></tr>)}</tbody></table></div>
+      <p className="meta-count">{budget.note}</p></>}
     <h3 className="subheading">Decisões e resultados</h3>
     {ledger.length === 0 ? <p className="meta-status">Nenhuma decisão registrada ainda.</p> : <ul className="meta-notes ledger-brief">{ledger.slice(0, 25).map((e) => <li key={e.id}><b>{e.date}</b> — {e.title} <small>({e.status}{e.cost ? ` · ${e.cost}` : ''})</small></li>)}</ul>}
   </section>;

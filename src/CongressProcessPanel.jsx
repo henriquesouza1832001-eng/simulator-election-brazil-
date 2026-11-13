@@ -32,7 +32,14 @@ export default function CongressProcessPanel({ request, state, onState, onNotice
   return <section className="panel powers-page">
     <h2>Tramitação no Congresso</h2>
     <p className="page-description">{data.note}</p>
-    {data.bills.length === 0 && <p className="meta-status">Nenhum projeto em tramitação com etapas. Envie um projeto pela aba Competências.</p>}
+    {data.bills.length === 0 && (!data.local_bills || data.local_bills.length === 0) && <p className="meta-status">Nenhum projeto em tramitação com etapas. Envie um projeto pela aba Competências.</p>}
+    {data.local_bills && data.local_bills.length > 0 && <>
+      <h3 className="subheading">Meus projetos</h3>
+      {data.local_bills.map((b) => <article className="bill-card" key={b.id}>
+        <h3 className="subheading">{b.title}</h3>
+        <p className="meta-count">{b.chamber} · {b.status} · votação prevista em {b.decision_date} · chance estimada de aprovação: {b.chance_pct}% · relator: {b.relator.name}{b.relator.party ? ` (${b.relator.party}${b.relator.state ? ', ' + b.relator.state : ''})` : ''}</p>
+        <ol className="bill-stages">{b.stages.map((s) => <li key={s.name} className={`stage-${s.status.split(' ')[0]}`}><b>{s.name}</b><small>{s.date} · {STATUS[s.status] || s.status}</small></li>)}</ol>
+      </article>)}</>}
     {data.bills.map((b) => <article className="bill-card" key={b.id}>
       <h3 className="subheading">{b.title}</h3>
       <p className="meta-count">{b.instrument} · votação prevista em {b.decision_date} · relator: {b.relator.name} ({b.relator.party}, {b.relator.state}) · chance de passar nas comissões: {b.committee_chance_pct}%{b.dilution < 1 ? ` · texto com ${Math.round(b.dilution * 100)}% dos efeitos` : ''}</p>

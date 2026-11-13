@@ -157,6 +157,10 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
                 if stage["status"] != "pendente" or not (before < date.fromisoformat(stage["date"]) <= after) or date.fromisoformat(stage["date"]) >= date.fromisoformat(bill["decision_date"]):
                     continue
                 if not stage["committee"]:
+                    if stage["name"].startswith("Plenário"):
+                        note = _plenary_events(state, bill, stage)
+                        if note == "obstruída":
+                            continue   # a votação foi adiada; a etapa volta a ser avaliada na nova data
                     stage["status"] = "concluída"
                     _news(state, bill, f"{bill['title']}: {stage['name']}.")
                     continue
@@ -187,6 +191,41 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
     return msgs
 
 
+def opposition_share(bill: dict[str, Any]) -> float:
+    """Parcela das cadeiras de partidos do lado ideológico oposto ao do projeto (0 a 1)."""
+    lean = _lean(bill)
+    if abs(lean) < 0.3:
+        return 0.0
+    seats = sum(p["seats"] for p in legislature.PARTIES if p["ideology"] * lean < 0 and abs(p["ideology"]) > 0.3)
+    return seats / legislature.CHAMBER_SIZE
+
+
+def _plenary_events(state: dict[str, Any], bill: dict[str, Any], stage: dict[str, Any]) -> str | None:
+    """Obstrução (adia a votação uma vez) e destaque (retira parte do texto) quando a oposição é forte e o tema, polarizado."""
+    proc = bill["process"]
+    lean = abs(_lean(bill))
+    if lean < 0.3:
+        return None
+    seed = f"{state.get('campaign_seed', 1)}:{bill['id']}"
+    if not proc.get("obstructed"):
+        p = 0.10 + 0.6 * lean * opposition_share(bill) - 0.05 * sum(len(v) for v in proc["negotiated"].values())
+        if _roll(seed + ":obstrucao") < max(0.0, p):
+            proc["obstructed"] = True
+            for st in proc["stages"]:
+                if st["status"] == "pendente":
+                    st["date"] = (date.fromisoformat(st["date"]) + timedelta(days=14)).isoformat()
+            bill["decision_date"] = (date.fromisoformat(bill["decision_date"]) + timedelta(days=14)).isoformat()
+            proc["log"].append({"date": state["date"], "text": "A oposição obstruiu a pauta: votação adiada em 14 dias."})
+            _news(state, bill, f"Oposição obstrui a votação de {bill['title']}; a pauta foi adiada em 14 dias.")
+            return "obstruída"
+    if not proc.get("destaque") and _roll(seed + ":destaque") < 0.25 * min(1.0, lean + 0.4):
+        proc["destaque"] = True
+        proc["dilution"] = round(max(0.6, proc["dilution"] * 0.9), 3)
+        proc["log"].append({"date": state["date"], "text": "Destaque aprovado retirou parte do texto (10% dos efeitos)."})
+        _news(state, bill, f"Destaque aprovado retira parte do texto de {bill['title']}.")
+    return None
+
+
 def _news(state: dict[str, Any], bill: dict[str, Any], text: str) -> None:
     book = consequences._book(state)
     consequences._post(book, state, {"id": f"tram-{bill['id']}-{len(book['feed'])}", "kind": "congresso", "headline": text, "body": "Tramitação simulada no Congresso.", "tone": "neutro", "action_id": bill.get("power_id", "")})
@@ -201,5 +240,7 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
         bills.append({"id": b["id"], "title": b["title"], "instrument": b["instrument"], "decision_date": b["decision_date"], "stages": proc["stages"], "relator": proc["relator"],
                       "dilution": proc["dilution"], "urgency": proc["urgency"], "log": proc["log"][-6:], "committee_chance_pct": round(committee_chance(state, b) * 100),
                       "can_urgency": _kind(b) == "pl" and not proc["urgency"], "outlook": party_outlook(state, b), "lean": _lean(b)})
-    return {"bills": bills, "offers": [{"key": k, **{kk: vv for kk, vv in v.items() if kk in {"label", "text"}}} for k, v in OFFERS.items()],
+    local = [{"id": b["id"], "title": b["title"], "chamber": b["chamber"], "decision_date": b["decision_date"], "status": b["status"], "relator": b["relator"], "stages": b["stages"],
+              "chance_pct": round(b["chance"] * 100)} for b in state.get("local_bills", [])[-8:]]
+    return {"bills": bills, "local_bills": list(reversed(local)), "offers": [{"key": k, **{kk: vv for kk, vv in v.items() if kk in {"label", "text"}}} for k, v in OFFERS.items()],
             "note": "Etapas, relator e probabilidades são regras do jogo; a votação nominal final usa a composição real do Congresso com voto simulado."}

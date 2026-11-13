@@ -235,6 +235,11 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         from .engine import regulators
         return regulators.overview(get_state())
 
+    @router.get("/api/budget/history")
+    def budget_history_overview() -> dict[str, Any]:
+        from .engine import budget_history
+        return budget_history.overview(get_state())
+
     @router.get("/api/fiscal/local")
     def local_fiscal() -> dict[str, Any]:
         from .engine import subnational_fiscal

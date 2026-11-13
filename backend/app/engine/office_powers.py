@@ -7,7 +7,7 @@ Usa a mesma agenda de 30 dias de `perform_governance_action`.
 from __future__ import annotations
 
 import hashlib
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from .career import is_career_governing, _clamp  # noqa: F401
@@ -128,35 +128,47 @@ def catalog(state: dict[str, Any], office: str) -> list[dict[str, Any]]:
     return out
 
 
-def execute(state: dict[str, Any], action_id: str) -> dict[str, Any]:
-    action = BY_ID.get(action_id)
-    career = state.get("career") or {}
-    if not action or career.get("office") not in action["offices"]:
-        raise PermissionError("Esta ação não pertence às atribuições do seu cargo.")
-    if not career.get("mode") or not is_career_governing(career, date.fromisoformat(state["date"])):
-        raise PermissionError("Você precisa estar empossado para agir neste cargo.")
+DAYS = {"vereador": 45, "deputado_estadual": 60, "deputado_federal": 75, "senador": 90}
+CHAMBER = {"vereador": "Câmara Municipal", "deputado_estadual": "Assembleia Legislativa", "deputado_federal": "Câmara dos Deputados", "senador": "Senado"}
+
+
+def _roll(seed: str) -> float:
+    return int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+
+
+def _relator(state: dict[str, Any], office: str, seed: str) -> dict[str, Any]:
+    if office in {"deputado_federal", "senador"}:
+        from . import legislature
+        house = legislature.composition(state)["camara" if office == "deputado_federal" else "senado"]
+        pick = house[int(_roll(seed + "relator") * len(house)) % len(house)]
+        return {"name": pick["name"], "party": pick["party"], "state": pick["state"], "real": True}
+    return {"name": "Relator(a) da comissão (simulado)", "party": None, "state": None, "real": False}
+
+
+def _submit_local_bill(state: dict[str, Any], action: dict[str, Any], chance: float, forecast: dict[str, float]) -> dict[str, Any]:
+    career = state["career"]
+    office = career["office"]
+    today = date.fromisoformat(state["date"])
+    span = DAYS[office]
+    seed = f"{state.get('campaign_seed', 1)}:{action['id']}:{state['date']}"
+    p_comm = min(0.97, 0.5 + 0.5 * chance)
+    p_plen = min(0.99, chance / p_comm)
+    bills = state.setdefault("local_bills", [])
+    led = ledger.record(state, "cargo", action["title"], forecast, None, status="em tramitação", cost=f"{action['cost']:.0f} pontos de capital político")
+    bill = {"id": f"lb-{len(bills) + 1}-{state['date']}", "action_id": action["id"], "title": action["title"], "office": office, "chamber": CHAMBER[office],
+            "submitted": state["date"], "decision_date": (today + timedelta(days=span)).isoformat(), "status": "em tramitação", "chance": chance,
+            "p_committee": round(p_comm, 3), "p_plenary": round(p_plen, 3), "relator": _relator(state, office, seed), "ledger_id": led["id"], "seed": seed, "forecast": forecast,
+            "stages": [{"name": "Protocolo", "date": state["date"], "committee": False, "status": "concluída"},
+                       {"name": "Comissão", "date": (today + timedelta(days=round(span * 0.4))).isoformat(), "committee": True, "status": "pendente"},
+                       {"name": f"Plenário ({CHAMBER[office]})", "date": (today + timedelta(days=span)).isoformat(), "committee": False, "status": "pendente"}]}
+    bills.append(bill)
+    return bill
+
+
+def _finalize(state: dict[str, Any], action: dict[str, Any], approved: bool, forecast: dict[str, float]) -> dict[str, float]:
+    """Aplica (ou nega) os efeitos de uma ação do cargo; usado na execução direta e na votação depois da tramitação."""
+    career = state["career"]
     gov = _governance(state)
-    if _wait(state, gov):
-        raise RuntimeError(f"A agenda do cargo abre em {_wait(state, gov)} dia(s).")
-    blocked = subnational_fiscal.check_can_spend(state, action["spend"]) if action["spend"] != "programa" else None
-    if blocked:
-        raise RuntimeError(blocked)
-    forecast = {**action["effects"], **action["territory"], **{f"lrf_{k}": v for k, v in action["fiscal"].items()}}
-    approved = True
-    chance = None
-    if action["kind"] == "leg":
-        if gov.get("political_capital", 0) < action["cost"]:
-            raise RuntimeError("Capital político insuficiente.")
-        gov["political_capital"] = round(float(gov["political_capital"]) - action["cost"], 1)
-        chance = _chance(state, gov, action)
-        roll = int(hashlib.sha256(f"{state.get('campaign_seed', 1)}:{action_id}:{state['date']}".encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
-        approved = roll < chance
-    else:
-        reserve = float(gov.get("budget_mi", 0))
-        spend = reserve * action["cost"]
-        if action["cost"] > 0 and reserve <= 0:
-            raise RuntimeError("Reserva do cargo insuficiente.")
-        gov["budget_mi"] = round(reserve - spend, 2)
     applied: dict[str, float] = {}
     if approved:
         for key, value in action["effects"].items():
@@ -172,23 +184,90 @@ def execute(state: dict[str, Any], action_id: str) -> dict[str, Any]:
                 if key in REGISTRY:
                     deltas[key] = round(deltas.get(key, 0.0) + value, 5)
                     applied[key] = value
+        if action["fiscal"]:
+            for key, value in subnational_fiscal.apply(state, **action["fiscal"]).items():
+                if value:
+                    applied[f"lrf_{key}"] = value
+        consequences.schedule(state, action_id=action["id"], title=action["title"], domain=action["domain"], effects=action["effects"], source="cargo", local=True)
     else:
         gov["trust"] = round(_clamp(float(gov.get("trust", 50)) - 0.8), 2)
         applied["trust"] = -0.8
-    if approved and action["fiscal"]:
-        for key, value in subnational_fiscal.apply(state, **action["fiscal"]).items():
-            if value:
-                applied[f"lrf_{key}"] = value
+    return applied
+
+
+def execute(state: dict[str, Any], action_id: str) -> dict[str, Any]:
+    action = BY_ID.get(action_id)
+    career = state.get("career") or {}
+    if not action or career.get("office") not in action["offices"]:
+        raise PermissionError("Esta ação não pertence às atribuições do seu cargo.")
+    if not career.get("mode") or not is_career_governing(career, date.fromisoformat(state["date"])):
+        raise PermissionError("Você precisa estar empossado para agir neste cargo.")
+    gov = _governance(state)
+    if _wait(state, gov):
+        raise RuntimeError(f"A agenda do cargo abre em {_wait(state, gov)} dia(s).")
+    blocked = subnational_fiscal.check_can_spend(state, action["spend"]) if action["spend"] != "programa" else None
+    if blocked:
+        raise RuntimeError(blocked)
+    forecast = {**action["effects"], **action["territory"], **{f"lrf_{k}": v for k, v in action["fiscal"].items()}}
+    if action["kind"] == "leg":
+        if gov.get("political_capital", 0) < action["cost"]:
+            raise RuntimeError("Capital político insuficiente.")
+        gov["political_capital"] = round(float(gov["political_capital"]) - action["cost"], 1)
+        chance = _chance(state, gov, action)
+        bill = _submit_local_bill(state, action, chance, forecast)
+        gov["last_action_date"] = state["date"]
+        return {"ledger_id": bill["ledger_id"], "approved": None, "pending": True, "decision_date": bill["decision_date"], "chance": chance, "forecast": forecast, "result": None,
+                "message": f"{action['title']} foi protocolado na {bill['chamber']}; votação prevista para {bill['decision_date']}."}
+    reserve = float(gov.get("budget_mi", 0))
+    if action["cost"] > 0 and reserve <= 0:
+        raise RuntimeError("Reserva do cargo insuficiente.")
+    gov["budget_mi"] = round(reserve - reserve * action["cost"], 2)
+    applied = _finalize(state, action, True, forecast)
     gov["last_action_date"] = state["date"]
-    entry = {"id": f"office-{state['date']}-{len(gov.get('actions', [])) + 1}", "date": state["date"], "action": action_id, "title": action["title"],
-             "summary": ("Aprovado no plenário." if approved else "Rejeitado no plenário; capital político gasto.") if action["kind"] == "leg" else "Executado.",
-             "forecast": forecast, "result": applied, "approved": approved, "chance": chance, "status": "active", "simulated": True}
+    entry = {"id": f"office-{state['date']}-{len(gov.get('actions', [])) + 1}", "date": state["date"], "action": action_id, "title": action["title"], "summary": "Executado.",
+             "forecast": forecast, "result": applied, "approved": True, "chance": None, "status": "active", "simulated": True}
     gov.setdefault("actions", []).append(entry)
     gov["actions"] = gov["actions"][-50:]
-    if approved:
-        consequences.schedule(state, action_id=action_id, title=action["title"], domain=action["domain"], effects=action["effects"], source="cargo", local=True)
-    led = ledger.record(state, "cargo", action["title"], forecast, applied, status="aprovado" if approved else "rejeitado",
-                        cost=(f"{action['cost']:.0f} pontos de capital político" if action["kind"] == "leg" else f"{action['cost'] * 100:.0f}% da reserva"),
-                        reason=ledger.explain_gap(forecast, applied, approved if action["kind"] == "leg" else None))
-    return {"ledger_id": led["id"], "approved": approved, "chance": chance, "forecast": forecast, "result": applied, "entry": entry,
-            "message": f"{action['title']}: {'aprovado' if approved else 'rejeitado'}." if action["kind"] == "leg" else f"{action['title']}: executado."}
+    led = ledger.record(state, "cargo", action["title"], forecast, applied, status="aprovado", cost=f"{action['cost'] * 100:.0f}% da reserva", reason=ledger.explain_gap(forecast, applied, None))
+    return {"ledger_id": led["id"], "approved": True, "chance": None, "forecast": forecast, "result": applied, "entry": entry, "message": f"{action['title']}: executado."}
+
+
+def local_tick(state: dict[str, Any], before: date, after: date) -> list[str]:
+    """Tramitação dos projetos de vereador, deputados e senador: comissão e plenário, com relator."""
+    career = state.get("career") or {}
+    msgs: list[str] = []
+    if not career.get("mode") or career.get("office") not in DAYS:
+        return msgs
+    for bill in state.get("local_bills", []):
+        if bill["status"] != "em tramitação" or bill["office"] != career.get("office"):
+            continue
+        action = BY_ID[bill["action_id"]]
+        for stage in bill["stages"]:
+            when = date.fromisoformat(stage["date"])
+            if stage["status"] != "pendente" or not (before < when <= after):
+                continue
+            ok = _roll(f"{bill['seed']}:{stage['name']}") < (bill["p_committee"] if stage["committee"] else bill["p_plenary"])
+            rel = bill["relator"]
+            who = f" (relator {rel['name']}{', ' + rel['party'] if rel['party'] else ''})" if stage["committee"] else ""
+            if stage["committee"]:
+                stage["status"] = "aprovada" if ok else "rejeitada"
+                _post_news(state, bill, f"{bill['title']}: {'aprovado' if ok else 'rejeitado'} na comissão{who}." + ("" if ok else " O projeto foi arquivado."))
+                if not ok:
+                    bill["status"] = "rejeitado na comissão"
+                    applied = _finalize(state, action, False, bill["forecast"])
+                    ledger.settle(state, bill["ledger_id"], applied, "rejeitado na comissão", "Arquivado na comissão; capital político gasto.")
+                    msgs.append(f"{bill['title']} foi arquivado na comissão.")
+                    break
+            else:
+                stage["status"] = "aprovada" if ok else "rejeitada"
+                applied = _finalize(state, action, ok, bill["forecast"])
+                bill["status"] = "aprovado" if ok else "rejeitado no plenário"
+                ledger.settle(state, bill["ledger_id"], applied, bill["status"], ledger.explain_gap(bill["forecast"], applied, ok))
+                _post_news(state, bill, f"{bill['title']}: {'aprovado' if ok else 'rejeitado'} no plenário da {bill['chamber']}.")
+                msgs.append(f"{bill['title']} foi {'aprovado' if ok else 'rejeitado'} no plenário.")
+    return msgs
+
+
+def _post_news(state: dict[str, Any], bill: dict[str, Any], text: str) -> None:
+    book = consequences._book(state)
+    consequences._post(book, state, {"id": f"lt-{bill['id']}-{len(book['feed'])}", "kind": "congresso", "headline": text, "body": "Tramitação simulada.", "tone": "neutro", "action_id": bill["action_id"]})

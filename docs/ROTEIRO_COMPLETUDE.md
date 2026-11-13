@@ -47,13 +47,17 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 
 - **Votos oficiais por candidato do TSE** (`app/data/tse_votes.py`, `engine/historical.py`): importados para 2016, 2020 e 2024 (anos gerais por comando), exibidos no Modo Eleitor e usados como referência real na carreira de vereador e prefeito.
 
+- **Eleições passadas jogáveis** (`engine/historical_play.py`, Modo Eleitor > "Disputar esta eleição"): campanha em 2014–2024 na data real, com adversários que usam o partido e a força eleitoral reais dos mais votados e, depois da apuração, comparação com o resultado oficial (nomes e votos reais).
+- **Obstrução e destaques** no plenário (oposição polarizada adia a pauta em 14 dias; destaque retira 10% do texto) e **tramitação para vereador, deputados e senador** (comissão e plenário, relator real em Câmara e Senado, efeitos só depois da aprovação).
+- **Orçamento por função** (`engine/budget_history.py`): previsto × executado mês a mês, com custos únicos de ações e estouro de obras na função correspondente (aba Painel > Histórico).
+
 ## Lista de pendências do protótipo (revisão de 10 nov. 2026)
 Ainda faltam, em ordem de impacto:
 1. **Entrevistas e debates:** falta a pesquisa de opinião antes e depois, o oponente responder de volta, e perguntas geradas com apoio do Gemini a partir do aprendizado.
-3. **Congresso:** obstrução, destaques, CPI em etapas e calendário de sessões (comissões, relator, urgência e negociação por bancada já existem para projetos do Presidente; falta para projetos de outros cargos).
-4. **Jogar eleições passadas:** os votos oficiais já existem (municipais; gerais por comando), mas ainda não há campanha jogável em 2014–2024 com as regras de cada ano.
+3. **Congresso:** CPI em etapas, calendário de sessões e negociação por bancada para projetos de outros cargos (comissões, relator, obstrução e destaque já existem).
+4. **Eleições passadas:** a campanha usa as regras atuais do jogo, não as regras específicas de cada ano (coligações proporcionais até 2018, cláusula de barreira etc.).
 5. **Confirmar em produção que as candidaturas do TSE foram importadas.** Verifique com `GET /api/data/tse/status`; se vier vazio, rode o importador no servidor (`python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`).
-6. **Histórico mais profundo de eventos, orçamento e obras** (previsto × realizado por mês e por função).
+6. **Orçamento:** receita e despesa corrente por função (hoje só o investimento tem previsto × executado mensal) e emendas parlamentares.
 7. **Multiplayer e votação entre jogadores:** apenas documentados (`docs/MULTIPLAYER_ARQUITETURA.md`).
 8. Chave Gemini em produção (variável `GEMINI_API_KEY` no servidor; sem ela tudo funciona em modo local).
 

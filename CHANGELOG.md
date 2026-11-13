@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22 — 12 nov. 2026 (eleições passadas, tramitação para todos os cargos e orçamento por função)
+
+- Eleições passadas jogáveis (2014 a 2024): adversários com o partido e a força dos mais votados de verdade e comparação final com o resultado oficial.
+- Obstrução e destaques no plenário; vereador, deputados e senador passam a tramitar projetos com comissão, plenário e relator.
+- Histórico mensal do orçamento de investimento por função (previsto × executado).
+
 ## 0.21 — 12 nov. 2026 (votos oficiais do TSE)
 
 - Importador de votos nominais por candidato do TSE (2016, 2020 e 2024 prontos; anos gerais por comando), com proveniência e checksum.
