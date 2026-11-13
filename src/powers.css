@@ -69,3 +69,12 @@
 .spark { width: 100%; height: 2.2rem; color: #6fd1a0; }
 .spark { width: 100%; height: 2.6rem; }
 .ledger-brief li { margin-bottom: .35rem; }
+
+.reference-election { margin: .8rem 0; padding: .7rem 1rem; }
+.reference-election p { margin: .3rem 0; }
+.reference-election small { opacity: .75; }
+
+.official-results { margin: .8rem 0; }
+.results-list { list-style: none; padding: 0; display: grid; gap: .3rem; }
+.results-list li { display: grid; grid-template-columns: 1fr auto; gap: .1rem .8rem; padding: .4rem .6rem; border-radius: 8px; background: rgba(128,128,128,.1); }
+.results-list li small { grid-column: 1 / -1; opacity: .75; }

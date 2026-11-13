@@ -62,6 +62,13 @@ def build_router() -> APIRouter:
         data.update(notice=elector.SIMULATED_VOTE_NOTICE, scope=scope)
         return data
 
+    @router.get("/api/elector/results")
+    def results(year: int, office: str, uf: str | None = None, municipality_id: str | None = None, limit: int = Query(12, ge=1, le=50)) -> dict[str, Any]:
+        scope = _scope(Selection(year=year, office=office, uf=uf, municipality_id=municipality_id))
+        data = elector.official_results(year, office, scope, limit)
+        data.update(scope=scope)
+        return data
+
     @router.post("/api/elector/vote")
     def vote(body: VoteBody) -> dict[str, Any]:
         scope = _scope(body)

@@ -69,3 +69,14 @@ Entram apenas regras com base normativa citada na própria estrutura (Constitui�
 3. Fotos oficiais do TSE e caricaturas por candidatura: não ligadas à tela; ver [Personagem e retratos](PERSONAGEM_E_RETRATOS.md).
 4. Endpoints e tabela antiga do TSE a migrar.
 5. Multiplayer: apenas documentado (ver [Multiplayer](MULTIPLAYER_ARQUITETURA.md)).
+
+
+## Votos por candidato (12 nov. 2026)
+
+`python -m app.data.tse_votes --years 2016 2020 2024` importa o recurso "Votação nominal por município e zona" do TSE (licença Creative Commons Attribution, SHA-256 e data de coleta registrados em `tse_import_runs`). Guarda votos nominais por candidato e município (prefeito, vereador, presidente, governador e senador) ou por candidato e UF (deputados). Anos gerais (2014, 2018, 2022) têm arquivos de 400 a 600 MB: rode no servidor.
+
+- API: `GET /api/elector/results?year=&office=&uf=&municipality_id=` (votos, participação sobre os votos nominais e situação, por turno). Aparece no Modo Eleitor.
+- Conferência: São Paulo 2024, prefeito: Ricardo Nunes 1.801.139 (29,49%) no 1º turno e 59,35% no 2º; vereador mais votado, Lucas Pavanato, 161.386 votos.
+- A carreira mostra uma "referência real": para vereador, quantos votos teve o último eleito no município na eleição anterior; para prefeito, quanto teve o vencedor. A simulação não usa esses números para decidir o resultado.
+- Votos em branco e nulos não entram. Sem a importação, as telas explicam como importar e o jogo segue sem a referência.
+- Produção: o banco de produção precisa rodar os dois importadores (`tse_candidacies` e `tse_votes`); o banco local não vai para o repositório.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21 — 12 nov. 2026 (votos oficiais do TSE)
+
+- Importador de votos nominais por candidato do TSE (2016, 2020 e 2024 prontos; anos gerais por comando), com proveniência e checksum.
+- Modo Eleitor mostra o resultado oficial por turno com votos e participação; a carreira de vereador e prefeito mostra uma referência real (último eleito, vencedor) e a entrevista cobra a meta de votos.
+
 ## 0.20 — 12 nov. 2026 (regras calibradas, veto e histórico)
 
 - Calibração por simulação de mandatos de 48 meses: o Congresso passa a aprovar projetos com base padrão (antes quase nenhum), crises sem resposta expiram em seis meses e a base volta ao equilíbrio.

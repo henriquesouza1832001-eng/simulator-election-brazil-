@@ -923,6 +923,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "state_code": career["state_code"], "state_name": career["state_name"], "municipality": career["municipality"],
         "campaign_territory": career.get("municipality") or ("Brasil" if career.get("office") == "presidente" else career["state_name"]),
         "municipality_id": career.get("municipality_id"), "municipality_profile": municipality_profile,
+        "reference_election": _reference_election(career),
         "campaign_team_location": ({
             "municipality_id": team_city_profile["ibge_code"], "name": team_city_profile["name"],
             "state_code": team_city_profile["state_code"], "macroregion": team_city_profile["macroregion"],
@@ -1219,6 +1220,14 @@ def _ensure_scaled_governance_budget(career: dict[str, Any], governance: dict[st
         "budget_population_reference_year": basis["reference_year"],
         "budget_scale_version": 1,
     })
+
+
+def _reference_election(career: dict[str, Any]) -> dict[str, Any] | None:
+    try:
+        from .historical import reference_election
+        return reference_election(career)
+    except Exception:
+        return None
 
 
 def governance_territory_for(career: dict[str, Any]) -> dict[str, Any]:

@@ -20,6 +20,7 @@ export default function ElectorPanel({ request }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [voting, setVoting] = useState(false);
+  const [official, setOfficial] = useState(null);
 
   useEffect(() => { request('/api/scenarios').then(setScenarios).catch((e) => setError(e.message)); }, []); // eslint-disable-line
 
@@ -46,6 +47,16 @@ export default function ElectorPanel({ request }) {
     request(`/api/elector/candidates?${params}`).then((d) => { if (live) setList(d); }).catch((e) => { if (live) { setList(null); setError(e.message); } }).finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [ready, year, office, uf, city.id, page, query]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!ready || !year || year >= 2028) { setOfficial(null); return; }
+    let live = true;
+    const params = new URLSearchParams({ year, office, limit: 10 });
+    if (uf && scope !== 'nacional') params.set('uf', uf);
+    if (scope === 'municipio') params.set('municipality_id', city.id);
+    request(`/api/elector/results?${params}`).then((d) => { if (live) setOfficial(d); }).catch(() => { if (live) setOfficial(null); });
+    return () => { live = false; };
+  }, [ready, year, office, uf, city.id]); // eslint-disable-line
 
   async function vote(choice) {
     setVoting(true); setError('');
@@ -111,6 +122,12 @@ export default function ElectorPanel({ request }) {
         {loading && <p className="meta-status" role="status">Carregando candidatos…</p>}
         {list && !loading && list.items.length === 0 && <p className="meta-status">{data.official_data || data.future_simulated ? 'Nenhum candidato encontrado para esta disputa e filtro.' : data.message}</p>}
         {list?.scenario && <p className="meta-status" role="alert">{list.scenario}</p>}
+        {official && official.available && <details className="official-results" open><summary>Resultado oficial: votos nominais por candidato</summary>
+          {official.rounds.map((r) => <div key={r.round}><h4 className="subheading">{official.rounds.length > 1 ? `${r.round}º turno · ` : ''}{r.nominal_votes.toLocaleString('pt-BR')} votos nominais · {r.candidates_count} candidaturas</h4>
+            <ol className="results-list">{r.candidates.map((c) => <li key={c.id}><span>{c.name} <small>({c.party})</small></span><b>{c.votes.toLocaleString('pt-BR')}</b><small>{c.share_pct}% · {c.result}</small></li>)}</ol></div>)}
+          <small className="meta-count">{official.note}</small></details>}
+        {official && !official.available && official.message && year < 2028 && <p className="meta-status">{official.message}</p>}
+
         {list && list.items.length > 0 && <ul className="candidate-list">{list.items.map((c) => <li key={c.id} className={c.fictional ? 'fictional' : ''}>
           <div className="cand-number" aria-label="Número">{c.number}</div>
           <div><b>{c.ballot_name}</b>{c.fictional && <span className="tag t-correcao">Fictício</span>}

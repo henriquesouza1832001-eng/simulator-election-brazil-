@@ -43,7 +43,7 @@ def availability(year: int) -> dict[str, Any]:
     return {"year": year, "official_data": True, "future_simulated": False, "candidacies": count, "source_url": run["source_url"],
             "license": run["license_name"], "collected_at": run["collected_at"], "file": run["file_name"], "sha256": run["file_sha256"],
             "rows_read": run["rows_read"], "rows_discarded": run["rows_discarded"],
-            "votes_imported": False, "votes_note": "Votos por candidato ainda não importados; o comparativo usa a situação de totalização do cadastro oficial."}
+            "votes_imported": votes_available(year), "votes_note": "Votos por candidato ainda não importados; o comparativo usa a situação de totalização do cadastro oficial."}
 
 
 def _scope_filters(office: str, scope: dict[str, Any]) -> tuple[str, list[Any]]:
@@ -123,6 +123,57 @@ def official_outcome(year: int, office: str, scope: dict[str, Any], limit: int =
             f"SELECT * FROM tse_candidacies WHERE election_year = ? AND {sql} AND result_status IN ({','.join('?' * len(statuses))}) "
             "ORDER BY name LIMIT ?", [year, *params, *statuses, limit]).fetchall()
     return {"available": True, "elected": [_row(r) for r in rows], "note": "Situação de totalização do cadastro oficial do TSE. Votos por candidato ainda não importados."}
+
+
+OFFICE_CODES = {"presidente": ("1",), "governador": ("3",), "senador": ("5",), "deputado_federal": ("6",), "deputado_estadual": ("7", "8"),
+                "prefeito": ("11",), "vereador": ("13",)}
+
+
+def votes_available(year: int) -> bool:
+    try:
+        with connect() as db:
+            return bool(db.execute("SELECT 1 FROM tse_votes WHERE election_year = ? LIMIT 1", (year,)).fetchone())
+    except Exception:  # tabela ainda não criada
+        return False
+
+
+def official_results(year: int, office: str, scope: dict[str, Any], limit: int = 20) -> dict[str, Any]:
+    """Votos nominais por candidato (TSE), por turno, com participação sobre os votos nominais do território."""
+    if year >= 2028:
+        return {"available": False, "message": "Cenário futuro simulado: não há resultado oficial.", "rounds": []}
+    if not votes_available(year):
+        return {"available": False, "rounds": [],
+                "message": f"Votos de {year} ainda não importados. Rode no servidor: python -m app.data.tse_votes --years {year}"}
+    codes = OFFICE_CODES[office]
+    marks = ",".join("?" * len(codes))
+    where = f"v.election_year = ? AND v.office_code IN ({marks})"
+    params: list[Any] = [year, *codes]
+    join_extra, join_params = "", []
+    if scope.get("uf") and office != "presidente":
+        where += " AND v.uf = ?"
+        params.append(scope["uf"])
+    if scope.get("municipality"):
+        join_extra = " AND norm(c.municipality) = ?"
+        join_params.append(normalize(scope["municipality"]))
+        where += " AND v.cd_municipio = c.ue_code"
+    params = join_params + params   # a ordem dos "?" no SQL: primeiro o JOIN, depois o WHERE
+    with _db() as db:
+        rows = db.execute(
+            f"SELECT v.round AS round, c.sq_candidato AS id, c.ballot_name AS ballot_name, c.name AS name, c.number AS number, c.party AS party, "
+            f"c.result_status AS result, SUM(v.votes) AS votes FROM tse_votes v JOIN tse_candidacies c "
+            f"ON c.election_year = v.election_year AND c.sq_candidato = v.sq_candidato{join_extra} WHERE {where} "
+            f"GROUP BY v.round, c.sq_candidato ORDER BY v.round, votes DESC", params).fetchall()
+    rounds: dict[int, list[Any]] = {}
+    for r in rows:
+        rounds.setdefault(int(r["round"]), []).append(r)
+    out = []
+    for rnd, items in sorted(rounds.items()):
+        total = sum(int(i["votes"]) for i in items) or 1
+        out.append({"round": rnd, "nominal_votes": total, "candidates_count": len(items),
+                    "candidates": [{"id": i["id"], "name": i["ballot_name"] or i["name"], "number": i["number"], "party": i["party"], "votes": int(i["votes"]),
+                                    "share_pct": round(100 * int(i["votes"]) / total, 2), "result": i["result"]} for i in items[:limit]]})
+    return {"available": bool(out), "rounds": out, "message": None if out else "Sem votos importados para este território.",
+            "note": "Votos nominais do TSE (brancos e nulos não entram na participação). Fonte: dados abertos do TSE, ver proveniência em /api/scenarios/{ano}."}
 
 
 def scope_key(office: str, scope: dict[str, Any]) -> str:

@@ -106,4 +106,15 @@ def country_questions(state: dict[str, Any], ctx: dict[str, Any]) -> list[dict[s
     trap = trap_question(state, ctx)
     if trap:
         out.append(trap)
+    if ctx["local"] and ctx["office"] in {"vereador", "prefeito"}:
+        from .historical import reference_election
+        ref = reference_election(state.get("career") or {})
+        if ref and ctx["office"] == "vereador":
+            votes = ref["last_elected"]["votes"]
+            out.append({"topic": "meta de votos", "target": None, "trap": False, "fact": float(votes),
+                        "prompt": f"Em {ref['year']}, o último vereador eleito aqui teve {votes:,} votos. Qual é a sua meta de votos e como vai chegar a ela?".replace(",", ".")})
+        elif ref and ctx["office"] == "prefeito":
+            votes = ref["winner"]["votes"]
+            out.append({"topic": "meta de votos", "target": None, "trap": False, "fact": float(votes),
+                        "prompt": f"Em {ref['year']}, o prefeito eleito aqui teve {votes:,} votos. Que coalizão e que prioridades levam o senhor ou a senhora a esse patamar?".replace(",", ".")})
     return out
