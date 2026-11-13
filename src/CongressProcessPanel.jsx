@@ -8,8 +8,9 @@ export default function CongressProcessPanel({ request, state, onState, onNotice
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [open, setOpen] = useState({});
+  const [cpis, setCpis] = useState([]);
   const load = () => request('/api/congress/process').then(setData).catch((e) => setError(e.message));
-  useEffect(() => { load(); }, [state?.date]);
+  useEffect(() => { load(); request('/api/cpi').then((r) => setCpis(r.cpis)).catch(() => setCpis([])); }, [state?.date]);
 
   async function negotiate(bill, party, offer) {
     try {
@@ -32,7 +33,15 @@ export default function CongressProcessPanel({ request, state, onState, onNotice
   return <section className="panel powers-page">
     <h2>Tramitação no Congresso</h2>
     <p className="page-description">{data.note}</p>
-    {data.bills.length === 0 && (!data.local_bills || data.local_bills.length === 0) && <p className="meta-status">Nenhum projeto em tramitação com etapas. Envie um projeto pela aba Competências.</p>}
+    {data.bills.length === 0 && cpis.length === 0 && (!data.local_bills || data.local_bills.length === 0) && <p className="meta-status">Nenhum projeto em tramitação com etapas. Envie um projeto pela aba Competências.</p>}
+    {cpis.length > 0 && <>
+      <h3 className="subheading">CPIs</h3>
+      {cpis.map((c) => <article className="bill-card" key={c.id}>
+        <h3 className="subheading">CPI sobre {c.subject}</h3>
+        <p className="meta-count">{c.house} · {c.author === 'oposicao' ? 'pedida pela oposição contra o governo' : 'instalada por você'} · {c.status}{c.verdict ? ` · ${c.verdict}` : ''}</p>
+        <ol className="bill-stages">{c.stages.map((s) => <li key={s.name} className={`stage-${s.status.split(' ')[0]}`}><b>{s.name}</b><small>{s.date} · {s.status}</small></li>)}</ol>
+        {c.log.length > 0 && <ul className="meta-notes">{c.log.map((l, i) => <li key={i}>{l.date} — {l.text}</li>)}</ul>}
+      </article>)}</>}
     {data.local_bills && data.local_bills.length > 0 && <>
       <h3 className="subheading">Meus projetos</h3>
       {data.local_bills.map((b) => <article className="bill-card" key={b.id}>

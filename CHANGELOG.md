@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23 — 12 nov. 2026 (CPI em etapas)
+
+- CPI em sete etapas (requerimento, instalação, três oitivas, relatório final e encaminhamento ao MP e à PF), com o relatório dependendo do que as oitivas encontraram e da integridade.
+- Dois caminhos: a CPI que o jogador instala como parlamentar e a que a oposição abre contra o governo quando a integridade cai; nesta, o jogador decide entre colaborar, mobilizar a base ou se calar. A aba Tramitação passou a aparecer também para prefeito e governador.
+
 ## 0.22 — 12 nov. 2026 (eleições passadas, tramitação para todos os cargos e orçamento por função)
 
 - Eleições passadas jogáveis (2014 a 2024): adversários com o partido e a força dos mais votados de verdade e comparação final com o resultado oficial.

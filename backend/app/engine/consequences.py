@@ -195,6 +195,9 @@ def respond(state: dict[str, Any], crisis_id: str, option_id: str) -> dict[str, 
     if hook.get("stf_risk_factor") and hook.get("case"):
         from . import regulators
         regulators.adjust_case_risk(state, hook["case"], float(hook["stf_risk_factor"]))
+    if hook.get("cpi"):
+        from . import cpi
+        cpi.apply_response(state, hook["cpi"], hook.get("option", ""))
     book["pending"].remove(crisis)
     _post(book, state, {"id": crisis_id + "-res", "kind": "resposta", "headline": f"Resposta do governo: {option['label']}", "body": crisis["title"], "tone": "neutro", "action_id": crisis["action_id"]})
     entry = ledger.record(state, "crise", f"{crisis['title']}: {option['label']}", {}, dict(option["effects"]), status="respondida")

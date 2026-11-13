@@ -136,6 +136,9 @@ def _roll(seed: str) -> float:
     return int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
 
 
+CPI_ACTIONS = {"v_cpi": "o transporte coletivo", "de_cpi": "contratos estaduais", "df_cpi": "contratos do governo federal"}
+
+
 def _relator(state: dict[str, Any], office: str, seed: str) -> dict[str, Any]:
     if office in {"deputado_federal", "senador"}:
         from . import legislature
@@ -188,6 +191,9 @@ def _finalize(state: dict[str, Any], action: dict[str, Any], approved: bool, for
             for key, value in subnational_fiscal.apply(state, **action["fiscal"]).items():
                 if value:
                     applied[f"lrf_{key}"] = value
+        if action["id"] in CPI_ACTIONS:
+            from . import cpi
+            cpi.open_cpi(state, subject=CPI_ACTIONS[action["id"]], author="jogador", severity=0.5, office=career["office"])
         consequences.schedule(state, action_id=action["id"], title=action["title"], domain=action["domain"], effects=action["effects"], source="cargo", local=True)
     else:
         gov["trust"] = round(_clamp(float(gov.get("trust", 50)) - 0.8), 2)

@@ -51,10 +51,12 @@ Resumo honesto do que existe, do que é parcial e do que ainda não existe. Subs
 - **Obstrução e destaques** no plenário (oposição polarizada adia a pauta em 14 dias; destaque retira 10% do texto) e **tramitação para vereador, deputados e senador** (comissão e plenário, relator real em Câmara e Senado, efeitos só depois da aprovação).
 - **Orçamento por função** (`engine/budget_history.py`): previsto × executado mês a mês, com custos únicos de ações e estouro de obras na função correspondente (aba Painel > Histórico).
 
+- **CPI em etapas** (`engine/cpi.py`): requerimento, instalação, oitivas, relatório e encaminhamento, pelo jogador ou pela oposição.
+
 ## Lista de pendências do protótipo (revisão de 10 nov. 2026)
 Ainda faltam, em ordem de impacto:
 1. **Entrevistas e debates:** falta a pesquisa de opinião antes e depois, o oponente responder de volta, e perguntas geradas com apoio do Gemini a partir do aprendizado.
-3. **Congresso:** CPI em etapas, calendário de sessões e negociação por bancada para projetos de outros cargos (comissões, relator, obstrução e destaque já existem).
+3. **Congresso:** calendário de sessões e negociação por bancada para projetos de outros cargos (comissões, relator, obstrução e destaque já existem).
 4. **Eleições passadas:** a campanha usa as regras atuais do jogo, não as regras específicas de cada ano (coligações proporcionais até 2018, cláusula de barreira etc.).
 5. **Confirmar em produção que as candidaturas do TSE foram importadas.** Verifique com `GET /api/data/tse/status`; se vier vazio, rode o importador no servidor (`python -m app.data.tse_candidacies --years 2014 2016 2018 2020 2022 2024 2026`).
 6. **Orçamento:** receita e despesa corrente por função (hoje só o investimento tem previsto × executado mensal) e emendas parlamentares.
