@@ -47,11 +47,23 @@ def carregar_config():
     return cfg
 
 
+def com_retentativa(funcao, tentativas=20, espera=30):
+    """A chave de API recem-criada demora alguns minutos para valer em todos os servidores da Oracle: 401 no inicio e normal."""
+    for numero in range(1, tentativas + 1):
+        try:
+            return funcao()
+        except oci.exceptions.ServiceError as erro:
+            if erro.status != 401 or numero == tentativas:
+                raise
+            log(f"401 (chave ainda propagando), tentativa {numero}/{tentativas}; espero {espera}s.")
+            time.sleep(espera)
+
+
 def achar_imagem(compute, compartimento):
-    imagens = compute.list_images(
+    imagens = com_retentativa(lambda: compute.list_images(
         compartimento, operating_system="Canonical Ubuntu", operating_system_version="22.04",
         shape=SHAPE, sort_by="TIMECREATED", sort_order="DESC", limit=5,
-    ).data
+    )).data
     if not imagens:
         sys.exit("Não achei imagem Ubuntu 22.04 compatível com ARM nesta região.")
     return imagens[0].id
@@ -59,7 +71,7 @@ def achar_imagem(compute, compartimento):
 
 def ja_existe_a1(compute, compartimento):
     ativos = ("PROVISIONING", "RUNNING", "STARTING", "STOPPING", "STOPPED")
-    for inst in compute.list_instances(compartimento).data:
+    for inst in com_retentativa(lambda: compute.list_instances(compartimento)).data:
         if inst.shape == SHAPE and inst.lifecycle_state in ativos:
             return inst
     return None
@@ -93,7 +105,17 @@ def esperar_ip(config, compute, inst):
     return None
 
 
+def manter_acordado():
+    """No Windows, pede para o sistema nao suspender enquanto o robo roda (nao muda nenhuma configuracao)."""
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)  # CONTINUOUS | SYSTEM_REQUIRED
+    except Exception:
+        pass
+
+
 def main():
+    manter_acordado()
     uma_vez = "--uma-vez" in sys.argv
     cfg = carregar_config()
     config = oci.config.from_file(cfg["oci_config"], cfg["perfil"])
@@ -103,7 +125,7 @@ def main():
     identidade = oci.identity.IdentityClient(config)
     chave_ssh = Path(cfg["ssh_public_key_path"]).expanduser().read_text(encoding="utf-8").strip()
     imagem = cfg.get("image_ocid") or achar_imagem(compute, compartimento)
-    dominios = [d.name for d in identidade.list_availability_domains(compartimento).data]
+    dominios = [d.name for d in com_retentativa(lambda: identidade.list_availability_domains(compartimento)).data]
     log(f"Pronto. Regiao {config['region']}, dominios {dominios}. Meta: {TAMANHOS[0]} nucleos/GB, minimo {TAMANHOS[-1]}.")
 
     erros_desconhecidos = 0
@@ -126,6 +148,9 @@ def main():
                     if "capacity" in texto.lower() or erro.status == 500:
                         log(f"Rodada {rodada}: sem vaga ({nucleos}/{gb} GB, {dominio}).")
                         erros_desconhecidos = 0
+                    elif erro.status == 401:
+                        log("401 ao criar (chave ainda propagando). Espero 1 minuto.")
+                        time.sleep(60)
                     elif erro.status == 429:
                         log("Muitas requisicoes (429). Esperando 10 minutos.")
                         time.sleep(600)
