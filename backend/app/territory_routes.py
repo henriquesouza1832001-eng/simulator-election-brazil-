@@ -41,13 +41,26 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
     def by_office(office: str) -> dict[str, Any]:
         return {"office": office, "indicators": for_office(office)}
 
+    @router.get("/api/territory/home")
+    def home_city() -> dict[str, Any]:
+        """Cidade padrão do jogador: a do cargo na carreira ou a cidade natal do personagem."""
+        state = get_state()
+        career = state.get("career") or {}
+        code = career.get("municipality_id") or ((state.get("player_character") or {}).get("birthplace") or {}).get("municipality_id")
+        if not code:
+            return {"ibge_code": None}
+        try:
+            return {"ibge_code": str(code), "name": territory.city_indicators(state, str(code))["name"]}
+        except ValueError:
+            return {"ibge_code": None}
+
     @router.get("/api/territory")
     def overview() -> dict[str, Any]:
         state = get_state()
         return {**territory.overview(state), "nation": indicator_engine.snapshot(state)}
 
     @router.get("/api/indicators/nation/history")
-    def nation_history(keys: str = Query(default="", max_length=300)) -> dict[str, Any]:
+    def nation_history(keys: str = Query(default="", max_length=2000)) -> dict[str, Any]:
         wanted = [k for k in keys.split(",") if k in REGISTRY]
         nation = indicator_engine.ensure(get_state())
         return {"series": [{"month": h["month"], **{k: h["values"].get(k) for k in wanted}} for h in nation["history"]]}

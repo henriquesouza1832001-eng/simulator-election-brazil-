@@ -1,5 +1,16 @@
 # Changelog
 
+A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
+
+## 0.4 — Base de interface e informação (em andamento, 14 nov. 2026)
+
+- Sistema de design único (`design.css` e `ui.jsx`) e auditoria automática de contraste; corrigidos os textos ilegíveis herdados do tema claro antigo.
+- **Indicadores** reescrito: país ou uma cidade, com variação, tendência e o que faz cada indicador mudar. Substitui as abas Indicadores e Território. Obras, estados e regiões passam a ficar em **Obras e mapa**.
+- **Histórico** reescrito: evolução (um gráfico por vez), decisões em linha do tempo e orçamento.
+- **Perfil** (Placar, Carimbos, Diário) deixa de aparecer na partida; a aba Aprendizado sai da interface; o aviso de importação do TSE deixa de mostrar comandos de desenvolvedor.
+- **Guia** em painel lateral com o que cada aba faz, busca e glossário (substitui o passo a passo).
+- Corrigida a população urbana das cidades (vinha em número de pessoas, agora é percentual).
+
 ## 0.25 — 14 nov. 2026 (novo nome)
 
 - O jogo passa a se chamar **Quatro Anos** (os quatro anos de um mandato). Mudaram os textos visíveis: topo, título da aba, rodapé, conta, créditos e README. Os nomes internos (pilhas `mandato-*` da AWS, chaves de salvamento do navegador, arquivos de imagem) ficaram como estavam para não apagar partidas salvas nem quebrar o deploy.

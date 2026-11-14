@@ -1,52 +1,93 @@
 import { useEffect, useMemo, useState } from 'react';
-import './powers.css';
+import { Page, Section, Segmented, LineChart, Stat, Badge, Empty, Delta, fmt } from './ui';
+import { effectText } from './format';
 
+// id do motor, rótulo, unidade e o que é bom
 const OPTIONS = [
-  ['aprovacao', 'Aprovação', '%'], ['inflacao', 'Inflação', '% a.a.'], ['desemprego', 'Desemprego', '%'], ['divida_pib', 'Dívida', '% do PIB'],
-  ['resultado_primario', 'Resultado primário', '% do PIB'], ['crescimento_pib', 'Crescimento do PIB', '%'], ['gini', 'Gini', ''], ['pobreza', 'Pobreza', '%'],
-  ['base_legislativa', 'Base no Congresso', '%'], ['confianca_institucional', 'Confiança institucional', ''], ['integridade', 'Integridade', ''],
+  ['aprovacao', 'Aprovação', '%', 'up'], ['inflacao', 'Inflação', '% a.a.', 'down'], ['desemprego', 'Desemprego', '%', 'down'], ['divida_pib', 'Dívida', '% do PIB', 'down'],
+  ['resultado_primario', 'Resultado primário', '% do PIB', 'up'], ['crescimento_pib', 'Crescimento do PIB', '% a.a.', 'up'], ['base_legislativa', 'Base no Congresso', '%', 'up'],
+  ['confianca_institucional', 'Confiança institucional', '/100', 'up'], ['integridade', 'Integridade', '/100', 'up'], ['pobreza', 'Pobreza', '%', 'down'], ['gini', 'Desigualdade (Gini)', '', 'down'],
 ];
-
-function Spark({ values }) {
-  const pts = values.filter((v) => Number.isFinite(v));
-  if (pts.length < 2) return <svg className="spark" viewBox="0 0 120 32" preserveAspectRatio="none" role="img" aria-label="Sem série suficiente"><line x1="0" y1="16" x2="120" y2="16" stroke="currentColor" strokeOpacity=".3" /></svg>;
-  const min = Math.min(...pts), max = Math.max(...pts), span = max - min || 1;
-  const d = pts.map((v, i) => `${i ? 'L' : 'M'}${(i / (pts.length - 1)) * 120},${30 - ((v - min) / span) * 28}`).join(' ');
-  return <svg className="spark" viewBox="0 0 120 32" preserveAspectRatio="none" role="img" aria-label={`De ${pts[0]} a ${pts[pts.length - 1]}`}><path d={d} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>;
-}
+const monthName = (iso) => new Date(`${iso.slice(0, 7)}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+const dayName = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+const toneOf = (status = '') => (status.startsWith('aprovad') || status === 'respondida' ? 'good' : /rejeit|agravad|negad/.test(status) ? 'bad' : /tramit/.test(status) ? 'warn' : '');
+const PAGE = 15;
 
 export default function HistoryPanel({ request, state }) {
-  const [picked, setPicked] = useState(['aprovacao', 'inflacao', 'desemprego', 'divida_pib']);
+  const [view, setView] = useState('evolucao');
+  const [key, setKey] = useState('aprovacao');
   const [series, setSeries] = useState(null);
-  const [ledger, setLedger] = useState([]);
+  const [ledger, setLedger] = useState(null);
   const [budget, setBudget] = useState(null);
-  const [error, setError] = useState('');
-  const keys = useMemo(() => picked.join(','), [picked]);
+  const [shown, setShown] = useState(PAGE);
 
-  useEffect(() => { request(`/api/indicators/nation/history?keys=${keys}`).then((r) => setSeries(r.series)).catch((e) => setError(e.message)); }, [keys, state?.date]);
+  useEffect(() => { request(`/api/indicators/nation/history?keys=${OPTIONS.map((o) => o[0]).join(',')}`).then((r) => setSeries(r.series)).catch(() => setSeries([])); }, [state?.date]);
+  useEffect(() => { request('/api/ledger').then((r) => setLedger(r.entries || [])).catch(() => setLedger([])); }, [state?.date]);
   useEffect(() => { request('/api/budget/history').then(setBudget).catch(() => setBudget(null)); }, [state?.date]);
-  useEffect(() => { request('/api/ledger').then((r) => setLedger(r.entries || [])).catch(() => {}); }, [state?.date]);
 
-  if (error) return <section className="panel"><p className="meta-status meta-error" role="alert">{error}</p></section>;
-  const toggle = (k) => setPicked((p) => (p.includes(k) ? p.filter((x) => x !== k) : [...p, k].slice(-8)));
-  const fmt = (v) => (Number.isFinite(v) ? Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—');
+  const [, label, unit, better] = OPTIONS.find((o) => o[0] === key);
+  const points = useMemo(() => (series || []).map((s) => ({ m: s.month, v: s[key] })), [series, key]);
+  const valid = points.filter((p) => Number.isFinite(p.v));
+  const first = valid[0], last = valid[valid.length - 1];
+  const peak = valid.length ? valid.reduce((a, b) => (b.v > a.v ? b : a)) : null;
+  const low = valid.length ? valid.reduce((a, b) => (b.v < a.v ? b : a)) : null;
 
-  return <section className="panel powers-page">
-    <h2>Histórico do mandato</h2>
-    <p className="page-description">Série mensal dos indicadores nacionais desde o início da partida e o que você decidiu em cada período.</p>
-    <div className="powers-filter" role="group" aria-label="Indicadores">{OPTIONS.map(([k, l]) => <button key={k} className={picked.includes(k) ? 'meta-tab active' : 'meta-tab'} aria-pressed={picked.includes(k)} onClick={() => toggle(k)}>{l}</button>)}</div>
-    {!series ? <p className="meta-status" role="status">Carregando…</p> : series.length < 2 ? <p className="meta-status">A série começa a ser registrada depois do primeiro mês. Avance o calendário.</p>
-      : <ul className="history-grid">{OPTIONS.filter(([k]) => picked.includes(k)).map(([k, l, u]) => {
-        const vals = series.map((s) => s[k]);
-        const first = vals.find((v) => Number.isFinite(v)), last = [...vals].reverse().find((v) => Number.isFinite(v));
-        return <li key={k}><span>{l}</span><b>{fmt(last)}<small> {u}</small></b><Spark values={vals} /><small>{series[0].month} a {series[series.length - 1].month} · {last - first >= 0 ? '+' : ''}{fmt(last - first)} no período</small></li>;
-      })}</ul>}
-    {budget && budget.ytd.length > 0 && <>
-      <h3 className="subheading">Orçamento de investimento por função em {budget.year}: previsto × executado</h3>
-      <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Função</th><th>Previsto (R$ bi)</th><th>Executado (R$ bi)</th><th>Diferença</th></tr></thead>
-        <tbody>{budget.ytd.map((r) => <tr key={r.function}><td>{r.label}</td><td>{fmt(r.planned_bi)}</td><td>{fmt(r.executed_bi)}</td><td className={r.difference_bi > 0 ? 'neg' : ''}>{r.difference_bi > 0 ? '+' : ''}{fmt(r.difference_bi)}</td></tr>)}</tbody></table></div>
-      <p className="meta-count">{budget.note}</p></>}
-    <h3 className="subheading">Decisões e resultados</h3>
-    {ledger.length === 0 ? <p className="meta-status">Nenhuma decisão registrada ainda.</p> : <ul className="meta-notes ledger-brief">{ledger.slice(0, 25).map((e) => <li key={e.id}><b>{e.date}</b> — {e.title} <small>({e.status}{e.cost ? ` · ${e.cost}` : ''})</small></li>)}</ul>}
-  </section>;
+  const entries = ledger || [];
+  const groups = useMemo(() => {
+    const out = [];
+    entries.slice(0, shown).forEach((e) => {
+      const m = (e.date || '').slice(0, 7);
+      if (!out.length || out[out.length - 1].m !== m) out.push({ m, items: [] });
+      out[out.length - 1].items.push(e);
+    });
+    return out;
+  }, [entries, shown]);
+
+  return <Page title="Histórico" lead="O que mudou no país e o que foi decidido, desde o primeiro dia da partida."
+    actions={<Segmented label="Tipo de histórico" value={view} onChange={setView} options={[['evolucao', 'Evolução'], ['decisoes', 'Decisões'], ['orcamento', 'Orçamento']]} />}>
+
+    {view === 'evolucao' && <>
+      <div className="ds-pick" role="group" aria-label="Indicador">{OPTIONS.map(([k, l]) => <button key={k} type="button" aria-pressed={key === k} onClick={() => setKey(k)}>{l}</button>)}</div>
+      {!series ? <p className="ds-muted" role="status">Carregando…</p> : <>
+        <LineChart points={points} unit={unit} labels={first && last ? [monthName(first.m + '-01'), monthName(last.m + '-01')] : undefined} />
+        {first && last && <Section>
+          <div className="ds-stats">
+            <Stat label="No início" value={fmt(first.v)} unit={unit} />
+            <Stat label="Agora" value={fmt(last.v)} unit={unit} delta={last.v - first.v} better={better} />
+            {peak && <Stat label="Ponto mais alto" value={fmt(peak.v)} unit={unit} note={monthName(peak.m + '-01')} />}
+            {low && <Stat label="Ponto mais baixo" value={fmt(low.v)} unit={unit} note={monthName(low.m + '-01')} />}
+          </div>
+        </Section>}
+      </>}
+    </>}
+
+    {view === 'decisoes' && <>
+      {ledger === null ? <p className="ds-muted" role="status">Carregando…</p> : entries.length === 0
+        ? <Empty title="Nenhuma decisão registrada ainda">Quando você decretar, enviar projetos ou responder a crises, cada decisão aparece aqui com o que se esperava e o que aconteceu.</Empty>
+        : <>
+          {groups.map((g) => <div key={g.m}>
+            <h3 className="ds-month">{monthName(g.m + '-15')}</h3>
+            <ul className="ds-timeline">{g.items.map((e) => <li key={e.id} className={toneOf(e.status)}>
+              <time dateTime={e.date}>{dayName(e.date)}</time>
+              <b>{e.title} {e.status && <Badge tone={toneOf(e.status)}>{e.status}</Badge>}</b>
+              {(effectText(e.forecast) || effectText(e.result)) && <p>{effectText(e.forecast) && <>Esperado: {effectText(e.forecast)}. </>}{e.result ? (effectText(e.result) ? <>Resultado: {effectText(e.result)}.</> : 'Resultado: sem efeito medido.') : 'Aguardando resultado.'}</p>}
+              {e.reason && <p className="ds-muted">{e.reason}</p>}
+              {e.cost && <p className="ds-muted">Custo: {e.cost}</p>}
+            </li>)}</ul>
+          </div>)}
+          {entries.length > shown && <button className="secondary-button" onClick={() => setShown(shown + PAGE)}>Mostrar mais ({entries.length - shown})</button>}
+        </>}
+    </>}
+
+    {view === 'orcamento' && <>
+      {!budget || budget.ytd.length === 0
+        ? <Empty title="O orçamento começa a ser registrado depois do primeiro mês">Avance o calendário para ver o previsto e o executado de cada função.</Empty>
+        : <Section title={`Investimento por função em ${budget.year}`} hint="Previsto é a dotação do ano dividida por 12; executado soma os gastos extras das suas decisões. Valores em R$ bilhões.">
+          <div className="ds-table-wrap"><table className="ds-table"><thead><tr><th>Função</th><th>Previsto</th><th>Executado</th><th>Diferença</th></tr></thead>
+            <tbody>{budget.ytd.map((r) => <tr key={r.function}><td>{r.label}</td><td>{fmt(r.planned_bi, 2)}</td><td>{fmt(r.executed_bi, 2)}</td>
+              <td><Delta value={r.difference_bi} better="down" digits={2} /></td></tr>)}</tbody></table></div>
+          <p className="ds-muted" style={{ fontSize: 13, marginTop: 10 }}>{budget.note}</p>
+        </Section>}
+    </>}
+  </Page>;
 }

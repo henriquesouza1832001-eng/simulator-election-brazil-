@@ -60,6 +60,16 @@ class TerritoryTest(unittest.TestCase):
         with self.assertRaises(PermissionError):
             territory.start(self.state, "rodoanel_bh", "vereador", "MG", None)
 
+class UrbanShareTest(unittest.TestCase):
+    def test_urban_population_is_a_percentage_not_a_head_count(self):
+        from app.engine.state import new_game
+        s = new_game()
+        for code in ("3550308", "1200013"):
+            row = next(i for i in territory.city_indicators(s, code)["indicators"] if i["id"] == "pop_urbana")
+            self.assertGreater(row["base"], 0)
+            self.assertLessEqual(row["base"], 100)
+
+
 
 if __name__ == "__main__":
     unittest.main()

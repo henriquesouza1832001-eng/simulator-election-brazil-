@@ -89,6 +89,11 @@ def _compute_base(city: dict[str, Any]) -> dict[str, float]:
     pop = float(city.get("population_estimate") or 10000)
     size = max(0.0, min(1.0, (math.log10(max(pop, 1000)) - 3) / 4))
     out = dict(_atlas_values(city["ibge_code"]))
+    # O Atlas traz população urbana/rural em pessoas (ADH_PESOURB/PESORUR); o registro as trata como % da população.
+    urban, rural = out.get("pop_urbana"), _atlas().get(city["ibge_code"], {}).get("pop_rural")
+    if (urban or 0) > 100:
+        total = float(urban) + float(rural or 0)
+        out["pop_urbana"] = round(100 * float(urban) / total, 1)
     out.setdefault("idhm", round(0.55 + 0.30 * wealth, 3))
     out.setdefault("gini", round(0.58 - 0.08 * wealth, 3))
     out["mobilidade"] = round(35 + 25 * size + 15 * wealth, 1)

@@ -1,0 +1,46 @@
+# Roteiro de versões do Quatro Anos
+
+Proposta de roteiro. Os números 0.4, 0.7 e 1.0 vêm de você; os demais são sugestão para ajustarmos.
+
+## 0.4 — Base de interface e informação (em andamento)
+
+O objetivo é uma base visual e de navegação robusta, em que qualquer informação do jogo seja fácil de achar e de entender.
+
+**Pronto**
+- Sistema de design único (`src/design.css` + `src/ui.jsx`): uma paleta, um tipo de bloco, componentes reutilizáveis (página, seção, número em destaque, linha de indicador, grupo recolhível, linha do tempo, gráfico, tabela).
+- Auditoria automática de contraste (todas as abas, 0 achados nas telas auditadas) e correção dos resquícios do tema claro.
+- Navegação em duas linhas; **Perfil** (Placar, Carimbos, Diário) fora da partida; Aprendizado e instruções de desenvolvedor removidos da tela do jogador.
+- **Indicadores**: país ou uma cidade, com variação, tendência e "o que faz mudar / o que afeta".
+- **Histórico**: evolução (um gráfico por vez), decisões em linha do tempo e orçamento.
+- **Guia** em painel lateral, com o que cada aba faz, busca e glossário.
+- Balanço do mandato com nota; CPI em etapas.
+
+**Falta para fechar a 0.4**
+- Migrar para o sistema de design: Visão geral, Agenda, Competências, Orçamento, Crises, Imprensa, Entrevistas, Carreira, Instituições, Nomeações, Trajetória.
+- Redesenhar **Sobre** (Planos, Termos, Créditos, Legado) e a **Agenda**.
+- Pré-campanha do vereador (hoje são cerca de 2 anos de espera): encurtar ou dar o que fazer.
+- Remover os arquivos de CSS antigos (`editorial.css`, `views.css` e outros) quando nenhuma tela depender deles.
+- Fundo e identidade visual unificados.
+
+## 0.5 — Economia e Estado (sugestão)
+Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.
+
+## 0.6 — Congresso e eleições em profundidade (sugestão)
+Calendário de sessões, negociação por bancada para projetos de outros cargos, CPI completa, regras eleitorais específicas por ano, Ficha Limpa e registro de candidatura pelo TSE.
+
+## 0.7 — Gemini conectado
+Hoje o Gemini está só provisionado (gateway na Cloudflare e variáveis de ambiente), sem ligação ao jogo em produção. Na 0.7 ele passa a:
+- ler texto livre e mapear para ações do cargo (o motor valida);
+- sugerir perguntas de entrevista e debate a partir do aprendizado;
+- narrar fatos que o motor já decidiu.
+
+Regra que não muda: o motor decide, o Gemini só interpreta e narra, e tudo que ele devolve é validado contra números e nomes do próprio motor.
+
+## 0.8 — Contas e nuvem (sugestão)
+Login, partidas na nuvem, ranking real e a base para jogar com outras pessoas (hoje só documentada).
+
+## 0.9 — Balanceamento e acabamento (sugestão)
+Simulações de 48 meses por estratégia, ajuste de dificuldade, acessibilidade, desempenho em celular e carga.
+
+## 1.0 — Completo
+Todos os cargos de vereador a presidente jogáveis ponta a ponta, reguladores com decisões próprias, empresas e Banco Central completos, dados oficiais atualizados e interface sem telas "de protótipo".

@@ -18,7 +18,7 @@ import Brand from './Brand';
 import EventArtwork from './EventArtwork';
 import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
-import LearningPanel from './LearningPanel';
+import IndicatorsPanel from './IndicatorsPanel';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
 import RegulatorsPanel from './RegulatorsPanel';
@@ -208,9 +208,8 @@ export default function App() {
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
-  const [activeTab, setActiveTab] = useState('Placar');
+  const [rawTab, setActiveTab] = useState(null);
   const [gameGuideOpen, setGameGuideOpen] = useState(false);
-  const [gameGuideStep, setGameGuideStep] = useState(0);
   const [ruptureInfo, setRuptureInfo] = useState(null);
   const [budgetView, setBudgetView] = useState(null);
   const [budgetSection, setBudgetSection] = useState('Contas públicas');
@@ -292,17 +291,17 @@ export default function App() {
   }, []);
   useEffect(() => { if (authReady && authUser) refresh().catch((e) => setNotice(e.message)); }, [authReady, authUser]);
   useEffect(() => {
-    if (activeTab === 'Orçamento') Promise.all([request('/api/budget'), request('/api/government/ministries')])
+    if (rawTab === 'Orçamento') Promise.all([request('/api/budget'), request('/api/government/ministries')])
       .then(([budget, cabinet]) => { setBudgetView(budget); setMinistries(cabinet.items || []); setTravelCutPct(budget.operating?.travel_cut_pct ?? 0); setResidenceCutPct(budget.operating?.residence_cut_pct ?? 0); })
       .catch((e) => setNotice(e.message));
-  }, [activeTab]);
+  }, [rawTab]);
 
   const currentDate = useMemo(() => state?.date ? new Date(`${state.date}T12:00:00`) : null, [state?.date]);
   const dateLabel = currentDate ? currentDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Carregando…';
 
   async function advance(days) {
     setBusy(true); setNotice('');
-    try { const data = await request('/api/game/advance', { method: 'POST', body: JSON.stringify({ days }) }); setState(data.state); if (activeTab === 'Orçamento') setBudgetView(await request('/api/budget')); setNotice(data.message); }
+    try { const data = await request('/api/game/advance', { method: 'POST', body: JSON.stringify({ days }) }); setState(data.state); if (rawTab === 'Orçamento') setBudgetView(await request('/api/budget')); setNotice(data.message); }
     catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
   async function interpret() {
@@ -441,33 +440,22 @@ export default function App() {
     governador: 'Governo estadual', deputado_federal: 'Câmara dos Deputados', senador: 'Senado',
     presidente: 'Presidência',
   })[careerOffice] || 'Mandato';
-  const tabGroups = partyMode ? [
-    { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
-    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Território', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Território', 'Acontecimentos'] },
+  const baseGroups = partyMode ? [
+    { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Indicadores', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Indicadores', 'Acontecimentos'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ] : [
-    { label: 'Placar', items: ['Placar', 'Coleção', 'Diário'] },
-    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Território', 'Histórico'] },
-    { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Crises'] },
+    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico'] },
+    { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Obras e mapa', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
-    { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Entrevistas', 'Acontecimentos', 'Aprendizado'] },
+    { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Entrevistas', 'Acontecimentos'] },
     { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
-  const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || tabGroups[0];
+  const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Carimbos', 'Diário'] }];
   const availableTabs = tabGroups.flatMap((group) => group.items);
-  const gameGuideSteps = [
-    { tab: 'Visão geral', title: 'Comece pelo painel', description: 'Os cartões resumem os números que você escolheu acompanhar. A agenda e os alertas ajudam a decidir o que merece atenção hoje.' },
-    { tab: 'Indicadores', title: 'Consulte os detalhes quando precisar', description: 'Os indicadores ficam agrupados por assunto. Abra só o grupo que procura e compare a variação com o início da partida.' },
-    { tab: 'Medidas', title: 'Revise antes de decidir', description: 'Escreva uma proposta, confira como o jogo a interpretou e leia efeitos e custos projetados antes de aplicar.' },
-    { tab: 'Mandato', title: `Exerça o cargo de ${careerOverview?.office_label || 'representante'}`, description: `Acompanhe o território de ${careerOverview?.governance_territory?.name || careerOverview?.campaign_territory || 'sua representação'}, suas atribuições, recursos e entregas. As decisões seguem os poderes de ${officeTabLabel.toLowerCase()}.` },
-    { tab: 'Orçamento', title: 'Acompanhe dinheiro, gastos e obras', description: 'Veja as contas públicas, ajuste despesas e escolha investimentos. Obras custam recursos e levam tempo para entregar.' },
-    { tab: 'Crises', title: 'Responda aos acontecimentos', description: 'Eventos simulados podem continuar afetando o país. Compare o custo e os efeitos imediatos e futuros de cada resposta.' },
-    { tab: 'Diplomacia', title: 'Planeje relações e viagens', description: 'Visitas e compromissos internacionais consomem dias do calendário; o restante do governo continua seguindo a data.' },
-    { tab: careerMode ? 'Carreira' : 'Eleição', title: careerMode ? 'Acompanhe sua carreira' : 'Governe durante a campanha', description: careerMode ? 'Confira cargo, território, apoio e calendário eleitoral. A eleição pode abrir caminho para outro mandato ou cargo.' : 'A campanha tem agenda e recursos próprios. O governo continua funcionando enquanto a eleição se aproxima.' },
-    { tab: 'Agenda', title: 'O tempo também é uma decisão', description: 'Use Próximo dia para avançar com cuidado. Viagens e atividades gastam dias; avançar sete dias ou um mês pode passar por vários acontecimentos.' },
-  ].filter((step) => availableTabs.includes(step.tab));
-  const dashboardTab = ['Visão geral', 'Indicadores', 'Medidas'].includes(activeTab);
+  const activeTab = rawTab && availableTabs.includes(rawTab) ? rawTab : baseGroups[0].items[0];
+  const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || baseGroups[0];
+  const dashboardTab = ['Visão geral', 'Medidas'].includes(activeTab);
   const pageGuidance = {
     'Visão geral': localCareer ? ['Sua carreira em movimento.', 'Veja onde você está no calendário e escolha o próximo passo.'] : (monthsRemaining === 0 && termMonth >= 48 ? ['O mandato terminou.', 'Veja o balanço final abaixo e decida se continua jogando ou abre uma nova partida.'] : ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.']),
     'Indicadores': ['Como está o país?', 'Abra os grupos para acompanhar os dados sem sobrecarregar o painel inicial.'],
@@ -480,27 +468,20 @@ export default function App() {
     'Nomeações': ['Quem ocupa os cargos.', 'Escolha ministros e acompanhe indicações ao STF e decisões do Senado.'],
     'Instituições': ['Regras e estabilidade.', 'Acompanhe as instituições e os limites do cargo.'],
     'Agenda': ['O que vem pela frente?', 'Compromissos e acontecimentos seguem a data da partida.'],
-    'Aprendizado': ['Memória do jogo.', 'Suas correções ajudam o intérprete; o motor numérico continua explícito.'],
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
   return <div className="app-shell">
-    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => { setGameGuideStep(0); setGameGuideOpen(true); }}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
-    <nav className="tabs tabs-grouped">{tabGroups.map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>{selectedTabGroup.items.length > 1 && <nav className="tabs tabs-grouped subtabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
+    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setActiveTab('Placar')}>Perfil</button><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => setGameGuideOpen(true)}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
+    <nav className="tabs tabs-grouped">{tabGroups.filter((group) => !group.hidden).map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>{(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="tabs tabs-grouped subtabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="tab tab-sub back-to-game" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
 
     <main className="content">
-      {!partyMode && ['Visão geral', 'Indicadores'].includes(activeTab) && <section className="welcome-row"><div><div className="eyebrow">{careerMode ? `${state.career_overview.office_label.toUpperCase()} · ${(state.career_overview.campaign_territory || state.career_overview.state_name).toUpperCase()}` : `GABINETE DA PRESIDÊNCIA · CICLO ${state.term}`}</div><h1>{pageGuidance[0]}</h1><p>{pageGuidance[1]}</p>{playerCharacter?.name && <div className="character-nameplate"><span>{playerCharacter.name.slice(0, 1).toUpperCase()}</span><div><b>{playerCharacter.name}</b><small>{playerCharacter.political_spectrum?.replaceAll('_', ' ') || playerCharacter.family_background?.replaceAll('_', ' ') || 'personagem da partida'}</small></div></div>}</div><div className="term-card"><span>{careerMode ? careerCardLabel : 'MANDATO'}</span><strong>{careerMode ? careerCardValue : termMonth}<small>{careerMode ? careerCardSuffix : ' / 48'}</small></strong><div className="progress"><i style={{ width: `${careerMode ? careerCardProgress : termMonth / 48 * 100}%` }}/></div><small>{careerMode ? careerCardNote : `${monthsRemaining} meses restantes`}</small></div></section>}
+      {!partyMode && activeTab === 'Visão geral' && <section className="welcome-row"><div><div className="eyebrow">{careerMode ? `${state.career_overview.office_label.toUpperCase()} · ${(state.career_overview.campaign_territory || state.career_overview.state_name).toUpperCase()}` : `GABINETE DA PRESIDÊNCIA · CICLO ${state.term}`}</div><h1>{pageGuidance[0]}</h1><p>{pageGuidance[1]}</p>{playerCharacter?.name && <div className="character-nameplate"><span>{playerCharacter.name.slice(0, 1).toUpperCase()}</span><div><b>{playerCharacter.name}</b><small>{playerCharacter.political_spectrum?.replaceAll('_', ' ') || playerCharacter.family_background?.replaceAll('_', ' ') || 'personagem da partida'}</small></div></div>}</div><div className="term-card"><span>{careerMode ? careerCardLabel : 'MANDATO'}</span><strong>{careerMode ? careerCardValue : termMonth}<small>{careerMode ? careerCardSuffix : ' / 48'}</small></strong><div className="progress"><i style={{ width: `${careerMode ? careerCardProgress : termMonth / 48 * 100}%` }}/></div><small>{careerMode ? careerCardNote : `${monthsRemaining} meses restantes`}</small></div></section>}
 
       {dashboardTab && <>{activeTab === 'Visão geral' && localCareer && <><div className="indicator-toolbar"><span>SUA SITUAÇÃO · {careerOverview.office_label.toUpperCase()}</span></div><section className="indicator-grid">{careerCards.map((card) => <Metric key={card.label} label={card.label} value={card.value} unit={card.unit} tone={card.tone || ''} detail={card.detail} />)}</section></>}
       {activeTab === 'Visão geral' && !localCareer && <><div className="indicator-toolbar"><span>SEU PAINEL · ATÉ 6 INDICADORES</span><details className="dashboard-customizer"><summary>Escolher indicadores</summary><div>{indicatorOptions.map((option) => <label key={option.key}><input type="checkbox" checked={(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).includes(option.key)} onChange={() => toggleDashboardCard(option.key)} />{option.label}</label>)}</div></details></div><section className="indicator-grid">
         {(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).slice(0, 6).map((key) => { const option = indicatorOptions.find((item) => item.key === key); if (!option) return null; const value = readIndicator(option, state); const tone = key === 'primary_balance' ? (m.primary_balance < 0 ? 'red' : 'green') : option.tone; return <Metric key={key} indicatorKey={key} label={option.label} value={value} unit={option.unit} tone={tone || ''} detail={option.detail} />; })}
       </section></>}
 
-      {activeTab === 'Indicadores' && <section className="all-indicators panel">
-        <div className="panel-heading small"><div><div className="eyebrow">PAINEL COMPLETO</div><h2>Indicadores por assunto</h2><p>Abra um grupo quando quiser consultar os detalhes. Seus cartões principais continuam no topo.</p></div><span className="indicator-count">{detailedIndicatorGroups.reduce((count, group) => count + group.items.length, 0)} INDICADORES</span></div>
-        <div className="indicator-groups">{detailedIndicatorGroups.map((group) => <details className="indicator-group" key={group.title}><summary>{group.title}<span>{group.items.length} itens</span></summary><div>{group.items.map((item) => { const value = readIndicator(item, state); const formatted = Number.isFinite(Number(value)) ? formatIndicator(value, item.key) : '—'; const trend = indicatorTrend(item, state); const tone = item.key === 'primary_balance' && Number(value) < 0 ? 'red' : item.key === 'approval' || item.key === 'gdp_growth' || item.key === 'human_development_index' || item.key === 'life_expectancy_years' || item.key === 'sanitation_coverage_pct' || item.key === 'school_completion_pct' ? 'green' : item.key === 'inflation' || item.key === 'debt_gdp' || item.key === 'country_risk' || item.key === 'gini_index' || item.key === 'poverty_rate_pct' || item.key === 'homicide_rate_per_100k' || item.key === 'infant_mortality_per_1000' ? 'amber' : ''; return <article className="indicator-line" key={item.key}><div><b>{item.label}</b><small>{item.detail}{trend && <span className="indicator-trend"> · {trend}</span>}</small></div><strong className={tone}>{formatted}<small>{item.unit}</small></strong></article>; })}</div></details>)}</div>
-        <details className="regional-snapshot"><summary>Comparar as cinco regiões <span>apoio, infraestrutura e atividade</span></summary><div className="regional-card-grid">{Object.entries(state.regional_metrics || {}).map(([key, region]) => <article key={key}><div><b>{key.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())}</b><span>{formatIndicator(region.support, 'support')}% apoio</span></div><i><em style={{ width: `${Math.max(0, Math.min(100, Number(region.infrastructure || 0)))}%` }}/></i><small>Infraestrutura {formatIndicator(region.infrastructure, 'infrastructure')} · atividade {formatIndicator(region.economic_activity, 'economic_activity')}</small><p>{region.priority || 'Prioridade de desenvolvimento definida no cenário.'}</p></article>)}</div><small className="regional-disclaimer">Linhas de base e variações são indicadores simulados; obras concluídas atualizam as regiões atendidas.</small></details>
-        <p className="indicator-footnote">Indicadores sociais, serviços, diplomacia e regiões são estimativas da simulação, não uma série oficial. Consulte as abas temáticas para ver orçamento, projetos e eventos que explicam cada mudança.</p>
-      </section>}
 
       {activeTab === 'Visão geral' && !localCareer && <MandateReview request={request} state={state} />}
       {activeTab === 'Visão geral' && <div className="overview-grid">
@@ -540,7 +521,9 @@ export default function App() {
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      {activeTab === 'Território' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
+      {activeTab === 'Indicadores' && <IndicatorsPanel request={request} state={state} />}
+
+      {activeTab === 'Obras e mapa' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
       {activeTab === 'Histórico' && <HistoryPanel request={request} state={state} />}
 
@@ -556,13 +539,12 @@ export default function App() {
 
       {activeTab === 'Competências' && <PowersPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
-      {activeTab === 'Aprendizado' && <LearningPanel state={state} request={request} />}
         {activeTab === 'Trajetória' && partyMode && <PartyPathPanel state={state} request={request} onNotice={setNotice} onLaunched={(next) => { acceptCampaignState(next); setActiveTab('Carreira'); }} />}
         {activeTab === 'Acontecimentos' && <StoryPanel state={state} request={request} onNotice={setNotice} />}
         {activeTab === 'Semana' &&<CampaignWeekPanel request={request} onNotice={setNotice} />}
         {activeTab === 'Congresso' &&<CongressPanel state={state} request={request} />}
         {activeTab === 'Placar' && <RankingPanel state={state} request={request} onNotice={setNotice} />}
-        {activeTab === 'Coleção' && <CollectionPanel state={state} request={request} />}
+        {activeTab === 'Carimbos' && <CollectionPanel state={state} request={request} />}
         {activeTab === 'Diário' && <DiaryPanel request={request} />}
         {['Planos', 'Legado', 'Termos', 'Créditos'].includes(activeTab) && <InfoPanel section={activeTab} />}
       {activeTab === 'Orçamento' && <section className="panel agenda-page">
@@ -624,10 +606,10 @@ export default function App() {
 
       {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      <footer className="footer"><span>QUATRO ANOS · simulador em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
+      <footer className="footer"><span>QUATRO ANOS · v0.4 · em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
     </main>
     {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} busy={busy} setBusy={setBusy} />}
     {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}
-    {gameGuideOpen && <GameGuide steps={gameGuideSteps} stepIndex={gameGuideStep} onStepChange={(nextStep) => { setGameGuideStep(nextStep); const nextTab = gameGuideSteps[nextStep]?.tab; if (nextTab) setActiveTab(nextTab); }} onClose={() => setGameGuideOpen(false)} />}
+    {gameGuideOpen && <GameGuide groups={tabGroups} activeTab={activeTab} onGo={setActiveTab} onClose={() => setGameGuideOpen(false)} />}
   </div>;
 }

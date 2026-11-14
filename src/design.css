@@ -1,0 +1,174 @@
+/* Quatro Anos — sistema de design (0.4)
+   Uma paleta, um tipo de bloco, poucos componentes. As telas migradas usam só as classes `ds-`.
+   Este arquivo é importado por último e também corrige o contraste das telas antigas que ainda não migraram. */
+
+:root {
+  color-scheme: dark;
+  --ds-bg: #0b1216;
+  --ds-surface: #111b21;
+  --ds-surface-2: #172730;
+  --ds-line: #26383f;
+  --ds-line-2: #365058;
+  --ds-ink: #ecf3f1;
+  --ds-ink-2: #bccbce;   /* texto secundário: 9:1 sobre a superfície */
+  --ds-ink-3: #95aab0;   /* texto de apoio: 6:1 sobre a superfície */
+  --ds-accent: #4cc79a;
+  --ds-accent-2: #1f7a58;
+  --ds-on-accent: #04150f;
+  --ds-good: #6fe0a8;
+  --ds-bad: #ff8f86;
+  --ds-warn: #f0c46e;
+  --ds-info: #86bfff;
+  --ds-radius: 10px;
+  --ds-space: 16px;
+}
+
+/* ---------- estrutura ---------- */
+.ds-page { max-width: 1120px; margin: 0 auto; padding: 4px 0 56px; color: var(--ds-ink); }
+.ds-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin: 0 0 20px; }
+.ds-head h1, .ds-head h2 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; }
+.ds-lead { margin: 6px 0 0; max-width: 70ch; color: var(--ds-ink-2); font-size: 15px; line-height: 1.55; }
+.ds-section { margin: 28px 0 0; }
+.ds-section > h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.ds-section > .ds-hint { margin: 0 0 12px; color: var(--ds-ink-3); font-size: 14px; line-height: 1.5; }
+.ds-card { background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: var(--ds-radius); padding: var(--ds-space); }
+.ds-muted { color: var(--ds-ink-3); }
+.ds-empty { padding: 28px 16px; text-align: center; color: var(--ds-ink-3); border: 1px dashed var(--ds-line-2); border-radius: var(--ds-radius); }
+.ds-empty b { display: block; margin-bottom: 4px; color: var(--ds-ink-2); }
+
+/* ---------- controle segmentado (país / cidade) ---------- */
+.ds-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: 999px; }
+.ds-seg button { border: 0; background: transparent; color: var(--ds-ink-2); font: inherit; font-size: 14px; padding: 7px 16px; border-radius: 999px; cursor: pointer; min-height: 36px; }
+.ds-seg button[aria-pressed="true"] { background: var(--ds-accent); color: var(--ds-on-accent); font-weight: 700; }
+.ds-seg button:not([aria-pressed="true"]):hover { color: var(--ds-ink); background: var(--ds-surface-2); }
+
+/* ---------- números em destaque ---------- */
+.ds-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0; }
+.ds-stat { background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: var(--ds-radius); padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.ds-stat > span { color: var(--ds-ink-2); font-size: 13px; }
+.ds-stat > b { font-size: 26px; line-height: 1.15; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ds-stat > b small { font-size: 13px; font-weight: 500; color: var(--ds-ink-3); margin-left: 4px; }
+.ds-stat > em { font-style: normal; font-size: 13px; }
+
+.ds-delta { font-variant-numeric: tabular-nums; font-size: 13px; white-space: nowrap; }
+.ds-delta.good { color: var(--ds-good); }
+.ds-delta.bad { color: var(--ds-bad); }
+.ds-delta.flat { color: var(--ds-ink-3); }
+
+/* ---------- lista de indicadores ---------- */
+.ds-rows { list-style: none; margin: 0; padding: 0; }
+.ds-row { border-top: 1px solid var(--ds-line); }
+.ds-row:first-child { border-top: 0; }
+.ds-row > button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto 92px 96px; align-items: center; gap: 12px; padding: 11px 4px; cursor: pointer; }
+.ds-row > button:hover { background: var(--ds-surface-2); }
+.ds-row > button:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: -2px; }
+.ds-row .ds-name { font-size: 15px; color: var(--ds-ink); overflow-wrap: anywhere; }
+.ds-row .ds-value { font-size: 16px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.ds-row .ds-value small { font-size: 12px; font-weight: 500; color: var(--ds-ink-3); margin-left: 3px; }
+.ds-row .ds-delta { text-align: right; }
+.ds-spark { width: 96px; height: 26px; color: var(--ds-ink-3); }
+.ds-spark.good { color: var(--ds-good); } .ds-spark.bad { color: var(--ds-bad); }
+.ds-row-more { padding: 4px 4px 16px; display: grid; gap: 8px; color: var(--ds-ink-2); font-size: 14px; line-height: 1.55; }
+.ds-row-more p { margin: 0; }
+.ds-row-more b { color: var(--ds-ink); }
+.ds-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.ds-tag { padding: 2px 10px; border: 1px solid var(--ds-line-2); border-radius: 999px; font-size: 12.5px; color: var(--ds-ink-2); }
+
+/* ---------- grupo recolhível ---------- */
+.ds-group { border: 1px solid var(--ds-line); border-radius: var(--ds-radius); background: var(--ds-surface); margin: 0 0 10px; }
+.ds-group > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 13px 16px; font-size: 16px; font-weight: 700; }
+.ds-group > summary::-webkit-details-marker { display: none; }
+.ds-group > summary::before { content: '▸'; color: var(--ds-ink-3); font-weight: 400; }
+.ds-group[open] > summary::before { content: '▾'; }
+.ds-group > summary .ds-meta { margin-left: auto; font-size: 13px; font-weight: 400; color: var(--ds-ink-3); }
+.ds-group > .ds-body { padding: 0 12px 10px; }
+
+/* ---------- selo ---------- */
+.ds-badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; border: 1px solid var(--ds-line-2); color: var(--ds-ink-2); }
+.ds-badge.good { color: var(--ds-good); border-color: #2c6a52; }
+.ds-badge.bad { color: var(--ds-bad); border-color: #7a4640; }
+.ds-badge.warn { color: var(--ds-warn); border-color: #7a6532; }
+
+/* ---------- linha do tempo ---------- */
+.ds-timeline { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 2px solid var(--ds-line); }
+.ds-timeline > li { position: relative; padding: 0 0 18px 18px; }
+.ds-timeline > li::before { content: ''; position: absolute; left: -25px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--ds-surface-2); border: 2px solid var(--ds-line-2); }
+.ds-timeline > li.good::before { border-color: var(--ds-good); }
+.ds-timeline > li.bad::before { border-color: var(--ds-bad); }
+.ds-timeline time { display: block; font-size: 12.5px; color: var(--ds-ink-3); }
+.ds-timeline b { display: block; font-size: 15px; font-weight: 600; }
+.ds-timeline p { margin: 3px 0 0; color: var(--ds-ink-2); font-size: 14px; line-height: 1.5; }
+.ds-month { margin: 22px 0 8px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ds-ink-3); }
+
+/* ---------- gráfico principal ---------- */
+.ds-chart { background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: var(--ds-radius); padding: 14px 16px 10px; }
+.ds-chart svg { display: block; width: 100%; height: 180px; color: var(--ds-accent); }
+.ds-chart-axis { display: flex; justify-content: space-between; color: var(--ds-ink-3); font-size: 12.5px; margin-top: 4px; }
+.ds-pick { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.ds-pick button { border: 1px solid var(--ds-line-2); background: transparent; color: var(--ds-ink-2); border-radius: 999px; padding: 5px 13px; font: inherit; font-size: 13.5px; cursor: pointer; min-height: 34px; }
+.ds-pick button[aria-pressed="true"] { background: var(--ds-accent); border-color: var(--ds-accent); color: var(--ds-on-accent); font-weight: 700; }
+
+@media (max-width: 640px) {
+  .ds-head h1, .ds-head h2 { font-size: 22px; }
+  .ds-row > button { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .ds-row .ds-delta { grid-column: 1; text-align: left; }
+  .ds-row .ds-spark { grid-column: 2; grid-row: 1 / span 2; justify-self: end; width: 72px; }
+  .ds-stat > b { font-size: 22px; }
+}
+
+/* ======================================================================
+   Correção de contraste das telas antigas (achados da auditoria automática).
+   Cada regra abaixo troca um resquício do tema claro por cores do sistema novo.
+   ====================================================================== */
+.regional-card-grid article, .regional-snapshot article { background: var(--ds-surface-2); border-color: var(--ds-line); color: var(--ds-ink); }
+.regional-card-grid article *, .regional-snapshot article * { color: inherit; }
+.regional-card-grid article small, .regional-card-grid article p, .regional-card-grid article > div span { color: var(--ds-ink-2); }
+.indicator-trend { color: var(--ds-ink-2) !important; }
+.composer-footer span, .composer-footer .muted { color: var(--ds-ink-2); }
+.panel .eyebrow, .eyebrow { color: var(--ds-ink-3); }
+.panel span.muted, .panel small { color: inherit; }
+.rupture-box { background: #2a1b1b; border-color: #6e3b36; }
+.rupture-box h3 { color: #ffb4ab; }
+.rupture-box p, .rupture-box small { color: #e6d3d0; }
+.forecast-later { color: var(--ds-ink-2) !important; }
+.score, .score strong { color: var(--ds-accent); }
+.neg, b.neg, span.neg { color: var(--ds-bad); }
+.pos, b.pos, span.pos { color: var(--ds-good); }
+.primary-button, .game-setup-screen .primary-button { background: var(--ds-accent-2); color: #fff; }
+.primary-button:hover:not(:disabled) { background: #2a9972; }
+.advance-link { color: var(--ds-ink-2); }
+.tabs .advance-link span { color: var(--ds-accent); }
+
+/* ---------- tabela ---------- */
+.ds-table-wrap { overflow-x: auto; max-width: 100%; }
+.ds-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.ds-table th { text-align: right; color: var(--ds-ink-2); font-weight: 600; font-size: 13px; padding: 8px 10px; border-bottom: 1px solid var(--ds-line-2); white-space: nowrap; }
+.ds-table td { text-align: right; padding: 10px; border-bottom: 1px solid var(--ds-line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ds-table th:first-child, .ds-table td:first-child { text-align: left; white-space: normal; position: static; background: transparent; }
+
+/* ---------- guia do jogo (painel lateral) ---------- */
+.ds-guide-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(4, 9, 12, .6); display: flex; justify-content: flex-end; }
+.ds-guide { width: min(560px, 100vw); height: 100%; overflow-y: auto; background: var(--ds-surface); border-left: 1px solid var(--ds-line-2); padding: 0 20px 40px; color: var(--ds-ink); }
+.ds-guide-top { position: sticky; top: 0; z-index: 1; background: var(--ds-surface); padding: 18px 0 12px; border-bottom: 1px solid var(--ds-line); display: grid; gap: 10px; }
+.ds-guide-top > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ds-guide-top h2 { margin: 0; font-size: 20px; }
+.ds-guide-top button { all: unset; cursor: pointer; font-size: 26px; line-height: 1; padding: 4px 10px; color: var(--ds-ink-2); border-radius: 8px; }
+.ds-guide-top button:hover { background: var(--ds-surface-2); color: var(--ds-ink); }
+.ds-guide-top input { min-height: 42px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--ds-line-2); background: var(--ds-bg); color: var(--ds-ink); font: inherit; }
+.ds-guide h3 { margin: 24px 0 8px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.ds-guide ol { margin: 0; padding-left: 20px; color: var(--ds-ink-2); line-height: 1.6; font-size: 15px; }
+.ds-guide-item { border-top: 1px solid var(--ds-line); padding: 12px 0; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: start; }
+.ds-guide-item b { font-size: 15px; }
+.ds-guide-item p { grid-column: 1; margin: 0; color: var(--ds-ink-2); font-size: 14px; line-height: 1.5; }
+.ds-guide-item button { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.ds-guide-group { margin: 18px 0 2px; font-size: 15px; font-weight: 700; color: var(--ds-accent); }
+.ds-gloss { border-top: 1px solid var(--ds-line); padding: 10px 0; }
+.ds-gloss b { display: block; font-size: 15px; }
+.ds-gloss p { margin: 2px 0 0; color: var(--ds-ink-2); font-size: 14px; line-height: 1.5; }
+
+/* ---------- nomeações, instituições e campanha (resquícios do tema claro) ---------- */
+.appointment-candidate, .appointment-candidate.selected, .current-minister, .current-minister.empty, .appointment-preview, .candidate-stats { background: var(--ds-surface-2); color: var(--ds-ink); border-color: var(--ds-line-2); }
+.appointment-candidate *, .current-minister *, .appointment-preview *, .candidate-stats * { color: inherit; }
+.appointment-candidate .candidate-background, .appointment-candidate .candidate-politics, .candidate-stats i, .appointment-candidate small, .current-minister small { color: var(--ds-ink-2); }
+.appointment-preview b { color: var(--ds-accent); }
+article.panel > span:first-child, .panel > article > span:first-child, article > span:first-child { color: var(--ds-ink-3); }
