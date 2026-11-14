@@ -346,3 +346,16 @@ table { max-width: 100%; }
 .operating-impact span { color: inherit; }
 .operating-impact b { color: inherit; }
 .operating-lines > * { color: inherit; }
+
+/* Resumos de apuração e referência: texto legível no tema escuro */
+.career-candidate-results > summary, .career-result summary, details.more > summary { color: var(--muted-strong, #b8c7cc); cursor: pointer; }
+.career-candidate-results > summary:hover { color: inherit; }
+.reference-election { margin: 0 0 1rem; }
+
+/* Tabelas do jogo: cor do texto herdada do tema (antes ficava escura sobre o fundo escuro) */
+.territory-table, .territory-table td, .territory-table th { color: var(--ink, #e8f0ee); }
+.territory-table th { color: var(--muted-strong, #b8c7cc); font-weight: 600; }
+.territory-table td.pos, .territory-table td.neg { font-weight: 600; }
+.territory-table td.pos { color: #6fe0a8; }
+.territory-table td.neg { color: #ff8f86; }
+.territory-table th:first-child, .territory-table td:first-child { background: var(--panel, #10191e); }

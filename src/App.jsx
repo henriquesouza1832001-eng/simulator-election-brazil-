@@ -26,6 +26,7 @@ import NewsPanel from './NewsPanel';
 import InterviewsPanel from './InterviewsPanel';
 import CompaniesPanel from './CompaniesPanel';
 import CongressProcessPanel from './CongressProcessPanel';
+import MandateReview from './MandateReview';
 import HistoryPanel from './HistoryPanel';
 import './territory.css';
 import TerritoryPanel from './TerritoryPanel';
@@ -468,7 +469,7 @@ export default function App() {
   ].filter((step) => availableTabs.includes(step.tab));
   const dashboardTab = ['Visão geral', 'Indicadores', 'Medidas'].includes(activeTab);
   const pageGuidance = {
-    'Visão geral': localCareer ? ['Sua carreira em movimento.', 'Veja onde você está no calendário e escolha o próximo passo.'] : ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.'],
+    'Visão geral': localCareer ? ['Sua carreira em movimento.', 'Veja onde você está no calendário e escolha o próximo passo.'] : (monthsRemaining === 0 && termMonth >= 48 ? ['O mandato terminou.', 'Veja o balanço final abaixo e decida se continua jogando ou abre uma nova partida.'] : ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.']),
     'Indicadores': ['Como está o país?', 'Abra os grupos para acompanhar os dados sem sobrecarregar o painel inicial.'],
     'Medidas': ['Prepare uma decisão.', 'Descreva a proposta; revise a interpretação e os efeitos antes de aplicar.'],
     'Orçamento': ['Onde usar os recursos?', 'Escolha entre contas públicas, investimentos e obras. Cada área tem sua própria tela.'],
@@ -501,6 +502,7 @@ export default function App() {
         <p className="indicator-footnote">Indicadores sociais, serviços, diplomacia e regiões são estimativas da simulação, não uma série oficial. Consulte as abas temáticas para ver orçamento, projetos e eventos que explicam cada mudança.</p>
       </section>}
 
+      {activeTab === 'Visão geral' && !localCareer && <MandateReview request={request} state={state} />}
       {activeTab === 'Visão geral' && <div className="overview-grid">
         <section className="panel today-brief">
           <div className="eyebrow">PRIORIDADE DE HOJE</div>

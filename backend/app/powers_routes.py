@@ -127,6 +127,11 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         from .engine import congress_agenda
         return congress_agenda.overview(get_state())
 
+    @router.get("/api/mandate/review")
+    def mandate_review() -> dict[str, Any]:
+        from .engine import mandate_review as mr
+        return mr.review(get_state())
+
     @router.get("/api/cpi")
     def cpi_overview() -> dict[str, Any]:
         from .engine import cpi

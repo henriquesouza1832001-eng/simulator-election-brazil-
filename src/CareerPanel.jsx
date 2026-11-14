@@ -44,7 +44,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
   const currentCharacter = state.player_character || overview?.character || {};
   const [options, setOptions] = useState(null);
   const [archives, setArchives] = useState([]);
-  const [section, setSection] = useState('Carreira');
+  const [section, setSection] = useState('Resumo');
   const [office, setOffice] = useState('vereador');
   const [stateCode, setStateCode] = useState('SP');
   const [municipality, setMunicipality] = useState('');
@@ -113,7 +113,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
     : 0;
   const campaignActivityDays = (chosenActivity?.days || 1) + travelDays;
   const chosenGovernmentAction = overview?.governance_actions?.find((item) => item.key === governmentAction);
-  const sections = ['Carreira', ...(overview?.governing ? ['Mandato'] : []), 'Campanha', 'Apoio', 'Histórico', 'Dados do TSE'];
+  const sections = ['Resumo', ...(overview?.governing ? ['Mandato'] : []), 'Campanha', 'Apoio', 'Histórico', 'Dados do TSE'];
   const mandateProfile = mandateProfiles[overview?.office] || mandateProfiles.presidente;
   const legislativeOffice = ['vereador', 'deputado_estadual', 'deputado_federal', 'senador'].includes(overview?.office);
   const budgetLabel = (amount) => Number(amount || 0) >= 1000
@@ -123,7 +123,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
   useEffect(() => { if (!sections.includes(section)) setSection(sections[0]); }, [overview?.phase, overview?.governing]);
   useEffect(() => {
     if (standaloneMandate && overview?.governing) setSection('Mandato');
-    else if (!standaloneMandate && section === 'Mandato') setSection('Carreira');
+    else if (!standaloneMandate && section === 'Mandato') setSection('Resumo');
   }, [standaloneMandate, overview?.governing]);
   useEffect(() => { if (!governmentAction && overview?.governance_actions?.length) setGovernmentAction(overview.governance_actions[0].key); }, [overview?.governance_actions]);
 
@@ -244,10 +244,10 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
       </header>
       {overview.historical_compare && <aside className="panel historical-compare" aria-label="Resultado oficial e simulado"><b>Eleição de {overview.historical_compare.year}: oficial × simulado</b><p>{overview.historical_compare.text}</p>
         <ol className="results-list">{overview.historical_compare.real_top.map((c) => <li key={c.id}><span>{c.name} <small>({c.party})</small></span><b>{c.votes.toLocaleString('pt-BR')}</b><small>{c.share_pct}% · {c.result}</small></li>)}</ol></aside>}
-      {overview.reference_election && <aside className="panel reference-election" aria-label="Referência histórica"><b>Referência real</b><p>{overview.reference_election.text}</p><small>{overview.reference_election.source}</small></aside>}
+      {overview.reference_election && <details className="fold reference-election" aria-label="Referência histórica"><summary>Referência real <span>último pleito, com dados do TSE</span></summary><p>{overview.reference_election.text}</p><small>{overview.reference_election.source}</small></details>}
       {!standaloneMandate && <nav className="career-subnav" aria-label="Seções da carreira">{sections.map((item) => <button key={item} className={section === item ? 'active' : ''} onClick={() => setSection(item)}>{item}</button>)}<span/>{overview.can_start_campaign && <button onClick={() => setShowSetup(true)}>Nova candidatura</button>}</nav>}
 
-      {section === 'Carreira' && <div className="career-columns">
+      {section === 'Resumo' && <div className="career-columns">
         <section className="panel career-status-panel">
           <span className="eyebrow">FASE ATUAL</span>
           <h3>{overview.phase === 'campaign' ? 'Construa apoio antes da votação' : overview.phase === 'runoff_campaign' ? 'Decida a reta final' : overview.phase === 'runoff_observer' ? 'A votação continua sem sua candidatura' : overview.phase === 'pre_campaign' ? 'Organize sua base antes da campanha' : overview.phase === 'transition' && !overview.governing ? 'Prepare a posse' : overview.governing ? `Mandato de ${overview.term_years} anos` : overview.phase === 'opposition' ? 'A disputa terminou; a carreira continua' : 'Mandato encerrado'}</h3>
@@ -268,7 +268,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
             {overview.conduct_review?.attempts > 0 && <small>{overview.conduct_review.detected} irregularidade(s) detectada(s); revisão final {overview.conduct_review.reviewed ? 'aberta' : 'não aberta'}; penalidade de {number.format(overview.conduct_review.vote_penalty)} pontos.</small>}
           </div>}
         </section>
-        <aside className="panel career-rules"><span className="eyebrow">PODERES DO CARGO</span><ul>{overview.powers.map((item) => <li key={item}>{item}</li>)}</ul><div className="career-appointment"><b>Outros caminhos</b>{overview.appointment_paths.map((item) => <p key={item.key} className={item.available ? 'available' : 'locked'}>{item.label}<small>{item.available ? item.description : `Disponível após exercer: ${item.requires.map((key) => options.offices.find((role) => role.key === key)?.label).join(', ')}`}</small></p>)}</div>{overview.can_start_campaign && <button className="secondary-button career-next-office" onClick={() => setShowSetup(true)}>Escolher próximo cargo</button>}</aside>
+        <aside className="panel career-rules"><span className="eyebrow">PODERES DO CARGO</span><ul>{overview.powers.map((item) => <li key={item}>{item}</li>)}</ul><div className="career-appointment"><b>Outros caminhos</b>{overview.appointment_paths.filter((item) => item.available).map((item) => <p key={item.key} className="available">{item.label}<small>{item.description}</small></p>)}{overview.appointment_paths.some((item) => !item.available) && <details className="more"><summary>Cargos que exigem outra trajetória</summary>{overview.appointment_paths.filter((item) => !item.available).map((item) => <p key={item.key} className="locked">{item.label}<small>{`Disponível após exercer: ${item.requires.map((key) => options.offices.find((role) => role.key === key)?.label).join(', ')}`}</small></p>)}</details>}</div>{overview.can_start_campaign && <button className="secondary-button career-next-office" onClick={() => setShowSetup(true)}>Escolher próximo cargo</button>}</aside>
       </div>}
 
       {overview.latest_public_poll && (section === 'Campanha' || section === 'Apoio') && <section className="panel career-poll-card">

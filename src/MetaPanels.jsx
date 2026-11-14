@@ -173,12 +173,18 @@ export function StoryPanel({ request, state, onNotice }) {
         <ul className="meta-notes">{Object.entries(data.profile).map(([k, v]) => <li key={k}>{TONE_LABEL[k] || k}: {v}</li>)}{data.unanswered > 0 && <li>Sem resposta no prazo: {data.unanswered}</li>}</ul></>}
       <details className="agenda-more" open={data.pending.length === 0}><summary>Histórico ({data.history.length})</summary>
       {data.history.length === 0 ? <p className="meta-status">Ainda não há histórico.</p> :
-        <ul className="vote-list story-history-list">{data.history.map((h) => <li key={h.id}>
+<><ul className="vote-list story-history-list">{data.history.slice(0, 5).map((h) => <li key={h.id}>
           <EventArtwork event={h} compact />
           <div><b>{h.title}</b>
             <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
             <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></div>
-        </li>)}</ul>}</details>
+        </li>)}</ul>
+        {data.history.length > 5 && <details className="more"><summary>Ver anteriores ({data.history.length - 5})</summary><ul className="vote-list story-history-list">{data.history.slice(5).map((h) => <li key={h.id}>
+          <EventArtwork event={h} compact />
+          <div><b>{h.title}</b>
+            <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
+            <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></div>
+        </li>)}</ul></details>}</>}</details>
     </>}</Status>
   </section>;
 }

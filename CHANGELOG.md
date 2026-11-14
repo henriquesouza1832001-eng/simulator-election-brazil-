@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.24 — 13 nov. 2026 (revisão de tela do começo ao fim do jogo)
+
+- Balanço do mandato (`engine/mandate_review.py`, `/api/mandate/review`): do primeiro ao último dia, indicador por indicador, decisões, CPIs e uma nota de 0 a 100 por regra fixa. No fim dos 48 meses aparece aberto na Visão geral, com o título "O mandato terminou".
+- Navegação em duas linhas (grupos e botões de avançar em cima, seções embaixo); Competências, Território, Reguladores e Empresas com blocos recolhíveis e detalhes sob demanda.
+- Trajetória mostra só os cargos próximos e o diário recente; Carreira troca a seção interna "Carreira" por "Resumo" e recolhe a referência real; Acontecimentos mostra os 5 últimos.
+- Correções de contraste: caixa de cortes do Orçamento, tabelas e resumos de apuração.
+
 ## 0.23 — 12 nov. 2026 (CPI em etapas)
 
 - CPI em sete etapas (requerimento, instalação, três oitivas, relatório final e encaminhamento ao MP e à PF), com o relatório dependendo do que as oitivas encontraram e da integridade.

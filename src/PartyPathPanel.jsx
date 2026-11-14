@@ -124,9 +124,17 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
     {ov.stage === 'quadro' && <section className="pp-box" aria-label="Pré-candidatura"><h3 className="subheading">Pré-candidatura</h3>
       {ov.returns > 0 && <p className="meta-status" role="status">Você voltou ao diretório depois da última disputa. O resultado está na aba Carreira; aqui você reconstrói prestígio e escolhe a próxima eleição.</p>}
       <p className="meta-count">Ao lançar, a campanha começa no módulo de carreira, levando a reputação que você construiu. Cargos maiores exigem mais do partido.</p>
-      <ul className="launch-offices">{(ov.next.offices || []).map((o) => <li key={o.key} className={o.ready ? 'ready' : ''}>
-        <div><b>{o.label}</b><small>Eleição {o.cycle === 'municipal' ? 'municipal' : 'geral'} · exige prestígio {o.needs.standing}, contatos {o.needs.network}, reputação {o.needs.reputation}{o.needs.terms ? `, ${o.needs.terms} mandato(s) cumprido(s)` : ''}</small></div>
-        <button className={o.ready ? 'primary-button' : 'secondary-button'} disabled={busy || !o.ready} onClick={() => launch(o.key)}>{o.ready ? 'Lançar' : 'Ainda não'}</button></li>)}</ul></section>}
+      {(() => {
+        const all = ov.next.offices || [];
+        const firstLocked = all.findIndex((o) => !o.ready);
+        const visible = all.filter((o, i) => o.ready || (firstLocked >= 0 && i <= firstLocked + 1));
+        const hidden = all.filter((o) => !visible.includes(o));
+        const row = (o) => <li key={o.key} className={o.ready ? 'ready' : ''}>
+          <div><b>{o.label}</b><small>Eleição {o.cycle === 'municipal' ? 'municipal' : 'geral'} · exige prestígio {o.needs.standing}, contatos {o.needs.network}, reputação {o.needs.reputation}{o.needs.terms ? `, ${o.needs.terms} mandato(s) cumprido(s)` : ''}</small></div>
+          <button className={o.ready ? 'primary-button' : 'secondary-button'} disabled={busy || !o.ready} onClick={() => launch(o.key)}>{o.ready ? 'Lançar' : 'Ainda não'}</button></li>;
+        return <><ul className="launch-offices">{visible.map(row)}</ul>
+          {hidden.length > 0 && <details className="more"><summary>Cargos mais altos ({hidden.length})</summary><ul className="launch-offices">{hidden.map(row)}</ul></details>}</>;
+      })()}</section>}
 
     {last && <p className="meta-status" role="status">{last.label}: {Object.entries(last.applied).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${({ reputation: 'reputação', network: 'contatos', militancy: 'militância', standing: 'prestígio' })[k] || k}`).join(' · ') || 'recuperou energia'}{last.gaffe ? ' · deu errado' : ''}{last.repeat_factor < 1 ? ` · repetição ×${last.repeat_factor}` : ''}.</p>}
 
@@ -137,7 +145,7 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
     <p className="meta-count">A energia volta com o tempo. Use “Próximo dia” ou “Avançar 7 dias” no topo. Acontecimentos aparecem na aba Acontecimentos.</p>
 
     <h3 className="subheading">Diário da trajetória</h3>
-    {ov.log.length === 0 ? <p className="meta-status">Nada registrado ainda.</p> : <ul className="meta-notes">{ov.log.map((l, i) => <li key={i}>{new Date(`${l.date}T12:00:00`).toLocaleDateString('pt-BR')} — {l.text}</li>)}</ul>}
+    {ov.log.length === 0 ? <p className="meta-status">Nada registrado ainda.</p> : <><ul className="meta-notes">{ov.log.slice(0, 6).map((l, i) => <li key={i}>{new Date(`${l.date}T12:00:00`).toLocaleDateString('pt-BR')} — {l.text}</li>)}</ul>{ov.log.length > 6 && <details className="more"><summary>Ver registros anteriores ({ov.log.length - 6})</summary><ul className="meta-notes">{ov.log.slice(6).map((l, i) => <li key={i}>{new Date(`${l.date}T12:00:00`).toLocaleDateString('pt-BR')} — {l.text}</li>)}</ul></details>}</>}
     <p className="meta-count">{ov.note}</p>
   </section>;
 }

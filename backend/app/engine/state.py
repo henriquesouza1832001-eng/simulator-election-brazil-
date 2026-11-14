@@ -139,6 +139,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(budget_tick(state, before, after))
     from .office_powers import local_tick
     messages.extend(local_tick(state, before, after))
+    from .mandate_review import tick as review_tick
+    messages.extend(review_tick(state, before, after))
     from .cpi import tick as cpi_tick
     messages.extend(cpi_tick(state, before, after))
     from .congress_process import tick as congress_tick
