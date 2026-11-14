@@ -1,22 +1,26 @@
 import { useEffect, useState } from 'react';
+import { Page, Section, Badge, Empty, Drawer } from './ui.jsx';
 import './powers.css';
 
-const EFFECT = { approval: 'aprovação', inflation: 'inflação', unemployment: 'desemprego', gdp_growth: 'PIB', primary_balance: 'resultado primário', integrity: 'integridade', congress_support: 'base no Congresso' };
+const tone = (v) => (v >= 65 ? 'good' : v >= 35 ? 'warn' : 'bad');
 
 export default function CompaniesPanel({ request, state, onState, onNotice }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [picks, setPicks] = useState({});
+  const [openId, setOpenId] = useState(null);
+  const [choosing, setChoosing] = useState(null); // chave da ação cujas opções estão abertas
+  const [pick, setPick] = useState('');
+  const [filter, setFilter] = useState('todas');
   const load = () => request('/api/companies').then(setData).catch((e) => setError(e.message));
   useEffect(() => { load(); }, [state?.date]);
 
-  async function act(company, action) {
-    const k = `${company.id}:${action.key}`;
+  async function act(company, action, option) {
     try {
-      const r = await request('/api/companies/act', { method: 'POST', body: JSON.stringify({ company: company.id, action: action.key, option: picks[k] || null }) });
+      const r = await request('/api/companies/act', { method: 'POST', body: JSON.stringify({ company: company.id, action: action.key, option: option || null }) });
       setData(r.overview);
       if (r.state) onState?.(r.state);
       onNotice?.(r.announcement || `${company.name}: decisão registrada.`);
+      setChoosing(null); setPick('');
     } catch (e) { onNotice?.(e.message); }
   }
 
@@ -29,32 +33,52 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
     } catch (e) { onNotice?.(e.message); }
   }
 
-  if (error) return <section className="panel"><p className="meta-status meta-error" role="alert">{error}</p></section>;
-  if (!data) return <section className="panel"><p className="meta-status" role="status">Carregando…</p></section>;
+  if (error) return <Page title="Empresas e bancos públicos"><p className="meta-status meta-error" role="alert">{error}</p></Page>;
+  if (!data) return <Page title="Empresas e bancos públicos"><Empty title="Carregando…" /></Page>;
 
-  return <section className="panel powers-page">
-    <h2>Empresas e bancos públicos</h2>
-    <p className="page-description">{data.note}</p>
-    <ul className="company-grid">{data.companies.map((c) => <li key={c.id}><div>
-      <b>{c.name}</b>
-      <small>{c.sector} · {c.control}{c.strategic ? ' · estratégica' : ''}</small>
-      <div className="company-meters">
-        <label>Saúde da empresa <meter min="0" max="100" low="35" high="65" optimum="85" value={c.health}>{c.health}</meter> <span>{c.health}</span></label>
-        <label>Relação com o governo <meter min="0" max="100" low="35" high="65" optimum="85" value={c.relation}>{c.relation}</meter> <span>{c.relation}</span></label>
+  const controls = ['todas', ...new Set(data.companies.map((c) => c.control))];
+  const list = data.companies.filter((c) => filter === 'todas' || c.control === filter);
+  const c = data.companies.find((x) => x.id === openId);
+  const close = () => { setOpenId(null); setChoosing(null); setPick(''); };
+
+  return <Page title="Empresas e bancos públicos" lead={data.note}>
+    <Section hint="Toque em uma empresa para ver a situação e as decisões possíveis.">
+      <div className="ds-seg" role="group" aria-label="Filtrar por controle">
+        {controls.map((k) => <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === 'todas' ? 'Todas' : k}</button>)}
       </div>
-      <details className="more"><summary>Detalhes e decisões</summary>
-      <small>Sede {c.hq}. {c.note}</small>
-      <div className="company-actions">{c.actions.map((a) => {
-        const k = `${c.id}:${a.key}`;
-        return <span className="company-action" key={a.key} title={a.reason || a.text}>
-          {a.options.length > 0 && a.available && <select aria-label={`${a.label} de ${c.name}`} value={picks[k] || ''} onChange={(e) => setPicks({ ...picks, [k]: e.target.value })}><option value="">{a.label}…</option>{a.options.map((o) => <option key={o} value={o}>{o}</option>)}</select>}
-          <button className="secondary-button" disabled={!a.available || (a.options.length > 0 && !picks[k])} onClick={() => act(c, a)}>{a.options.length && a.available ? 'Aplicar' : a.label}</button>
-          {!a.available && <small className="neg">{a.reason}</small>}
-        </span>;
-      })}</div>
-      {c.can_privatize && <div className="company-actions"><button className="quiet-button" onClick={() => privatize(c)}>Propor a privatização (exige lei)</button></div>}
-      </details>
-    </div></li>)}</ul>
-    <p className="meta-count">Efeitos de cada decisão aparecem no histórico de previsto e realizado (aba Competências) e na linha do tempo da Imprensa.</p>
-  </section>;
+      <div className="ds-inv-grid" style={{ marginTop: 12 }}>
+        {list.map((x) => <button key={x.id} type="button" className="ds-inv" onClick={() => setOpenId(x.id)}>
+          <span className="ds-muted">{x.sector}{x.strategic ? ' · estratégica' : ''}</span>
+          <b>{x.name}</b>
+          <small className="ds-muted">{x.control}</small>
+          <span>Saúde <Badge tone={tone(x.health)}>{x.health}</Badge> · Relação <Badge tone={tone(x.relation)}>{x.relation}</Badge></span>
+        </button>)}
+      </div>
+    </Section>
+    <p className="ds-muted">Os efeitos de cada decisão aparecem no histórico de previsto e realizado (aba Competências) e na linha do tempo da Imprensa.</p>
+
+    {c && <Drawer title={c.name} onClose={close}>
+      <p className="ds-muted">{c.sector} · {c.control}{c.strategic ? ' · estratégica' : ''} · sede {c.hq}</p>
+      <p>{c.note}</p>
+      <div className="ds-after">
+        <span>Saúde da empresa<b>{c.health}/100</b></span>
+        <span>Relação com o governo<b>{c.relation}/100</b></span>
+      </div>
+      <h4>Decisões</h4>
+      <div className="ds-pick-list">
+        {c.actions.map((a) => <div key={a.key}>
+          <button type="button" disabled={!a.available} aria-pressed={choosing === a.key}
+            onClick={() => (a.options.length ? (setChoosing(choosing === a.key ? null : a.key), setPick('')) : act(c, a))}>
+            <span>{a.label}</span><small>{a.available ? (a.options.length ? 'escolher' : 'aplicar') : 'indisponível'}</small>
+          </button>
+          {!a.available && a.reason && <small className="neg">{a.reason}</small>}
+          {choosing === a.key && a.available && <div className="ds-pick-list" style={{ marginTop: 6 }}>
+            {a.options.map((o) => <button key={o} type="button" aria-pressed={pick === o} onClick={() => setPick(o)}><span>{o}</span></button>)}
+            <button type="button" className="primary-button" disabled={!pick} onClick={() => act(c, a, pick)}>Aplicar</button>
+          </div>}
+        </div>)}
+      </div>
+      {c.can_privatize && <button type="button" className="quiet-button" onClick={() => privatize(c)}>Propor a privatização (exige lei)</button>}
+    </Drawer>}
+  </Page>;
 }
