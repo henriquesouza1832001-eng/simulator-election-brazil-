@@ -175,18 +175,30 @@ def _aggregate(state: dict[str, Any], cities: list[dict[str, Any]]) -> dict[str,
             "indicators": {k: round(sums[k] / weights[k], 3) for k in sums if weights[k]}}
 
 
+_OVERVIEW_CACHE: dict[str, dict[str, Any]] = {}
+
+
 def overview(state: dict[str, Any]) -> dict[str, Any]:
-    cities = list(_cities().values())
-    by_uf: dict[str, list] = {}
-    by_region: dict[str, list] = {}
-    for c in cities:
-        by_uf.setdefault(c["state_code"], []).append(c)
-        by_region.setdefault(c["region_code"], []).append(c)
-    return {"country": _aggregate(state, cities),
-            "regions": [{"code": k, "name": REGIONS.get(k, k), **_aggregate(state, v)} for k, v in by_region.items()],
-            "states": [{"uf": k, "name": v[0]["state_name"], **_aggregate(state, v)} for k, v in sorted(by_uf.items())],
-            "projects": ensure(state)["projects"],
-            "note": "Médias ponderadas pela população. Base social: Atlas do Desenvolvimento Humano (Censo 2010); mobilidade e segurança são estimativas do jogo."}
+    """Visão do país, das regiões e dos estados. Os agregados só mudam quando as decisões do jogador mexem nos indicadores
+    (os "deltas"), então o resultado é guardado por esse conjunto: antes, cada abertura da tela recalculava 33 médias sobre 5.570 cidades."""
+    deltas = ensure(state)["deltas"]
+    signature = json.dumps(deltas, sort_keys=True, separators=(",", ":"))
+    base = _OVERVIEW_CACHE.get(signature)
+    if base is None:
+        cities = list(_cities().values())
+        by_uf: dict[str, list] = {}
+        by_region: dict[str, list] = {}
+        for c in cities:
+            by_uf.setdefault(c["state_code"], []).append(c)
+            by_region.setdefault(c["region_code"], []).append(c)
+        base = {"country": _aggregate(state, cities),
+                "regions": [{"code": k, "name": REGIONS.get(k, k), **_aggregate(state, v)} for k, v in by_region.items()],
+                "states": [{"uf": k, "name": v[0]["state_name"], **_aggregate(state, v)} for k, v in sorted(by_uf.items())],
+                "note": "Médias ponderadas pela população. Base social: Atlas do Desenvolvimento Humano (Censo 2010); mobilidade e segurança são estimativas do jogo."}
+        if len(_OVERVIEW_CACHE) >= 16:
+            _OVERVIEW_CACHE.pop(next(iter(_OVERVIEW_CACHE)))
+        _OVERVIEW_CACHE[signature] = base
+    return {**base, "projects": ensure(state)["projects"]}
 
 
 def search(query: str, uf: str | None = None, limit: int = 20) -> list[dict[str, Any]]:

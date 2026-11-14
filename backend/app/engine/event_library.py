@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import os
 from collections import Counter
 from pathlib import Path
@@ -50,12 +51,37 @@ def real_person_names() -> set[str]:
     return names
 
 
+_token_cache: tuple[Any, frozenset[str], int] = (None, frozenset(), 0)
+
+
+def _tokens(text: str) -> list[str]:
+    return re.findall(r"[A-Z0-9]+", _normalize_name(text))
+
+
+def _name_index() -> tuple[frozenset[str], int]:
+    """Nomes reais como sequências de palavras (para achar um nome em um texto sem comparar com todos os 31 mil)."""
+    global _token_cache
+    names = real_person_names()
+    if _token_cache[0] is not names:  # recalcula se o conjunto de nomes mudou (importação nova ou teste)
+        keys = {" ".join(_tokens(name)) for name in names}
+        keys.discard("")
+        _token_cache = (names, frozenset(keys), max((len(k.split()) for k in keys), default=0))
+    return _token_cache[1], _token_cache[2]
+
+
 def mentions_real_person(text: str) -> str | None:
-    """Devolve o primeiro nome real encontrado no texto (maiúsculas, sem acento), ou None."""
-    haystack = f" {_normalize_name(text)} "
-    for name in real_person_names():
-        if f" {name} " in haystack or f" {name}," in haystack or f" {name}." in haystack:
-            return name
+    """Devolve o primeiro nome real encontrado no texto (maiúsculas, sem acento), ou None.
+
+    Antes cada texto era comparado com todos os nomes (centenas de milhares de comparações por evento). Agora o texto vira palavras e
+    só se consultam os trechos de 2 a N palavras no conjunto de nomes, o que custa microssegundos.
+    """
+    names, longest = _name_index()
+    words = _tokens(text)
+    for size in range(2, min(longest, len(words)) + 1):
+        for start in range(len(words) - size + 1):
+            candidate = " ".join(words[start:start + size])
+            if candidate in names:
+                return candidate
     return None
 
 

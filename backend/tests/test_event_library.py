@@ -184,6 +184,31 @@ class GeneratorTests(unittest.TestCase):
         self.assertNotIn("manual:x", library.events)
         self.assertEqual(library.report["rejected_real_person"], 1)
 
+class RealNameMatcherTest(unittest.TestCase):
+    def setUp(self):
+        from app.engine import event_library as lib_mod
+        self.lib = lib_mod
+        self.saved = lib_mod._real_names
+
+    def tearDown(self):
+        self.lib._real_names = self.saved
+
+    def test_finds_a_real_name_inside_a_sentence_and_ignores_partial_matches(self):
+        self.lib._real_names = {"FULANO DE TAL", "MARIA DA SILVA"}
+        self.assertEqual(self.lib.mentions_real_person("O deputado Fulano de Tal, de novo, voltou."), "FULANO DE TAL")
+        self.assertEqual(self.lib.mentions_real_person("Segundo MARIA DA SILVA."), "MARIA DA SILVA")
+        self.assertIsNone(self.lib.mentions_real_person("Fulano falou com Maria"))
+        self.assertIsNone(self.lib.mentions_real_person("Um texto sem ninguém conhecido."))
+
+    def test_is_fast_even_with_tens_of_thousands_of_names(self):
+        import time
+        self.lib._real_names = {f"NOME{i} SOBRENOME{i}" for i in range(40000)}
+        self.lib.mentions_real_person("aquece o índice")
+        started = time.time()
+        for _ in range(200):
+            self.lib.mentions_real_person("Um texto comum com algumas palavras sobre orçamento, saúde e educação no Nordeste.")
+        self.assertLess(time.time() - started, 0.5)
+
 
 if __name__ == "__main__":
     unittest.main()

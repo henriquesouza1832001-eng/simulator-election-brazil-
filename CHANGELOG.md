@@ -2,6 +2,12 @@
 
 A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
 
+## Pós-0.4 — desempenho e direção visual (14 nov. 2026)
+
+- **Primeiro avanço de tempo de 23 s para 1,5 s** (medido com o banco do TSE importado): índice nos nomes de candidatos, conferência de pessoa real por trechos de palavras em vez de 31 mil comparações por evento, e pré-aquecimento dos caches ao ligar o servidor.
+- Resumo do território guardado por conjunto de decisões (0,4 s para zero nas repetições).
+- Direção visual da 0.5 em `docs/DIRECAO_VISUAL.md`, com protótipo navegável em `docs/visual/prototipo.html`; roteiro reordenado (0.5 é a versão visual; o motor de economia vai para a 0.6).
+
 ## 0.4 — Base de interface e informação (concluída, 14 nov. 2026)
 
 - Sistema de design único (`design.css` e `ui.jsx`) e auditoria automática de contraste; corrigidos os textos ilegíveis herdados do tema claro antigo.

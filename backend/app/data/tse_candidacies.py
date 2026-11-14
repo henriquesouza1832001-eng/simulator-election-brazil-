@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS tse_candidacies (
     PRIMARY KEY (election_year, sq_candidato)
 );
 CREATE INDEX IF NOT EXISTS idx_candidacies_lookup ON tse_candidacies (election_year, office, uf, municipality);
+CREATE INDEX IF NOT EXISTS idx_tse_cand_real_names ON tse_candidacies (office, election_year, ballot_name);
 CREATE TABLE IF NOT EXISTS tse_import_runs (
     election_year INTEGER NOT NULL,
     file_name TEXT NOT NULL,

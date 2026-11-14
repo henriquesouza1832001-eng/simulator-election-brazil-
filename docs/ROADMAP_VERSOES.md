@@ -18,16 +18,16 @@ O objetivo é uma base visual e de navegação robusta, em que qualquer informa�
 - Visão geral, Agenda, Imprensa e Sobre reescritos; pré-campanha longa com botão para pular até o ano da eleição.
 - Telas antigas uniformizadas (mesma superfície, borda e tipografia) e sem artes decorativas de eventos.
 
-**Refinos visuais que ficam para depois (não bloqueiam a 0.5)**
+**Refinos visuais (passam para a 0.5, que é a versão de direção visual)**
 - Reescrever com os componentes novos (hoje só herdam o visual): Competências, Orçamento, Crises, Entrevistas, Carreira, Trajetória, Instituições, Nomeações, Empresas, Reguladores, Tramitação, Congresso, Diplomacia, Eleição e Semana.
 - Remover os arquivos de CSS antigos (`editorial.css`, `views.css` e outros) quando nenhuma tela depender deles.
 - Pré-campanha do vereador como militante (alternativa ao pulo), se ainda fizer sentido.
 
-## 0.5 — Economia e Estado (sugestão)
-Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.
+## 0.5 — Direção visual (próxima)
+Identidade visual sólida e específica: manchete com imagem, números em destaque, navegação em trilho (computador) e barra inferior (celular), indicadores em lista e detalhe, desempenho. Guia completo em [DIRECAO_VISUAL.md](DIRECAO_VISUAL.md) e protótipo em `docs/visual/prototipo.html`.
 
-## 0.6 — Congresso e eleições em profundidade (sugestão)
-Calendário de sessões, negociação por bancada para projetos de outros cargos, CPI completa, regras eleitorais específicas por ano, Ficha Limpa e registro de candidatura pelo TSE.
+## 0.6 — Motor: economia e Estado (sugestão)
+Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.
 
 ## 0.7 — Gemini conectado
 Hoje o Gemini está só provisionado (gateway na Cloudflare e variáveis de ambiente), sem ligação ao jogo em produção. Na 0.7 ele passa a:
@@ -37,8 +37,8 @@ Hoje o Gemini está só provisionado (gateway na Cloudflare e variáveis de ambi
 
 Regra que não muda: o motor decide, o Gemini só interpreta e narra, e tudo que ele devolve é validado contra números e nomes do próprio motor.
 
-## 0.8 — Contas e nuvem (sugestão)
-Login, partidas na nuvem, ranking real e a base para jogar com outras pessoas (hoje só documentada).
+## 0.8 — Congresso, eleições, contas e nuvem (sugestão)
+Calendário de sessões, negociação por bancada para projetos de outros cargos, CPI completa, regras eleitorais por ano, Ficha Limpa; login, partidas na nuvem, ranking real e a base para jogar com outras pessoas (hoje só documentada).
 
 ## 0.9 — Balanceamento e acabamento (sugestão)
 Simulações de 48 meses por estratégia, ajuste de dificuldade, acessibilidade, desempenho em celular e carga.

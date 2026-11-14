@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quatro Anos — protótipo da direção visual 0.5</title>
+<style>
+/* Protótipo estático da direção visual. Fontes finais (hospedadas no jogo): Fraunces (títulos), DM Sans (texto), DM Mono (números).
+   Aqui usam-se fontes do sistema só para o arquivo abrir em qualquer lugar. Dados e textos são de exemplo. */
+:root{
+  --noite:#0b1216; --superficie:#111b21; --superficie-2:#172730; --linha:#26383f; --linha-2:#365058;
+  --tinta:#ecf3f1; --tinta-2:#bccbce; --tinta-3:#95aab0;
+  --verde:#2fa97c; --verde-claro:#4cc79a; --ouro:#d8b25a; --tijolo:#e5776c; --ceu:#86bfff;
+  --titulo:"Fraunces",Georgia,"Times New Roman",serif; --texto:"DM Sans",system-ui,"Segoe UI",Roboto,sans-serif; --numero:"DM Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --raio:12px; --trilho:84px; --topo:56px;
+}
+*{box-sizing:border-box} html{color-scheme:dark}
+body{margin:0;background:var(--noite);color:var(--tinta);font:16px/1.55 var(--texto);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--verde-claro);outline-offset:2px;border-radius:6px}
+
+/* ---------- casca ---------- */
+.topo{position:sticky;top:0;z-index:30;height:var(--topo);display:flex;align-items:center;gap:16px;padding:0 20px 0 calc(var(--trilho) + 20px);background:rgba(11,18,22,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--linha)}
+.topo .data{font-family:var(--numero);font-size:13px;color:var(--tinta-2)} .topo .data b{color:var(--tinta);font-weight:500}
+.topo .esp{flex:1}
+.btn{border:1px solid var(--linha-2);background:transparent;border-radius:999px;padding:7px 16px;font-size:14px;min-height:38px}
+.btn:hover{background:var(--superficie-2)}
+.btn.primario{background:var(--verde);border-color:var(--verde);color:#04150f;font-weight:700}
+.btn.primario:hover{background:var(--verde-claro)}
+.trilho{position:fixed;inset:0 auto 0 0;width:var(--trilho);z-index:40;background:var(--superficie);border-right:1px solid var(--linha);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:4px}
+.marca{width:44px;height:44px;margin-bottom:10px;border-radius:12px;background:var(--verde);display:grid;place-items:center;color:#04150f;font:700 15px var(--titulo)}
+.nav{all:unset;box-sizing:border-box;width:68px;padding:9px 0 7px;border-radius:12px;display:grid;justify-items:center;gap:3px;color:var(--tinta-3);font-size:11.5px;cursor:pointer}
+.nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nav:hover{color:var(--tinta);background:var(--superficie-2)}
+.nav[aria-current="page"]{color:var(--tinta);background:var(--superficie-2);box-shadow:inset 3px 0 0 var(--ouro)}
+main{padding:0 0 80px calc(var(--trilho))}
+.pagina{max-width:1180px;margin:0 auto;padding:28px 28px 40px}
+.abas{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 0 22px;border-bottom:1px solid var(--linha)}
+.abas button{all:unset;cursor:pointer;padding:10px 14px;color:var(--tinta-3);font-size:15px;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
+.abas button[aria-selected="true"]{color:var(--tinta);border-color:var(--ouro)}
+.abas button:hover{color:var(--tinta)}
+
+/* ---------- vozes tipográficas ---------- */
+.rotulo{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-3);font-weight:600}
+h1,h2{font-family:var(--titulo);font-weight:700;letter-spacing:-.01em;line-height:1.12;margin:0}
+.num{font-family:var(--numero);font-variant-numeric:tabular-nums}
+
+/* ---------- herói: imagem + manchete ---------- */
+.heroi{position:relative;border-radius:16px;overflow:hidden;min-height:300px;border:1px solid var(--linha);background:#0e1a1f;isolation:isolate}
+.heroi svg.arte{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.heroi .texto{position:absolute;inset:auto 0 0 0;padding:26px 28px 24px;background:linear-gradient(to top,rgba(8,13,16,.94) 5%,rgba(8,13,16,.55) 60%,transparent)}
+.heroi h1{font-size:clamp(28px,4.4vw,44px);max-width:20ch;margin:6px 0 8px}
+.heroi p{margin:0;color:var(--tinta-2);max-width:56ch}
+.selo{position:absolute;top:16px;left:18px;display:flex;gap:8px}
+.selo span{font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;border:1px solid var(--ouro);color:var(--ouro);background:rgba(8,13,16,.55)}
+
+/* ---------- faixa de números ---------- */
+.faixa{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 0}
+.kpi{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);padding:16px 18px}
+.kpi small{display:block;color:var(--tinta-2);font-size:13px}
+.kpi b{display:block;font:500 32px/1.15 var(--numero);margin:3px 0 2px}
+.kpi b i{font-style:normal;font-size:14px;color:var(--tinta-3);margin-left:4px}
+.d-bom{color:var(--verde-claro)} .d-mau{color:var(--tijolo)} .d-neutro{color:var(--tinta-3)}
+.kpi em{font-style:normal;font-size:13px;font-family:var(--numero)}
+
+/* ---------- blocos ---------- */
+.grade{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:16px;margin-top:22px;align-items:start}
+.bloco{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);padding:20px}
+.bloco h2{font-size:22px;margin:4px 0 8px}
+.bloco p{margin:0 0 14px;color:var(--tinta-2)}
+.acoes{display:flex;flex-wrap:wrap;gap:8px}
+.lista{list-style:none;margin:0;padding:0}
+.lista li{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:10px 0;border-top:1px solid var(--linha)}
+.lista li:first-child{border-top:0}
+.lista time{font:13px var(--numero);color:var(--ouro);grid-row:1/3;align-self:center;min-width:52px}
+.lista b{font-weight:600} .lista span{color:var(--tinta-3);font-size:14px}
+
+/* ---------- indicadores: lista e detalhe ---------- */
+.mestre{display:grid;grid-template-columns:230px minmax(0,1fr) 340px;gap:0;border:1px solid var(--linha);border-radius:var(--raio);background:var(--superficie);overflow:hidden;min-height:520px}
+.assuntos{border-right:1px solid var(--linha);padding:8px;overflow:auto}
+.assunto{all:unset;box-sizing:border-box;display:block;width:100%;padding:10px 12px;border-radius:10px;cursor:pointer}
+.assunto:hover{background:var(--superficie-2)}
+.assunto[aria-pressed="true"]{background:var(--superficie-2);box-shadow:inset 3px 0 0 var(--ouro)}
+.assunto b{display:block;font-weight:600;font-size:15px} .assunto small{color:var(--tinta-3);font-size:12.5px}
+.itens{padding:8px 4px;overflow:auto}
+.item{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto 70px;gap:10px;align-items:center;width:100%;padding:11px 14px;cursor:pointer;border-radius:10px}
+.item:hover{background:var(--superficie-2)}
+.item[aria-selected="true"]{background:var(--superficie-2);outline:1px solid var(--linha-2)}
+.item .v{font:500 17px var(--numero);text-align:right} .item .v small{font-size:12px;color:var(--tinta-3)}
+.item .d{font:13px var(--numero);text-align:right}
+.detalhe{border-left:1px solid var(--linha);padding:20px;background:var(--superficie-2)}
+.detalhe h2{font-size:22px;margin:4px 0 4px}
+.detalhe .grande{font:500 40px/1.1 var(--numero);margin:10px 0 4px}
+.detalhe svg{width:100%;height:110px;color:var(--verde-claro);margin:6px 0 10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.tags span{font-size:13px;padding:3px 10px;border:1px solid var(--linha-2);border-radius:999px;color:var(--tinta-2)}
+.detalhe h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-3);margin:16px 0 6px}
+.detalhe p{margin:0;color:var(--tinta-2);font-size:15px}
+
+/* ---------- decisão ---------- */
+.decisao{max-width:760px}
+.opcao{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:2px 16px;width:100%;padding:14px 16px;margin:0 0 10px;border:1px solid var(--linha-2);border-radius:var(--raio);cursor:pointer;background:var(--superficie)}
+.opcao:hover{border-color:var(--verde-claro);background:var(--superficie-2)}
+.opcao b{font-size:16px} .opcao small{color:var(--tinta-2);grid-column:1}
+.opcao .custo{grid-row:1/3;grid-column:2;align-self:center;text-align:right;font:13px var(--numero);color:var(--ouro)}
+
+/* ---------- celular ---------- */
+.barra{display:none}
+@media (max-width:760px){
+  :root{--trilho:0px;--topo:52px}
+  .trilho{display:none}
+  .topo{padding:0 14px;justify-content:space-between} .topo .data b{display:none} .topo .btn{display:none} .topo .esp{display:none}
+  .topo .data{font-size:12.5px}
+  main{padding:0 0 92px}
+  .pagina{padding:16px 14px 30px}
+  .heroi{min-height:240px} .heroi .texto{padding:18px}
+  .faixa{grid-template-columns:repeat(2,1fr)}
+  .grade{grid-template-columns:1fr}
+  .mestre{grid-template-columns:1fr;border:0;background:transparent;min-height:0}
+  .assuntos{display:flex;gap:8px;overflow-x:auto;border:0;padding:0 0 10px;scrollbar-width:none}
+  .assunto{width:auto;white-space:nowrap;border:1px solid var(--linha-2);border-radius:999px;padding:8px 14px} .assunto small{display:none}
+  .itens{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio)}
+  .detalhe{position:fixed;inset:auto 0 0 0;z-index:60;border:1px solid var(--linha-2);border-radius:18px 18px 0 0;max-height:78vh;overflow:auto;transform:translateY(105%);transition:transform .22s ease;box-shadow:0 -20px 50px rgba(0,0,0,.6)}
+  .detalhe.aberto{transform:none}
+  .barra{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;inset:auto 0 0 0;z-index:50;background:var(--superficie);border-top:1px solid var(--linha);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .barra .nav{width:auto;padding:7px 0 5px}
+  .avancar{position:fixed;right:16px;bottom:78px;z-index:55;height:52px;border-radius:26px;padding:0 20px;border:0;background:var(--verde);color:#04150f;font-weight:700;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+}
+@media (min-width:761px){.avancar{display:none}}
+@media (max-width:1100px) and (min-width:761px){.mestre{grid-template-columns:200px minmax(0,1fr)} .detalhe{grid-column:1/-1;border-left:0;border-top:1px solid var(--linha)} .faixa{grid-template-columns:repeat(2,1fr)}}
+.oculto{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<aside class="trilho" aria-label="Seções do jogo">
+  <div class="marca" aria-hidden="true">4A</div>
+  <button class="nav" data-ir="painel" aria-current="page"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
+  <button class="nav" data-ir="governo"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-6 10 6"/></svg>Governo</button>
+  <button class="nav" data-ir="politica"><svg viewBox="0 0 24 24"><path d="M4 20c0-4 3-6 8-6s8 2 8 6M12 4a4 4 0 100 8 4 4 0 000-8z"/></svg>Política</button>
+  <button class="nav" data-ir="agenda"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Agenda</button>
+  <button class="nav" data-ir="mais"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>Mais</button>
+</aside>
+
+<header class="topo">
+  <span class="data"><b>Quatro Anos · </b>12 mar 2028 · mês 15 de 48</span><span class="rotulo" style="display:none" id="marca-m">Quatro Anos</span>
+  <span class="esp"></span>
+  <button class="btn">Guia</button><button class="btn">Perfil</button>
+  <button class="btn primario">Avançar ▾</button>
+</header>
+
+<main>
+<div class="pagina">
+
+  <!-- ===== PAINEL ===== -->
+  <section id="painel" data-tela>
+    <div class="abas" role="tablist" aria-label="Painel"><button role="tab" aria-selected="true" data-sub="p-visao">Visão geral</button><button role="tab" aria-selected="false" data-sub="p-ind">Indicadores</button><button role="tab" aria-selected="false" data-sub="p-dec">Decisão</button></div>
+
+    <div id="p-visao" data-sub-tela>
+      <div class="heroi">
+        <svg class="arte" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <defs><linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1a1c"/><stop offset=".55" stop-color="#1c3a33"/><stop offset="1" stop-color="#8a7a3f"/></linearGradient>
+          <linearGradient id="chao" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3a2c"/><stop offset="1" stop-color="#0b1216"/></linearGradient></defs>
+          <rect width="1200" height="420" fill="url(#ceu)"/>
+          <circle cx="930" cy="250" r="64" fill="#d8b25a" opacity=".85"/>
+          <g fill="#0b1216" opacity=".92"><rect x="420" y="120" width="26" height="170"/><rect x="470" y="120" width="26" height="170"/><rect x="380" y="270" width="150" height="26"/>
+            <path d="M270 296a90 38 0 01180 0z" transform="translate(-40 0)"/><path d="M520 296a90 38 0 000-0 90 38 0 01 190 0z" transform="translate(40 0)" opacity="0"/><path d="M560 296a76 52 0 01152 0z"/>
+            <rect x="120" y="190" width="70" height="106"/><rect x="200" y="210" width="70" height="86"/><rect x="760" y="200" width="70" height="96"/><rect x="840" y="220" width="70" height="76"/></g>
+          <rect y="296" width="1200" height="124" fill="url(#chao)"/>
+        </svg>
+        <div class="selo"><span>Mês 15 · Primeiro mandato</span></div>
+        <div class="texto"><div class="rotulo">Hoje no país</div><h1>A inflação sobe pelo terceiro mês seguido.</h1><p>A base no Congresso resiste, mas a aprovação já perdeu 4 pontos desde janeiro.</p></div>
+      </div>
+
+      <div class="faixa">
+        <div class="kpi"><small>Aprovação</small><b>47,2<i>%</i></b><em class="d-mau">▼ 4,1 desde o início</em></div>
+        <div class="kpi"><small>Inflação</small><b>5,4<i>% a.a.</i></b><em class="d-mau">▲ 0,9 desde o início</em></div>
+        <div class="kpi"><small>Desemprego</small><b>6,1<i>%</i></b><em class="d-bom">▼ 1,1 desde o início</em></div>
+        <div class="kpi"><small>Base no Congresso</small><b>51,7<i>%</i></b><em class="d-neutro">estável</em></div>
+      </div>
+
+      <div class="grade">
+        <div class="bloco"><div class="rotulo">Próximo passo</div><h2>A seca no Nordeste pede uma resposta</h2><p>Reservatórios em nível crítico. Prefeitos pedem socorro federal e a safra está ameaçada. O prazo vence em 12 dias.</p>
+          <div class="acoes"><button class="btn primario" data-ir-sub="p-dec">Ver as opções</button><button class="btn">Abrir a agenda</button></div></div>
+        <div class="bloco"><div class="rotulo">O que vem pela frente</div>
+          <ul class="lista"><li><time>em 12 d</time><b>Prazo da seca no Nordeste</b><span>Crise · responder</span></li><li><time>em 45 d</time><b>Primeira revisão do orçamento</b><span>Contas públicas</span></li><li><time>em 99 d</time><b>Balanço dos primeiros cem dias</b><span>Imprensa</span></li></ul></div>
+      </div>
+    </div>
+
+    <div id="p-ind" data-sub-tela class="oculto">
+      <div class="mestre">
+        <nav class="assuntos" aria-label="Assuntos">
+          <button class="assunto" aria-pressed="true"><b>Economia</b><small>4 indicadores · 3 pioram</small></button>
+          <button class="assunto" aria-pressed="false"><b>Contas públicas</b><small>6 · 1 melhora</small></button>
+          <button class="assunto" aria-pressed="false"><b>Trabalho e renda</b><small>3 · 2 melhoram</small></button>
+          <button class="assunto" aria-pressed="false"><b>Pobreza e desigualdade</b><small>5 · 1 melhora</small></button>
+          <button class="assunto" aria-pressed="false"><b>Saúde</b><small>2 indicadores</small></button>
+          <button class="assunto" aria-pressed="false"><b>Educação</b><small>1 indicador</small></button>
+          <button class="assunto" aria-pressed="false"><b>Transporte</b><small>2 indicadores</small></button>
+          <button class="assunto" aria-pressed="false"><b>Segurança</b><small>3 · 1 melhora</small></button>
+        </nav>
+        <div class="itens" role="listbox" aria-label="Indicadores de Economia">
+          <button class="item" role="option" aria-selected="true" data-abre><span>Taxa básica de juros (Selic)</span><span class="v">10,8<small> % a.a.</small></span><span class="d d-mau">▲ 0,3</span></button>
+          <button class="item" role="option" aria-selected="false" data-abre><span>Expectativas de inflação</span><span class="v">4,7<small> % a.a.</small></span><span class="d d-mau">▲ 0,7</span></button>
+          <button class="item" role="option" aria-selected="false" data-abre><span>Crescimento do PIB</span><span class="v">1,2<small> % a.a.</small></span><span class="d d-mau">▼ 0,9</span></button>
+          <button class="item" role="option" aria-selected="false" data-abre><span>Inflação (IPCA)</span><span class="v">5,4<small> % a.a.</small></span><span class="d d-mau">▲ 0,9</span></button>
+        </div>
+        <aside class="detalhe" id="detalhe" aria-label="Detalhe do indicador">
+          <div class="rotulo">Economia</div><h2>Taxa básica de juros (Selic)</h2>
+          <div class="grande">10,8<small style="font-size:16px;color:var(--tinta-3)"> % a.a.</small></div><span class="num d-mau">▲ 0,3 desde o início</span>
+          <svg viewBox="0 0 300 110" preserveAspectRatio="none" aria-label="Últimos 24 meses"><path d="M0 80 C40 78 60 70 90 66 S150 50 190 40 S260 22 300 18" fill="none" stroke="currentColor" stroke-width="2.4" vector-effect="non-scaling-stroke"/></svg>
+          <h3>O que faz isso mudar</h3><div class="tags"><span>↑ Expectativas de inflação</span><span>↑ Risco-país</span><span>↓ Autonomia do BC</span></div>
+          <h3>O que isso afeta</h3><div class="tags"><span>Crescimento do PIB</span><span>Dívida pública</span><span>Câmbio</span></div>
+          <h3>Quem pode agir</h3><p>Presidente: política econômica e indicação ao Banco Central.</p>
+          <p style="margin-top:14px"><button class="btn" id="fecha" style="display:none">Fechar</button></p>
+        </aside>
+      </div>
+    </div>
+
+    <div id="p-dec" data-sub-tela class="oculto">
+      <div class="decisao">
+        <div class="rotulo">Crise · prazo em 12 dias</div>
+        <h1 style="font-size:clamp(28px,4vw,38px);margin:8px 0 10px">Seca pressiona a produção no Nordeste</h1>
+        <p style="color:var(--tinta-2);margin:0 0 20px">Chuva abaixo da média afeta reservatórios, pequenas lavouras e o preço dos alimentos. Se ninguém responder, vale a última opção.</p>
+        <button class="opcao"><b>Levar água e apoio técnico às áreas críticas</b><small>Alivia a pressão sobre produção e preços; o efeito é gradual.</small><span class="custo">R$ 1,8 bi<br>aprovação +1,2</span></button>
+        <button class="opcao"><b>Coordenar estados e publicar mapa de abastecimento</b><small>Barato e rápido; a recuperação será lenta.</small><span class="custo">R$ 0,5 bi<br>aprovação +0,6</span></button>
+        <button class="opcao"><b>Aguardar a próxima previsão de chuva</b><small>Os danos acumulados permanecem; o problema pode voltar em 90 dias.</small><span class="custo">sem custo<br>aprovação −2,0</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section id="governo" data-tela class="oculto"><div class="abas"><button aria-selected="true">Medidas</button><button aria-selected="false">Competências</button><button aria-selected="false">Empresas</button><button aria-selected="false">Orçamento</button></div><p style="color:var(--tinta-3)">As demais seções seguem o mesmo molde: herói com manchete, faixa de 4 números, bloco principal e rodapé de ação. Abas dentro da página, no máximo cinco.</p></section>
+  <section id="politica" data-tela class="oculto"><div class="abas"><button aria-selected="true">Carreira</button><button aria-selected="false">Congresso</button><button aria-selected="false">Reguladores</button></div><p style="color:var(--tinta-3)">Mesmo molde.</p></section>
+  <section id="agenda" data-tela class="oculto"><div class="abas"><button aria-selected="true">Agenda</button><button aria-selected="false">Imprensa</button><button aria-selected="false">Acontecimentos</button></div><p style="color:var(--tinta-3)">Mesmo molde.</p></section>
+  <section id="mais" data-tela class="oculto"><div class="abas"><button aria-selected="true">Mundo</button><button aria-selected="false">Perfil</button><button aria-selected="false">Guia</button><button aria-selected="false">Sobre</button></div><p style="color:var(--tinta-3)">No celular, “Mais” abre aqui: Mundo, Perfil, Guia e Sobre.</p></section>
+
+</div>
+</main>
+
+<nav class="barra" aria-label="Seções do jogo">
+  <button class="nav" data-ir="painel" aria-current="page"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
+  <button class="nav" data-ir="governo"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-6 10 6"/></svg>Governo</button>
+  <button class="nav" data-ir="politica"><svg viewBox="0 0 24 24"><path d="M4 20c0-4 3-6 8-6s8 2 8 6M12 4a4 4 0 100 8 4 4 0 000-8z"/></svg>Política</button>
+  <button class="nav" data-ir="agenda"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Agenda</button>
+  <button class="nav" data-ir="mais"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>Mais</button>
+</nav>
+<button class="avancar" aria-label="Avançar o tempo">Avançar ▾</button>
+
+<script>
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+function ir(id){ $$('[data-tela]').forEach(t=>t.classList.toggle('oculto',t.id!==id)); $$('.nav[data-ir]').forEach(n=>n.toggleAttribute('aria-current',n.dataset.ir===id)); $$('.nav[data-ir]').forEach(n=>{ if(n.dataset.ir!==id) n.removeAttribute('aria-current'); else n.setAttribute('aria-current','page'); }); scrollTo(0,0); }
+$$('.nav[data-ir]').forEach(n=>n.addEventListener('click',()=>ir(n.dataset.ir)));
+function sub(id){ $$('[data-sub-tela]').forEach(t=>t.classList.toggle('oculto',t.id!==id)); $$('#painel .abas button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.sub===id))); }
+$$('#painel .abas button').forEach(b=>b.addEventListener('click',()=>sub(b.dataset.sub)));
+$$('[data-ir-sub]').forEach(b=>b.addEventListener('click',()=>sub(b.dataset.irSub)));
+$$('.assunto').forEach(b=>b.addEventListener('click',()=>{$$('.assunto').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');}));
+const det=document.getElementById('detalhe'), fecha=document.getElementById('fecha');
+$$('.item').forEach(i=>i.addEventListener('click',()=>{ $$('.item').forEach(x=>x.setAttribute('aria-selected','false')); i.setAttribute('aria-selected','true'); if(matchMedia('(max-width:760px)').matches){ det.classList.add('aberto'); fecha.style.display='inline-block'; } }));
+fecha.addEventListener('click',()=>{det.classList.remove('aberto');});
+</script>
+</body>
+</html>

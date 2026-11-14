@@ -1,5 +1,7 @@
 import os
+import logging
 import re
+import threading
 from uuid import uuid4
 from copy import deepcopy
 from datetime import date, timedelta
@@ -385,10 +387,21 @@ def public_state(state: dict[str, Any]) -> dict[str, Any]:
             "learning": {"corrections_saved": correction_count(), "interpretations_logged": interpretation_count()}}
 
 
+def _warm_caches() -> None:
+    """Carrega, em segundo plano, o que antes só carregava no primeiro avanço do primeiro jogador (biblioteca de eventos e territórios)."""
+    try:
+        from .engine import event_library, territory
+        event_library.get_library()
+        territory.overview({})
+    except Exception as problem:  # o pré-aquecimento é só otimização: se falhar, o jogo carrega sob demanda
+        logging.getLogger(__name__).warning("Pré-aquecimento incompleto: %s", problem)
+
+
 @app.on_event("startup")
 def startup() -> None:
     initialize()
     game_state()
+    threading.Thread(target=_warm_caches, name="warm-caches", daemon=True).start()
 
 
 @app.get("/api/health")
