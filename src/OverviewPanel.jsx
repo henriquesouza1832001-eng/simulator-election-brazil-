@@ -1,12 +1,25 @@
-import { Page, Section, Stat, Group, Badge, fmt } from './ui';
+import { useEffect, useState } from 'react';
+import { Section, Stat, Badge, fmt } from './ui';
+import Hero, { headline } from './Hero';
 import MandateReview from './MandateReview';
 
 const dateLabel = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR') : '—');
 
-/** Visão geral: o resumo do dia. Os dados chegam já prontos do App; aqui só se decide como mostrar. */
-export default function OverviewPanel({ request, state, title, lead, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, go }) {
-  return <Page title={title} lead={lead}
-    actions={term && <div className="ds-term" aria-label="Progresso do mandato"><span>{term.label}</span><b>{term.value}<small>{term.suffix}</small></b><i style={{ '--p': `${Math.max(0, Math.min(100, term.progress))}%` }} /><small>{term.note}</small></div>}>
+/** Visão geral: manchete do dia, números, próximo passo, agenda e balanço. Os dados chegam prontos do App. */
+export default function OverviewPanel({ request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, go }) {
+  const [review, setReview] = useState(null);
+  useEffect(() => {
+    if (!showReview) return;
+    request('/api/mandate/review').then(setReview).catch(() => setReview(null));
+  }, [state?.date, showReview]);
+
+  const crisis = state.active_crises?.[0];
+  const hero = showReview
+    ? { ...headline(review, crisis), label: 'Hoje no país' }
+    : { mood: next.urgent ? 'crise' : 'calmo', title: next.title, text: next.text, label: next.label };
+
+  return <section className="ds-page">
+    <Hero name="painel" mood={hero.mood} label={hero.label} title={hero.title} text={hero.text} badge={term ? `${term.label} ${term.value}${term.suffix}` : undefined} />
 
     <Section title={stats.title}>
       <div className="ds-stats">{stats.items.map((s) => <Stat key={s.label} label={s.label} value={s.value} unit={s.unit} note={s.note} />)}</div>
@@ -42,12 +55,12 @@ export default function OverviewPanel({ request, state, title, lead, term, stats
         </section>}
         <section className="ds-card">
           <h4>O que vem pela frente <button type="button" className="ds-link" onClick={() => go('Agenda')}>ver agenda</button></h4>
-          {upcoming.length ? <ul className="ds-list">{upcoming.map((e) => <li key={e.id}><span className="ds-muted">{e.days_until === 0 ? 'hoje' : `em ${e.days_until} dias`}</span><b>{e.title}</b></li>)}</ul> : <p className="ds-muted">Nenhum compromisso próximo.</p>}
+          {upcoming.length ? <ul className="ds-list">{upcoming.map((e) => <li key={e.id}><span className="ds-when">{e.days_until === 0 ? 'hoje' : `em ${e.days_until} d`}</span><b>{e.title}</b></li>)}</ul> : <p className="ds-muted">Nenhum compromisso próximo.</p>}
         </section>
         {last && <section className="ds-card"><h4>Última decisão</h4><p className="ds-last"><b>{last.title}</b><span className="ds-muted">{dateLabel(last.date)} · {last.kind}</span></p></section>}
       </div>
     </div>
 
-    {showReview && <Section><MandateReview request={request} state={state} /></Section>}
-  </Page>;
+    {showReview && <Section><MandateReview request={request} state={state} data={review} /></Section>}
+  </section>;
 }

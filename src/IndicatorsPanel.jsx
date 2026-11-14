@@ -1,54 +1,79 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Page, Section, Segmented, Stat, Group, IndicatorRow, Empty, Badge, fmt } from './ui';
+import { Page, Section, Segmented, Stat, Delta, LineChart, Empty, fmt } from './ui';
 
 const DOMAIN_NAMES = {
   economia: 'Economia', fiscal: 'Contas públicas', trabalho: 'Trabalho e renda', desigualdade: 'Pobreza e desigualdade', educacao: 'Educação',
   saude: 'Saúde', saneamento: 'Saneamento e moradia', infraestrutura: 'Transporte e infraestrutura', seguranca: 'Segurança', ambiente: 'Meio ambiente',
   instituicoes: 'Instituições e política', demografia: 'População', externo: 'Setor externo',
 };
+const ORDER = Object.keys(DOMAIN_NAMES);
 const OFFICE_NAMES = { vereador: 'Vereador', prefeito: 'Prefeito', deputado_estadual: 'Deputado estadual', governador: 'Governador', deputado_federal: 'Deputado federal', senador: 'Senador', presidente: 'Presidente' };
 const SOURCE = { atlas: 'Atlas do Desenvolvimento Humano (Censo 2010)', ibge: 'IBGE', estimado: 'estimativa do jogo' };
-// Os seis números do topo: chave do motor, rótulo, unidade e o que é bom.
-const HEADLINE = [
-  ['approval', 'Aprovação do governo', '%', 'up'], ['gdp_growth', 'Crescimento do PIB', '% a.a.', 'up'], ['inflation', 'Inflação', '% a.a.', 'down'],
-  ['unemployment', 'Desemprego', '%', 'down'], ['debt_gdp', 'Dívida pública', '% do PIB', 'down'], ['congress_support', 'Base no Congresso', '%', 'up'],
-];
-const CITY_HEADLINE = ['idhm', 'gini', 'pobreza', 'desemprego', 'esperanca_vida', 'agua_encanada'];
+const HEADLINE = [['approval', 'Aprovação', '%', 'up'], ['inflation', 'Inflação', '% a.a.', 'down'], ['unemployment', 'Desemprego', '%', 'down'], ['debt_gdp', 'Dívida pública', '% do PIB', 'down']];
+const CITY_HEADLINE = ['idhm', 'pobreza', 'desemprego', 'esperanca_vida'];
 
 const digitsFor = (unit, value) => (unit === '0 a 1' ? 3 : unit === 'hab.' || Math.abs(Number(value)) >= 1000 ? 0 : 1);
 const show = (row) => fmt(row.value, digitsFor(row.unit, row.value));
 const unitLabel = (unit) => (unit === '0 a 1' || unit === '0 a 100' ? '' : unit);
+const isBetter = (r, d) => Number.isFinite(d) && Math.abs(d) >= 0.05 && r.better !== 'neutral' && (d > 0) === (r.better === 'up');
+const isWorse = (r, d) => Number.isFinite(d) && Math.abs(d) >= 0.05 && r.better !== 'neutral' && (d > 0) !== (r.better === 'up');
 
-function Explain({ meta, row, office }) {
-  if (!meta) return <p className="ds-muted">Carregando explicação…</p>;
-  const levers = Object.entries(meta.levers || {});
-  return <>
-    {meta.note && <p>{meta.note}</p>}
-    {meta.drivers?.length > 0 && <p><b>O que faz isso mudar:</b></p>}
-    {meta.drivers?.length > 0 && <div className="ds-tags">{meta.drivers.map((d) => <span className="ds-tag" key={d.from}>{d.sign > 0 ? '↑' : '↓'} {d.label}</span>)}</div>}
-    {meta.influences?.length > 0 && <p><b>O que isso afeta:</b></p>}
-    {meta.influences?.length > 0 && <div className="ds-tags">{meta.influences.slice(0, 6).map((d) => <span className="ds-tag" key={d.id}>{d.label}</span>)}</div>}
-    {levers.length > 0 && <p><b>Quem pode agir:</b> {levers.map(([k, v]) => `${OFFICE_NAMES[k] || k} (${v})`).join('; ')}.</p>}
-    {row.base !== undefined && <p className="ds-muted">Base de partida: {fmt(row.base, digitsFor(row.unit, row.base))} · Fonte: {SOURCE[row.source] || row.source}</p>}
-    {!meta.note && !meta.drivers?.length && !levers.length && <p className="ds-muted">Este indicador não tem ligações cadastradas ainda.</p>}
-  </>;
+function Detail({ row, delta, meta, series, open, onClose }) {
+  if (!row) return <aside className={`ds-detail ${open ? 'open' : ''}`}><p className="ds-empty-detail">Escolha um indicador na lista para ver o detalhe.</p></aside>;
+  const levers = Object.entries(meta?.levers || {});
+  const unit = unitLabel(row.unit);
+  const points = (series || []).map((v, i) => ({ m: String(i + 1), v }));
+  return <aside className={`ds-detail ${open ? 'open' : ''}`} aria-label={`Detalhe: ${row.label}`}>
+    <div className="ds-label">{DOMAIN_NAMES[row.domain] || row.domain}</div>
+    <h2>{row.label}</h2>
+    <div className="ds-big">{show(row)}{unit && <small>{unit}</small>}</div>
+    <Delta value={delta} better={row.better} digits={digitsFor(row.unit, row.value) > 1 ? 3 : 1} /> <span className="ds-muted">desde o início</span>
+    {points.filter((p) => Number.isFinite(p.v)).length >= 2 && <LineChart points={points} unit={unit} labels={['início', 'agora']} />}
+    {!meta && <p className="ds-muted" style={{ marginTop: 14 }}>Carregando explicação…</p>}
+    {meta?.note && <><h3>Em uma frase</h3><p>{meta.note}</p></>}
+    {meta?.drivers?.length > 0 && <><h3>O que faz isso mudar</h3><div className="ds-tags">{meta.drivers.map((d) => <span className="ds-tag" key={d.from}>{d.sign > 0 ? '↑' : '↓'} {d.label}</span>)}</div></>}
+    {meta?.influences?.length > 0 && <><h3>O que isso afeta</h3><div className="ds-tags">{meta.influences.slice(0, 6).map((d) => <span className="ds-tag" key={d.id}>{d.label}</span>)}</div></>}
+    {levers.length > 0 && <><h3>Quem pode agir</h3><p>{levers.map(([k, v]) => `${OFFICE_NAMES[k] || k}: ${v}`).join('. ')}.</p></>}
+    {row.base !== undefined && <><h3>Ponto de partida</h3><p>{fmt(row.base, digitsFor(row.unit, row.base))}{unit ? ` ${unit}` : ''} · {SOURCE[row.source] || row.source}</p></>}
+    <button type="button" className="secondary-button ds-close" onClick={onClose}>Fechar</button>
+  </aside>;
 }
 
-function Groups({ rows, history, registry, loadRegistry, deltaOf, series, openFirst }) {
-  const byDomain = useMemo(() => {
+function Master({ rows, deltaOf, seriesOf, registry, loadRegistry }) {
+  const subjects = useMemo(() => {
     const acc = {};
     rows.forEach((r) => { (acc[r.domain] ||= []).push(r); });
-    return Object.entries(acc).sort((a, b) => Object.keys(DOMAIN_NAMES).indexOf(a[0]) - Object.keys(DOMAIN_NAMES).indexOf(b[0]));
+    return Object.entries(acc).sort((a, b) => ORDER.indexOf(a[0]) - ORDER.indexOf(b[0]));
   }, [rows]);
-  return byDomain.map(([domain, items], index) => {
-    const better = items.filter((r) => { const d = Number(deltaOf(r)); return Number.isFinite(d) && Math.abs(d) >= 0.05 && r.better !== 'neutral' && (d > 0) === (r.better === 'up'); }).length;
-    const worse = items.filter((r) => { const d = Number(deltaOf(r)); return Number.isFinite(d) && Math.abs(d) >= 0.05 && r.better !== 'neutral' && (d > 0) !== (r.better === 'up'); }).length;
-    const meta = `${items.length} ${items.length === 1 ? 'indicador' : 'indicadores'}${better ? ` · ${better} melhoram` : ''}${worse ? ` · ${worse} pioram` : ''}`;
-    return <Group key={domain} title={DOMAIN_NAMES[domain] || domain} meta={meta} open={openFirst && index === 0}>
-      <ul className="ds-rows">{items.map((r) => <IndicatorRow key={r.id} name={r.label} value={show(r)} unit={unitLabel(r.unit)} delta={deltaOf(r)} better={r.better} digits={digitsFor(r.unit, r.value) > 1 ? 3 : 1}
-        series={series?.(r)} onOpen={loadRegistry}><Explain meta={registry?.[r.id]} row={r} /></IndicatorRow>)}</ul>
-    </Group>;
-  });
+  const [domain, setDomain] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [open, setOpen] = useState(false);
+  const active = subjects.find(([k]) => k === domain) || subjects[0];
+  const items = active ? active[1] : [];
+  const row = items.find((r) => r.id === selected) || items[0];
+
+  useEffect(() => { loadRegistry(); }, []);
+  if (!active) return <Empty title="Sem indicadores para mostrar" />;
+
+  return <div className="ds-master">
+    <nav className="ds-subjects" aria-label="Assuntos">
+      {subjects.map(([key, list]) => {
+        const better = list.filter((r) => isBetter(r, deltaOf(r))).length, worse = list.filter((r) => isWorse(r, deltaOf(r))).length;
+        return <button key={key} type="button" className="ds-subject" aria-pressed={active[0] === key} onClick={() => { setDomain(key); setSelected(null); setOpen(false); }}>
+          <b>{DOMAIN_NAMES[key] || key}</b>
+          <small>{list.length} {list.length === 1 ? 'indicador' : 'indicadores'}{better ? ` · ${better} melhoram` : ''}{worse ? ` · ${worse} pioram` : ''}</small>
+        </button>;
+      })}
+    </nav>
+    <div className="ds-items" role="listbox" aria-label={`Indicadores de ${DOMAIN_NAMES[active[0]] || active[0]}`}>
+      {items.map((r) => <button key={r.id} type="button" role="option" aria-selected={row?.id === r.id} className="ds-item" onClick={() => { setSelected(r.id); setOpen(true); }}>
+        <span className="ds-n">{r.label}</span>
+        <span className="ds-v">{show(r)}{unitLabel(r.unit) && <small>{unitLabel(r.unit)}</small>}</span>
+        <Delta value={deltaOf(r)} better={r.better} digits={digitsFor(r.unit, r.value) > 1 ? 3 : 1} />
+      </button>)}
+    </div>
+    <Detail row={row} delta={row ? deltaOf(row) : null} meta={row ? registry?.[row.id] : null} series={row ? seriesOf?.(row) : null} open={open} onClose={() => setOpen(false)} />
+  </div>;
 }
 
 export default function IndicatorsPanel({ request, state }) {
@@ -79,7 +104,7 @@ export default function IndicatorsPanel({ request, state }) {
   useEffect(() => { if (cityCode) request(`/api/territory/city/${cityCode}`).then(setCity).catch((e) => setError(e.message)); }, [cityCode, state?.date]);
 
   const loadRegistry = () => { if (!registry) request('/api/indicators/registry').then((r) => setRegistry(Object.fromEntries(r.indicators.map((i) => [i.id, i])))).catch(() => {}); };
-  const series = (r) => (history || []).slice(-24).map((h) => h[r.id]);
+  const seriesOf = (r) => (history || []).slice(-24).map((h) => h[r.id]);
 
   async function search(e) {
     e.preventDefault();
@@ -94,16 +119,15 @@ export default function IndicatorsPanel({ request, state }) {
   const cityByKey = city ? Object.fromEntries(city.indicators.map((i) => [i.id, i])) : {};
   const nationByKey = Object.fromEntries(nation.map((i) => [i.id, i]));
 
-  return <Page title="Indicadores" lead={scope === 'pais' ? 'Como o país está agora e como mudou desde o início da partida. Clique em um indicador para ver o que o move.' : 'Como está a cidade escolhida. Os valores de partida vêm do Atlas do Desenvolvimento Humano (Censo 2010); o jogo soma o efeito das suas decisões.'}
+  return <Page title="Indicadores" lead={scope === 'pais' ? 'Como o país está agora e como mudou desde o início. Escolha um assunto e um indicador para ver o que o move.' : 'Como está a cidade escolhida. Os valores de partida vêm do Atlas do Desenvolvimento Humano (Censo 2010); o jogo soma o efeito das suas decisões.'}
     actions={<Segmented label="Escopo" value={scope} onChange={setScope} options={[['pais', 'País'], ['cidade', 'Uma cidade']]} />}>
 
     {scope === 'pais' && <>
-      <Section title="O país em seis números">
-        <div className="ds-stats">{HEADLINE.map(([key, label, unit, better]) => { const m = rowsByKey[key]; return m
-          ? <Stat key={key} label={label} value={fmt(m.now)} unit={unit} delta={m.delta} better={better} /> : null; })}</div>
+      <Section>
+        <div className="ds-stats">{HEADLINE.map(([key, label, unit, better]) => { const m = rowsByKey[key]; return m ? <Stat key={key} label={label} value={fmt(m.now)} unit={unit} delta={m.delta} better={better} /> : null; })}</div>
       </Section>
-      <Section title="Todos os indicadores" hint="Agrupados por assunto. A seta mostra a variação desde o início; verde é melhora, vermelho é piora.">
-        <Groups rows={nation} history={history} registry={registry} loadRegistry={loadRegistry} deltaOf={(r) => r.change_since_start} series={series} openFirst />
+      <Section title="Todos os indicadores">
+        <Master rows={nation} deltaOf={(r) => r.change_since_start} seriesOf={seriesOf} registry={registry} loadRegistry={loadRegistry} />
       </Section>
     </>}
 
@@ -116,13 +140,13 @@ export default function IndicatorsPanel({ request, state }) {
       {!city && <Empty title="Escolha uma cidade">Busque pelo nome acima. Se você jogar a carreira, a cidade do seu cargo abre sozinha.</Empty>}
       {city && <>
         <p className="ds-lead" style={{ margin: '0 0 14px' }}><b style={{ color: 'var(--ds-ink)' }}>{city.name}</b> · {city.uf} · {city.region}{city.population ? ` · ${Number(city.population).toLocaleString('pt-BR')} habitantes` : ''}{city.gdp_per_capita ? ` · PIB per capita R$ ${Number(city.gdp_per_capita).toLocaleString('pt-BR')}` : ''}</p>
-        <Section title="A cidade em seis números">
+        <Section>
           <div className="ds-stats">{CITY_HEADLINE.map((id) => { const c = cityByKey[id]; if (!c) return null; const n = nationByKey[id];
             return <Stat key={id} label={c.label.replace(/ \(.*\)/, '')} value={show(c)} unit={unitLabel(c.unit)} delta={c.delta} better={c.better} digits={digitsFor(c.unit, c.value) > 1 ? 3 : 1}
               note={n ? `Brasil: ${show(n)}${unitLabel(n.unit) ? ' ' + unitLabel(n.unit) : ''}` : undefined} />; })}</div>
         </Section>
         <Section title="Todos os indicadores da cidade" hint="A seta mostra a mudança causada pelas decisões da partida em relação ao ponto de partida.">
-          <Groups rows={city.indicators} registry={registry} loadRegistry={loadRegistry} deltaOf={(r) => r.delta} openFirst />
+          <Master rows={city.indicators} deltaOf={(r) => r.delta} registry={registry} loadRegistry={loadRegistry} />
         </Section>
         <p className="ds-muted" style={{ fontSize: 13 }}>{city.note}</p>
       </>}

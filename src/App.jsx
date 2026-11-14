@@ -14,6 +14,8 @@ import AccountPanel from './AccountPanel';
 import WelcomePanel from './WelcomePanel';
 import GameSetupPanel from './GameSetupPanel';
 import GameGuide from './GameGuide';
+import { Nav, AdvanceMenu, MoreSheet } from './Shell';
+import { TAB_HELP } from './guideContent';
 import Brand from './Brand';
 import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
@@ -212,6 +214,9 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [rawTab, setActiveTab] = useState(null);
   const [gameGuideOpen, setGameGuideOpen] = useState(false);
+  const [advanceOpen, setAdvanceOpen] = useState(false);
+  const [advanceFabOpen, setAdvanceFabOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [ruptureInfo, setRuptureInfo] = useState(null);
   const [budgetView, setBudgetView] = useState(null);
   const [budgetSection, setBudgetSection] = useState('Contas públicas');
@@ -507,9 +512,24 @@ export default function App() {
     skip: localCareer && careerPhase === 'pre_campaign' && monthsToElection > 120 ? { text: `A campanha abre em ${monthsToElection} dias. Se preferir não esperar, o jogo pode avançar sozinho até o ano da eleição (os meses passam normalmente, com economia e acontecimentos).`, label: 'Pular para o ano da eleição', busy, onSkip: skipToElectionYear } : null,
     showReview: !localCareer && !partyMode,
   };
+  const railGroups = tabGroups.filter((group) => !group.hidden && !['Mundo', 'Sobre'].includes(group.label))
+    .map((group) => ({ ...group, rail: ['Painel', 'Política', 'Agenda', 'Militância'].includes(group.label) ? group.label : 'Governo', icon: ['Painel', 'Política', 'Agenda'].includes(group.label) ? group.label : group.label === 'Militância' ? 'Política' : 'Governo' }));
+  const moreEntries = [
+    ...(tabGroups.find((group) => group.label === 'Mundo')?.items || []).map((tab) => ({ label: tab, icon: 'Mundo', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
+    { label: 'Perfil', hint: 'Placar, carimbos e diário', go: () => setActiveTab('Placar') },
+    { label: 'Guia', hint: 'O que cada aba faz e o glossário', go: () => setGameGuideOpen(true) },
+    ...(tabGroups.find((group) => group.label === 'Sobre')?.items || []).map((tab) => ({ label: tab, icon: 'Sobre', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
+    { label: 'Partidas', hint: 'Trocar ou começar uma partida', go: () => setShowGameMenu(true) },
+    ...(authConfig?.enabled ? (authUser?.isGuest
+      ? [{ label: 'Entrar / criar conta', icon: 'Perfil', go: () => { setShowAuthPanel(true); setNotice(''); } }]
+      : [{ label: 'Conta', icon: 'Perfil', go: () => setShowAccountPanel(true) }, { label: 'Sair', icon: 'Perfil', go: async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); } }]) : []),
+  ];
   return <div className="app-shell">
-    <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setActiveTab('Placar')}>Perfil</button><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => setGameGuideOpen((open) => !open)} aria-pressed={gameGuideOpen}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
-    <nav className="tabs tabs-grouped">{tabGroups.filter((group) => !group.hidden).map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>{(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="tabs tabs-grouped subtabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="tab tab-sub back-to-game" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
+    <header className="ds-top"><Brand /><div className="ds-date"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="ds-top-actions">{authConfig?.enabled && (authUser?.isGuest ? <button className="ds-btn" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="ds-btn" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="ds-btn" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button type="button" className="ds-btn" onClick={() => setGameGuideOpen((open) => !open)} aria-pressed={gameGuideOpen}>Guia</button><button type="button" className="ds-btn" onClick={() => setActiveTab('Placar')}>Perfil</button><button type="button" className="ds-btn" onClick={() => setShowGameMenu(true)}>Partidas</button><AdvanceMenu open={advanceOpen} setOpen={setAdvanceOpen} busy={busy} advance={advance} /></div></header>
+    <Nav items={railGroups} current={selectedTabGroup.label} moreActive={['Mundo', 'Sobre', 'Perfil'].includes(selectedTabGroup.label)} onGo={(group) => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }} onMore={() => setMoreOpen(true)} />
+    <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} entries={moreEntries} />
+    <AdvanceMenu floating open={advanceFabOpen} setOpen={setAdvanceFabOpen} busy={busy} advance={advance} />
+    {(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="ds-tabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="ds-tab back" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className="ds-tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
 
     <main className="content">
 
@@ -625,7 +645,7 @@ export default function App() {
 
       {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      <footer className="footer"><span>QUATRO ANOS · v0.4 · em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
+      <footer className="footer"><span>QUATRO ANOS · v0.5 · em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
     </main>
     {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} busy={busy} setBusy={setBusy} />}
     {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}

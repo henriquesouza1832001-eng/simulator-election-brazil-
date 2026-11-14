@@ -10,8 +10,8 @@ const TODAY = [
 ];
 const ROADMAP = [
   ['0.4', 'Base de interface e informação (concluída)'],
-  ['0.5', 'Direção visual: identidade, navegação e desempenho (próxima)'],
-  ['0.6', 'Motor: economia e Estado, empresas, Banco Central e Selic'],
+  ['0.5', 'Direção visual: identidade, navegação e desempenho (concluída)'],
+  ['0.6', 'Motor: economia e Estado, empresas, Banco Central e Selic (próxima)'],
   ['0.7', 'Gemini conectado ao jogo'],
   ['0.8', 'Congresso, eleições, contas e nuvem'],
   ['0.9', 'Balanceamento e acabamento'],

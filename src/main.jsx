@@ -9,5 +9,6 @@ import './theme.css';
 import './polish.css';
 import './government.css';
 import './design.css';
+import './shell.css';
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);

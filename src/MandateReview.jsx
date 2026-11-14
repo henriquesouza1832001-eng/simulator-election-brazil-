@@ -4,9 +4,10 @@ import { Group, Delta, fmt } from './ui';
 // O que é bom em cada indicador do balanço.
 const BETTER = { approval: 'up', congress_support: 'up', institutional_trust: 'up', integrity: 'up', gdp_growth: 'up', inflation: 'down', unemployment: 'down', debt_gdp: 'down' };
 
-export default function MandateReview({ request, state }) {
-  const [data, setData] = useState(null);
-  useEffect(() => { request('/api/mandate/review').then(setData).catch(() => setData(null)); }, [state?.date]);
+export default function MandateReview({ request, state, data: given }) {
+  const [own, setOwn] = useState(null);
+  useEffect(() => { if (given === undefined) request('/api/mandate/review').then(setOwn).catch(() => setOwn(null)); }, [state?.date, given]);
+  const data = given === undefined ? own : given;
   if (!data) return null;
   const { decisions, cpis } = data;
   return <Group title={data.final ? 'Fim do mandato: balanço final' : 'Balanço do mandato até agora'} meta={`${data.headline} · nota ${data.score}/100 (${data.letter})`} open={data.final}>

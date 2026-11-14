@@ -2,6 +2,15 @@
 
 A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
 
+## 0.5 — Direção visual (concluída, 14 nov. 2026)
+
+- **Casca nova:** trilho lateral com cinco destinos (computador e tablet) e barra inferior com botão flutuante **Avançar** (celular); abas dentro da página; folha **Mais** com Mundo, Perfil, Guia, Sobre e Partidas; menu de avançar (próximo dia, 7 dias, 1 mês).
+- **Fontes próprias** dentro do jogo (Fraunces nos títulos, DM Sans no texto, DM Mono nos números), sem depender de fontes instaladas ou de serviço externo.
+- **Visão geral** com faixa de abertura: manchete escrita pelo motor a partir dos números (sem IA), arte em duas cores que muda com o estado (calmo, tenso, crise) e que uma imagem real em `public/assets/hero/` pode substituir sem mexer em código.
+- **Indicadores** em lista e detalhe (assuntos, indicadores e painel com gráfico, o que move, o que afeta e quem pode agir); no celular, chips e folha na base. Sem blocos que abrem e fecham.
+- Auditorias: contraste sem achados e nenhuma rolagem lateral em 390 e 768 px, em todas as abas alcançáveis.
+- Cores do tema antigo redirecionadas para o sistema novo; telas antigas herdam fontes, cores e superfícies.
+
 ## Pós-0.4 — desempenho e direção visual (14 nov. 2026)
 
 - **Primeiro avanço de tempo de 23 s para 1,5 s** (medido com o banco do TSE importado): índice nos nomes de candidatos, conferência de pessoa real por trechos de palavras em vez de 31 mil comparações por evento, e pré-aquecimento dos caches ao ligar o servidor.

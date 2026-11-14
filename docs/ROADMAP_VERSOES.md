@@ -23,8 +23,8 @@ O objetivo é uma base visual e de navegação robusta, em que qualquer informa�
 - Remover os arquivos de CSS antigos (`editorial.css`, `views.css` e outros) quando nenhuma tela depender deles.
 - Pré-campanha do vereador como militante (alternativa ao pulo), se ainda fizer sentido.
 
-## 0.5 — Direção visual (próxima)
-Identidade visual sólida e específica: manchete com imagem, números em destaque, navegação em trilho (computador) e barra inferior (celular), indicadores em lista e detalhe, desempenho. Guia completo em [DIRECAO_VISUAL.md](DIRECAO_VISUAL.md) e protótipo em `docs/visual/prototipo.html`.
+## 0.5 — Direção visual (concluída em 14 nov. 2026)
+Entregue: casca nova (trilho e barra inferior), fontes próprias, Visão geral com manchete e arte, Indicadores em lista e detalhe, auditorias de contraste e de rolagem lateral. Ficam para quando as imagens reais chegarem: trocar a arte padrão pelas fotos (basta soltar os arquivos em `public/assets/hero/`). Identidade visual sólida e específica: manchete com imagem, números em destaque, navegação em trilho (computador) e barra inferior (celular), indicadores em lista e detalhe, desempenho. Guia completo em [DIRECAO_VISUAL.md](DIRECAO_VISUAL.md) e protótipo em `docs/visual/prototipo.html`.
 
 ## 0.6 — Motor: economia e Estado (sugestão)
 Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.
