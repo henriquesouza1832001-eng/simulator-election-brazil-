@@ -1,6 +1,6 @@
-# Civiciclo 0.1 — simulador político
+# Quatro Anos 0.1 — simulador político
 
-Civiciclo é o nome de trabalho do jogo fictício de política brasileira, jogado no navegador. A marca usada pelo app e pelo ícone do navegador é `public/assets/brand/civiciclo-marca.png`; a busca de disponibilidade da marca no INPI ainda não foi feita. O tempo avança por dia; decisões, campanhas, eleições, crises e projetos alteram uma simulação determinística. O projeto não representa previsões oficiais nem atribui fatos inventados a pessoas ou empresas reais.
+Quatro Anos é o nome de trabalho do jogo fictício de política brasileira, jogado no navegador. A marca usada pelo app e pelo ícone do navegador é `public/assets/brand/civiciclo-marca.png`; a busca de disponibilidade da marca no INPI ainda não foi feita. O tempo avança por dia; decisões, campanhas, eleições, crises e projetos alteram uma simulação determinística. O projeto não representa previsões oficiais nem atribui fatos inventados a pessoas ou empresas reais.
 
 ## Estado da versão
 
@@ -10,7 +10,7 @@ As regras são uma abstração de jogo, não um modelo econômico ou jurídico p
 
 ## Jogar na web
 
-A instalação de protótipo está em [Civiciclo](https://d2dpmk0vrt66wn.cloudfront.net). O endereço usa Cognito para cadastro e login e pode exigir confirmação de e-mail. A branch `main` é validada pelo GitHub Actions e publicada automaticamente pelo servidor após aprovação; a instância verifica atualizações a cada cinco minutos. Os arquivos e limites da infraestrutura estão em [`deploy/aws/README.md`](deploy/aws/README.md) e [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
+A instalação de protótipo está em [Quatro Anos](https://d2dpmk0vrt66wn.cloudfront.net). O endereço usa Cognito para cadastro e login e pode exigir confirmação de e-mail. A branch `main` é validada pelo GitHub Actions e publicada automaticamente pelo servidor após aprovação; a instância verifica atualizações a cada cinco minutos. Os arquivos e limites da infraestrutura estão em [`deploy/aws/README.md`](deploy/aws/README.md) e [`docs/AUTENTICACAO_E_DEPLOY.md`](docs/AUTENTICACAO_E_DEPLOY.md).
 
 ## Executar localmente
 

@@ -358,6 +358,6 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
       {!mode && archives.length > 0 && <details className="game-archives"><summary>Restaurar uma partida arquivada ({archives.length})</summary><div><select value={selectedArchive} onChange={(event) => setSelectedArchive(event.target.value)}><option value="">Escolha uma partida salva</option>{archives.map((item) => <option key={item.id} value={item.id}>{item.title} · {new Date(`${item.archived_at.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}</option>)}</select><button className="secondary-button" disabled={busy || !selectedArchive} onClick={restore}>Restaurar</button></div></details>}
       {notice && <p className="game-setup-notice" role="status">{notice}</p>}
     </div>
-    <footer className="game-setup-footer">Civiciclo é um simulador fictício e satírico, sem afiliação ou endosso de partidos, pessoas ou instituições. A referência a nomes partidários não transforma resultados simulados em fatos. Não use dados pessoais reais no perfil livre.</footer>
+    <footer className="game-setup-footer">Quatro Anos é um simulador fictício e satírico, sem afiliação ou endosso de partidos, pessoas ou instituições. A referência a nomes partidários não transforma resultados simulados em fatos. Não use dados pessoais reais no perfil livre.</footer>
   </main>;
 }

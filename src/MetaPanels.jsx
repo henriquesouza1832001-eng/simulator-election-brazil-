@@ -321,7 +321,7 @@ export function InfoPanel({ section }) {
   const content = {
     Planos: <>
       <h2>Modos e limites</h2>
-      <p className="page-description">O Civiciclo roda sem cobrança e sem limite de meses. Nenhuma compra é feita aqui.</p>
+      <p className="page-description">O jogo roda sem cobrança e sem limite de meses. Nenhuma compra é feita aqui.</p>
       <div className="meta-cards plans">
         <article><span>NESTA VERSÃO LOCAL</span><strong>Tudo liberado</strong><small>Sem limite de meses. A chave de IA (Gemini) é sua, no arquivo backend/.env.</small></article>
       </div></>,
@@ -341,7 +341,7 @@ export function InfoPanel({ section }) {
     Créditos: <>
       <h2>Créditos</h2>
       <ul className="meta-notes">
-        <li>Reconstrução independente construída sobre o Civiciclo, com regras próprias.</li>
+        <li>Reconstrução independente construída sobre o projeto Quatro Anos, com regras próprias.</li>
         <li>Dados públicos de partidos podem vir do cadastro do TSE (importação manual, com fonte e licença registradas).</li>
         <li>Observação do site de referência feita com o REA (Reverse Engineer Anything) sobre páginas públicas.</li>
       </ul></>,

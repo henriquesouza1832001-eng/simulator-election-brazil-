@@ -624,7 +624,7 @@ export default function App() {
 
       {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      <footer className="footer"><span>CIVICICLO · simulador em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
+      <footer className="footer"><span>QUATRO ANOS · simulador em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
     </main>
     {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} busy={busy} setBusy={setBusy} />}
     {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}

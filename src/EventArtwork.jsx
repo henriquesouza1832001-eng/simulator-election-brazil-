@@ -83,7 +83,7 @@ export default function EventArtwork({ event, compact = false }) {
     <g color={accent} opacity=".96"><SceneSymbol name={scene} /></g>
     <text x="660" y="276" textAnchor="end" fill={accent} fontSize="12" fontFamily="system-ui, sans-serif" letterSpacing="1" opacity=".8">{serial}</text>
     <g clipPath={`url(#${reactId}-text)`}>
-      <text x="31" y="46" fill={accent} fontSize="15" fontFamily="system-ui, sans-serif" fontWeight="700" letterSpacing="2">CIVICICLO  /  {sceneLabel}</text>
+      <text x="31" y="46" fill={accent} fontSize="15" fontFamily="system-ui, sans-serif" fontWeight="700" letterSpacing="2">QUATRO ANOS  /  {sceneLabel}</text>
       <text x="31" y="104" fill="#f1f5ee" fontSize="24" fontFamily="Georgia, serif" fontWeight="700">{lines.map((line, index) => <tspan key={index} x="31" dy={index ? 31 : 0}>{line}</tspan>)}</text>
       <path d="M31 267h205" stroke={accent} strokeWidth="2" opacity=".8" />
       <text x="31" y="291" fill="#bbcfca" fontSize="13" fontFamily="system-ui, sans-serif" letterSpacing="1">ARQUIVO DE EVENTOS  /  Nº {serial}</text>

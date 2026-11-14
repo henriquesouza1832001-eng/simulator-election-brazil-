@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25 — 14 nov. 2026 (novo nome)
+
+- O jogo passa a se chamar **Quatro Anos** (os quatro anos de um mandato). Mudaram os textos visíveis: topo, título da aba, rodapé, conta, créditos e README. Os nomes internos (pilhas `mandato-*` da AWS, chaves de salvamento do navegador, arquivos de imagem) ficaram como estavam para não apagar partidas salvas nem quebrar o deploy.
+
 ## 0.24 — 13 nov. 2026 (revisão de tela do começo ao fim do jogo)
 
 - Balanço do mandato (`engine/mandate_review.py`, `/api/mandate/review`): do primeiro ao último dia, indicador por indicador, decisões, CPIs e uma nota de 0 a 100 por regra fixa. No fim dos 48 meses aparece aberto na Visão geral, com o título "O mandato terminou".
