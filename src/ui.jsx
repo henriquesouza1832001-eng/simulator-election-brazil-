@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Componentes do sistema de design (0.4). Usam só as classes `ds-` de design.css.
 
@@ -102,5 +102,21 @@ export function LineChart({ points, unit = '', labels }) {
       <path d={d} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
     </svg>
     <div className="ds-chart-axis"><span>{firstLabel} · {fmt(vals[0].v)} {unit}</span><span>mín. {fmt(min)} · máx. {fmt(max)}</span><span>{labels?.[1] ?? last.m} · {fmt(last.v)} {unit}</span></div>
+  </div>;
+}
+
+/** Painel lateral à direita (no celular ocupa a largura toda). Fecha com Esc, clique fora ou no ×. */
+export function Drawer({ title, onClose, children, footer }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return <div className="ds-drawer-backdrop" onClick={onClose}>
+    <aside className="ds-drawer" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <header><b>{title}</b><button type="button" onClick={onClose} aria-label="Fechar">×</button></header>
+      <div className="ds-drawer-body">{children}</div>
+      {footer && <footer>{footer}</footer>}
+    </aside>
   </div>;
 }

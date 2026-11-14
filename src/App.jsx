@@ -35,6 +35,7 @@ import TerritoryPanel from './TerritoryPanel';
 import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel } from './MetaPanels';
 import AgendaPanel from './AgendaPanel';
 import AboutPanel from './AboutPanel';
+import InvestmentsPanel from './InvestmentsPanel';
 import './diplomacy.css';
 import './ai-status.css';
 
@@ -362,10 +363,10 @@ export default function App() {
     catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
-  async function submitBudgetTransfer() {
+  async function submitBudgetTransfer(source, target, amount) {
     setBusy(true);
     try {
-      const data = await request('/api/budget/reallocate', { method: 'POST', body: JSON.stringify({ source: budgetSource, target: budgetTarget, amount_bi: Number(budgetAmount) }) });
+      const data = await request('/api/budget/reallocate', { method: 'POST', body: JSON.stringify({ source, target, amount_bi: amount }) });
       setBudgetView(data.budget); setState(data.state); setNotice(`Remanejamento registrado. A entrega está prevista para ${data.project.completion_date}.`);
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
@@ -618,13 +619,7 @@ export default function App() {
           </div>
           </>}
           {budgetSection === 'Investimentos' && <>
-          <h3 className="subheading">Carteira de investimentos</h3>
-          <p className="page-description">Carteira simplificada em R$ bilhões anuais. O total não cresce: para ampliar uma área, remaneje verba de outra. Resultados chegam após a maturação do projeto.</p>
-          <div className="budget-total"><span>Total anual da carteira de investimento</span><strong>R$ {budgetView.annual_investment_bi.toFixed(1)} bi</strong><small>Próxima revisão em {budgetView.days_until_reallocation} dia(s)</small></div>
-          <div className="investment-grid">{Object.entries(budgetView.areas).map(([key, area]) => <article key={key}><span>{area.ministry}</span><h3>{area.label}</h3><strong>R$ {Number(budgetView.allocations[key] || 0).toFixed(1)} bi/ano</strong><small>Resultado estimado em {area.lag_days} dias</small></article>)}</div>
-          <div className="budget-form"><h3>Remanejar investimento</h3><label>Retirar de<select value={budgetSource} onChange={(e) => setBudgetSource(e.target.value)}>{Object.entries(budgetView.areas).map(([key, area]) => <option key={key} value={key}>{area.label}</option>)}</select></label><label>Reforçar<select value={budgetTarget} onChange={(e) => setBudgetTarget(e.target.value)}>{Object.entries(budgetView.areas).map(([key, area]) => <option key={key} value={key}>{area.label}</option>)}</select></label><label>Valor anual (R$ bi)<input type="number" min="0.1" max={Math.min(10, Number(budgetView.allocations[budgetSource] || 0) * .2)} step="0.1" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} /></label><button className="primary-button" disabled={busy || budgetView.days_until_reallocation > 0 || budgetSource === budgetTarget} onClick={submitBudgetTransfer}>Confirmar remanejamento</button></div>
-          <h3 className="subheading">Investimentos em execução</h3>
-          {budgetView.pipeline.length ? budgetView.pipeline.map((project) => <div className="agenda-event" key={project.id}><div className="agenda-count">EM CURSO<small>{project.completion_date}</small></div><div><h3>{budgetView.areas[project.area]?.label}</h3><p>Reforço de R$ {project.annual_increase_bi.toFixed(1)} bi/ano. Os efeitos aparecem na conclusão simulada.</p></div></div>) : <div className="empty-state">Nenhum investimento novo em maturação.</div>}
+          <InvestmentsPanel view={budgetView} busy={busy} onTransfer={submitBudgetTransfer} />
           <details className="ministry-roster"><summary>Ver pastas oficiais disponíveis ({ministries.length})</summary><div>{ministries.map((ministry) => <span key={ministry.name}>{ministry.name}</span>)}</div><small>Catálogo baseado no SIORG; estas pastas são fixas no jogo. A carteira de investimentos não cria ministérios.</small></details>
           </>}
           {budgetSection === 'Obras' && <section className="works-section">

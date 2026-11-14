@@ -220,3 +220,32 @@ article > span:first-child { opacity: 1; }
 .municipality-results button b { font-size: 14px; color: var(--ds-ink); }
 .municipality-results button small, .municipality-result-note { color: var(--ds-ink-3) !important; font-size: 13px !important; }
 .municipality-results button:hover, .municipality-results button:focus-visible { background: var(--ds-surface) !important; }
+
+/* Painel lateral à direita */
+.ds-drawer-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(4, 9, 12, .55); display: flex; justify-content: flex-end; }
+.ds-drawer { width: min(440px, 100%); height: 100%; background: var(--ds-surface); border-left: 1px solid var(--ds-line-2); display: flex; flex-direction: column; }
+.ds-drawer header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--ds-line); }
+.ds-drawer header b { font-size: 17px; }
+.ds-drawer header button { all: unset; cursor: pointer; font-size: 34px; line-height: 1; min-width: 44px; min-height: 44px; display: grid; place-items: center; color: var(--ds-ink-2); border-radius: 8px; }
+.ds-drawer header button:hover { background: var(--ds-surface-2); }
+.ds-drawer-body { flex: 1; overflow: auto; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.ds-drawer-body h4 { margin: 8px 0 0; }
+.ds-drawer footer { padding: 12px 16px; border-top: 1px solid var(--ds-line); display: grid; }
+.ds-pick-list { display: grid; gap: 6px; }
+.ds-pick-list button { all: unset; box-sizing: border-box; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--ds-line); border-radius: 10px; background: var(--ds-surface-2); color: var(--ds-ink); }
+.ds-pick-list button[aria-pressed="true"] { border-color: var(--ds-accent); box-shadow: inset 0 0 0 1px var(--ds-accent); }
+.ds-pick-list button:focus-visible { outline: 2px solid var(--ds-accent); }
+.ds-drawer input[type="range"] { width: 100%; accent-color: var(--ds-accent); }
+.ds-amount { display: grid; gap: 2px; }
+.ds-amount b { font-size: 22px; color: var(--ds-accent); }
+.ds-after { display: grid; gap: 6px; padding: 10px 12px; border: 1px dashed var(--ds-line-2); border-radius: 10px; }
+.ds-after span { display: flex; justify-content: space-between; gap: 8px; }
+
+/* Investimentos */
+.ds-inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.ds-inv { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 4px; padding: 12px; background: var(--ds-surface-2); border: 1px solid var(--ds-line); border-radius: 12px; color: var(--ds-ink); }
+.ds-inv:hover, .ds-inv:focus-visible { border-color: var(--ds-accent); }
+.ds-inv strong { font-size: 20px; color: var(--ds-accent); }
+.ds-inv strong small { font-size: 12px; color: var(--ds-ink-3); margin-left: 2px; }
+.ds-inv-bar { display: block; height: 6px; border-radius: 99px; background: var(--ds-line); overflow: hidden; }
+.ds-inv-bar u { display: block; height: 100%; background: var(--ds-accent); }
