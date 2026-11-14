@@ -51,7 +51,7 @@ fi
 
 api_url="https://api.github.com/repos/${repo}/actions/workflows/${workflow}/runs?head_sha=${target_sha}&per_page=1"
 workflow_json="$(curl --fail --silent --show-error --retry 3 --retry-delay 5 "$api_url")"
-ci_result="$(python3 -c 'import json,sys; data=json.load(sys.stdin); runs=data.get("workflow_runs", []); run=next((r for r in runs if r.get("head_sha")==sys.argv[1]), None); print((run or {}).get("status", "pending")+":"+(run or {}).get("conclusion", ""))' "$target_sha" <<<"$workflow_json")"
+ci_result="$(python3 -c 'import json,sys; data=json.load(sys.stdin); runs=data.get("workflow_runs", []); run=next((r for r in runs if r.get("head_sha")==sys.argv[1]), None); print(((run or {}).get("status") or "pending")+":"+((run or {}).get("conclusion") or ""))' "$target_sha" <<<"$workflow_json")"
 if [[ "$ci_result" != "completed:success" ]]; then
   echo "Aguardando testes verdes de ${target_sha}; situação atual: ${ci_result}."
   exit 0
