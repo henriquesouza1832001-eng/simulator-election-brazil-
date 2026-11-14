@@ -1,0 +1,48 @@
+name: Teste de ponta a ponta (carreiras)
+
+# Separado do CI: joga carreiras inteiras (de vereador a presidente, vencendo e perdendo) pela API e confere as telas principais.
+# Roda toda madrugada e sob demanda (Actions > Teste de ponta a ponta > Run workflow). Não bloqueia o deploy da VM.
+on:
+  workflow_dispatch:
+    inputs:
+      offices:
+        description: "Cargos separados por vírgula (vazio = todos). Ex.: vereador,prefeito"
+        required: false
+        default: ""
+      months:
+        description: "Meses de mandato jogados depois da posse (48 = mandato inteiro)"
+        required: false
+        default: "12"
+  schedule:
+    - cron: "17 5 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e
+  cancel-in-progress: true
+
+jobs:
+  carreiras:
+    name: Carreiras de ponta a ponta
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Instalar dependências
+        working-directory: backend
+        run: python -m pip install -r requirements.txt
+      - name: Jogar as carreiras
+        working-directory: backend
+        env:
+          E2E_OFFICES: ${{ github.event.inputs.offices }}
+          E2E_MONTHS: ${{ github.event.inputs.months || '12' }}
+        run: python -m unittest discover -s e2e -t . -v
