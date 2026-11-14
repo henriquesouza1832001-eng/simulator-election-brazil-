@@ -176,7 +176,7 @@ def main():
         if uma_vez:
             log("Rodada unica concluida sem vaga.")
             return
-        espera = cfg["espera_segundos"] + random.randint(0, 60)
+        espera = cfg["espera_segundos"] + random.randint(0, 30)
         time.sleep(espera)
 
 

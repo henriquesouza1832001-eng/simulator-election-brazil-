@@ -3,5 +3,5 @@
   "ssh_public_key_path": "C:/Users/Dell/.ssh/oracle.pub",
   "nome": "quatroanos-a1",
   "boot_gb": 100,
-  "espera_segundos": 300
+  "espera_segundos": 45
 }
