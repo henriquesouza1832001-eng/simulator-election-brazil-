@@ -89,19 +89,25 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const actions = allActions.slice(0, shown);
 
   return <section className="panel powers-page">
-    <h2>{role.label}: o que cabe a este papel</h2>
-    <p className="page-description">Resumo da Constituição e das leis citadas, feito para o jogo. Não é parecer jurídico.</p>
-    <div className="powers-roles">
-      <div><h3 className="subheading">Pode</h3><ul>{role.pode.map((t) => <li key={t}>{t}</li>)}</ul></div>
-      <div><h3 className="subheading">Não pode</h3><ul>{role.nao_pode.map((t) => <li key={t}>{t}</li>)}</ul></div>
-    </div>
-    <p className="meta-count">Base: {role.base}</p>
+    <h2>{role.label}</h2>
+    <p className="page-description">Escolha uma ação abaixo. Cada cargo só faz o que a Constituição permite; o resumo jurídico é para o jogo, não é parecer.</p>
+    <details className="fold">
+      <summary>O que cabe a este cargo <span>e o que não cabe</span></summary>
+      <div className="powers-roles">
+        <div><h3 className="subheading">Pode</h3><ul>{role.pode.map((t) => <li key={t}>{t}</li>)}</ul></div>
+        <div><h3 className="subheading">Não pode</h3><ul>{role.nao_pode.map((t) => <li key={t}>{t}</li>)}</ul></div>
+      </div>
+      <p className="meta-count">Base: {role.base}</p>
+    </details>
 
-    {data.structure && <div className="powers-structure" aria-label="Situação do país">
-      {Object.entries(data.structure).map(([k, v]) => <article key={k}><span>{STRUCTURE_NAMES[k]}</span><b>{v.label}</b></article>)}
-      <article><span>Blocos</span><b>{Object.entries(data.blocs).filter(([, on]) => on === true).map(([k]) => k.toUpperCase()).join(', ') || 'nenhum'}</b></article>
-      <article><span>Empresas controladas pela União</span><b>{Object.entries(data.companies).filter(([, v]) => v !== 'privada').map(([k]) => k).join(', ')}</b></article>
-    </div>}
+    {data.structure && <details className="fold">
+      <summary>Situação do país <span>banco, armas, polícia, moeda, blocos e empresas</span></summary>
+      <div className="powers-structure" aria-label="Situação do país">
+        {Object.entries(data.structure).map(([k, v]) => <article key={k}><span>{STRUCTURE_NAMES[k]}</span><b>{v.label}</b></article>)}
+        <article><span>Blocos</span><b>{Object.entries(data.blocs).filter(([, on]) => on === true).map(([k]) => k.toUpperCase()).join(', ') || 'nenhum'}</b></article>
+        <article><span>Empresas controladas pela União</span><b>{Object.entries(data.companies).filter(([, v]) => v !== 'privada').map(([k]) => k).join(', ')}</b></article>
+      </div>
+    </details>}
 
     {(data.actions || []).length > 0 && <form className="mapper-box" onSubmit={understand}>
       <label htmlFor="mapper-text"><b>Diga o que quer fazer</b></label>
@@ -123,8 +129,8 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
       </div>}
     </form>}
 
-    {fiscal && <div className="fiscal-box" aria-label="Contas do cargo e LRF">
-      <h3 className="subheading">Contas do cargo e Lei de Responsabilidade Fiscal</h3>
+    {fiscal && <details className="fold fiscal-box" aria-label="Contas do cargo e LRF">
+      <summary>Contas do cargo e Lei de Responsabilidade Fiscal <span>reserva, folha e dívida</span></summary>
       <div className="powers-structure">
         <article><span>Reserva disponível no ano</span><b>R$ {Number(fiscal.reserve_available_mi).toLocaleString('pt-BR')} mi</b><small>de R$ {Number(fiscal.annual_reserve_mi).toLocaleString('pt-BR')} mi</small></article>
         <article className={`lrf-${fiscal.personnel_level}`}><span>Despesa com pessoal</span><b>{fiscal.personnel_pct}% da RCL</b><small>limite {fiscal.personnel_limit}% · situação: {fiscal.personnel_level}</small></article>
@@ -135,12 +141,12 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
       {fiscal.summaries.length > 0 && <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Mês</th><th>Executado (mi)</th><th>Folha %RCL</th><th>Dívida %RCL</th><th>Situação</th></tr></thead>
         <tbody>{fiscal.summaries.map((m) => <tr key={m.month}><td>{m.month}</td><td>{m.executed_mi}</td><td>{m.personnel_pct}</td><td>{m.debt_pct}</td><td>{m.level}</td></tr>)}</tbody></table></div>}
       <p className="meta-count">{fiscal.basis}. {fiscal.note}</p>
-    </div>}
+    </details>}
 
-    {data.reference?.length > 0 && <>
-      <h3 className="subheading">Principais iniciativas do cargo</h3>
+    {data.reference?.length > 0 && <details className="fold">
+      <summary>Principais iniciativas do cargo <span>{data.reference.length} itens</span></summary>
       <ul className="powers-reference">{data.reference.map((r) => <li key={r.title}><b>{r.title}</b><small>{r.text}</small><small className="meta-count">{r.basis}</small></li>)}</ul>
-      <p className="meta-count">Nesta versão, estas ações ainda são descritivas; use a aba do cargo para as decisões do mandato.</p></>}
+      <p className="meta-count">Nesta versão, estas ações ainda são descritivas; use a aba do cargo para as decisões do mandato.</p></details>}
 
     {data.actions?.length > 0 && <>
       <div className="powers-filter" role="group" aria-label="Áreas">
@@ -153,11 +159,15 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
           <div>
             <b>{a.title}</b>
             <small>{a.summary}</small>
-            <small className="powers-meta"><span className={`powers-kind ${a.approval}`}>{kind}</span> {rule} · {a.basis}</small>
-            {a.legal && <small className={`powers-meta legal-${a.legal.level}`}>Parecer da AGU: risco jurídico {a.legal.level} ({a.legal.risk_pct}% de chance de o STF suspender). {a.legal.note}</small>}
-            {a.cost_text && <small className="powers-meta">Custo: {a.cost_text}{a.chance != null ? ` · chance de aprovação ${Math.round(a.chance * 100)}%` : ''}</small>}
+            <small className="powers-meta"><span className={`powers-kind ${a.approval}`}>{kind}</span> {rule}{a.legal ? <span className={`legal-chip legal-${a.legal.level}`}>risco jurídico {a.legal.level}</span> : null}</small>
             {effectText(a.effects) && <small className="powers-effects">Efeito estimado: {effectText(a.effects)}{a.cost_bi ? ` · ${a.cost_bi > 0 ? 'custo' : 'receita'} R$ ${Math.abs(a.cost_bi)} bi` : ''}</small>}
-            {a.precedent && <small className="powers-precedent">Precedente: {a.precedent}</small>}
+            <details className="more">
+              <summary>Detalhes</summary>
+              <small className="powers-meta">Base: {a.basis}</small>
+              {a.legal && <small className={`powers-meta legal-${a.legal.level}`}>Parecer da AGU: {a.legal.risk_pct}% de chance de o STF suspender. {a.legal.note}</small>}
+              {a.cost_text && <small className="powers-meta">Custo: {a.cost_text}{a.chance != null ? ` · chance de aprovação ${Math.round(a.chance * 100)}%` : ''}</small>}
+              {a.precedent && <small className="powers-precedent">Precedente: {a.precedent}</small>}
+            </details>
             {!a.available && <small className="neg">{a.reason}</small>}
           </div>
           {data.executable && a.available && <div className="powers-actions">
@@ -168,10 +178,10 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
         </li>;
       })}</ul>
       {allActions.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 8)}>Mostrar mais ({allActions.length - shown})</button>}
-      {data.history?.length > 0 && <><h3 className="subheading">Atos recentes</h3><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{h.date} — {h.title}</li>)}</ul></>}
+      {data.history?.length > 0 && <details className="fold"><summary>Atos recentes <span>{data.history.length}</span></summary><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{h.date} — {h.title}</li>)}</ul></details>}
     </>}
-    {ledger.length > 0 && <>
-      <h3 className="subheading">Previsto e realizado</h3>
+    {ledger.length > 0 && <details className="fold">
+      <summary>Previsto e realizado <span>{ledger.length} {ledger.length === 1 ? "decisão" : "decisões"}</span></summary>
       <ul className="powers-list ledger-list">{ledger.slice(0, 12).map((e) => <li key={e.id}><div>
         <b>{e.title}</b> <small>{e.date} · {e.status}{e.cost ? ` · ${e.cost}` : ''}</small>
         <small>Previsto: {effectText(e.forecast) || 'sem efeito numérico'}</small>
@@ -179,6 +189,6 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
         {e.reason && <small className="powers-precedent">{e.reason}</small>}
         {e.narrative && <small className="powers-narrative">{e.narrative.text} <em>({e.narrative.source === 'gemini' ? 'Gemini, a partir dos fatos do motor' : 'texto local'})</em></small>}
       </div>{!e.narrative && <div className="powers-actions"><button className="secondary-button" onClick={() => narrate(e)}>Narrar</button></div>}</li>)}</ul>
-    </>}
+    </details>}
   </section>;
 }

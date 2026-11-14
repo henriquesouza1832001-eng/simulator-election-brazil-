@@ -53,9 +53,9 @@ export default function TerritoryPanel({ request, state, onState, onNotice }) {
 
     {view === 'nacional' && overview.nation && <>
       <p className="page-description">Indicadores do país ligados ao grafo de influências: quando PIB, inflação, emprego ou contas mudam, os demais se ajustam a cada avanço do calendário e chegam aos municípios. {overview.nation.months_recorded} mês(es) registrados.</p>
-      {Object.entries(overview.nation.indicators.reduce((a, i) => { (a[i.domain] ||= []).push(i); return a; }, {})).map(([d, items]) => <div key={d}><h3 className="territory-domain">{DOMAIN_NAMES[d] || d}</h3>
+      {Object.entries(overview.nation.indicators.reduce((a, i) => { (a[i.domain] ||= []).push(i); return a; }, {})).map(([d, items], idx) => <details className="fold" key={d} open={idx < 2}><summary>{DOMAIN_NAMES[d] || d} <span>{items.length} indicadores</span></summary>
         <ul className="territory-indicators">{items.map((i) => <li key={i.id}><span>{i.label}</span><b>{fmt(i.value, i.unit === '0 a 1' ? 3 : 1)}<small> {i.unit}</small></b>
-          {i.change_since_start !== 0 && <small className={(i.change_since_start > 0) === (i.better === 'up') ? 'pos' : 'neg'}>{i.change_since_start > 0 ? '+' : ''}{fmt(i.change_since_start, i.unit === '0 a 1' ? 3 : 2)} desde o início</small>}</li>)}</ul></div>)}
+          {i.change_since_start !== 0 && <small className={(i.change_since_start > 0) === (i.better === 'up') ? 'pos' : 'neg'}>{i.change_since_start > 0 ? '+' : ''}{fmt(i.change_since_start, i.unit === '0 a 1' ? 3 : 2)} desde o início</small>}</li>)}</ul></details>)}
     </>}
 
     {view === 'mapa' && <>

@@ -83,3 +83,24 @@
 .historical-start label { display: grid; gap: .2rem; font-size: .9rem; }
 .historical-start input, .historical-start select { min-height: 44px; }
 .historical-compare { margin: .8rem 0; padding: .7rem 1rem; }
+
+/* ---- leitura mais leve: blocos recolhíveis e cartões de ação enxutos ---- */
+.fold { border: 1px solid var(--line, #223139); border-radius: 10px; margin: 0 0 .75rem; padding: 0 1rem; }
+.fold > summary { cursor: pointer; padding: .8rem 0; font-weight: 600; list-style: none; display: flex; gap: .6rem; align-items: baseline; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::before { content: '▸'; color: var(--muted, #82949d); }
+.fold[open] > summary::before { content: '▾'; }
+.fold > summary span { font-weight: 400; font-size: .85em; color: var(--muted, #82949d); }
+.fold[open] { padding-bottom: .8rem; }
+.powers-list > li { padding: .9rem 1rem; }
+.powers-list > li small { display: block; margin-top: .3rem; }
+.powers-list .more { margin-top: .4rem; }
+.powers-list .more > summary { cursor: pointer; font-size: .82rem; color: var(--muted, #82949d); }
+.legal-chip { margin-left: .5rem; padding: .05rem .5rem; border: 1px solid currentColor; border-radius: 999px; font-size: .75rem; }
+.powers-page .mapper-box { margin-bottom: 1rem; }
+.powers-filter { margin: 1rem 0 .75rem; }
+.tabs.subtabs { border-top: 0; min-height: 44px; top: 52px; background: var(--paper, #122429); }
+.mapper-box > label, .mapper-box > small { display: block; margin-bottom: .35rem; }
+.more { margin-top: .4rem; }
+.more > summary { cursor: pointer; font-size: .82rem; color: var(--muted, #82949d); }
+.fold .territory-indicators { margin-top: 0; }
