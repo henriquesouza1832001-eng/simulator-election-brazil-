@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import IndicatorLinks from './IndicatorLinks.jsx';
 import './powers.css';
 import './territory.css';
 
@@ -102,13 +103,6 @@ export default function TerritoryPanel({ request, state, onState, onNotice }) {
       {!projects.can_start && <p className="meta-count">Obras só podem ser iniciadas por quem está no exercício de um cargo executivo.</p>}
     </>}
 
-    {view === 'indicadores' && registry && <>
-      <p className="page-description">{registry.count} indicadores. Para cada um: o que o influencia, o que ele influencia e quais cargos agem sobre ele.</p>
-      {Object.entries(registry.indicators.reduce((a, i) => { (a[i.domain] ||= []).push(i); return a; }, {})).map(([d, items]) => <details key={d} className="agenda-more"><summary>{DOMAIN_NAMES[d] || d} ({items.length})</summary>
-        <ul className="powers-list">{items.map((i) => <li key={i.id}><div><b>{i.label}</b> <small>({i.unit} · fonte: {SOURCE[i.source] || i.source})</small>
-          {i.drivers.length > 0 && <small>Depende de: {i.drivers.map((x) => `${x.sign > 0 ? '+' : '−'}${x.label}`).join(', ')}</small>}
-          {i.influences.length > 0 && <small>Influencia: {i.influences.map((x) => `${x.sign > 0 ? '+' : '−'}${x.label}`).join(', ')}</small>}
-          {Object.keys(i.levers).length > 0 && <small className="powers-effects">Quem age: {Object.entries(i.levers).map(([o, t]) => `${o}: ${t}`).join(' · ')}</small>}</div></li>)}</ul></details>)}
-    </>}
+    {view === 'indicadores' && registry && <IndicatorLinks registry={registry} domainNames={DOMAIN_NAMES} />}
   </section>;
 }

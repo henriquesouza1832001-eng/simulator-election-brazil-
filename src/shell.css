@@ -249,3 +249,5 @@ article > span:first-child { opacity: 1; }
 .ds-inv strong small { font-size: 12px; color: var(--ds-ink-3); margin-left: 2px; }
 .ds-inv-bar { display: block; height: 6px; border-radius: 99px; background: var(--ds-line); overflow: hidden; }
 .ds-inv-bar u { display: block; height: 100%; background: var(--ds-accent); }
+.ds-link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 12px; }
+.ds-seg { flex-wrap: wrap; }
