@@ -31,7 +31,7 @@ sudo bash /tmp/qa/deploy/gcp/bootstrap.sh SUA_BRANCH
 `SUA_BRANCH` é a branch que a VM acompanha (hoje `feat/cenarios-eleitorais-modo-eleitor`; depois do merge, `main`).
 Para trocar depois: `echo main | sudo tee /opt/quatroanos/branch` e `sudo rm /var/lib/quatroanos/auto-deploy-last-checked`.
 
-O script cria `/opt/quatroanos`, instala o atalho `quatro-dc` (um `docker compose` já apontado para o arquivo certo),
+O script cria `/opt/quatroanos`, instala o atalho `quatro-dc` (um `docker compose` já apontado para o arquivo certo; ele usa `sudo` sozinho, porque o `.env` só o root lê),
 sobe API e site e liga os dois timers: **deploy automático** (a cada 5 min) e **backup diário**.
 
 ## Criar o túnel e o acesso (Cloudflare)

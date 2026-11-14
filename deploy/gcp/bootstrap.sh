@@ -46,6 +46,8 @@ fi
 
 cat > /usr/local/bin/quatro-dc <<'EOF'
 #!/usr/bin/env bash
+# O .env guarda segredos (permissão 600, só root); por isso o atalho se reexecuta com sudo.
+if [[ $EUID -ne 0 ]]; then exec sudo "$0" "$@"; fi
 exec docker compose -f /opt/quatroanos/app/deploy/gcp/compose.yaml --env-file /opt/quatroanos/.env "$@"
 EOF
 chmod 755 /usr/local/bin/quatro-dc
