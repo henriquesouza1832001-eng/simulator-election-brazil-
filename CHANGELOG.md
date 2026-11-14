@@ -8,7 +8,7 @@ A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/
 - **Indicadores** reescrito: país ou uma cidade, com variação, tendência e o que faz cada indicador mudar. Substitui as abas Indicadores e Território. Obras, estados e regiões passam a ficar em **Obras e mapa**.
 - **Histórico** reescrito: evolução (um gráfico por vez), decisões em linha do tempo e orçamento.
 - **Perfil** (Placar, Carimbos, Diário) deixa de aparecer na partida; a aba Aprendizado sai da interface; o aviso de importação do TSE deixa de mostrar comandos de desenvolvedor.
-- **Guia** em painel lateral com o que cada aba faz, busca e glossário (substitui o passo a passo).
+- **Guia** flutuante (não bloqueia o jogo, dá para arrastar e minimizar, abre com a ajuda da aba atual), com o que cada aba faz, busca e glossário; botão "?" sempre à mão. Substitui o passo a passo.
 - **Visão geral** reescrita: números do dia, próximo passo, capacidade de governar, agenda, última decisão e o balanço do mandato.
 - **Agenda**, **Imprensa** e **Sobre** (agora "O jogo", "Termos" e "Créditos") reescritos no sistema novo; a aba Legado, que citava outro produto, foi removida.
 - Pré-campanha longa (vereador, cerca de dois anos): botão **Pular para o ano da eleição**, que avança mês a mês com o jogo rodando.
