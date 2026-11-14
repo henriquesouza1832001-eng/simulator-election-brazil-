@@ -13,6 +13,7 @@ mkdir -p /run/lock /var/lib/quatroanos
 exec 9>/run/lock/quatroanos-deploy.lock
 flock 9
 
+git -C "$app_dir" config core.fileMode false
 git -C "$app_dir" fetch --quiet --prune origin "$branch"
 deployed_sha="$(git -C "$app_dir" rev-parse HEAD)"
 target_sha="$(git -C "$app_dir" rev-parse "origin/$branch")"

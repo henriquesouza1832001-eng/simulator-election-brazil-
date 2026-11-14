@@ -22,6 +22,7 @@ rollback() {
   if [[ "$deployment_started" == "1" ]]; then
     echo "A implantação falhou; voltando para ${previous_sha}." >&2
     git -C "$app_dir" reset --hard "$previous_sha" || true
+    chmod 755 "$app_dir"/deploy/gcp/*.sh || true
     (cd "$app_dir" && dc build api && dc build web && dc up -d --remove-orphans) || true
   fi
   exit "$exit_code"
@@ -58,7 +59,9 @@ chmod 600 "$backup_dir/$backup_name"
 echo "Backup: $backup_dir/$backup_name"
 
 deployment_started=1
-git -C "$app_dir" checkout -B "$branch" "$requested_sha"
+git -C "$app_dir" config core.fileMode false
+git -C "$app_dir" checkout -f -B "$branch" "$requested_sha"
+chmod 755 "$app_dir"/deploy/gcp/*.sh
 cd "$app_dir"
 dc build api
 dc build web

@@ -52,6 +52,7 @@ exec docker compose -f /opt/quatroanos/app/deploy/gcp/compose.yaml --env-file /o
 EOF
 chmod 755 /usr/local/bin/quatro-dc
 
+git -C "$app_dir" config core.fileMode false
 chmod 755 "$app_dir"/deploy/gcp/*.sh
 cp "$app_dir"/deploy/gcp/quatroanos-*.service "$app_dir"/deploy/gcp/quatroanos-*.timer /etc/systemd/system/
 systemctl daemon-reload
