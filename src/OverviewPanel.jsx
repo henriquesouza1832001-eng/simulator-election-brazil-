@@ -6,7 +6,7 @@ import MandateReview from './MandateReview';
 const dateLabel = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR') : '—');
 
 /** Visão geral: manchete do dia, números, próximo passo, agenda e balanço. Os dados chegam prontos do App. */
-export default function OverviewPanel({ request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, go }) {
+export default function OverviewPanel({ request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go }) {
   const [review, setReview] = useState(null);
   useEffect(() => {
     if (!showReview) return;
@@ -61,6 +61,6 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
       </div>
     </div>
 
-    {showReview && <Section><MandateReview request={request} state={state} data={review} /></Section>}
+    {showBalance && <Section><MandateReview request={request} state={state} data={review} /></Section>}
   </section>;
 }

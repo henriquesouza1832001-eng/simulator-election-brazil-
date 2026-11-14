@@ -206,3 +206,10 @@ article > span:first-child { opacity: 1; }
 .ds-stat-btn:focus-visible { outline: 2px solid var(--ds-accent); }
 .ds-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .ds-detail-actions .ds-btn[aria-pressed="true"] { border-color: var(--ds-accent); color: var(--ds-accent); }
+
+/* filtro de período dos gráficos */
+.ds-chart-range { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 10px 0; }
+.ds-chart-range button { all: unset; cursor: pointer; box-sizing: border-box; min-height: 30px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid var(--ds-line-2); color: var(--ds-ink-2); font-size: 13px; }
+.ds-chart-range button:hover { background: var(--ds-surface-2); }
+.ds-chart-range button[aria-pressed="true"] { background: var(--ds-accent); border-color: var(--ds-accent); color: var(--ds-on-accent); font-weight: 700; }
+.ds-chart-range button:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }

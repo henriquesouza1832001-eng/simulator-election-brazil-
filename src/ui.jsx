@@ -80,17 +80,27 @@ export function Badge({ tone = '', children }) { return <span className={`ds-bad
 
 export function Empty({ title, children }) { return <div className="ds-empty"><b>{title}</b>{children}</div>; }
 
+const RANGES = [['6', '6 meses', 6], ['12', '1 ano', 12], ['24', '2 anos', 24], ['all', 'Tudo', Infinity]];
+
+/** Gráfico de linha com filtro de período (6 meses, 1 ano, 2 anos, tudo). O filtro só aparece quando há pontos suficientes. */
 export function LineChart({ points, unit = '', labels }) {
-  const vals = points.filter((p) => Number.isFinite(p.v));
-  if (vals.length < 2) return <Empty title="Ainda não há série suficiente">Avance alguns meses para ver a evolução.</Empty>;
+  const [range, setRange] = useState('all');
+  const all = points.filter((p) => Number.isFinite(p.v));
+  const usable = RANGES.filter(([, , n]) => n === Infinity || n < all.length);
+  const active = usable.some(([k]) => k === range) ? range : 'all';
+  const limit = RANGES.find(([k]) => k === active)[2];
+  const vals = limit === Infinity ? all : all.slice(-(limit + 1));
+  if (all.length < 2) return <Empty title="Ainda não há série suficiente">Avance alguns meses para ver a evolução.</Empty>;
   const min = Math.min(...vals.map((p) => p.v)), max = Math.max(...vals.map((p) => p.v)), span = max - min || 1;
   const d = vals.map((p, i) => `${i ? 'L' : 'M'}${(i / (vals.length - 1)) * 600},${170 - ((p.v - min) / span) * 150}`).join(' ');
   const last = vals[vals.length - 1];
+  const firstLabel = active === 'all' ? (labels?.[0] ?? vals[0].m) : `há ${limit} meses`;
   return <div className="ds-chart">
+    {usable.length > 1 && <div className="ds-chart-range" role="group" aria-label="Período do gráfico">{usable.map(([k, label]) => <button key={k} type="button" aria-pressed={active === k} onClick={() => setRange(k)}>{label}</button>)}</div>}
     <svg viewBox="0 0 600 180" preserveAspectRatio="none" role="img" aria-label={`De ${fmt(vals[0].v)} a ${fmt(last.v)} ${unit}`}>
       <line x1="0" y1="170" x2="600" y2="170" stroke="currentColor" strokeOpacity=".2" />
       <path d={d} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
     </svg>
-    <div className="ds-chart-axis"><span>{labels?.[0] ?? vals[0].m} · {fmt(vals[0].v)} {unit}</span><span>mín. {fmt(min)} · máx. {fmt(max)}</span><span>{labels?.[1] ?? last.m} · {fmt(last.v)} {unit}</span></div>
+    <div className="ds-chart-axis"><span>{firstLabel} · {fmt(vals[0].v)} {unit}</span><span>mín. {fmt(min)} · máx. {fmt(max)}</span><span>{labels?.[1] ?? last.m} · {fmt(last.v)} {unit}</span></div>
   </div>;
 }

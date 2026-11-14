@@ -364,6 +364,10 @@ def require_presidential_authority(state: dict[str, Any], action: str) -> None:
         raise HTTPException(status_code=403, detail=f"{action} exige estar no exercício da Presidência nesta partida.")
 
 
+# Partes grandes do estado que a interface nunca lê (ela busca o que precisa por rotas próprias). Mandá-las em toda resposta pesava ~0,5 MB.
+_STATE_NOT_SENT = ("government_appointments", "nation", "story", "budget_history")
+
+
 def public_state(state: dict[str, Any]) -> dict[str, Any]:
     now = date.fromisoformat(state["date"])
     events = [{**event, "simulated": True, "days_until": (date.fromisoformat(event["date"]) - now).days}
@@ -375,7 +379,9 @@ def public_state(state: dict[str, Any]) -> dict[str, Any]:
     executive_wait = max(0, exec_cooldown - (now - date.fromisoformat(executive_last)).days) if executive_last else 0
     legislative_cooldown = int(state.get("legislative_calendar", {}).get("cooldown_days", 60))
     legislative_wait = max(0, legislative_cooldown - (now - date.fromisoformat(legislative_last)).days) if legislative_last else 0
-    return {**state, "campaign_id": current_campaign_id(),
+    light = {k: v for k, v in state.items() if k not in _STATE_NOT_SENT}
+    light["indicator_history"] = list(state.get("indicator_history", []))[-13:]  # a interface só compara com 12 meses atrás
+    return {**light, "campaign_id": current_campaign_id(),
             "campaign_name": state.get("campaign_name") or campaign_name(),
             "events": events, "active_crises": [c for c in state.get("active_crises", []) if c.get("status") == "active"],
             "action_limits": {"executive_days": executive_wait, "legislative_days": legislative_wait,

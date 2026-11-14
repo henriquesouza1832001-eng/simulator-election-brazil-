@@ -10,6 +10,9 @@ A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/
 - **Indicadores:** bloco "O que mudou desde o início", indicadores fixados no topo e botão para agir a partir do detalhe.
 - **Reguladores** em cartões; AGU só aparece para quem governa o Executivo federal.
 - Ruptura institucional só para presidente governando; botão de pular só fora do ano da eleição.
+- Filtro de período (6 meses, 1 ano, 2 anos, tudo) em todos os gráficos.
+- Perfil (Placar, Carimbos, Diário) saiu do menu e do topo; o balanço do mandato só aparece no fim do mandato.
+- O estado do jogo enviado a cada resposta ficou bem menor (histórico completo, nomeações e outros blocos que a interface não lê saíram da resposta).
 - gzip e cache longo no nginx (o estado do jogo passou de 548 KB para uma fração disso na rede).
 
 ## 0.5 — Direção visual (concluída, 14 nov. 2026)

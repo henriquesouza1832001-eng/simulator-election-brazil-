@@ -112,7 +112,7 @@ export default function IndicatorsPanel({ request, state, onAct, actLabel }) {
   useEffect(() => { if (cityCode) request(`/api/territory/city/${cityCode}`).then(setCity).catch((e) => setError(e.message)); }, [cityCode, state?.date]);
 
   const loadRegistry = () => { if (!registry) request('/api/indicators/registry').then((r) => setRegistry(Object.fromEntries(r.indicators.map((i) => [i.id, i])))).catch(() => {}); };
-  const seriesOf = (r) => (history || []).slice(-24).map((h) => h[r.id]);
+  const seriesOf = (r) => (history || []).map((h) => h[r.id]);
 
   async function search(e) {
     e.preventDefault();
