@@ -1,7 +1,8 @@
 name: Teste de ponta a ponta (carreiras)
 
 # Separado do CI: joga carreiras inteiras (de vereador a presidente, vencendo e perdendo) pela API e confere as telas principais.
-# Roda toda madrugada e sob demanda (Actions > Teste de ponta a ponta > Run workflow). Não bloqueia o deploy da VM.
+# Roda todo dia às 2h da manhã (horário de Brasília) e sob demanda (Actions > Teste de ponta a ponta > Run workflow).
+# Cada execução publica um relatório no resumo da própria execução e como arquivo. Não bloqueia o deploy da VM.
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +15,8 @@ on:
         required: false
         default: "12"
   schedule:
-    - cron: "17 5 * * *"
+    # O GitHub conta em UTC: 05:00 UTC = 02:00 em Brasília (sem horário de verão). Pode atrasar alguns minutos quando o GitHub está cheio.
+    - cron: "0 5 * * *"
 
 permissions:
   contents: read
@@ -45,4 +47,21 @@ jobs:
         env:
           E2E_OFFICES: ${{ github.event.inputs.offices }}
           E2E_MONTHS: ${{ github.event.inputs.months || '12' }}
+          E2E_REPORT: ${{ github.workspace }}/e2e-report.md
         run: python -m unittest discover -s e2e -t . -v
+      - name: Publicar o relatório
+        if: always()
+        run: |
+          {
+            echo "# Quatro Anos v$(node -p "require('./package.json').version") · commit ${GITHUB_SHA::7}"
+            echo
+            if [ -f e2e-report.md ]; then cat e2e-report.md; else echo "O teste não chegou a gerar relatório (falhou antes de começar)."; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Guardar o relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-e2e
+          path: e2e-report.md
+          if-no-files-found: ignore
+          retention-days: 30

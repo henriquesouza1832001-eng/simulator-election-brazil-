@@ -11,6 +11,7 @@ Variáveis de ambiente:
 from __future__ import annotations
 
 import os
+import time
 import unittest
 
 from e2e.harness import MESSAGE, Failure, Player
@@ -19,6 +20,29 @@ OFFICES = [("vereador", "SP", "3550308"), ("prefeito", "SP", "3550308"), ("deput
            ("deputado_federal", "SP", None), ("senador", "SP", None), ("presidente", "DF", None)]
 SELECTED = {o.strip() for o in os.getenv("E2E_OFFICES", "").split(",") if o.strip()}
 MONTHS = int(os.getenv("E2E_MONTHS", "6"))
+
+
+RESULTS: list[dict] = []
+
+
+def tearDownModule() -> None:
+    """Se E2E_REPORT apontar para um arquivo, grava o relatório da rodada em Markdown (o GitHub o mostra no resumo da execução)."""
+    path = os.getenv("E2E_REPORT")
+    if not path or not RESULTS:
+        return
+    ordem = [o[0] for o in OFFICES]
+    rows = sorted(RESULTS, key=lambda r: (ordem.index(r["office"]), not r["win"]))
+    ok = sum(1 for r in rows if r["ok"])
+    lines = [f"## Carreiras de ponta a ponta: {ok} de {len(rows)} cenários passaram", "",
+             f"Meses de mandato jogados: {MONTHS}. Resultado da eleição forçado para cobrir vitória e derrota.", "",
+             "| Cargo | Eleição | Situação | Fases | Ações do cargo | Meses | Chamadas | Tempo |", "|---|---|---|---|---|---|---|---|"]
+    for r in rows:
+        lines.append(f"| {r['office']} | {'vence' if r['win'] else 'perde'} | {'passou' if r['ok'] else 'FALHOU'} | {', '.join(r.get('phases', []))} | {r.get('powers', '')} | {r.get('months', '')} | {r.get('calls', '')} | {r['seconds']:.0f}s |")
+    falhas = [r for r in rows if not r["ok"]]
+    if falhas:
+        lines += ["", "### Falhas"] + [f"- **{r['office']} ({'vence' if r['win'] else 'perde'})**: {r['error']}" for r in falhas]
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(chr(10).join(lines) + chr(10))
 
 
 def force(support: float, momentum: float):
@@ -117,11 +141,18 @@ class CareerEndToEnd(unittest.TestCase):
 
 def _make(office: str, state_code: str, municipality: str | None, win: bool):
     def test(self):
+        started = time.time()
+        entry = {"office": office, "win": win, "ok": False, "seconds": 0.0, "error": ""}
+        RESULTS.append(entry)
         try:
             summary = run_career(self, office, state_code, municipality, win)
+            entry.update(summary, ok=True, seconds=time.time() - started)
             print(f"   {summary['office']:18s} {'vence' if win else 'perde':5s} fases={summary['phases']} ações_do_cargo={summary['powers']} meses={summary['months']} chamadas={summary['calls']}")
-        except Failure as exc:
-            self.fail(str(exc))
+        except BaseException as exc:
+            entry.update(seconds=time.time() - started, error=str(exc)[:300])
+            if isinstance(exc, Failure):
+                self.fail(str(exc))
+            raise
     test.__name__ = f"test_{office}_{'vence' if win else 'perde'}"
     return test
 
