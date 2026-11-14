@@ -4,6 +4,9 @@ A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/
 
 ## 0.5.1 — Ajustes visuais (14 nov. 2026)
 
+- Limpeza do repositório: removidos o deploy da AWS (e o workflow manual), os dossiês de captura em `research/rea/`, o retrato/caricaturas sem uso e imagens de fundo antigas. Tudo continua no histórico do Git.
+
+
 - **Menu lateral expansível:** abre com nomes ou recolhe só com ícones; a escolha fica salva no navegador.
 - **Menu inicial e boas-vindas** refeitos com a mesma cara do jogo (faixa de abertura, partida em andamento em destaque, quatro modos, novidades da versão e o que vem por aí).
 - **Paleta azul e ouro** (sem o verde de antes); só tema escuro.

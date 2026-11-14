@@ -4,7 +4,7 @@ Protótipo navegável deste documento: [`docs/visual/prototipo.html`](visual/pro
 
 ## 1. O que o Planalto faz (estudo de estrutura, não de conteúdo)
 
-Base: capturas e dossiês em `extrato/` e `research/rea/`. Só estrutura e padrões visuais; não copiamos fonte, imagem, texto nem conteúdo.
+Base: capturas e dossiês em `extrato/`. Só estrutura e padrões visuais; não copiamos fonte, imagem, texto nem conteúdo.
 
 - **Emoção vem da imagem.** Fotografia em tela cheia no começo de cada tela, escurecida embaixo, com o título em cima. A imagem muda conforme o estado (na escolha de dificuldade: primavera verde, seca, incêndio).
 - **Três vozes tipográficas.** Títulos largos e pesados em caixa-alta, texto corrido com serifa, e números em fonte monoespaçada.
