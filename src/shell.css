@@ -30,7 +30,7 @@ body, button, input, select, textarea { font-family: var(--ds-sans); }
 .ds-btn { border: 1px solid var(--ds-line-2); background: transparent; color: var(--ds-ink); border-radius: 999px; padding: 0 16px; min-height: 38px; font-size: 14px; cursor: pointer; }
 .ds-btn:hover { background: var(--ds-surface-2); }
 .ds-btn[aria-pressed="true"] { border-color: #d8b25a; }
-.ds-btn.primary { background: var(--ds-accent-2); border-color: var(--ds-accent-2); color: #fff; font-weight: 700; }
+.ds-btn.primary { background: var(--ds-accent-2); border-color: var(--ds-accent-2); color: var(--ds-on-accent); font-weight: 700; }
 .ds-btn.primary:hover { background: #2a9972; }
 .ds-btn:disabled { opacity: .55; cursor: not-allowed; }
 .ds-rail { position: fixed; top: var(--ds-topbar); left: 0; bottom: 0; width: var(--ds-rail); z-index: 40; background: var(--ds-surface); border-right: 1px solid var(--ds-line); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0; }
@@ -55,7 +55,7 @@ body, button, input, select, textarea { font-family: var(--ds-sans); }
 .ds-menu button { all: unset; cursor: pointer; padding: 11px 14px; border-radius: 8px; font-size: 15px; }
 .ds-menu button:hover, .ds-menu button:focus-visible { background: var(--ds-line); }
 .ds-advance.floating { display: none; }
-.ds-fab { all: unset; cursor: pointer; box-sizing: border-box; height: 52px; padding: 0 22px; border-radius: 26px; background: var(--ds-accent-2); color: #fff; font-weight: 700; box-shadow: 0 10px 26px rgba(0, 0, 0, .5); display: inline-flex; align-items: center; }
+.ds-fab { all: unset; cursor: pointer; box-sizing: border-box; height: 52px; padding: 0 22px; border-radius: 26px; background: var(--ds-accent-2); color: var(--ds-on-accent); font-weight: 700; box-shadow: 0 10px 26px rgba(0, 0, 0, .5); display: inline-flex; align-items: center; }
 .ds-fab:focus-visible { outline: 3px solid var(--ds-info); outline-offset: 2px; }
 
 /* ---------- folha (Mais, detalhes) ---------- */
@@ -63,7 +63,7 @@ body, button, input, select, textarea { font-family: var(--ds-sans); }
 .ds-sheet { width: min(520px, 100%); max-height: 82vh; overflow: auto; background: var(--ds-surface); border: 1px solid var(--ds-line-2); border-radius: 18px 18px 0 0; padding: 4px 8px 18px; }
 .ds-sheet header { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; position: sticky; top: 0; background: var(--ds-surface); }
 .ds-sheet header b { font-size: 16px; }
-.ds-sheet header button { all: unset; cursor: pointer; font-size: 26px; line-height: 1; padding: 2px 10px; color: var(--ds-ink-2); border-radius: 8px; }
+.ds-sheet header button { all: unset; cursor: pointer; font-size: 34px; line-height: 1; min-width: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; color: var(--ds-ink-2); border-radius: 8px; }
 .ds-sheet ul { list-style: none; margin: 0; padding: 0; }
 .ds-sheet li > button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 24px 1fr; gap: 14px; align-items: center; padding: 13px 12px; border-radius: 12px; cursor: pointer; }
 .ds-sheet li > button:hover, .ds-sheet li > button:focus-visible { background: var(--ds-surface-2); }
@@ -168,3 +168,17 @@ select, input, textarea { max-width: 100%; }
   .ds-table th:first-child, .ds-table td:first-child { min-width: 7.5rem; font-family: var(--ds-sans); }
 }
 article > span:first-child { opacity: 1; }
+
+/* ---------- Reguladores ---------- */
+.ds-reg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.ds-reg h4 { margin: 0; font-size: 17px; color: var(--ds-ink); }
+.ds-reg-role { margin: 4px 0 12px; color: var(--ds-ink-2); font-size: 14px; line-height: 1.5; }
+.ds-reg-now { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--ds-surface-2); display: grid; gap: 2px; }
+.ds-reg-now span { font-size: 12.5px; color: var(--ds-ink-3); }
+.ds-reg-now b { font-family: var(--ds-mono, inherit); font-size: 18px; }
+.ds-reg-now small { color: var(--ds-ink-3); font-size: 13px; line-height: 1.45; }
+.ds-reg-now ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--ds-ink-2); }
+.ds-reg-more summary { cursor: pointer; color: var(--ds-accent); font-size: 14px; padding: 4px 0; }
+.ds-reg-more p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ds-ink-2); }
+.ds-reg-decisions { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ds-reg-decisions li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 14px; background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: 10px; }

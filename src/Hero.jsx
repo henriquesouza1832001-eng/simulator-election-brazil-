@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { fmt } from './ui';
 
 const PALETTE = {
-  calmo: { top: '#0b1a1c', mid: '#1c3a33', low: '#8a7a3f', sun: '#d8b25a', sunOpacity: 0.85 },
-  tenso: { top: '#0b1518', mid: '#2a3033', low: '#6b5a36', sun: '#c79a4a', sunOpacity: 0.5 },
-  crise: { top: '#0a0f12', mid: '#2b1d1f', low: '#5a2e2a', sun: '#e5776c', sunOpacity: 0.55 },
+  calmo: { top: '#12305c', mid: '#2a6fa8', low: '#e7c25a', sun: '#ffd23f', sunOpacity: 0.95 },
+  tenso: { top: '#14243a', mid: '#3b4b63', low: '#a08440', sun: '#e0b050', sunOpacity: 0.6 },
+  crise: { top: '#1a1626', mid: '#4a2c3a', low: '#7a3a30', sun: '#ff8a7a', sunOpacity: 0.6 },
 };
 
 /** Esplanada em duas cores. É a arte padrão: se existir public/assets/hero/<nome>.webp, a imagem real a substitui. */
@@ -14,12 +14,12 @@ function HeroArt({ mood }) {
   return <svg className="ds-hero-art" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
       <linearGradient id={`${id}-ceu`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={c.top} /><stop offset=".55" stopColor={c.mid} /><stop offset="1" stopColor={c.low} /></linearGradient>
-      <linearGradient id={`${id}-chao`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#26332a" /><stop offset="1" stopColor="#0b1216" /></linearGradient>
+      <linearGradient id={`${id}-chao`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#1f7a4a" /><stop offset="1" stopColor="#0d3a2a" /></linearGradient>
     </defs>
     <rect width="1200" height="420" fill={`url(#${id}-ceu)`} />
     <circle cx="930" cy="250" r="64" fill={c.sun} opacity={c.sunOpacity} />
     {mood === 'crise' && <path d="M760 30l-34 86h30l-26 84 78-110h-34l30-60z" fill="#f4d9a0" opacity=".28" />}
-    <g fill="#0b1216" opacity=".92">
+    <g fill="#0d1a2c" opacity=".92">
       <rect x="420" y="120" width="26" height="170" /><rect x="470" y="120" width="26" height="170" /><rect x="380" y="270" width="150" height="26" />
       <path d="M230 296a90 38 0 01180 0z" /><path d="M560 296a76 52 0 01152 0z" />
       <rect x="120" y="190" width="70" height="106" /><rect x="200" y="210" width="70" height="86" /><rect x="760" y="200" width="70" height="96" /><rect x="840" y="220" width="70" height="76" />

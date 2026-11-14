@@ -4,21 +4,21 @@
 
 :root {
   color-scheme: dark;
-  --ds-bg: #0b1216;
-  --ds-surface: #111b21;
-  --ds-surface-2: #172730;
-  --ds-line: #26383f;
-  --ds-line-2: #365058;
-  --ds-ink: #ecf3f1;
-  --ds-ink-2: #bccbce;   /* texto secundário: 9:1 sobre a superfície */
-  --ds-ink-3: #95aab0;   /* texto de apoio: 6:1 sobre a superfície */
-  --ds-accent: #4cc79a;
-  --ds-accent-2: #1f7a58;
-  --ds-on-accent: #04150f;
-  --ds-good: #6fe0a8;
+  --ds-bg: #0d1a2c;
+  --ds-surface: #15253d;
+  --ds-surface-2: #1d3556;
+  --ds-line: #2d4669;
+  --ds-line-2: #416289;
+  --ds-ink: #f3f6fb;
+  --ds-ink-2: #c8d4e6;   /* texto secundário: 9:1 sobre a superfície */
+  --ds-ink-3: #9fb4d0;   /* texto de apoio: 6:1 sobre a superfície */
+  --ds-accent: #ffd23f;
+  --ds-accent-2: #f5b800;
+  --ds-on-accent: #1b1500;
+  --ds-good: #4ddc86;
   --ds-bad: #ff8f86;
   --ds-warn: #f0c46e;
-  --ds-info: #86bfff;
+  --ds-info: #8ec5ff;
   --ds-radius: 10px;
   --ds-space: 16px;
 }
@@ -134,7 +134,7 @@
 .score, .score strong { color: var(--ds-accent); }
 .neg, b.neg, span.neg { color: var(--ds-bad); }
 .pos, b.pos, span.pos { color: var(--ds-good); }
-.primary-button, .game-setup-screen .primary-button { background: var(--ds-accent-2); color: #fff; }
+.primary-button, .game-setup-screen .primary-button { background: var(--ds-accent-2); color: var(--ds-on-accent); }
 .primary-button:hover:not(:disabled) { background: #2a9972; }
 .advance-link { color: var(--ds-ink-2); }
 .tabs .advance-link span { color: var(--ds-accent); }
