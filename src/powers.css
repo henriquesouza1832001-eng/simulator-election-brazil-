@@ -104,3 +104,8 @@
 .more { margin-top: .4rem; }
 .more > summary { cursor: pointer; font-size: .82rem; color: var(--muted, #82949d); }
 .fold .territory-indicators { margin-top: 0; }
+.company-grid { list-style: none; padding: 0; margin: 1rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: .75rem; }
+.company-grid > li { border: 1px solid var(--line, #223139); border-radius: 10px; padding: .9rem 1rem; }
+.company-grid > li small { display: block; margin-top: .25rem; }
+.company-grid .company-meters { margin: .6rem 0 .3rem; }
+.company-grid .company-actions { margin-top: .6rem; }

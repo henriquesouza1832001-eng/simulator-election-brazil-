@@ -35,13 +35,15 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
   return <section className="panel powers-page">
     <h2>Empresas e bancos públicos</h2>
     <p className="page-description">{data.note}</p>
-    <ul className="powers-list company-list">{data.companies.map((c) => <li key={c.id}><div>
-      <b>{c.name}</b> <small>{c.sector} · sede {c.hq} · {c.control}{c.strategic ? ' · estratégica' : ''}</small>
-      <small>{c.note}</small>
+    <ul className="company-grid">{data.companies.map((c) => <li key={c.id}><div>
+      <b>{c.name}</b>
+      <small>{c.sector} · {c.control}{c.strategic ? ' · estratégica' : ''}</small>
       <div className="company-meters">
         <label>Saúde da empresa <meter min="0" max="100" low="35" high="65" optimum="85" value={c.health}>{c.health}</meter> <span>{c.health}</span></label>
         <label>Relação com o governo <meter min="0" max="100" low="35" high="65" optimum="85" value={c.relation}>{c.relation}</meter> <span>{c.relation}</span></label>
       </div>
+      <details className="more"><summary>Detalhes e decisões</summary>
+      <small>Sede {c.hq}. {c.note}</small>
       <div className="company-actions">{c.actions.map((a) => {
         const k = `${c.id}:${a.key}`;
         return <span className="company-action" key={a.key} title={a.reason || a.text}>
@@ -51,6 +53,7 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
         </span>;
       })}</div>
       {c.can_privatize && <div className="company-actions"><button className="quiet-button" onClick={() => privatize(c)}>Propor a privatização (exige lei)</button></div>}
+      </details>
     </div></li>)}</ul>
     <p className="meta-count">Efeitos de cada decisão aparecem no histórico de previsto e realizado (aba Competências) e na linha do tempo da Imprensa.</p>
   </section>;

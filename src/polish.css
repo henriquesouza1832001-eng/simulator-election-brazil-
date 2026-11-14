@@ -337,3 +337,12 @@ table { max-width: 100%; }
   .setup-step-nav .secondary-button { min-height: 44px; }
   .difficulty-readonly { font-size: .75rem; }
 }
+
+/* Orçamento: a caixa de cortes herdava fundo claro de um tema antigo e o texto ficava apagado no tema escuro. */
+.operating-budget { background: var(--panel, #10191e); border-color: var(--line, #223139); color: inherit; }
+.operating-budget .eyebrow, .operating-budget small, .operating-budget span,
+.operating-heading p, .operating-lines small, .operating-lines span, .operating-footer small { color: var(--muted-strong, #b8c7cc); }
+.operating-impact { background: transparent; border-color: var(--line, #223139); }
+.operating-impact span { color: inherit; }
+.operating-impact b { color: inherit; }
+.operating-lines > * { color: inherit; }
