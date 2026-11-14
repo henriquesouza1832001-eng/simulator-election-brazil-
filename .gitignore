@@ -9,3 +9,8 @@ deploy/aws/.origin-secret
 *.sqlite3
 *.db
 backend/data/interpreter_models/
+
+# Oracle: configuracao e saidas locais do robo
+deploy/oracle/robo.local.json
+deploy/oracle/robo.log
+deploy/oracle/instancia-oracle.txt
