@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import './meta.css';
-import EventArtwork from './EventArtwork';
 
 function useLoad(request, path, deps = []) {
   const [data, setData] = useState(null);
@@ -43,7 +42,7 @@ export function CongressPanel({ request, state }) {
   const maxSeats = data ? Math.max(...data.partidos.map((p) => p[house])) : 1;
   return <section className="panel meta-page">
     <h2>Câmara e Senado</h2>
-    <p className="page-description">513 deputados e 81 senadores inventados, gerados pela semente da partida. Projetos de lei e PECs enviados na aba Medidas são votados um a um quando chega a data da decisão.</p>
+    <p className="page-description">513 deputados e 81 senadores, com nomes, partidos e estados dos dados abertos da Câmara e do Senado. A adesão de cada um ao governo é uma simulação do jogo. Projetos enviados pelo cargo são votados um a um quando chega a data da decisão.</p>
     <Status loading={loading} error={error}>{data && <>
       <div className="meta-tabs" role="tablist" aria-label="Casa legislativa">
         {[['camara', `Câmara · ${data.camara_total}`], ['senado', `Senado · ${data.senado_total}`], ['votacoes', 'Votações']].map(([id, label]) =>
@@ -161,7 +160,7 @@ export function StoryPanel({ request, state, onNotice }) {
       <h3 className="subheading">Pedem resposta ({data.pending.length})</h3>
       {data.pending.length === 0 ? <p className="meta-status">Nenhum acontecimento pendente. Avance o tempo para ver novidades.</p> :
         data.pending.map((ev) => <article className="story-card" key={ev.id}>
-          <EventArtwork event={ev} />
+          
           <div className="story-head"><span className={`tag t-${ev.kind === 'decisao' ? 'correcao' : ev.kind === 'oportunidade' ? 'melhor' : 'novo'}`}>{ev.kind === 'decisao' ? 'Decisão' : 'Oportunidade'}</span>
             {ev.days_left != null && <small>{ev.days_left <= 0 ? 'Último dia' : `${ev.days_left} dia(s) para responder`}</small>}</div>
           <h3>{ev.title}</h3>{ev.inspired_by_real_event && <p className="meta-count">Versão fictícia inspirada em um episódio real{ev.remix?.label ? ` · intensidade ${ev.remix.label}` : ''}.</p>}<p>{ev.text}</p>
@@ -174,13 +173,13 @@ export function StoryPanel({ request, state, onNotice }) {
       <details className="agenda-more" open={data.pending.length === 0}><summary>Histórico ({data.history.length})</summary>
       {data.history.length === 0 ? <p className="meta-status">Ainda não há histórico.</p> :
 <><ul className="vote-list story-history-list">{data.history.slice(0, 5).map((h) => <li key={h.id}>
-          <EventArtwork event={h} compact />
+          
           <div><b>{h.title}</b>
             <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
             <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></div>
         </li>)}</ul>
         {data.history.length > 5 && <details className="more"><summary>Ver anteriores ({data.history.length - 5})</summary><ul className="vote-list story-history-list">{data.history.slice(5).map((h) => <li key={h.id}>
-          <EventArtwork event={h} compact />
+          
           <div><b>{h.title}</b>
             <span>{new Date(`${h.on}T12:00:00`).toLocaleDateString('pt-BR')} · {h.choice_label}{h.auto ? ' (opção padrão)' : ''}</span>
             <small>{h.outcome} {h.deltas.length > 0 && `(${h.deltas.map(fmt).join(' · ')})`}</small></div>
@@ -316,35 +315,3 @@ export function DiaryPanel({ request }) {
   </section>;
 }
 
-/* ---------- Planos, Legado, Termos e Créditos (informativo) ---------- */
-export function InfoPanel({ section }) {
-  const content = {
-    Planos: <>
-      <h2>Modos e limites</h2>
-      <p className="page-description">O jogo roda sem cobrança e sem limite de meses. Nenhuma compra é feita aqui.</p>
-      <div className="meta-cards plans">
-        <article><span>NESTA VERSÃO LOCAL</span><strong>Tudo liberado</strong><small>Sem limite de meses. A chave de IA (Gemini) é sua, no arquivo backend/.env.</small></article>
-      </div></>,
-    Legado: <>
-      <h2>Legado</h2>
-      <p className="page-description">O site de referência tem um segundo jogo, o Legado: temporadas de 90 dias, eleições a cada temporada com apuração ao vivo e quatro classes (Político, Jornalista, Advogado, Empresário), com conta separada.</p>
-      <p className="meta-status">O multiplayer exige servidor compartilhado e contas, o que está fora desta versão local. A <b>Carreira</b> do jogo cobre o percurso de político em modo solo; as outras classes e as temporadas ao vivo continuam pendentes.</p></>,
-    Termos: <>
-      <h2>Termos e avisos</h2>
-      <ul className="meta-notes">
-        <li>Este jogo é uma obra de ficção satírica. Candidatos, parlamentares, pesquisas, empresas e acontecimentos são inventados.</li>
-        <li>Nenhuma pessoa real participa do jogo; nenhum fato real atual é afirmado pelos indicadores.</li>
-        <li>Os textos podem ser gerados por IA se você configurar uma chave; sem chave, o modo local é determinístico e nada sai do seu computador.</li>
-        <li>Os dados do jogo ficam no seu navegador/servidor local (SQLite). Nada é enviado a terceiros sem a sua configuração.</li>
-        <li>Esta é uma reconstrução independente, baseada em observação pública; não é afiliada ao produto de referência.</li>
-      </ul></>,
-    Créditos: <>
-      <h2>Créditos</h2>
-      <ul className="meta-notes">
-        <li>Reconstrução independente construída sobre o projeto Quatro Anos, com regras próprias.</li>
-        <li>Dados públicos de partidos podem vir do cadastro do TSE (importação manual, com fonte e licença registradas).</li>
-        <li>Observação do site de referência feita com o REA (Reverse Engineer Anything) sobre páginas públicas.</li>
-      </ul></>,
-  }[section];
-  return <section className="panel meta-page"><div className="eyebrow">{section.toUpperCase()}</div>{content}</section>;
-}

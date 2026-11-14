@@ -15,7 +15,6 @@ import WelcomePanel from './WelcomePanel';
 import GameSetupPanel from './GameSetupPanel';
 import GameGuide from './GameGuide';
 import Brand from './Brand';
-import EventArtwork from './EventArtwork';
 import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
 import IndicatorsPanel from './IndicatorsPanel';
@@ -31,7 +30,9 @@ import MandateReview from './MandateReview';
 import HistoryPanel from './HistoryPanel';
 import './territory.css';
 import TerritoryPanel from './TerritoryPanel';
-import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel, InfoPanel } from './MetaPanels';
+import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel } from './MetaPanels';
+import AgendaPanel from './AgendaPanel';
+import AboutPanel from './AboutPanel';
 import './diplomacy.css';
 import './ai-status.css';
 
@@ -452,14 +453,14 @@ export default function App() {
   })[careerOffice] || 'Mandato';
   const baseGroups = partyMode ? [
     { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Indicadores', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Indicadores', 'Acontecimentos'] },
-    { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
+    { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ] : [
     { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Obras e mapa', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Entrevistas', 'Acontecimentos'] },
-    { label: 'Sobre', items: ['Planos', 'Legado', 'Termos', 'Créditos'] },
+    { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
   const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Carimbos', 'Diário'] }];
   const availableTabs = tabGroups.flatMap((group) => group.items);
@@ -531,11 +532,11 @@ export default function App() {
         </section>
 
         <aside className="side-column"><section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">ESTABILIDADE</div><h2>Capacidade de governar</h2></div><strong className="score">{formatIndicator(m.governability, 'governability')}<small>/100</small></strong></div><div className="bar"><i style={{ width: `${m.governability}%` }}/></div><div className="mini-stats"><div><span>Base no Congresso</span><b>{formatIndicator(m.congress_support, 'congress_support')}%</b></div><div><span>Confiança institucional</span><b>{formatIndicator(m.institutional_trust, 'institutional_trust')}/100</b></div></div></section>
-        <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">AGENDA PRÓXIMA</div><h2>O que vem pela frente</h2></div><button className="icon-button" onClick={() => setActiveTab('Agenda')}>↗</button></div>{state.events?.length ? state.events.slice(0, 3).map((event) => <div className="event" key={event.id}><EventArtwork event={event} compact /><span className="event-date">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}</span><div><b>{event.title}</b><small>{event.description}</small></div></div>) : <p className="empty-state">Agenda tranquila por enquanto. Avance alguns dias para acompanhar o mandato.</p>}</section>
+        <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">AGENDA PRÓXIMA</div><h2>O que vem pela frente</h2></div><button className="icon-button" onClick={() => setActiveTab('Agenda')}>↗</button></div>{state.events?.length ? state.events.slice(0, 3).map((event) => <div className="event" key={event.id}><span className="event-date">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}</span><div><b>{event.title}</b><small>{event.description}</small></div></div>) : <p className="empty-state">Agenda tranquila por enquanto. Avance alguns dias para acompanhar o mandato.</p>}</section>
         <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">REGISTRO</div><h2>Últimas decisões</h2></div></div>{state.recent_actions?.length ? state.recent_actions.slice(0, 3).map((action) => <div className="decision" key={action.id}><span>✓</span><div><b>{action.title}</b><small>{new Date(`${action.date}T12:00:00`).toLocaleDateString('pt-BR')} · {action.kind}</small></div></div>) : <p className="empty-state">Nenhuma medida assinada ainda.</p>}</section></aside>
       </div>}</>}
 
-      {activeTab === 'Agenda' && <section className="panel agenda-page"><div className="eyebrow">CALENDÁRIO DO MANDATO</div><h2>Agenda e acontecimentos</h2><p className="page-description">A linha do tempo acompanha o calendário real da campanha simulada. Avance um dia, uma semana ou um mês.</p>{state.events?.length ? <>{state.events.slice(0, 5).map((event) => <div className="agenda-event" key={event.id}><EventArtwork event={event} compact /><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>)}{state.events.length > 5 && <details className="agenda-more"><summary>Ver mais {state.events.length - 5} compromisso(s)</summary>{state.events.slice(5).map((event) => <div className="agenda-event" key={event.id}><EventArtwork event={event} compact /><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `${event.days_until} DIAS`}<small>{new Date(`${event.date}T12:00:00`).toLocaleDateString('pt-BR')}</small></div><div><h3>{event.title}</h3><p>{event.description}</p></div></div>)}</details>}</> : <div className="empty-state">Não há eventos futuros cadastrados. Novos eventos aparecem conforme o conteúdo do jogo crescer.</div>}</section>}
+      {activeTab === 'Agenda' && <AgendaPanel state={state} />}
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
@@ -564,7 +565,7 @@ export default function App() {
         {activeTab === 'Placar' && <RankingPanel state={state} request={request} onNotice={setNotice} />}
         {activeTab === 'Carimbos' && <CollectionPanel state={state} request={request} />}
         {activeTab === 'Diário' && <DiaryPanel request={request} />}
-        {['Planos', 'Legado', 'Termos', 'Créditos'].includes(activeTab) && <InfoPanel section={activeTab} />}
+        {['O jogo', 'Termos', 'Créditos'].includes(activeTab) && <AboutPanel section={activeTab} />}
       {activeTab === 'Orçamento' && <section className="panel agenda-page">
         <div className="eyebrow">EXECUTIVO FEDERAL · DESPESAS E INVESTIMENTOS</div>
         <h2>Orçamento do governo</h2>
@@ -615,7 +616,7 @@ export default function App() {
           </section>}
         </> : <div className="empty-state">Carregando o orçamento...</div>}
       </section>}
-      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">EVENTOS FICTÍCIOS · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><EventArtwork event={event} /><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} dias · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {option.cost_bi.toFixed(1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <>{state.simulated_news.slice(0, 3).map((item) => <div className="agenda-event" key={item.id}><EventArtwork event={item} compact /><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}{state.simulated_news.length > 3 && <details className="agenda-more"><summary>Ver mais {state.simulated_news.length - 3} notícias</summary>{state.simulated_news.slice(3, 12).map((item) => <div className="agenda-event" key={item.id}><EventArtwork event={item} compact /><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}</details>}</> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
+      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">EVENTOS FICTÍCIOS · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} dias · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {option.cost_bi.toFixed(1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <>{state.simulated_news.slice(0, 3).map((item) => <div className="agenda-event" key={item.id}><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}{state.simulated_news.length > 3 && <details className="agenda-more"><summary>Ver mais {state.simulated_news.length - 3} notícias</summary>{state.simulated_news.slice(3, 12).map((item) => <div className="agenda-event" key={item.id}><div className="agenda-count">SIMULADO<small>{item.date}</small></div><div><h3>{item.title}</h3><p>{item.description}</p></div></div>)}</details>}</> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
 
       {activeTab === 'Eleição' && <CampaignPanel state={state} request={request} onState={setState} busy={busy} setBusy={setBusy} onNotice={setNotice} />}
       {['Carreira', 'Mandato'].includes(activeTab) && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} standaloneMandate={activeTab === 'Mandato'} />}

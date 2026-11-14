@@ -9,6 +9,11 @@ A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/
 - **Histórico** reescrito: evolução (um gráfico por vez), decisões em linha do tempo e orçamento.
 - **Perfil** (Placar, Carimbos, Diário) deixa de aparecer na partida; a aba Aprendizado sai da interface; o aviso de importação do TSE deixa de mostrar comandos de desenvolvedor.
 - **Guia** em painel lateral com o que cada aba faz, busca e glossário (substitui o passo a passo).
+- **Visão geral** reescrita: números do dia, próximo passo, capacidade de governar, agenda, última decisão e o balanço do mandato.
+- **Agenda**, **Imprensa** e **Sobre** (agora "O jogo", "Termos" e "Créditos") reescritos no sistema novo; a aba Legado, que citava outro produto, foi removida.
+- Pré-campanha longa (vereador, cerca de dois anos): botão **Pular para o ano da eleição**, que avança mês a mês com o jogo rodando.
+- As artes decorativas de eventos saíram de todas as telas; as variáveis de cor do tema antigo passaram a apontar para o sistema novo, então todas as telas antigas assumem a mesma superfície, borda e tipografia (títulos em uma só fonte).
+- Congresso: o texto dizia "deputados inventados", mas a composição agora é real (dados abertos da Câmara e do Senado); corrigido, e o nome dos partidos não quebra mais no meio da palavra.
 - Corrigida a população urbana das cidades (vinha em número de pessoas, agora é percentual).
 
 ## 0.25 — 14 nov. 2026 (novo nome)

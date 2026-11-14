@@ -15,12 +15,13 @@ O objetivo é uma base visual e de navegação robusta, em que qualquer informa�
 - **Guia** em painel lateral, com o que cada aba faz, busca e glossário.
 - Balanço do mandato com nota; CPI em etapas.
 
+- Visão geral, Agenda, Imprensa e Sobre reescritos; pré-campanha longa com botão para pular até o ano da eleição.
+- Telas antigas uniformizadas (mesma superfície, borda e tipografia) e sem artes decorativas de eventos.
+
 **Falta para fechar a 0.4**
-- Migrar para o sistema de design: Visão geral, Agenda, Competências, Orçamento, Crises, Imprensa, Entrevistas, Carreira, Instituições, Nomeações, Trajetória.
-- Redesenhar **Sobre** (Planos, Termos, Créditos, Legado) e a **Agenda**.
-- Pré-campanha do vereador (hoje são cerca de 2 anos de espera): encurtar ou dar o que fazer.
+- Reescrever com os componentes novos (hoje só herdam o visual): Competências, Orçamento, Crises, Entrevistas, Carreira, Trajetória, Instituições, Nomeações, Empresas, Reguladores, Tramitação, Congresso, Diplomacia, Eleição e Semana.
 - Remover os arquivos de CSS antigos (`editorial.css`, `views.css` e outros) quando nenhuma tela depender deles.
-- Fundo e identidade visual unificados.
+- Pré-campanha do vereador como militante (alternativa ao pulo), se ainda fizer sentido.
 
 ## 0.5 — Economia e Estado (sugestão)
 Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.

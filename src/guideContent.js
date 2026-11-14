@@ -36,10 +36,9 @@ export const TAB_HELP = {
   'Placar': 'Ranking dos mandatos que você concluiu e registrou nesta conta.',
   'Carimbos': 'Conquistas que você desbloqueou jogando.',
   'Diário': 'Anotações da sua jornada.',
-  'Planos': 'O que o jogo é hoje e o que vem nas próximas versões.',
+  'O jogo': 'O que o jogo já faz e para onde vai nas próximas versões.',
   'Termos': 'Condições de uso e aviso de que tudo é ficção.',
   'Créditos': 'Fontes de dados e agradecimentos.',
-  'Legado': 'O segundo jogo do site de referência e o que fica para depois.',
 };
 
 export const GLOSSARY = [
