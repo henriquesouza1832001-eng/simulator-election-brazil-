@@ -138,12 +138,6 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   Object.entries(familySupport[character.family_background] || {}).forEach(([group, amount]) => { initialSupport[group] = (initialSupport[group] || 0) + amount; });
   const setCharacterField = (key, value) => setCharacter((current) => ({ ...current, [key]: value }));
   const updateMode = (next) => {
-    if (next && next !== 'elector' && window.matchMedia('(min-width: 900px)').matches && !new URLSearchParams(window.location.search).has('novo')) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('novo', next);
-      const opened = window.open(url.toString(), '_blank');
-      if (opened) { opened.opener = null; return; }
-    }
     if (!next && new URLSearchParams(window.location.search).has('novo')) {
       const url = new URL(window.location.href);
       url.searchParams.delete('novo');
