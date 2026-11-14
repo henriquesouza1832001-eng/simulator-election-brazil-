@@ -1,8 +1,7 @@
 name: Build and deploy Mandato
 
+# O deploy automático agora é na VM do Google (deploy/gcp). Este fluxo ficou só manual, para o caso de voltar à AWS.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

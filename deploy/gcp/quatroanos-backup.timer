@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup diário do Quatro Anos
+
+[Timer]
+OnCalendar=*-*-* 06:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10min
+Unit=quatroanos-backup.service
+
+[Install]
+WantedBy=timers.target

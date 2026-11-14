@@ -1,12 +1,11 @@
 name: CI (validação antes do merge)
 
-# Roda em pull requests para main e em pushes para qualquer outra branch.
-# Não usa segredos e não toca na AWS: só valida o jogo. O deploy continua em aws-deploy.yml (somente main).
+# Roda em pull requests para main e em qualquer push (inclusive main).
+# Não usa segredos: só valida o jogo. A VM do Google (deploy/gcp) só implanta commits em que este fluxo passou.
 on:
   pull_request:
     branches: [main]
   push:
-    branches-ignore: [main]
 
 permissions:
   contents: read

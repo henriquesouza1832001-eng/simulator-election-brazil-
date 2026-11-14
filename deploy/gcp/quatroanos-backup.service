@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup diário das partidas do Quatro Anos
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/quatroanos/app/deploy/gcp/backup.sh
+User=root
+Group=root

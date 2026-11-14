@@ -1,0 +1,12 @@
+[Unit]
+Description=Verifica atualizações aprovadas do Quatro Anos a cada cinco minutos
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+RandomizedDelaySec=30s
+Unit=quatroanos-auto-deploy.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Verifica os testes no GitHub e atualiza o Quatro Anos
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/quatroanos/app/deploy/gcp/auto-deploy-check.sh
+User=root
+Group=root
+TimeoutStartSec=25min

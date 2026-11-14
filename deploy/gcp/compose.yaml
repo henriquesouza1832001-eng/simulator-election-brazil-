@@ -1,0 +1,48 @@
+# Quatro Anos na VM do Google: API + site + túnel da Cloudflare.
+# Nenhuma porta é publicada no servidor; o único caminho de entrada é o túnel (conexão de saída).
+# Usado sempre pelo atalho `quatro-dc` (instalado por bootstrap.sh), que passa -f e --env-file.
+name: quatroanos
+
+services:
+  api:
+    build:
+      context: ../../backend
+    restart: unless-stopped
+    environment:
+      DATABASE_PATH: /data/game.sqlite3
+      FRONTEND_ORIGIN: ${PUBLIC_URL:-http://localhost}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GEMINI_GATEWAY_URL: ${GEMINI_GATEWAY_URL:-}
+      GEMINI_GATEWAY_TOKEN: ${GEMINI_GATEWAY_TOKEN:-}
+    volumes:
+      - game_data:/data
+    expose:
+      - "8000"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      ORIGIN_SECRET: ${ORIGIN_SECRET:-}
+      NGINX_ENVSUBST_FILTER: ^ORIGIN_SECRET$
+    expose:
+      - "80"
+
+  # Só sobe com COMPOSE_PROFILES=tunnel (definido em /opt/quatroanos/.env depois de colar o token).
+  cloudflared:
+    profiles: ["tunnel"]
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - web
+
+volumes:
+  game_data:
