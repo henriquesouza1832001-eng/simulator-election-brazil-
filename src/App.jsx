@@ -19,6 +19,7 @@ import EventArtwork from './EventArtwork';
 import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
 import IndicatorsPanel from './IndicatorsPanel';
+import OverviewPanel from './OverviewPanel';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
 import RegulatorsPanel from './RegulatorsPanel';
@@ -316,6 +317,15 @@ export default function App() {
     try { const data = await request('/api/measures/apply', { method: 'POST', body: JSON.stringify({ text: measure, interpretation_id: preview.interpretation_id }) }); setState(data.state); setPreview(null); setMeasure(''); setNotice(data.status === 'pending_legislation' ? `Projeto enviado ao Congresso. A votação simulada está prevista para ${data.effects[0].decision_date}; efeitos dependem de aprovação.` : 'Ato registrado. O Executivo tem agenda limitada e os efeitos seguem as regras do simulador.'); }
     catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
+  async function skipToElectionYear() {
+    setBusy(true);
+    try {
+      const data = await request('/api/career/skip-to-election-year', { method: 'POST' });
+      setState(data.state);
+      setNotice(data.message);
+    } catch (e) { setNotice(e.message); } finally { setBusy(false); }
+  }
+
   async function toggleDashboardCard(key) {
     const current = state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key);
     if (!current.includes(key) && current.length >= 6) {
@@ -470,35 +480,43 @@ export default function App() {
     'Agenda': ['O que vem pela frente?', 'Compromissos e acontecimentos seguem a data da partida.'],
   }[activeTab] || ['Governo em exercício.', 'Acompanhe o calendário e as consequências das decisões.'];
 
+  const selectedCards = (state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).slice(0, 6);
+  const upcomingEvents = (state.events || []).slice(0, 3);
+  const nextCrisis = state.active_crises?.[0];
+  const nextEvent = state.events?.[0];
+  const mainTab = careerMode ? 'Carreira' : 'Medidas';
+  const mainLabel = careerMode ? 'Acompanhar carreira' : 'Preparar uma decisão';
+  const overviewNext = localCareer
+    ? { label: careerNextStep.label, title: careerNextStep.title, text: careerNextStep.text, urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }, { label: 'Ver acontecimentos', tab: 'Acontecimentos' }] }
+    : nextCrisis ? { label: 'Crise em andamento', title: nextCrisis.title, text: nextCrisis.description, urgent: true, actions: [{ label: careerMode ? 'Ver situação da carreira' : 'Ver opções de resposta', tab: careerMode ? 'Carreira' : 'Crises', primary: true }, { label: 'Abrir agenda', tab: 'Agenda' }] }
+      : nextEvent ? { label: nextEvent.days_until === 0 ? 'Acontece hoje' : `Próximo evento · em ${nextEvent.days_until} dias`, title: nextEvent.title, text: nextEvent.description, urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }, { label: 'Abrir agenda', tab: 'Agenda' }] }
+        : { label: 'Sem pendências', title: 'Nada urgente agora', text: 'Use o tempo para preparar uma decisão ou avance o calendário.', urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }] };
+  const monthsToElection = careerOverview?.days_until_campaign;
+  const overviewProps = {
+    request, state, go: setActiveTab,
+    title: activeTab === 'Visão geral' ? pageGuidance[0] : 'Visão geral', lead: activeTab === 'Visão geral' ? pageGuidance[1] : undefined,
+    term: partyMode ? null : { label: careerMode ? careerCardLabel : 'Mandato', value: careerMode ? careerCardValue : termMonth, suffix: careerMode ? careerCardSuffix : ' / 48', progress: careerMode ? careerCardProgress : termMonth / 48 * 100, note: careerMode ? careerCardNote : `${monthsRemaining} meses restantes` },
+    stats: localCareer
+      ? { title: `Sua situação · ${careerOverview.office_label}`, items: careerCards.map((c) => ({ label: c.label, value: formatIndicator(c.value), unit: c.unit?.trim(), note: c.detail })) }
+      : { title: 'Seus números', items: selectedCards.map((key) => { const option = indicatorOptions.find((item) => item.key === key); return option ? { label: option.label, value: formatIndicator(readIndicator(option, state), key), unit: option.unit?.trim(), note: option.detail } : null; }).filter(Boolean) },
+    customize: localCareer ? null : { options: indicatorOptions, selected: selectedCards, toggle: toggleDashboardCard },
+    next: overviewNext, upcoming: upcomingEvents, last: state.recent_actions?.[0] || null,
+    calendar: localCareer ? [['Campanha abre', careerOverview.campaign_start_date], ['Votação', careerOverview.election_date], ['Posse', careerOverview.inauguration_date]] : null,
+    governing: localCareer ? null : { governability: m.governability, congress_support: m.congress_support, institutional_trust: m.institutional_trust },
+    skip: localCareer && careerPhase === 'pre_campaign' && monthsToElection > 120 ? { text: `A campanha abre em ${monthsToElection} dias. Se preferir não esperar, o jogo pode avançar sozinho até o ano da eleição (os meses passam normalmente, com economia e acontecimentos).`, label: 'Pular para o ano da eleição', busy, onSkip: skipToElectionYear } : null,
+    showReview: !localCareer && !partyMode,
+  };
   return <div className="app-shell">
     <header className="topbar"><Brand /><div className="date-block"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="top-actions"><button className="quiet-button" onClick={() => setActiveTab('Placar')}>Perfil</button><button className="quiet-button" onClick={() => setShowGameMenu(true)}>Partidas</button><button className="quiet-button" onClick={() => setGameGuideOpen(true)}>Guia</button><span className="difficulty-readonly" title="Definida na criação da partida">Nível: {difficultyLabels[state.difficulty] || 'Normal'}</span><span className="live-dot">SÁTIRA · CENÁRIO FICTÍCIO</span>{authConfig?.enabled && (authUser?.isGuest ? <button className="quiet-button" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="quiet-button" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="quiet-button" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button className="quiet-button" onClick={() => advance(1)} disabled={busy}>Próximo dia <b>→</b></button></div></header>
     <nav className="tabs tabs-grouped">{tabGroups.filter((group) => !group.hidden).map((group) => <button key={group.label} className={selectedTabGroup.label === group.label ? 'tab active' : 'tab'} onClick={() => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }}>{group.label}</button>)}<div className="tab-spacer"/><button className="advance-link" onClick={() => advance(7)} disabled={busy}>Avançar 7 dias <span>↗</span></button><button className="advance-link" onClick={() => advance(30)} disabled={busy}>Avançar mês <span>↗</span></button></nav>{(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="tabs tabs-grouped subtabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="tab tab-sub back-to-game" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className={`tab tab-sub ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
 
     <main className="content">
-      {!partyMode && activeTab === 'Visão geral' && <section className="welcome-row"><div><div className="eyebrow">{careerMode ? `${state.career_overview.office_label.toUpperCase()} · ${(state.career_overview.campaign_territory || state.career_overview.state_name).toUpperCase()}` : `GABINETE DA PRESIDÊNCIA · CICLO ${state.term}`}</div><h1>{pageGuidance[0]}</h1><p>{pageGuidance[1]}</p>{playerCharacter?.name && <div className="character-nameplate"><span>{playerCharacter.name.slice(0, 1).toUpperCase()}</span><div><b>{playerCharacter.name}</b><small>{playerCharacter.political_spectrum?.replaceAll('_', ' ') || playerCharacter.family_background?.replaceAll('_', ' ') || 'personagem da partida'}</small></div></div>}</div><div className="term-card"><span>{careerMode ? careerCardLabel : 'MANDATO'}</span><strong>{careerMode ? careerCardValue : termMonth}<small>{careerMode ? careerCardSuffix : ' / 48'}</small></strong><div className="progress"><i style={{ width: `${careerMode ? careerCardProgress : termMonth / 48 * 100}%` }}/></div><small>{careerMode ? careerCardNote : `${monthsRemaining} meses restantes`}</small></div></section>}
-
-      {dashboardTab && <>{activeTab === 'Visão geral' && localCareer && <><div className="indicator-toolbar"><span>SUA SITUAÇÃO · {careerOverview.office_label.toUpperCase()}</span></div><section className="indicator-grid">{careerCards.map((card) => <Metric key={card.label} label={card.label} value={card.value} unit={card.unit} tone={card.tone || ''} detail={card.detail} />)}</section></>}
-      {activeTab === 'Visão geral' && !localCareer && <><div className="indicator-toolbar"><span>SEU PAINEL · ATÉ 6 INDICADORES</span><details className="dashboard-customizer"><summary>Escolher indicadores</summary><div>{indicatorOptions.map((option) => <label key={option.key}><input type="checkbox" checked={(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).includes(option.key)} onChange={() => toggleDashboardCard(option.key)} />{option.label}</label>)}</div></details></div><section className="indicator-grid">
-        {(state.dashboard_cards || indicatorOptions.slice(0, 6).map((item) => item.key)).slice(0, 6).map((key) => { const option = indicatorOptions.find((item) => item.key === key); if (!option) return null; const value = readIndicator(option, state); const tone = key === 'primary_balance' ? (m.primary_balance < 0 ? 'red' : 'green') : option.tone; return <Metric key={key} indicatorKey={key} label={option.label} value={value} unit={option.unit} tone={tone || ''} detail={option.detail} />; })}
-      </section></>}
 
 
-      {activeTab === 'Visão geral' && !localCareer && <MandateReview request={request} state={state} />}
-      {activeTab === 'Visão geral' && <div className="overview-grid">
-        <section className="panel today-brief">
-          <div className="eyebrow">PRIORIDADE DE HOJE</div>
-          {localCareer ? <><span className="brief-label">{careerNextStep.label}</span><h2>{careerNextStep.title}</h2><p>{careerNextStep.text}</p><button className="secondary-button" onClick={() => setActiveTab('Acontecimentos')}>Ver acontecimentos <b>→</b></button></> : state.active_crises?.length ? <><EventArtwork event={state.active_crises[0]} compact /><span className="brief-label urgent">CRISE EM ANDAMENTO</span><h2>{state.active_crises[0].title}</h2><p>{state.active_crises[0].description}</p><button className="secondary-button" onClick={() => setActiveTab(careerMode ? 'Carreira' : 'Crises')}>{careerMode ? 'Ver situação da carreira' : 'Ver opções de resposta'} <b>→</b></button></> : state.events?.length ? <><EventArtwork event={state.events[0]} compact /><span className="brief-label">{state.events[0].days_until === 0 ? 'ACONTECE HOJE' : `PRÓXIMO EVENTO · ${state.events[0].days_until} DIAS`}</span><h2>{state.events[0].title}</h2><p>{state.events[0].description}</p><button className="secondary-button" onClick={() => setActiveTab('Agenda')}>Abrir agenda <b>→</b></button></> : <><span className="brief-label">SEM URGÊNCIAS</span><h2>{careerMode ? 'Sua carreira segue o calendário.' : 'O governo está em ritmo normal.'}</h2><p>Confira a agenda ou prepare o próximo passo. Os efeitos aparecem antes da eleição e continuam no mandato.</p><button className="secondary-button" onClick={() => setActiveTab('Agenda')}>Ver agenda <b>→</b></button></>}
-          <button className="primary-button" onClick={() => setActiveTab(careerMode ? 'Carreira' : 'Medidas')}>{careerMode ? 'Acompanhar carreira' : 'Preparar uma decisão'} <b>→</b></button>
-        </section>
-        <aside className="overview-side">
-          {localCareer && <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">CALENDÁRIO ELEITORAL</div><h2>Datas da sua carreira</h2></div><button className="icon-button" onClick={() => setActiveTab('Carreira')}>Ver <b>→</b></button></div>
-            <div className="brief-meta"><span>Campanha abre</span><b>{new Date(`${careerOverview.campaign_start_date}T12:00:00`).toLocaleDateString('pt-BR')}</b><span>Votação</span><b>{new Date(`${careerOverview.election_date}T12:00:00`).toLocaleDateString('pt-BR')}</b><span>Posse</span><b>{new Date(`${careerOverview.inauguration_date}T12:00:00`).toLocaleDateString('pt-BR')}</b></div>
-            <small className="regional-disclaimer">Datas do ciclo simulado do jogo.</small></section>}
-          {!localCareer && <><section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">CAPACIDADE DE GOVERNAR</div><h2>{formatIndicator(m.governability, 'governability')}/100</h2></div><button className="icon-button" onClick={() => setActiveTab('Instituições')}>Ver <b>→</b></button></div><div className="bar"><i style={{ width: `${m.governability}%` }}/></div><div className="brief-meta"><span>Base no Congresso</span><b>{formatIndicator(m.congress_support, 'congress_support')}%</b><span>Confiança institucional</span><b>{formatIndicator(m.institutional_trust, 'institutional_trust')}/100</b></div></section>
-          <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">AGENDA PRÓXIMA</div><h2>O que vem pela frente</h2></div><button className="icon-button" onClick={() => setActiveTab('Agenda')}>Ver <b>→</b></button></div>{state.events?.length ? state.events.slice(0, 2).map((event) => <div className="event" key={event.id}><EventArtwork event={event} compact /><span className="event-date">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}</span><div><b>{event.title}</b><small>{event.description}</small></div></div>) : <p className="empty-state">Nenhum compromisso próximo.</p>}</section>
-          {state.recent_actions?.length > 0 && <section className="panel compact-panel latest-action"><div className="eyebrow">ÚLTIMA DECISÃO</div><b>{state.recent_actions[0].title}</b><small>{new Date(`${state.recent_actions[0].date}T12:00:00`).toLocaleDateString('pt-BR')} · {state.recent_actions[0].kind}</small></section>}</>}
-        </aside>
-      </div>}
+
+      {activeTab === 'Visão geral' && <OverviewPanel {...overviewProps} />}
+
+      {dashboardTab && <>
 
       {activeTab === 'Medidas' && <div className="main-grid">
         <section className="panel measure-panel">

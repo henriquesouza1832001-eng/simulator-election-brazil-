@@ -1,21 +1,20 @@
 import { useEffect, useState } from 'react';
-import './powers.css';
+import { Group, Delta, fmt } from './ui';
 
-const fmt = (v, d = 1) => (v == null ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }));
+// O que é bom em cada indicador do balanço.
+const BETTER = { approval: 'up', congress_support: 'up', institutional_trust: 'up', integrity: 'up', gdp_growth: 'up', inflation: 'down', unemployment: 'down', debt_gdp: 'down' };
 
 export default function MandateReview({ request, state }) {
   const [data, setData] = useState(null);
   useEffect(() => { request('/api/mandate/review').then(setData).catch(() => setData(null)); }, [state?.date]);
   if (!data) return null;
   const { decisions, cpis } = data;
-  return <details className={`fold mandate-review ${data.final ? 'final' : ''}`} open={data.final}>
-    <summary>{data.final ? 'Fim do mandato: balanço final' : 'Balanço do mandato até agora'} <span>{data.headline} · nota {data.score}/100 ({data.letter})</span></summary>
-    {data.final && <p className="page-description">Os 48 meses acabaram. Veja abaixo o que mudou desde o primeiro dia e como o governo foi avaliado. Você pode continuar jogando ou abrir uma nova partida em “Partidas”.</p>}
-    <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Indicador</th><th>Início</th><th>Agora</th><th>Variação</th></tr></thead>
-      <tbody>{data.metrics.map((r) => <tr key={r.key}><td>{r.label}</td><td>{fmt(r.start)} {r.unit}</td><td>{fmt(r.now)} {r.unit}</td>
-        <td className={r.good == null ? '' : r.good ? 'pos' : 'neg'}>{r.delta == null ? '—' : `${r.delta > 0 ? '+' : ''}${fmt(r.delta, 1)}`}</td></tr>)}</tbody></table></div>
-    <p className="meta-count">{decisions.recorded} decisões registradas, {decisions.approved} aprovadas e {decisions.setbacks} revezes (rejeições ou crises sem resposta).
+  return <Group title={data.final ? 'Fim do mandato: balanço final' : 'Balanço do mandato até agora'} meta={`${data.headline} · nota ${data.score}/100 (${data.letter})`} open={data.final}>
+    {data.final && <p className="ds-lead" style={{ margin: '0 4px 12px' }}>Os 48 meses acabaram. Veja o que mudou desde o primeiro dia e como o governo foi avaliado. Você pode continuar jogando ou abrir uma nova partida em “Partidas”.</p>}
+    <div className="ds-table-wrap"><table className="ds-table"><thead><tr><th>Indicador</th><th>Início</th><th>Agora</th><th>Variação</th></tr></thead>
+      <tbody>{data.metrics.map((r) => <tr key={r.key}><td>{r.label}</td><td>{fmt(r.start)} {r.unit}</td><td>{fmt(r.now)} {r.unit}</td><td><Delta value={r.delta} better={BETTER[r.key] || 'up'} /></td></tr>)}</tbody></table></div>
+    <p className="ds-muted" style={{ margin: '12px 4px 0', fontSize: 14 }}>{decisions.recorded} decisões registradas, {decisions.approved} aprovadas e {decisions.setbacks} revezes (rejeições ou crises sem resposta).
       {cpis.total > 0 ? ` ${cpis.total} CPI(s), ${cpis.against_government} contra o governo e ${cpis.with_indictments} com pedido de indiciamento.` : ''}</p>
-    <p className="meta-count">{data.note}</p>
-  </details>;
+    <p className="ds-muted" style={{ margin: '6px 4px 4px', fontSize: 13 }}>{data.note}</p>
+  </Group>;
 }

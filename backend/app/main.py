@@ -904,6 +904,26 @@ def advance(request: AdvanceRequest) -> dict[str, Any]:
     return {"state": public_state(state), "message": message}
 
 
+@app.post("/api/career/skip-to-election-year")
+def skip_to_election_year() -> dict[str, Any]:
+    """Pré-campanha longa (ex.: vereador, cerca de dois anos): avança, mês a mês e com o jogo rodando, até 1º de janeiro do ano da eleição."""
+    state = game_state()
+    career = state.get("career") or {}
+    if not career.get("mode") or career.get("phase") != "pre_campaign":
+        raise HTTPException(status_code=409, detail="Só dá para pular durante a pré-campanha.")
+    target = date(date.fromisoformat(career["election_date"]).year, 1, 1)
+    today = date.fromisoformat(state["date"])
+    if today >= target:
+        raise HTTPException(status_code=409, detail="Você já está no ano da eleição.")
+    start = today
+    while date.fromisoformat(state["date"]) < target:
+        remaining = (target - date.fromisoformat(state["date"])).days
+        state, _ = advance_state(state, min(30, remaining))
+    save_state(state)
+    return {"state": public_state(state), "skipped_days": (date.fromisoformat(state["date"]) - start).days,
+            "message": f"Você avançou {(date.fromisoformat(state['date']) - start).days} dias, até o ano da eleição."}
+
+
 @app.post("/api/game/inaugural-address")
 def inaugural_address(request: InauguralAddressRequest) -> dict[str, Any]:
     state = game_state()
