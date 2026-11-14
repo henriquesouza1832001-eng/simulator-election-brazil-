@@ -9,8 +9,8 @@ const TODAY = [
   ['Balanço do mandato', 'No fim dos 48 meses, o que mudou indicador por indicador e uma nota calculada por regra fixa.'],
 ];
 const ROADMAP = [
-  ['0.4', 'Base de interface e informação (agora)'],
-  ['0.5', 'Economia e Estado: empresas, Banco Central e Selic'],
+  ['0.4', 'Base de interface e informação (concluída)'],
+  ['0.5', 'Motor: economia e Estado, empresas, Banco Central e Selic (próxima)'],
   ['0.6', 'Congresso e eleições em profundidade'],
   ['0.7', 'Gemini conectado ao jogo'],
   ['0.8', 'Contas e partidas na nuvem'],

@@ -2,7 +2,7 @@
 
 Proposta de roteiro. Os números 0.4, 0.7 e 1.0 vêm de você; os demais são sugestão para ajustarmos.
 
-## 0.4 — Base de interface e informação (em andamento)
+## 0.4 — Base de interface e informação (concluída em 14 nov. 2026)
 
 O objetivo é uma base visual e de navegação robusta, em que qualquer informação do jogo seja fácil de achar e de entender.
 
@@ -18,7 +18,7 @@ O objetivo é uma base visual e de navegação robusta, em que qualquer informa�
 - Visão geral, Agenda, Imprensa e Sobre reescritos; pré-campanha longa com botão para pular até o ano da eleição.
 - Telas antigas uniformizadas (mesma superfície, borda e tipografia) e sem artes decorativas de eventos.
 
-**Falta para fechar a 0.4**
+**Refinos visuais que ficam para depois (não bloqueiam a 0.5)**
 - Reescrever com os componentes novos (hoje só herdam o visual): Competências, Orçamento, Crises, Entrevistas, Carreira, Trajetória, Instituições, Nomeações, Empresas, Reguladores, Tramitação, Congresso, Diplomacia, Eleição e Semana.
 - Remover os arquivos de CSS antigos (`editorial.css`, `views.css` e outros) quando nenhuma tela depender deles.
 - Pré-campanha do vereador como militante (alternativa ao pulo), se ainda fizer sentido.

@@ -2,7 +2,7 @@
 
 A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
 
-## 0.4 — Base de interface e informação (em andamento, 14 nov. 2026)
+## 0.4 — Base de interface e informação (concluída, 14 nov. 2026)
 
 - Sistema de design único (`design.css` e `ui.jsx`) e auditoria automática de contraste; corrigidos os textos ilegíveis herdados do tema claro antigo.
 - **Indicadores** reescrito: país ou uma cidade, com variação, tendência e o que faz cada indicador mudar. Substitui as abas Indicadores e Território. Obras, estados e regiões passam a ficar em **Obras e mapa**.

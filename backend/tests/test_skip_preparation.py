@@ -1,5 +1,9 @@
+import os
+import tempfile
 import unittest
 from datetime import date
+from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -7,12 +11,24 @@ from app.main import app
 
 
 class SkipPreparationTest(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.environment = patch.dict(os.environ, {"DATABASE_PATH": str(Path(self.temp_dir.name) / "game.sqlite3"), "COGNITO_REGION": "", "COGNITO_USER_POOL_ID": "",
+                                                    "COGNITO_CLIENT_ID": "", "COGNITO_DOMAIN": "", "GEMINI_API_KEY": ""})
+        self.environment.start()
+        self.client = TestClient(app)
+        self.client.__enter__()
+
+    def tearDown(self):
+        self.client.__exit__(None, None, None)
+        self.environment.stop()
+        self.temp_dir.cleanup()
+
     def test_refuses_outside_career(self):
-        client = TestClient(app)
-        created = client.post("/api/game/new", json={"character": {"name": "Teste"}, "difficulty": "normal"})
+        created = self.client.post("/api/game/new", json={"character": {"name": "Teste"}, "difficulty": "normal"})
         self.assertEqual(created.status_code, 200)
         cid = created.json()["campaign_id"]
-        r = client.post("/api/career/skip-to-election-year", headers={"X-Mandato-Campaign": cid})
+        r = self.client.post("/api/career/skip-to-election-year", headers={"X-Mandato-Campaign": cid})
         self.assertEqual(r.status_code, 409)
 
     def test_skips_a_long_preparation_up_to_the_election_year(self):
