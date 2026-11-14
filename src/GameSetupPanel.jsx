@@ -3,6 +3,7 @@ import MunicipalityPicker from './MunicipalityPicker';
 import ElectorPanel from './ElectorPanel';
 import { PartyStartForm } from './PartyPathPanel';
 import Brand from './Brand';
+import StartMenu from './StartMenu';
 
 const difficultyOptions = [
   ['tranquilo', 'Tranquilo'], ['normal', 'Normal'], ['dificil', 'Difícil'],
@@ -253,54 +254,13 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
     </header>
     <div className="game-setup-content">
       {!mode ? <>
-      <section className="game-setup-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,24,21,.82), rgba(9,24,21,.16)), url('/assets/backgrounds/${heroImage}')` }}>
-        <span className="eyebrow">UM BRASIL, VÁRIOS CAMINHOS</span><h1>Onde começa sua história?</h1>
-        <p>Escolha o ponto de partida. Você pode entrar direto no governo ou construir uma carreira desde a campanha.</p>
-      </section>
-
-      <section className="setup-tutorial" aria-label="Guia de início">
+      <StartMenu active={campaigns.find((c) => c.active)} hasSavedGame={hasSavedGame} onContinue={onContinue} onPick={updateMode} busy={busy} catalogReady={Boolean(catalog)} tutorial={<section className="setup-tutorial" aria-label="Guia de início">
         {tutorialStep < 0 ? <><div><b>Primeira vez?</b><span>Veja um guia curto sobre os modos, o calendário e as decisões.</span></div><button className="secondary-button" type="button" onClick={() => setTutorialStep(0)}>Abrir guia rápido</button></> : <>
           <div className="setup-tutorial-step"><span>GUIA · {tutorialStep + 1} DE {tutorialSteps.length}</span><b>{tutorialSteps[tutorialStep][0]}</b><p>{tutorialSteps[tutorialStep][1]}</p></div>
           <div className="setup-tutorial-actions"><button className="secondary-button" type="button" disabled={tutorialStep === 0} onClick={() => setTutorialStep((step) => step - 1)}>Anterior</button><button className="secondary-button" type="button" onClick={() => setTutorialStep(-1)}>Pular guia</button>{tutorialStep < tutorialSteps.length - 1 ? <button className="primary-button" type="button" onClick={() => setTutorialStep((step) => step + 1)}>Próximo</button> : <button className="primary-button" type="button" onClick={() => setTutorialStep(-1)}>Concluir</button>}</div>
         </>}
-      </section>
-
-      <div className="game-setup-toolbar">
-        {hasSavedGame ? <button className="primary-button" onClick={onContinue}>Continuar partida salva <b>→</b></button> : <span className="setup-new-label">Nenhuma partida ativa. Escolha um modo para começar.</span>}
-      </div>
-
+      </section>} />
       {campaigns.length > 0 && <details className="saved-campaign-list"><summary>Minhas partidas salvas ({campaigns.length})</summary><div className="saved-campaign-grid">{campaigns.map((item) => <article className={item.active ? 'active' : ''} key={item.campaign_id}><div><b>{item.name}</b><small>{item.office} · {item.phase.replaceAll('_', ' ')} · {item.date ? new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR') : 'sem data'} · {difficultyOptions.find(([value]) => value === item.difficulty)?.[1] || item.difficulty}</small></div><button className="secondary-button" disabled={busy || item.active} onClick={() => activateCampaign(item.campaign_id)}>{item.active ? 'Em andamento' : 'Abrir'}</button></article>)}</div></details>}
-
-      <section className="game-mode-grid" aria-label="Modos de jogo">
-        <article className={`game-mode-card presidency-mode ${mode === 'presidency' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/brasilia-mandato-v2.jpg')" }} />
-          <span className="game-mode-kicker">GOVERNO FEDERAL · 48 MESES</span><h2>Tomar posse no primeiro dia</h2>
-          <p>Comece em 1º de janeiro de 2027 como presidente e conduza o governo pelos quatro anos.</p>
-          <ul><li>Sem etapa de campanha</li><li>Pronunciamento de posse obrigatório</li><li>Orçamento, Congresso e agenda nacional</li></ul>
-          <button className="secondary-button" disabled={busy} onClick={() => updateMode('presidency')}>Configurar posse direta <b>→</b></button>
-        </article>
-        <article className={`game-mode-card career-mode ${mode === 'career' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/campanha-praca-v2.jpg')" }} />
-          <span className="game-mode-kicker">CAMPANHA E CARREIRA</span><h2>Disputar uma eleição</h2>
-          <p>Escolha cargo e território. Faça campanha, dispute a eleição e exerça o mandato se vencer.</p>
-          <ul><li>De vereador a presidente</li><li>Calendário e poderes próprios de cada cargo</li><li>Estado e município definem o cenário local</li></ul>
-          <button className="secondary-button" disabled={!catalog || busy} onClick={() => updateMode('career')}>Escolher cargo e lugar <b>→</b></button>
-        </article>
-        <article className={`game-mode-card elector-mode ${mode === 'elector' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/plenario-jogo-v2.jpg')" }} />
-          <span className="game-mode-kicker">MODO ELEITOR · 2014 A 2030</span><h2>Consultar e votar em simulação</h2>
-          <p>Veja os candidatos oficiais de um pleito e escolha seu voto simulado, sem criar partida.</p>
-          <ul><li>Dados oficiais do TSE com fonte</li><li>2028 e 2030 são cenários futuros simulados</li><li>Nunca envia voto a uma eleição real</li></ul>
-          <button className="secondary-button" disabled={busy} onClick={() => updateMode('elector')}>Abrir Modo Eleitor <b>→</b></button>
-        </article>
-        <article className={`game-mode-card party-mode ${mode === 'party' ? 'selected' : ''}`}>
-          <div className="game-mode-art" aria-hidden="true" style={{ backgroundImage: "url('/assets/backgrounds/campanha-praca-v2.jpg')" }} />
-          <span className="game-mode-kicker">MILITÂNCIA E PARTIDO</span><h2>Começar como militante</h2>
-          <p>Comece como eleitor engajado, ganhe espaço no partido e chegue à candidatura a vereador.</p>
-          <ul><li>Militância, filiação e vida partidária</li><li>Acontecimentos de bairro e de diretório</li><li>Pré-candidatura leva à campanha</li></ul>
-          <button className="secondary-button" disabled={busy} onClick={() => updateMode('party')}>Começar trajetória <b>→</b></button>
-        </article>
-      </section>
       </> : <>
         <section className="game-setup-hero game-config-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,24,21,.84), rgba(9,24,21,.20)), url('/assets/backgrounds/${heroImage}')` }}>
           <span className="eyebrow">{setupCopy[0]}</span>

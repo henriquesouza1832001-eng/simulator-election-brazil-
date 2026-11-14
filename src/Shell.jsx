@@ -21,11 +21,12 @@ export function Icon({ name }) {
 }
 
 /** Trilho lateral (computador e tablet) e barra inferior (celular): os mesmos cinco destinos. */
-export function Nav({ items, current, moreActive, onGo, onMore }) {
+export function Nav({ items, current, moreActive, onGo, onMore, expanded, onToggle }) {
   const all = [...items.map((g) => ({ key: g.label, label: g.rail || g.label, icon: g.icon || g.label, active: current === g.label, go: () => onGo(g) })), { key: 'Mais', label: 'Mais', icon: 'Mais', active: moreActive, go: onMore }];
   return <>
     <aside className="ds-rail" aria-label="Seções do jogo">
-      {all.map((i) => <button key={i.key} type="button" className="ds-nav" aria-current={i.active ? 'page' : undefined} onClick={i.go}><Icon name={i.icon} />{i.label}</button>)}
+      {all.map((i) => <button key={i.key} type="button" className="ds-nav" title={i.label} aria-current={i.active ? 'page' : undefined} onClick={i.go}><Icon name={i.icon} /><span>{i.label}</span></button>)}
+      <button type="button" className="ds-nav ds-rail-toggle" aria-expanded={expanded} title={expanded ? 'Recolher menu' : 'Expandir menu'} onClick={onToggle}><svg viewBox="0 0 24 24" aria-hidden="true" className="ds-icon"><path d={expanded ? 'M14 6l-6 6 6 6M19 4v16' : 'M10 6l6 6-6 6M5 4v16'} /></svg><span>{expanded ? 'Recolher menu' : 'Abrir'}</span></button>
     </aside>
     <nav className="ds-bottom" aria-label="Seções do jogo">
       {all.map((i) => <button key={i.key} type="button" className="ds-nav" aria-current={i.active ? 'page' : undefined} onClick={i.go}><Icon name={i.icon} /><span>{i.label}</span></button>)}

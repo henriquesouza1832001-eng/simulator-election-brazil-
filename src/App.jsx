@@ -217,6 +217,8 @@ export default function App() {
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [advanceFabOpen, setAdvanceFabOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [railOpen, setRailOpen] = useState(() => { try { const v = window.localStorage.getItem('quatroanos.rail'); return v ? v === 'open' : window.innerWidth >= 1280; } catch { return false; } });
+  const toggleRail = () => setRailOpen((open) => { const next = !open; try { window.localStorage.setItem('quatroanos.rail', next ? 'open' : 'closed'); } catch { /* sem armazenamento */ } return next; });
   const [ruptureInfo, setRuptureInfo] = useState(null);
   const [budgetView, setBudgetView] = useState(null);
   const [budgetSection, setBudgetSection] = useState('Contas públicas');
@@ -524,9 +526,9 @@ export default function App() {
       ? [{ label: 'Entrar / criar conta', icon: 'Perfil', go: () => { setShowAuthPanel(true); setNotice(''); } }]
       : [{ label: 'Conta', icon: 'Perfil', go: () => setShowAccountPanel(true) }, { label: 'Sair', icon: 'Perfil', go: async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); } }]) : []),
   ];
-  return <div className="app-shell">
+  return <div className={`app-shell ${railOpen ? 'rail-open' : ''}`}>
     <header className="ds-top"><Brand /><div className="ds-date"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="ds-top-actions">{authConfig?.enabled && (authUser?.isGuest ? <button className="ds-btn" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="ds-btn" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="ds-btn" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button type="button" className="ds-btn" onClick={() => setGameGuideOpen((open) => !open)} aria-pressed={gameGuideOpen}>Guia</button><button type="button" className="ds-btn" onClick={() => setActiveTab('Placar')}>Perfil</button><button type="button" className="ds-btn" onClick={() => setShowGameMenu(true)}>Partidas</button><AdvanceMenu open={advanceOpen} setOpen={setAdvanceOpen} busy={busy} advance={advance} /></div></header>
-    <Nav items={railGroups} current={selectedTabGroup.label} moreActive={['Mundo', 'Sobre', 'Perfil'].includes(selectedTabGroup.label)} onGo={(group) => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }} onMore={() => setMoreOpen(true)} />
+    <Nav expanded={railOpen} onToggle={toggleRail} items={railGroups} current={selectedTabGroup.label} moreActive={['Mundo', 'Sobre', 'Perfil'].includes(selectedTabGroup.label)} onGo={(group) => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }} onMore={() => setMoreOpen(true)} />
     <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} entries={moreEntries} />
     <AdvanceMenu floating open={advanceFabOpen} setOpen={setAdvanceFabOpen} busy={busy} advance={advance} />
     {(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="ds-tabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="ds-tab back" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className="ds-tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
@@ -560,7 +562,7 @@ export default function App() {
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
-      {activeTab === 'Indicadores' && <IndicatorsPanel request={request} state={state} />}
+      {activeTab === 'Indicadores' && <IndicatorsPanel request={request} state={state} onAct={() => setActiveTab(careerMode ? (careerOverview?.governing ? 'Mandato' : 'Carreira') : 'Medidas')} actLabel={careerMode ? (careerOverview?.governing ? 'Ir para o mandato' : 'Ver minha carreira') : 'Preparar uma medida'} />}
 
       {activeTab === 'Obras e mapa' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
@@ -574,7 +576,7 @@ export default function App() {
 
       {activeTab === 'Imprensa' && <NewsPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
-      {activeTab === 'Reguladores' && <RegulatorsPanel request={request} state={state} />}
+      {activeTab === 'Reguladores' && <RegulatorsPanel request={request} state={state} federalExecutive={!careerMode || careerOffice === 'presidente'} />}
 
       {activeTab === 'Competências' && <PowersPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 

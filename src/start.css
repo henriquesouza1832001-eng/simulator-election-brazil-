@@ -1,0 +1,38 @@
+/* Menu inicial: mesma pele do jogo (tokens --ds-*). */
+.ds-start-continue { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 8px; padding: 18px 22px; border: 1px solid var(--ds-accent); border-radius: 14px; background: linear-gradient(90deg, rgba(255, 210, 63, .12), var(--ds-surface)); }
+.ds-start-continue h2 { margin: 2px 0 4px; font-size: 22px; font-family: var(--ds-display); }
+.ds-start-continue p { margin: 0; color: var(--ds-ink-2); }
+.ds-start-continue .ds-btn { min-height: 46px; padding: 0 26px; font-size: 16px; }
+.ds-start-section { margin: 28px 0 0; }
+.ds-start-section > h2 { margin: 0 0 14px; font-size: 20px; font-family: var(--ds-display); }
+.ds-start-modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.ds-start-mode { display: flex; flex-direction: column; gap: 6px; }
+.ds-start-mode h3 { margin: 0; font-size: 18px; line-height: 1.25; }
+.ds-start-mode p { margin: 0; color: var(--ds-ink-2); font-size: 14.5px; line-height: 1.5; }
+.ds-start-mode ul { margin: 6px 0 12px; padding-left: 18px; color: var(--ds-ink-3); font-size: 13.5px; line-height: 1.6; }
+.ds-start-mode .ds-btn { margin-top: auto; align-self: flex-start; }
+.ds-start-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: var(--ds-surface-2); margin-bottom: 4px; }
+.ds-start-icon .ds-icon { width: 22px; height: 22px; stroke: var(--ds-accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ds-start-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin: 28px 0 0; }
+.ds-start-info h3 { margin: 0 0 10px; font-size: 17px; }
+.ds-start-news { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ds-start-news li { display: grid; gap: 2px; }
+.ds-start-news b { font-size: 14.5px; }
+.ds-start-news span { color: var(--ds-ink-3); font-size: 13.5px; line-height: 1.45; }
+.game-setup-screen .ds-hero { margin-top: 4px; }
+
+/* cabeçalho e rodapé das telas de partida e boas-vindas: igual ao topo do jogo */
+.game-setup-header, .welcome-header { background: rgba(13, 26, 44, .94) !important; border-bottom: 1px solid var(--ds-line) !important; box-shadow: none !important; }
+.game-setup-header .brand-mark { width: 40px; height: 40px; }
+.game-setup-caption { font-family: var(--ds-mono); font-size: 12px; letter-spacing: .1em; color: var(--ds-ink-3); }
+.game-setup-header .secondary-button, .welcome-header .quiet-button { background: transparent; border: 1px solid var(--ds-line-2); color: var(--ds-ink); border-radius: 999px; padding: 0 16px; font-weight: 500; }
+.game-setup-header .secondary-button:hover { background: var(--ds-surface-2); }
+.game-setup-content { max-width: 1120px; width: 100%; margin: 0 auto; padding-top: 18px; }
+.setup-tutorial { margin: 14px 0 0; }
+.game-setup-footer { color: var(--ds-ink-3); border-top: 1px solid var(--ds-line); }
+.ds-welcome { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; background: var(--ds-bg); color: var(--ds-ink); }
+.ds-welcome-body { width: 100%; max-width: 1120px; margin: 0 auto; padding: 22px 16px 40px; display: grid; gap: 14px; align-content: start; }
+.ds-welcome-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ds-welcome-actions .ds-btn { min-height: 46px; padding: 0 22px; font-size: 16px; }
+.ds-welcome .welcome-footer { color: var(--ds-ink-3); border-top: 1px solid var(--ds-line); padding: 16px; text-align: center; font-size: 13px; }
+.ds-welcome .welcome-header { display: flex; align-items: center; justify-content: space-between; padding: 12px clamp(16px, 5vw, 64px); }

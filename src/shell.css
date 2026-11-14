@@ -182,3 +182,27 @@ article > span:first-child { opacity: 1; }
 .ds-reg-more p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ds-ink-2); }
 .ds-reg-decisions { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ds-reg-decisions li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 14px; background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: 10px; }
+
+/* ---------- menu lateral expansível ---------- */
+.ds-rail, .app-shell, .ds-top { transition: width .18s ease, padding-left .18s ease, margin-left .18s ease; }
+.ds-rail .ds-nav > span { display: block; }
+.ds-rail-toggle { margin-top: auto; }
+.ds-rail-toggle > span { font-size: 11px; }
+@media (min-width: 761px) {
+  .app-shell.rail-open { --ds-rail: 236px; }
+  .app-shell.rail-open .ds-rail { align-items: stretch; padding: 12px 10px; }
+  .app-shell.rail-open .ds-nav { width: auto; grid-template-columns: 24px 1fr; justify-items: start; align-items: center; gap: 12px; padding: 11px 14px; font-size: 15px; text-align: left; }
+  .app-shell.rail-open .ds-nav > span { font-size: 15px; }
+  .app-shell.rail-open .ds-nav[aria-current="page"] { color: var(--ds-ink); }
+}
+
+/* ---------- Indicadores: o que mudou, favoritos, ações ---------- */
+.ds-moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.ds-moves h4 { margin: 0 0 8px; font-size: 14px; color: var(--ds-ink-2); }
+.ds-moves ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ds-moves li button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 15px; }
+.ds-moves li button:hover, .ds-moves li button:focus-visible { background: var(--ds-surface-2); }
+.ds-stat-btn { all: unset; box-sizing: border-box; cursor: pointer; display: block; border-radius: 12px; }
+.ds-stat-btn:focus-visible { outline: 2px solid var(--ds-accent); }
+.ds-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.ds-detail-actions .ds-btn[aria-pressed="true"] { border-color: var(--ds-accent); color: var(--ds-accent); }

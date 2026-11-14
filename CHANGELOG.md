@@ -2,6 +2,16 @@
 
 A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
 
+## 0.5.1 — Ajustes visuais (14 nov. 2026)
+
+- **Menu lateral expansível:** abre com nomes ou recolhe só com ícones; a escolha fica salva no navegador.
+- **Menu inicial e boas-vindas** refeitos com a mesma cara do jogo (faixa de abertura, partida em andamento em destaque, quatro modos, novidades da versão e o que vem por aí).
+- **Paleta azul e ouro** (sem o verde de antes); só tema escuro.
+- **Indicadores:** bloco "O que mudou desde o início", indicadores fixados no topo e botão para agir a partir do detalhe.
+- **Reguladores** em cartões; AGU só aparece para quem governa o Executivo federal.
+- Ruptura institucional só para presidente governando; botão de pular só fora do ano da eleição.
+- gzip e cache longo no nginx (o estado do jogo passou de 548 KB para uma fração disso na rede).
+
 ## 0.5 — Direção visual (concluída, 14 nov. 2026)
 
 - **Casca nova:** trilho lateral com cinco destinos (computador e tablet) e barra inferior com botão flutuante **Avançar** (celular); abas dentro da página; folha **Mais** com Mundo, Perfil, Guia, Sobre e Partidas; menu de avançar (próximo dia, 7 dias, 1 mês).

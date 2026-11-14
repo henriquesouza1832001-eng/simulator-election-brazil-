@@ -20,7 +20,7 @@ function Situation({ r }) {
   return null;
 }
 
-export default function RegulatorsPanel({ request, state }) {
+export default function RegulatorsPanel({ request, state, federalExecutive = true }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => { request('/api/regulators').then(setData).catch((e) => setError(e.message)); }, [state?.date]);
@@ -31,7 +31,7 @@ export default function RegulatorsPanel({ request, state }) {
   return <Page title="Quem fiscaliza você" lead={`Nenhum cargo age sozinho. Estes órgãos avaliam, limitam e investigam o que você faz. ${data.note || ''}`}>
     <Section title="Órgãos de controle" hint="Toque em um órgão para ver o que ele pode e o que não pode fazer.">
       <div className="ds-reg-grid">
-        {data.regulators.map((r) => <article key={r.id} className="ds-card ds-reg">
+        {data.regulators.filter((r) => federalExecutive || r.id !== 'agu').map((r) => <article key={r.id} className="ds-card ds-reg">
           <h4>{r.name}</h4>
           <p className="ds-reg-role">{r.role}</p>
           <Situation r={r} />
