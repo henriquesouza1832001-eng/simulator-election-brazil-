@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Page, Section, Badge, Empty } from './ui.jsx';
 import './powers.css';
 
 const CRITERIA = { relevancia: 'Relevância causal', viabilidade: 'Viabilidade e competência', dados: 'Dados', compromisso: 'Compromisso e tom' };
@@ -34,13 +35,11 @@ export default function InterviewsPanel({ request, state, onState, onNotice }) {
   if (!data) return <section className="panel"><p className="meta-status" role="status">Carregando…</p></section>;
   const cur = data.current;
 
-  return <section className="panel powers-page">
-    <h2>Entrevistas, sabatinas e debates</h2>
-    <p className="page-description">{data.note}</p>
+  return <Page title="Entrevistas, sabatinas e debates" lead={data.note}>
 
-    {!cur && <ul className="powers-list">{data.kinds.map((k) => <li key={k.key} className={k.available ? '' : 'blocked'}><div>
-      <b>{k.label}</b> <small>({k.questions} perguntas)</small><small>{k.text}</small>{!k.available && <small className="neg">{k.reason}</small>}</div>
-      {k.available && <div className="powers-actions"><button className="secondary-button" disabled={busy} onClick={() => begin(k.key)}>Começar</button></div>}</li>)}</ul>}
+    {!cur && <div className="ds-inv-grid">{data.kinds.map((k) => <div key={k.key} className="ds-inv">
+      <span className="ds-muted">{k.questions} perguntas</span><b>{k.label}</b><small className="ds-muted">{k.text}</small>
+      {k.available ? <button className="primary-button" disabled={busy} onClick={() => begin(k.key)}>Começar</button> : <Badge tone="warn">{k.reason || 'indisponível'}</Badge>}</div>)}</div>}
 
     {cur && cur.transcript && <div className="debate-stage" aria-label="Transcrição do debate">
       <p className="meta-count">Palco: você, {cur.opponents.map((o) => o.name).join(' e ')}. Pesquisa antes do debate: {cur.poll_before}.</p>
@@ -70,6 +69,6 @@ export default function InterviewsPanel({ request, state, onState, onNotice }) {
       <p>Efeitos persistentes: {Object.entries(summary.effects).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k === 'approval' ? 'aprovação' : k === 'trust' ? 'confiança' : 'momentum'}`).join(' · ') || 'nenhum'}. A repercussão aparece em Imprensa.</p></div>}
 
     {data.history.length > 0 && !cur && <><h3 className="subheading">Histórico</h3>
-      <ul className="meta-notes">{data.history.map((h) => <li key={h.id}>{h.date} — {h.kind}: {h.avg} pontos ({h.grade})</li>)}</ul></>}
-  </section>;
+      <ul className="ds-reg-decisions">{data.history.map((h) => <li key={h.id}><span className="ds-muted">{h.date.split('-').reverse().join('/')}</span><b>{h.kind}</b><small className="ds-muted">{h.avg} pontos · {h.grade}</small></li>)}</ul></>}
+  </Page>;
 }

@@ -301,3 +301,6 @@ article > span:first-child { opacity: 1; }
 .ds-dip-mission h4 { margin: 4px 0 0; }
 .ds-dip-mission .ds-seg { flex-wrap: wrap; }
 @media (max-width: 860px) { .ds-dip-layout { grid-template-columns: 1fr; } .ds-dip-mission { position: static; } }
+
+.ds-inv-grid > div.ds-inv { align-content: start; align-items: start; }
+.ds-inv-grid > div.ds-inv .primary-button { width: auto; justify-self: start; padding: 8px 18px; }
