@@ -389,15 +389,6 @@ html, body { background: var(--ds-bg); }
 
 .ds-apu-list.ds-list li { display: flex; justify-content: space-between; gap: 8px; }
 /* Ligações entre telas */
-.ds-related { max-width: 1120px; margin: 8px auto 28px; padding-top: 14px; border-top: 1px solid var(--ds-line); }
-.ds-related > span { display: block; font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 700; margin-bottom: 8px; }
-.ds-related ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-.ds-related button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--ds-line); border-left: 3px solid var(--ds-line-2); border-radius: 6px; background: var(--ds-surface); }
-.ds-related button:hover { border-left-color: var(--ds-accent); background: var(--ds-surface-2); }
-.ds-related button:focus-visible { outline: 2px solid var(--ds-accent); }
-.ds-related button small { color: var(--ds-ink-3); font-size: 12.5px; }
-.ds-related button { color: var(--ds-ink); font: inherit; }
-.ds-related button b { color: var(--ds-ink); }
 
 /* Abas e filtros antigos (meta-tab, powers-filter) no mesmo estilo das abas novas */
 .meta-tabs, .powers-filter { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--ds-line); margin: 10px 0 14px; padding: 0; background: transparent; border-radius: 0; }
@@ -495,10 +486,11 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 
 /* Ligado a esta tela: linhas iguais, seta de navegação, sem faixa lateral */
 .ds-related { max-width: 1120px; margin: 24px auto 28px; padding-top: 16px; border-top: 1px solid var(--ds-line); }
-.ds-related > span { font-size: 12px; letter-spacing: .12em; margin-bottom: 10px; }
-.ds-related ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; align-items: stretch; }
+.ds-related > span { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 700; margin-bottom: 10px; }
+.ds-related ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 10px; align-items: stretch; }
 .ds-related li { display: flex; }
-.ds-related button { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 4px; align-content: start; padding: 12px 14px; border: 1px solid var(--ds-line); border-left: 1px solid var(--ds-line); border-radius: 6px; background: var(--ds-surface); text-align: left; transition: border-color .12s, background .12s; }
+.ds-related button { all: unset; box-sizing: border-box; cursor: pointer; color: var(--ds-ink); font: inherit; flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 4px; align-content: start; padding: 12px 14px; border: 1px solid var(--ds-line); border-left: 1px solid var(--ds-line); border-radius: 6px; background: var(--ds-surface); text-align: left; transition: border-color .12s, background .12s; }
+.ds-related button:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
 .ds-related button:hover { border-color: var(--ds-accent); background: var(--ds-surface-2); }
 .ds-related-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 700; color: var(--ds-ink); font-size: 15px; }
 .ds-related-title i { font-style: normal; color: var(--ds-ink-3); transition: transform .12s, color .12s; }
