@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Page, Section, Badge, Empty, Drawer, Stat, fmt } from './ui.jsx';
 import './powers.css';
 
+const groupOf = (c) => (c.control.startsWith('privada') ? 'Privadas' : c.control.includes('mista') ? 'Mistas' : 'Públicas');
+const GROUPS = ['Todas', 'Públicas', 'Mistas', 'Privadas'];
 const tone = (v) => (v >= 65 ? 'good' : v >= 35 ? 'warn' : 'bad');
 
 export default function CompaniesPanel({ request, state, onState, onNotice }) {
@@ -10,7 +12,9 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
   const [openId, setOpenId] = useState(null);
   const [choosing, setChoosing] = useState(null); // chave da ação cujas opções estão abertas
   const [pick, setPick] = useState('');
-  const [filter, setFilter] = useState('todas');
+  const [filter, setFilter] = useState('Todas');
+  const [level, setLevel] = useState('Todas');
+  const [query, setQuery] = useState('');
   const [bank, setBank] = useState(null);
   const load = () => request('/api/companies').then(setData).catch((e) => setError(e.message));
   useEffect(() => { load(); request('/api/central-bank').then(setBank).catch(() => setBank(null)); }, [state?.date]);
@@ -37,8 +41,9 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
   if (error) return <Page title="Empresas e bancos públicos"><p className="meta-status meta-error" role="alert">{error}</p></Page>;
   if (!data) return <Page title="Empresas e bancos públicos"><Empty title="Carregando…" /></Page>;
 
-  const controls = ['todas', ...new Set(data.companies.map((c) => c.control))];
-  const list = data.companies.filter((c) => filter === 'todas' || c.control === filter);
+  const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = norm(query.trim());
+  const list = data.companies.filter((c) => (filter === 'Todas' || groupOf(c) === filter) && (level === 'Todas' || (level === 'Federais' ? c.level === 'federal' : c.level === 'estadual')) && (!q || norm(`${c.name} ${c.sector}`).includes(q)));
   const c = data.companies.find((x) => x.id === openId);
   const close = () => { setOpenId(null); setChoosing(null); setPick(''); };
 
@@ -56,10 +61,14 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
       <p className="ds-muted">Para mudar a autonomia, os diretores ou criticar os juros, use Competências &gt; Banco e moeda.</p>
     </Section>}
     <Section hint="Toque em uma empresa para ver a situação e as decisões possíveis.">
-      <div className="ds-seg" role="group" aria-label="Filtrar por controle">
-        {controls.map((k) => <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === 'todas' ? 'Todas' : k}</button>)}
+      <div className="ds-inv-filters">
+        <div className="ds-seg" role="group" aria-label="Filtrar por controle">{GROUPS.map((k) => <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{k}</button>)}</div>
+        <div className="ds-seg" role="group" aria-label="Filtrar por esfera">{['Todas', 'Federais', 'Estaduais'].map((k) => <button key={k} type="button" aria-pressed={level === k} onClick={() => setLevel(k)}>{k}</button>)}</div>
+        <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar empresa ou setor" aria-label="Buscar empresa ou setor" />
       </div>
+      <p className="ds-muted">{list.length} de {data.companies.length} empresas</p>
       <div className="ds-inv-grid" style={{ marginTop: 12 }}>
+        {list.length === 0 && <p className="ds-muted">Nenhuma empresa com esse filtro.</p>}
         {list.map((x) => <button key={x.id} type="button" className="ds-inv" onClick={() => setOpenId(x.id)}>
           <span className="ds-muted">{x.sector}{x.strategic ? ' · estratégica' : ''}</span>
           <b>{x.name}</b>
