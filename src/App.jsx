@@ -209,6 +209,11 @@ export default function App() {
   const [showGameMenu, setShowGameMenu] = useState(true);
   const [state, setState] = useState(null);
   const [campaignId, setCampaignId] = useState(() => window.localStorage.getItem('mandato.activeCampaign') || 'default');
+  const pinKey = `qa.pins.${campaignId || 'default'}`;
+  const readPins = () => { try { const v = JSON.parse(window.localStorage.getItem(pinKey) || '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string').slice(0, 8) : []; } catch { return []; } };
+  const [pins, setPins] = useState(readPins);
+  useEffect(() => { setPins(readPins()); }, [pinKey]);
+  const togglePin = (tab) => setPins((cur) => { const next = cur.includes(tab) ? cur.filter((x) => x !== tab) : [...cur, tab].slice(-8); try { window.localStorage.setItem(pinKey, JSON.stringify(next)); } catch { /* sem armazenamento: vale só nesta sessão */ } return next; });
   const [measure, setMeasure] = useState('');
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -529,10 +534,10 @@ export default function App() {
   ];
   return <div className={`app-shell ${railOpen ? 'rail-open' : ''}`}>
     <header className="ds-top"><Brand /><div className="ds-date"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="ds-top-actions">{authConfig?.enabled && (authUser?.isGuest ? <button className="ds-btn" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="ds-btn" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="ds-btn" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button type="button" className="ds-btn" onClick={() => setGameGuideOpen((open) => !open)} aria-pressed={gameGuideOpen}>Guia</button><button type="button" className="ds-btn" onClick={() => setShowGameMenu(true)}>Partidas</button><AdvanceMenu open={advanceOpen} setOpen={setAdvanceOpen} busy={busy} advance={advance} /></div></header>
-    <Nav expanded={railOpen} onToggle={toggleRail} items={railGroups} current={selectedTabGroup.label} moreActive={['Mundo', 'Sobre', 'Perfil'].includes(selectedTabGroup.label)} onGo={(group) => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }} onMore={() => setMoreOpen(true)} />
+    <Nav expanded={railOpen} onToggle={toggleRail} items={railGroups} current={selectedTabGroup.label} moreActive={['Mundo', 'Sobre', 'Perfil'].includes(selectedTabGroup.label)} onGo={(group) => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }} onMore={() => setMoreOpen(true)} pins={pins} activePin={activeTab} onPin={setActiveTab} />
     <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} entries={moreEntries} />
     <AdvanceMenu floating open={advanceFabOpen} setOpen={setAdvanceFabOpen} busy={busy} advance={advance} />
-    {(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="ds-tabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="ds-tab back" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className="ds-tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>}
+    {(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="ds-tabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="ds-tab back" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className="ds-tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}<button type="button" className="ds-tab-pin" aria-pressed={pins.includes(activeTab)} title={pins.includes(activeTab) ? 'Tirar do menu lateral' : 'Fixar no menu lateral'} onClick={() => togglePin(activeTab)}>{pins.includes(activeTab) ? '★ Fixada' : '☆ Fixar'}</button></nav>}
 
     <main className="content">
 

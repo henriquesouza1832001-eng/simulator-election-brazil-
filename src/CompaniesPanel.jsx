@@ -15,6 +15,8 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
   const [filter, setFilter] = useState('Todas');
   const [level, setLevel] = useState('Todas');
   const [query, setQuery] = useState('');
+  const [shown, setShown] = useState(24);
+  useEffect(() => { setShown(24); }, [filter, level, query]);
   const [bank, setBank] = useState(null);
   const load = () => request('/api/companies').then(setData).catch((e) => setError(e.message));
   useEffect(() => { load(); request('/api/central-bank').then(setBank).catch(() => setBank(null)); }, [state?.date]);
@@ -69,13 +71,14 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
       <p className="ds-muted">{list.length} de {data.companies.length} empresas</p>
       <div className="ds-inv-grid" style={{ marginTop: 12 }}>
         {list.length === 0 && <p className="ds-muted">Nenhuma empresa com esse filtro.</p>}
-        {list.map((x) => <button key={x.id} type="button" className="ds-inv" onClick={() => setOpenId(x.id)}>
+        {list.slice(0, shown).map((x) => <button key={x.id} type="button" className="ds-inv" onClick={() => setOpenId(x.id)}>
           <span className="ds-muted">{x.sector}{x.strategic ? ' · estratégica' : ''}</span>
           <b>{x.name}</b>
           <small className="ds-muted">{x.control}{x.stake != null ? ` · União ${fmt(x.stake, 0)}%` : ''}</small>
           <span>Saúde <Badge tone={tone(x.health)}>{x.health}</Badge> · Relação <Badge tone={tone(x.relation)}>{x.relation}</Badge></span>
         </button>)}
       </div>
+      {list.length > shown && <button type="button" className="secondary-button" style={{ marginTop: 12 }} onClick={() => setShown(shown + 24)}>Mostrar mais ({list.length - shown} restantes)</button>}
     </Section>
     <p className="ds-muted">Os efeitos de cada decisão aparecem no histórico de previsto e realizado (aba Competências) e na linha do tempo da Imprensa.</p>
 

@@ -11,6 +11,7 @@ const PATHS = {
   Perfil: <path d="M4 20c0-4 3-6 8-6s8 2 8 6M12 4a4 4 0 100 8 4 4 0 000-8z" />,
   Guia: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17.2v.1" /></>,
   Sobre: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.1" /></>,
+  Fixar: <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5" />,
   Partidas: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
 };
 const keyOf = (label) => (label === 'Política' ? 'Politica' : label);
@@ -21,11 +22,12 @@ export function Icon({ name }) {
 }
 
 /** Trilho lateral (computador e tablet) e barra inferior (celular): os mesmos cinco destinos. */
-export function Nav({ items, current, moreActive, onGo, onMore, expanded, onToggle }) {
+export function Nav({ items, current, moreActive, onGo, onMore, expanded, onToggle, pins = [], activePin, onPin }) {
   const all = [...items.map((g) => ({ key: g.label, label: g.rail || g.label, icon: g.icon || g.label, active: current === g.label, go: () => onGo(g) })), { key: 'Mais', label: 'Mais', icon: 'Mais', active: moreActive, go: onMore }];
   return <>
     <aside className="ds-rail" aria-label="Seções do jogo">
       {all.map((i) => <button key={i.key} type="button" className="ds-nav" title={i.label} aria-current={i.active ? 'page' : undefined} onClick={i.go}><Icon name={i.icon} /><span>{i.label}</span></button>)}
+      {pins.length > 0 && <div className="ds-pins" role="group" aria-label="Atalhos fixados"><small>Fixados</small>{pins.map((tab) => <button key={tab} type="button" className="ds-nav ds-pin" title={tab} aria-current={activePin === tab ? 'page' : undefined} onClick={() => onPin(tab)}><Icon name="Fixar" /><span>{tab}</span></button>)}</div>}
       <button type="button" className="ds-nav ds-rail-toggle" aria-expanded={expanded} title={expanded ? 'Recolher menu' : 'Expandir menu'} onClick={onToggle}><svg viewBox="0 0 24 24" aria-hidden="true" className="ds-icon"><path d={expanded ? 'M14 6l-6 6 6 6M19 4v16' : 'M10 6l6 6-6 6M5 4v16'} /></svg><span>{expanded ? 'Recolher menu' : 'Abrir'}</span></button>
     </aside>
     <nav className="ds-bottom" aria-label="Seções do jogo">

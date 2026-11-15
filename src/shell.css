@@ -338,3 +338,14 @@ article > span:first-child { opacity: 1; }
 .ds-section > h3 { font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid var(--ds-line); margin-bottom: 12px; }
 .ds-stat, .ds-inv, .ds-card, .ds-group, .ds-chart, .ds-term { border-radius: 6px; border-top: 2px solid var(--ds-line-2); }
 .ds-inv-bar { border-radius: 2px; }
+
+/* Atalhos fixados no menu lateral */
+.ds-pins { display: grid; gap: 2px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--ds-line); justify-items: center; width: 100%; }
+.ds-pins small { color: var(--ds-ink-3); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+.ds-pin { padding: 6px 0 5px; }
+.ds-pin span { max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.ds-tab-pin { margin-left: auto; align-self: center; border: 0; background: transparent; color: var(--ds-ink-3); font: inherit; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 4px; white-space: nowrap; }
+.ds-tab-pin:hover { color: var(--ds-ink); background: var(--ds-surface-2); }
+.ds-tab-pin[aria-pressed="true"] { color: var(--ds-accent); }
+
+html, body { background: var(--ds-bg); }
