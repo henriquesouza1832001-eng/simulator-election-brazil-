@@ -2,6 +2,12 @@
 
 A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
 
+## 0.6.0 — Motor: economia e Estado (em andamento)
+
+- **Copom e Selic:** a Selic passa a ser decidida a cada 45 dias por regra (inflação, meta e taxa de equilíbrio), com passo máximo de 0,5 ponto (1,0 se o desvio for grande). Quanto menos autônomo o Banco Central, mais ele puxa os juros para baixo, com ganho curto de atividade e custo em inflação e credibilidade. Painel na aba Empresas e valor refletido nos Indicadores.
+- **Participação da União:** comprar e vender 5 ou 10 pontos percentuais de empresas federais (Eletrobras, Petrobras, Caixa, BB, BNDES, Correios, Eletronuclear, Telebras). A venda abate a dívida, a compra a aumenta, e cruzar a linha do controle (50%) exige lei.
+- Testes novos em `tests/test_central_bank.py`.
+
 ## 0.5.1 — Ajustes visuais (14 nov. 2026)
 
 - Menu inicial em página de jornal (manchete, partidas salvas e novidades lado a lado) com guia passo a passo que destaca cada área; escolher o modo de jogo não abre mais outra aba.
