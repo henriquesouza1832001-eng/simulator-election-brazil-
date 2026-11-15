@@ -13,7 +13,10 @@ A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/
 - **Congresso:** aba Votações mostra sanções e vetos; Acontecimentos mostra o tamanho da biblioteca de eventos.
 - **Empresas:** catálogo de 71 empresas e bancos com filtros e busca.
 - **Revisão de texto:** números no formato brasileiro, plurais corretos, Território refeito, Carreira sem sentido num mandato de presidente.
-- Testes novos em `tests/test_tally_social.py`.
+- **Eleição proporcional com cadeiras reais:** vereadores pela escala da Constituição (9 a 55, pela população), deputados federais pela bancada de cada estado (513 no total) e deputados estaduais pela regra do art. 27 (SP: 94).
+- **Horário eleitoral e teto de gastos** na campanha de carreira; **Carimbos por partida**; Placar e Diário no menu Mais.
+- Passada ponta a ponta nos sete cargos (campanha e depois da eleição): 19 telas por fase sem erro de navegador ou de API; 53 rotas de leitura sem resposta 5xx em 8 partidas.
+- Testes novos em `tests/test_tally_social.py`, `test_tv_time.py`, `test_seats.py`, `test_stamps_by_game.py` e `test_diplomacy_text.py`.
 
 ## 0.6.0 — Motor: economia e Estado (em andamento)
 

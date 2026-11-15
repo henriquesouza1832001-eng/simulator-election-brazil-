@@ -66,7 +66,10 @@ function formatIndicator(value, key) {
       maximumFractionDigits: precision.maximumFractionDigits,
     }));
   }
-  return indicatorFormatters.get(formatKey).format(numericValue);
+  const out = indicatorFormatters.get(formatKey).format(numericValue);
+  // evita "-0" quando o valor é pequeno e negativo: mostra duas casas
+  if (/^[-−]0(,0+)?$/.test(out) && numericValue !== 0) return numericValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  return out;
 }
 
 function Metric({ label, value, unit = '', tone = '', detail, indicatorKey }) {

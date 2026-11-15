@@ -5,7 +5,7 @@ simulation. The rules are deliberately explicit so the UI can explain outcomes.
 """
 from __future__ import annotations
 
-from . import tv_time
+from . import seats as seats_for, tv_time
 
 import random
 import re
@@ -1567,7 +1567,8 @@ def _proportional_electorate(career: dict[str, Any]) -> int | None:
 
 def _proportional_result(career: dict[str, Any], rng: random.Random, strength: float) -> dict[str, Any]:
     """Lista aberta simulada: D'Hondt entre legendas fictícias e ordem interna por votos nominais."""
-    seats = 13 if career["office"] == "vereador" else 24
+    profile = get_municipality(career.get("municipality_id")) if career.get("municipality_id") and career.get("office") == "vereador" else None
+    seats = seats_for.for_office(career["office"], career.get("state_code"), int(profile["population_estimate"]) if profile else None)
     party_vote = max(3.0, min(60.0, 6.0 + strength * 0.32 + rng.uniform(-2.0, 3.0)))
     weights = [rng.gammavariate(1.7, 1.0) for _ in range(9)]
     total_weight = sum(weights) or 1.0

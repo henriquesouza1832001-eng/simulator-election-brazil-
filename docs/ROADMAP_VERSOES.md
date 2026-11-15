@@ -23,8 +23,21 @@ O objetivo é uma base visual e de navegação robusta, em que qualquer informa�
 - Remover os arquivos de CSS antigos (`editorial.css`, `views.css` e outros) quando nenhuma tela depender deles.
 - Pré-campanha do vereador como militante (alternativa ao pulo), se ainda fizer sentido.
 
-## 0.5 — Direção visual (concluída em 14 nov. 2026)
-Entregue: casca nova (trilho e barra inferior), fontes próprias, Visão geral com manchete e arte, Indicadores em lista e detalhe, auditorias de contraste e de rolagem lateral. Ficam para quando as imagens reais chegarem: trocar a arte padrão pelas fotos (basta soltar os arquivos em `public/assets/hero/`). Identidade visual sólida e específica: manchete com imagem, números em destaque, navegação em trilho (computador) e barra inferior (celular), indicadores em lista e detalhe, desempenho. Guia completo em [DIRECAO_VISUAL.md](DIRECAO_VISUAL.md) e protótipo em `docs/visual/prototipo.html`.
+## 0.5 — Direção visual (fechada em 15 nov. 2026)
+
+**Entregue**
+- Casca nova (trilho e barra inferior), fontes próprias, linguagem visual institucional (grafite, dourado fosco, cantos retos, abas com linha) e Painel como centro de comando, com mapa do país, pendências e atalhos fixados. Guia completo em [GUIA_DE_INTERFACE.md](GUIA_DE_INTERFACE.md) e [DIRECAO_VISUAL.md](DIRECAO_VISUAL.md).
+- Navegação por endereço (`#/orcamento`), botão voltar, contadores no menu lateral; fim dos dropdowns (lista em painel lateral) e das telas longas (cartões, filtros e painéis).
+- Telas refeitas: Indicadores, Orçamento, Investimentos, Empresas (71), Território, Congresso (plenário), Diplomacia (mapa), Imprensa, Entrevistas, Nomeações, Crises, Apuração e Redes.
+- Eleição simulada: apuração por boletins (estado, regiões, quociente por legenda), primeiro e segundo turnos, horário eleitoral e teto de gastos na campanha de carreira.
+- Redes sociais fictícias geradas pelo motor; sanções e vetos no Congresso; carimbos por partida; Placar e Diário no menu.
+- Revisão de texto (pt-BR, plurais, acentos) e auditorias de contraste e de rolagem lateral nas telas do jogo; passada ponta a ponta nos sete cargos.
+- Antecipado da 0.6: Copom e Selic, compra e venda de participação da União.
+
+**Fica para depois**
+- Fotos e caricaturas (1.0); Gemini (0.7); contas e nuvem (0.8).
+- Mapa por município na apuração (exige o desenho dos municípios); tempo de TV e partido no modo Presidência.
+- Pré-campanha do vereador como militante (alternativa ao pulo).
 
 ## 0.6 — Motor: economia e Estado (sugestão)
 Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.
