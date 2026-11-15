@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Drawer } from './ui.jsx';
 import './powers.css';
 import './territory.css';
 import { EFFECT, effectText } from './format';
@@ -27,6 +28,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const [fiscal, setFiscal] = useState(null);
   const [text, setText] = useState('');
   const [mapped, setMapped] = useState(null);
+  const [sel, setSel] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -84,6 +86,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const activeDomain = domain || domains[0] || 'todos';
   const allActions = (data.actions || []).filter((a) => activeDomain === 'todos' || a.domain === activeDomain);
   const actions = allActions.slice(0, shown);
+  const chosen = sel ? (data.actions || []).find((x) => x.id === sel) : null;
 
   return <section className="panel powers-page">
     <h2>{role.label}</h2>
@@ -150,31 +153,32 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
         {domains.map((d) => <button key={d} className={activeDomain === d ? 'meta-tab active' : 'meta-tab'} aria-pressed={activeDomain === d} onClick={() => { setDomain(d); setShown(8); }}>{DOMAINS[d] || d}</button>)}
         <button className={activeDomain === 'todos' ? 'meta-tab active' : 'meta-tab'} onClick={() => { setDomain('todos'); setShown(8); }}>Todas</button>
       </div>
-      <ul className="powers-list">{actions.map((a) => {
-        const [kind, rule] = APPROVAL[a.approval];
-        return <li key={a.id} className={a.available ? '' : 'blocked'}>
-          <div>
-            <b>{a.title}</b>
-            <small>{a.summary}</small>
-            <small className="powers-meta"><span className={`powers-kind ${a.approval}`}>{kind}</span> {rule}{a.legal ? <span className={`legal-chip legal-${a.legal.level}`}>risco jurídico {a.legal.level}</span> : null}</small>
-            {effectText(a.effects) && <small className="powers-effects">Efeito estimado: {effectText(a.effects)}{a.cost_bi ? ` · ${a.cost_bi > 0 ? 'custo' : 'receita'} R$ ${Math.abs(a.cost_bi)} bi` : ''}</small>}
-            <details className="more">
-              <summary>Detalhes</summary>
-              <small className="powers-meta">Base: {a.basis}</small>
-              {a.legal && <small className={`powers-meta legal-${a.legal.level}`}>Parecer da AGU: {a.legal.risk_pct}% de chance de o STF suspender. {a.legal.note}</small>}
-              {a.cost_text && <small className="powers-meta">Custo: {a.cost_text}{a.chance != null ? ` · chance de aprovação ${Math.round(a.chance * 100)}%` : ''}</small>}
-              {a.precedent && <small className="powers-precedent">Precedente: {a.precedent}</small>}
-            </details>
-            {!a.available && <small className="neg">{a.reason}</small>}
-          </div>
-          {data.executable && a.available && <div className="powers-actions">
-            {a.options.length > 0 && <select aria-label={`Opções de ${a.title}`} value={options[a.id] || ''} onChange={(e) => setOptions({ ...options, [a.id]: e.target.value })}>
-              <option value="">Escolher…</option>{a.options.map((o) => <option key={o} value={o}>{o}</option>)}</select>}
-            <button className="secondary-button" disabled={busy === a.id || (a.options.length > 0 && !options[a.id])} onClick={() => run(a)}>{busy === a.id ? 'Enviando…' : (a.kind === 'leg' ? 'Levar à votação' : (['decreto', 'mp'].includes(a.approval) ? 'Assinar' : 'Enviar ao Congresso'))}</button>
-          </div>}
-        </li>;
-      })}</ul>
-      {allActions.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 8)}>Mostrar mais ({allActions.length - shown})</button>}
+      <div className="ds-inv-grid ds-power-grid">{actions.map((a) => {
+        const [kind] = APPROVAL[a.approval];
+        return <button key={a.id} type="button" className={'ds-inv' + (a.available ? '' : ' blocked')} onClick={() => setSel(a.id)}>
+          <span className="ds-muted">{kind}{a.legal ? ' · risco jurídico ' + a.legal.level : ''}</span>
+          <b>{a.title}</b>
+          <small className="ds-muted">{effectText(a.effects) || a.summary}</small>
+          {!a.available && <small className="neg">indisponível agora</small>}
+        </button>;
+      })}</div>
+      {chosen && <Drawer title={chosen.title} onClose={() => setSel(null)} footer={data.executable && chosen.available
+        ? <button className="primary-button" disabled={busy === chosen.id || (chosen.options.length > 0 && !options[chosen.id])} onClick={async () => { await run(chosen); setSel(null); }}>{busy === chosen.id ? 'Enviando…' : (chosen.kind === 'leg' ? 'Levar à votação' : (['decreto', 'mp'].includes(chosen.approval) ? 'Assinar' : 'Enviar ao Congresso'))}</button>
+        : null}>
+        <p>{chosen.summary}</p>
+        <p className="powers-meta"><span className={`powers-kind ${chosen.approval}`}>{APPROVAL[chosen.approval][0]}</span> {APPROVAL[chosen.approval][1]}{chosen.legal ? <span className={`legal-chip legal-${chosen.legal.level}`}>risco jurídico {chosen.legal.level}</span> : null}</p>
+        {effectText(chosen.effects) && <p className="powers-effects">Efeito estimado: {effectText(chosen.effects)}{chosen.cost_bi ? ` · ${chosen.cost_bi > 0 ? 'custo' : 'receita'} R$ ${Math.abs(chosen.cost_bi)} bi` : ''}</p>}
+        {!chosen.available && <p className="neg">{chosen.reason}</p>}
+        {chosen.options.length > 0 && chosen.available && <><h4>Escolha uma opção</h4>
+          <div className="ds-pick-list">{chosen.options.map((o) => <button key={o} type="button" aria-pressed={options[chosen.id] === o} onClick={() => setOptions({ ...options, [chosen.id]: o })}><span>{o}</span></button>)}</div></>}
+        <details className="more"><summary>Base legal e detalhes</summary>
+          <p className="powers-meta">Base: {chosen.basis}</p>
+          {chosen.legal && <p className={`powers-meta legal-${chosen.legal.level}`}>Parecer da AGU: {chosen.legal.risk_pct}% de chance de o STF suspender. {chosen.legal.note}</p>}
+          {chosen.cost_text && <p className="powers-meta">Custo: {chosen.cost_text}{chosen.chance != null ? ` · chance de aprovação ${Math.round(chosen.chance * 100)}%` : ''}</p>}
+          {chosen.precedent && <p className="powers-precedent">Precedente: {chosen.precedent}</p>}
+        </details>
+      </Drawer>}
+      {allActions.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 12)}>Mostrar mais ({allActions.length - shown})</button>}
       {data.history?.length > 0 && <details className="fold"><summary>Atos recentes <span>{data.history.length}</span></summary><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{h.date} — {h.title}</li>)}</ul></details>}
     </>}
     {ledger.length > 0 && <details className="fold">

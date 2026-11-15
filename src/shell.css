@@ -274,3 +274,6 @@ article > span:first-child { opacity: 1; }
 .ds-map-side ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .ds-map-side li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--ds-line); padding-bottom: 4px; }
 @media (max-width: 860px) { .ds-map-layout { grid-template-columns: 1fr; } }
+
+.ds-power-grid .ds-inv.blocked { opacity: .6; }
+.ds-power-grid .ds-inv b { font-size: 15.5px; line-height: 1.3; }

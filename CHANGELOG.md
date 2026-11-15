@@ -4,6 +4,12 @@ A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/
 
 ## 0.5.1 — Ajustes visuais (14 nov. 2026)
 
+- Menu inicial em página de jornal (manchete, partidas salvas e novidades lado a lado) com guia passo a passo que destaca cada área; escolher o modo de jogo não abre mais outra aba.
+- Painel lateral à direita (`Drawer`) em Investimentos, Empresas, Competências e Como os indicadores se ligam; fim dos dropdowns e da rolagem longa nessas telas.
+- Mapas coloridos: estados do Brasil por indicador (com legenda e leitura por teclado) e América do Sul por relação bilateral. Malhas do IBGE e Natural Earth, geradas por `tools/gerar-mapas.mjs`.
+- Criação de personagem com seis perfis prontos (ficção) para preencher e ajustar.
+
+
 - Limpeza do repositório: removidos o deploy da AWS (e o workflow manual), os dossiês de captura em `research/rea/`, o retrato/caricaturas sem uso e imagens de fundo antigas. Tudo continua no histórico do Git.
 
 
