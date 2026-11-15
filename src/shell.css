@@ -258,3 +258,19 @@ article > span:first-child { opacity: 1; }
 .character-presets button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--ds-line); border-radius: 10px; background: var(--ds-surface-2); color: var(--ds-ink); }
 .character-presets button:hover, .character-presets button:focus-visible { border-color: var(--ds-accent); }
 .character-presets small { color: var(--ds-ink-3); font-size: 12.5px; }
+
+/* Mapas */
+.ds-geomap { margin: 0; display: grid; gap: 10px; }
+.ds-geomap svg { width: 100%; max-height: 520px; }
+.ds-geomap path { cursor: pointer; transition: opacity .12s; }
+.ds-geomap path:hover, .ds-geomap path:focus-visible, .ds-geomap path.on { stroke: var(--ds-accent); stroke-width: 2.5; outline: none; opacity: .92; }
+.ds-geomap-read { min-height: 24px; font-size: 15px; }
+.ds-geomap-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ds-ink-2); }
+.ds-geomap-legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+.ds-map-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.ds-map-layout .ds-seg { margin-bottom: 8px; flex-wrap: wrap; }
+.ds-map-side { border: 1px solid var(--ds-line); border-radius: 12px; padding: 12px 14px; background: var(--ds-surface-2); }
+.ds-map-side h4 { margin: 0 0 2px; font-size: 18px; }
+.ds-map-side ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.ds-map-side li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--ds-line); padding-bottom: 4px; }
+@media (max-width: 860px) { .ds-map-layout { grid-template-columns: 1fr; } }

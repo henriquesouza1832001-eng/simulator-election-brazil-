@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import IndicatorLinks from './IndicatorLinks.jsx';
+import GeoMap from './GeoMap.jsx';
+import { BRASIL } from './mapData.js';
 import './powers.css';
 import './territory.css';
 
 const DOMAIN_NAMES = { economia: 'Economia', fiscal: 'Contas públicas', trabalho: 'Trabalho e renda', desigualdade: 'Pobreza e desigualdade', educacao: 'Educação', saude: 'Saúde', saneamento: 'Saneamento e moradia', infraestrutura: 'Transporte e infraestrutura', seguranca: 'Segurança', ambiente: 'Meio ambiente', instituicoes: 'Instituições e política', demografia: 'População', externo: 'Setor externo' };
 const SOURCE = { atlas: 'Atlas (Censo 2010)', ibge: 'IBGE', estimado: 'estimativa do jogo' };
 const COLS = [['idhm', 'IDHM', 3], ['gini', 'Gini', 3], ['pobreza', 'Pobreza %', 1], ['esperanca_vida', 'Esperança de vida', 1], ['mortalidade_infantil', 'Mort. infantil', 1], ['saneamento_basico', 'Saneamento', 1], ['mobilidade', 'Mobilidade', 1], ['seguranca', 'Segurança', 1]];
+const BETTER = { idhm: 'up', gini: 'down', pobreza: 'down', esperanca_vida: 'up', mortalidade_infantil: 'down', saneamento_basico: 'up', mobilidade: 'up', seguranca: 'up' };
 const fmt = (v, d = 1) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');
 
 export default function TerritoryPanel({ request, state, onState, onNotice }) {
   const [view, setView] = useState('nacional');
+  const [mapKey, setMapKey] = useState('idhm');
+  const [mapUf, setMapUf] = useState(null);
   const [overview, setOverview] = useState(null);
   const [error, setError] = useState('');
   const [level, setLevel] = useState('states');
@@ -64,11 +69,30 @@ export default function TerritoryPanel({ request, state, onState, onNotice }) {
         <button className={level === 'states' ? 'meta-tab active' : 'meta-tab'} onClick={() => setLevel('states')}>Estados</button>
         <button className={level === 'regions' ? 'meta-tab active' : 'meta-tab'} onClick={() => setLevel('regions')}>Regiões</button>
       </div>
+      {level === 'states' && (() => {
+        const col = COLS.find(([k]) => k === mapKey) || COLS[0];
+        const values = Object.fromEntries(overview.states.map((s) => [s.uf, s.indicators[col[0]]]));
+        const names = Object.fromEntries(overview.states.map((s) => [s.uf, s.name]));
+        const sel = overview.states.find((s) => s.uf === mapUf);
+        return <div className="ds-map-layout">
+          <div>
+            <div className="ds-seg" role="group" aria-label="Indicador do mapa">{COLS.map(([k, l]) => <button key={k} type="button" aria-pressed={mapKey === k} onClick={() => setMapKey(k)}>{l}</button>)}</div>
+            <GeoMap map={BRASIL} values={values} names={names} better={BETTER[col[0]]} digits={col[2]} unit={col[1]} selected={mapUf} onSelect={setMapUf} />
+          </div>
+          <aside className="ds-map-side">
+            {sel ? <><h4>{sel.name}</h4><p className="ds-muted">{fmt(sel.population, 0)} habitantes · PIB R$ {fmt(sel.gdp_bi, 0)} bi</p>
+              <ul>{COLS.map(([k, l, d]) => <li key={k}><span>{l}</span><b>{fmt(sel.indicators[k], d)}</b></li>)}</ul></>
+              : <p className="ds-muted">Toque em um estado para ver todos os indicadores dele.</p>}
+          </aside>
+        </div>;
+      })()}
+      <details className="agenda-more"><summary>Ver tabela completa</summary>
       <div className="territory-table-wrap"><table className="territory-table">
         <thead><tr><th>{level === 'states' ? 'Estado' : 'Região'}</th><th>População</th><th>PIB (R$ bi)</th>{COLS.map(([k, l]) => <th key={k}>{l}</th>)}</tr></thead>
         <tbody><tr className="country"><td>Brasil</td><td>{fmt(overview.country.population, 0)}</td><td>{fmt(overview.country.gdp_bi, 0)}</td>{COLS.map(([k, , d]) => <td key={k}>{fmt(overview.country.indicators[k], d)}</td>)}</tr>
           {rows.map((r) => <tr key={r.uf || r.code}><td>{r.name}</td><td>{fmt(r.population, 0)}</td><td>{fmt(r.gdp_bi, 0)}</td>{COLS.map(([k, , d]) => <td key={k}>{fmt(r.indicators[k], d)}</td>)}</tr>)}</tbody>
       </table></div>
+      </details>
       <p className="meta-count">{overview.note}</p>
     </>}
 

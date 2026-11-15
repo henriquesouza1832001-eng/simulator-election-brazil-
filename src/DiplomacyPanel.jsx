@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import GeoMap from './GeoMap.jsx';
+import { AMSUL } from './mapData.js';
 import { fetchAuthSession } from 'aws-amplify/auth';
 
 async function api(path, options, authEnabled) {
@@ -52,6 +54,10 @@ export default function DiplomacyPanel({ date, authEnabled, onState, onNotice, b
         <label>Pauta<select value={agenda} onChange={(event) => setAgenda(event.target.value)}>{Object.entries(view.agendas).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <button className="primary-button" disabled={busy || Boolean(view.active_trip) || view.days_until_visit > 0} onClick={() => act('/api/diplomacy/visit', { country_code: country, agenda })}>{view.active_trip ? 'Em missão' : view.days_until_visit ? `Nova visita em ${view.days_until_visit} dias` : 'Iniciar missão oficial'}</button>
       </div>
+      <section className="diplomacy-section" aria-label="Mapa da América do Sul">
+        <h3>América do Sul: relação bilateral</h3>
+        <GeoMap map={AMSUL} names={AMSUL.names} values={Object.fromEntries(view.countries.map((c) => [c.code, c.relation]))} better="up" unit="/100" digits={0} selected={country} onSelect={(code) => { if (view.countries.some((c) => c.code === code)) setCountry(code); }} noData="sem relação no jogo" />
+      </section>
       <details className="agenda-more diplomacy-section" open={typeof window !== 'undefined' && window.innerWidth > 760}><summary>Relações bilaterais ({view.countries.length} países)</summary>
       <div className="country-grid">{view.countries.map((item) => <article key={item.code}><div><b>{item.name}</b><span>{item.region}</span></div><strong>{item.relation}/100</strong><small>{item.focus}</small><div className="bar"><i style={{ width: `${item.relation}%` }}/></div></article>)}</div></details>
       <details className="agenda-more diplomacy-section" open={typeof window !== 'undefined' && window.innerWidth > 760}><summary>Cúpulas e compromissos multilaterais ({view.events.length})</summary>
