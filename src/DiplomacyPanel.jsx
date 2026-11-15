@@ -48,18 +48,30 @@ export default function DiplomacyPanel({ date, authEnabled, onState, onNotice, b
         <article><span>Intervalo para nova missão</span><b>{view.active_trip ? 'Em andamento' : view.days_until_visit ? `${view.days_until_visit} dias` : 'Disponível'}</b></article>
         <article><span>Verba anual de viagens</span><b>R$ {view.travel_remaining_bi.toFixed(3)} bi livres</b><small>R$ {view.travel_spent_bi.toFixed(3)} bi usados neste ano</small></article>
       </div>
-      {(() => { const selected = view.countries.find((item) => item.code === country) || view.countries[0]; return <div className="diplomacy-trip-quote">A missão para <b>{selected.name}</b> ocupa <b>{selected.trip_days} dias</b> no calendário, ida, agenda e retorno. Custo em preços atuais: <b>R$ {(selected.travel_cost_bi * 1000).toFixed(0)} milhões</b> (índice ×{selected.travel_price_index.toFixed(3)}); descontado da verba anual de viagens. O efeito diplomático só entra ao concluir a missão.</div>; })()}
-      <div className="diplomacy-form">
-        <label>País<select value={country} onChange={(event) => setCountry(event.target.value)}>{view.countries.map((item) => <option key={item.code} value={item.code}>{item.name} · {item.region}</option>)}</select></label>
-        <label>Pauta<select value={agenda} onChange={(event) => setAgenda(event.target.value)}>{Object.entries(view.agendas).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
-        <button className="primary-button" disabled={busy || Boolean(view.active_trip) || view.days_until_visit > 0} onClick={() => act('/api/diplomacy/visit', { country_code: country, agenda })}>{view.active_trip ? 'Em missão' : view.days_until_visit ? `Nova visita em ${view.days_until_visit} dias` : 'Iniciar missão oficial'}</button>
-      </div>
-      <section className="diplomacy-section" aria-label="Mapa da América do Sul">
-        <h3>América do Sul: relação bilateral</h3>
-        <GeoMap map={AMSUL} names={AMSUL.names} values={Object.fromEntries(view.countries.map((c) => [c.code, c.relation]))} better="up" unit="/100" digits={0} selected={country} onSelect={(code) => { if (view.countries.some((c) => c.code === code)) setCountry(code); }} noData="sem relação no jogo" />
+      {(() => {
+        const selected = view.countries.find((item) => item.code === country) || view.countries[0];
+        const blocked = busy || Boolean(view.active_trip) || view.days_until_visit > 0;
+        return <div className="ds-dip-layout">
+          <section className="diplomacy-section" aria-label="Mapa da América do Sul">
+            <h3>América do Sul: relação bilateral</h3>
+            <GeoMap map={AMSUL} names={AMSUL.names} values={Object.fromEntries(view.countries.map((c) => [c.code, c.relation]))} better="up" unit="/100" digits={0} selected={country} onSelect={(code) => { if (view.countries.some((c) => c.code === code)) setCountry(code); }} noData="sem relação no jogo" />
+          </section>
+          <aside className="ds-dip-mission" aria-label="Missão oficial">
+            <span className="ds-label">Missão oficial</span>
+            <h3>{selected.name}</h3>
+            <p className="ds-muted">{selected.region} · {selected.focus}</p>
+            <div className="ds-after"><span>Relação bilateral<b>{selected.relation}/100</b></span><span>Duração<b>{selected.trip_days} dias</b></span><span>Custo<b>R$ {(selected.travel_cost_bi * 1000).toFixed(0)} mi</b></span></div>
+            <h4>Pauta</h4>
+            <div className="ds-seg" role="group" aria-label="Pauta da missão">{Object.entries(view.agendas).map(([key, label]) => <button key={key} type="button" aria-pressed={agenda === key} onClick={() => setAgenda(key)}>{label}</button>)}</div>
+            <button className="primary-button" disabled={blocked} onClick={() => act('/api/diplomacy/visit', { country_code: country, agenda })}>{view.active_trip ? 'Em missão' : view.days_until_visit ? `Nova visita em ${view.days_until_visit} dias` : 'Iniciar missão oficial'}</button>
+            <small className="ds-muted">O custo sai da verba anual de viagens (índice ×{selected.travel_price_index.toFixed(3)}). O efeito diplomático só entra ao concluir a missão.</small>
+          </aside>
+        </div>;
+      })()}
+      <section className="diplomacy-section" aria-label="Todos os países">
+        <h3>Todos os países ({view.countries.length})</h3>
+        <div className="ds-party-chips" role="group" aria-label="Escolher país">{view.countries.map((item) => <button key={item.code} type="button" aria-pressed={country === item.code} onClick={() => setCountry(item.code)}><b>{item.name}</b><span>{item.relation}</span><small>{item.region}</small></button>)}</div>
       </section>
-      <details className="agenda-more diplomacy-section" open={typeof window !== 'undefined' && window.innerWidth > 760}><summary>Relações bilaterais ({view.countries.length} países)</summary>
-      <div className="country-grid">{view.countries.map((item) => <article key={item.code}><div><b>{item.name}</b><span>{item.region}</span></div><strong>{item.relation}/100</strong><small>{item.focus}</small><div className="bar"><i style={{ width: `${item.relation}%` }}/></div></article>)}</div></details>
       <details className="agenda-more diplomacy-section" open={typeof window !== 'undefined' && window.innerWidth > 760}><summary>Cúpulas e compromissos multilaterais ({view.events.length})</summary>
       {view.events.length ? view.events.map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}<small>{event.place}</small></div><div><h3>{event.name}</h3><p>{event.description}</p><button className="secondary-button" disabled={busy || Boolean(view.active_trip) || event.days_until > 30} onClick={() => act('/api/diplomacy/events/attend', { event_id: event.id })}>{event.days_until > 30 ? 'Confirmação abre 30 dias antes' : `Iniciar missão · ${event.trip_days} dias · R$ ${(event.cost_bi * 1000).toFixed(0)} mi`}</button></div></div>) : <div className="empty-state">Nenhum evento com tempo suficiente para a viagem.</div>}</details>
       <details className="agenda-more diplomacy-section"><summary>Visitas recentes ({view.visit_log.length})</summary>
