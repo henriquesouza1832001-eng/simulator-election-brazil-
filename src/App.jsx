@@ -21,6 +21,9 @@ import InterpretationCorrection from './InterpretationCorrection';
 import MeasureForecast from './MeasureForecast';
 import IndicatorsPanel from './IndicatorsPanel';
 import OverviewPanel from './OverviewPanel';
+import ApuracaoPanel from './ApuracaoPanel';
+import RedesPanel from './RedesPanel';
+import Related from './Related';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
 import RegulatorsPanel from './RegulatorsPanel';
@@ -470,9 +473,9 @@ export default function App() {
   ] : [
     { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Obras e mapa', 'Crises'] },
-    { label: 'Política', items: careerMode ? ['Carreira', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
-    { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Entrevistas', 'Acontecimentos'] },
+    { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
   const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Carimbos', 'Diário'] }];
@@ -580,6 +583,8 @@ export default function App() {
 
       {activeTab === 'Entrevistas' && <InterviewsPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
+      {activeTab === 'Apuração' && <ApuracaoPanel request={request} state={state} />}
+      {activeTab === 'Redes' && <RedesPanel request={request} state={state} go={setActiveTab} />}
       {activeTab === 'Imprensa' && <NewsPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
       {activeTab === 'Reguladores' && <RegulatorsPanel request={request} state={state} federalExecutive={!careerMode || careerOffice === 'presidente'} />}
@@ -647,6 +652,7 @@ export default function App() {
 
       {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 
+      <Related tab={activeTab} exists={new Set(tabGroups.flatMap((g) => g.items))} go={setActiveTab} />
       <footer className="footer"><span>QUATRO ANOS · v0.5 · em desenvolvimento</span><span>Eventos e projeções são ficção; resultados numéricos seguem regras do motor.</span></footer>
     </main>
     {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} busy={busy} setBusy={setBusy} />}

@@ -117,15 +117,15 @@ Objetivo: simular de verdade como uma eleição funciona, na proporção de cada
 
 ## 8. Plano em fases (ordem de implantação)
 
-| Fase | Entrega | Onde mexe |
+| Fase | Entrega | Estado |
 |---|---|---|
-| **A** | Linguagem visual (cantos, cor, abas retas, cabeçalho de seção) | `design.css`, `shell.css` |
-| **B** | Menu lateral com atalhos fixados e contadores | `Shell.jsx`, `App.jsx` |
-| **C** | Painel como centro de comando (mapa, pendências, fixados) | `OverviewPanel`, `GeoMap` |
-| **D** | Ligações entre telas (blocos "relacionado" nas telas principais) | `IndicatorLinks`, telas |
-| **E** | Mapa de apuração + simulação de eleição por cargo | motor (`election`), `CampaignPanel` |
-| **F** | Publicações e sátira de redes (modelos) | motor, `CampaignPanel` |
-| **G** | Gemini narrando (0.7) | motor de narração |
+| **A** | Linguagem visual (cantos, cor, abas retas, cabeçalho de seção) | feita |
+| **B** | Menu lateral com atalhos fixados | feita (contadores de pendência ainda não) |
+| **C** | Painel como centro de comando (mapa, pendências, fixados) | feita |
+| **D** | Ligações entre telas (bloco "Ligado a esta tela") | feita: `Related.jsx` |
+| **E** | Apuração ao vivo por boletins, com mapa por estado | feita para a Presidência: `engine/tally.py`, aba Apuração. Falta o sistema proporcional (quociente) e o mapa por município |
+| **F** | Publicações e sátira de redes (modelos guiados pelo motor) | feita: `engine/social_feed.py`, aba Redes. Falta ligar à campanha (cada ação gera publicação) |
+| **G** | Gemini narrando (0.7) | pendente |
 
 Cada fase fecha com: captura das telas em 1280 px, checagem de largura em 390 px, auditoria de contraste e commit.
 

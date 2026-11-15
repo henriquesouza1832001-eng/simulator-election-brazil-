@@ -365,3 +365,36 @@ html, body { background: var(--ds-bg); }
 .ds-page .ds-hero { min-height: 250px; }
 .ds-page .ds-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .ds-painel-mapa .ds-geomap svg, .ds-painel-mapa svg { max-height: 400px; margin: 0 auto; }
+
+/* Apuração e redes */
+.ds-apu { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
+.ds-apu-map { display: grid; gap: 10px; }
+.ds-apu-map svg { width: 100%; max-height: 460px; }
+.ds-apu-map path { cursor: pointer; transition: fill .25s; }
+.ds-apu-ctl { display: flex; gap: 8px; flex-wrap: wrap; }
+.ds-apu-side { display: grid; gap: 12px; }
+.ds-apu-bar { height: 10px; border-radius: 2px; background: rgba(111, 143, 201, .85); overflow: hidden; margin: 8px 0 10px; }
+.ds-apu-bar i { display: block; height: 100%; background: var(--ds-accent); }
+.ds-apu-list li { display: flex; justify-content: space-between; gap: 8px; }
+@media (max-width: 860px) { .ds-apu { grid-template-columns: 1fr; } }
+.ds-feed { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 10px; }
+.ds-post { border: 1px solid var(--ds-line); border-left: 3px solid var(--ds-line-2); border-radius: 6px; padding: 12px 14px; background: var(--ds-surface); display: grid; gap: 6px; }
+.ds-post.apoio { border-left-color: var(--ds-accent); }
+.ds-post.oposicao { border-left-color: #6f8fc9; }
+.ds-post.humor { border-left-color: var(--ds-good); }
+.ds-post.imprensa { border-left-color: var(--ds-ink-3); }
+.ds-post header { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.ds-post p { margin: 0; }
+.ds-post footer { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--ds-ink-3); font-size: 13px; }
+
+.ds-apu-list.ds-list li { display: flex; justify-content: space-between; gap: 8px; }
+/* Ligações entre telas */
+.ds-related { max-width: 1120px; margin: 8px auto 28px; padding-top: 14px; border-top: 1px solid var(--ds-line); }
+.ds-related > span { display: block; font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 700; margin-bottom: 8px; }
+.ds-related ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ds-related button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--ds-line); border-left: 3px solid var(--ds-line-2); border-radius: 6px; background: var(--ds-surface); }
+.ds-related button:hover { border-left-color: var(--ds-accent); background: var(--ds-surface-2); }
+.ds-related button:focus-visible { outline: 2px solid var(--ds-accent); }
+.ds-related button small { color: var(--ds-ink-3); font-size: 12.5px; }
+.ds-related button { color: var(--ds-ink); font: inherit; }
+.ds-related button b { color: var(--ds-ink); }

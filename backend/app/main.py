@@ -1197,3 +1197,7 @@ app.include_router(build_powers_router(lambda: game_state(), lambda s: save_stat
 from .territory_routes import build_router as build_territory_router  # noqa: E402
 
 app.include_router(build_territory_router(lambda: game_state(), lambda s: save_state(s), lambda s: public_state(s)))
+
+from .election_routes import build_router as build_election_router  # noqa: E402
+
+app.include_router(build_election_router(lambda: game_state()))
