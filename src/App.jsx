@@ -610,7 +610,7 @@ export default function App() {
                 const max = isTravel ? 75 : 50;
                 return <article key={key}>
                   <div><b>{line.label}</b><small>{line.description}</small><span>Orçamento: R$ {Number(line.annual_cost_bi).toFixed(1)} bi/ano · após o corte: R$ {(Number(line.annual_cost_bi) * (1 - cut / 100)).toFixed(3)} bi/ano</span></div>
-                  <label>Reduzir<select value={cut} onChange={(event) => isTravel ? setTravelCutPct(Number(event.target.value)) : setResidenceCutPct(Number(event.target.value))}>{[0, 10, 25, 50, 75].filter((value) => value <= max).map((value) => <option value={value} key={value}>{value}%</option>)}</select></label>
+                  <div className="ds-seg" role="group" aria-label={`Reduzir ${line.label}`}>{[0, 10, 25, 50, 75].filter((value) => value <= max).map((value) => <button type="button" key={value} aria-pressed={cut === value} onClick={() => isTravel ? setTravelCutPct(value) : setResidenceCutPct(value)}>{value === 0 ? 'Manter' : `−${value}%`}</button>)}</div>
                 </article>;
               })}
             </div>

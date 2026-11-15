@@ -138,7 +138,7 @@ export default function IndicatorsPanel({ request, state, onAct, actLabel }) {
       </Section>
       {moves.up.length + moves.down.length > 0 && <Section title="O que mudou desde o início" hint="As maiores melhoras e quedas, em relação ao ponto de partida. Toque para abrir.">
         <div className="ds-moves">
-          {[['Melhoraram', moves.up, 'good'], ['Pioraram', moves.down, 'bad']].map(([title, list, tone]) => <article key={title} className="ds-card"><h4>{title}</h4>{list.length === 0 ? <p className="ds-muted">Nada relevante.</p> : <ul>{list.map((r) => <li key={r.id}><button type="button" onClick={() => setPick({ id: r.id, n: Date.now() })}><span>{r.label}</span><Delta value={r.change_since_start} better={r.better} digits={digitsFor(r.unit, r.value) > 1 ? 3 : 1} /></button></li>)}</ul>}</article>)}
+          {[['Melhoraram', moves.up, 'good'], ['Pioraram', moves.down, 'bad']].map(([title, list, tone]) => <article key={title} className="ds-card"><h4>{title}</h4>{list.length === 0 ? <p className="ds-muted">Nada relevante.</p> : <ul>{list.map((r) => <li key={r.id}><button type="button" onClick={() => setPick({ id: r.id, n: Date.now() })}><span>{r.label}</span><Delta value={r.change_since_start} better={r.better} digits={digitsFor(r.unit, r.value) > 1 ? 3 : 1} suffix={unitLabel(r.unit) ? ' ' + unitLabel(r.unit) : ''} /></button></li>)}</ul>}</article>)}
         </div>
       </Section>}
       <Section title="Todos os indicadores">

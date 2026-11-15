@@ -277,3 +277,6 @@ article > span:first-child { opacity: 1; }
 
 .ds-power-grid .ds-inv.blocked { opacity: .6; }
 .ds-power-grid .ds-inv b { font-size: 15.5px; line-height: 1.3; }
+
+.operating-lines article { align-items: center; }
+.operating-lines .ds-seg { flex-wrap: wrap; justify-content: flex-end; }
