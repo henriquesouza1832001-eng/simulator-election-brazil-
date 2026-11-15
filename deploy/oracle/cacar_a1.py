@@ -49,9 +49,16 @@ def carregar_config():
 
 def com_retentativa(funcao, tentativas=20, espera=30):
     """A chave de API recem-criada demora alguns minutos para valer em todos os servidores da Oracle: 401 no inicio e normal."""
-    for numero in range(1, tentativas + 1):
+    numero = 0
+    while True:
+        numero += 1
         try:
             return funcao()
+        except (oci.exceptions.ConnectTimeout, oci.exceptions.RequestException) as erro:
+            # Sem internet (PC dormiu, Wi-Fi caiu): espera e tenta de novo, nunca derruba o robo.
+            log(f"Sem conexao com a Oracle ({type(erro).__name__}); espero 60s e tento de novo.")
+            numero -= 1  # queda de rede nao conta como tentativa de 401
+            time.sleep(60)
         except oci.exceptions.ServiceError as erro:
             if erro.status != 401 or numero == tentativas:
                 raise
