@@ -29,8 +29,8 @@ def share(party: str | None) -> dict[str, Any]:
     factor = max(FACTOR_RANGE[0], min(FACTOR_RANGE[1], 1 + FACTOR_SENSITIVITY * (pct / baseline - 1)))
     return {"share_pct": pct, "seats": seats, "total_seats": total, "equal_pct": round(equal, 2), "proportional_pct": round(proportional, 2),
             "parties": count, "factor": round(factor, 3),
-            "text": (f"Sua legenda tem {seats} deputados federais e fica com cerca de {pct:.1f}% do horário eleitoral gratuito."
-                     if seats else f"Sua legenda não tem bancada na Câmara e fica só com a parte igual, cerca de {pct:.1f}% do horário eleitoral gratuito.")}
+            "text": (f"Sua legenda tem {seats} deputados federais e fica com cerca de {str(round(pct, 1)).replace('.', ',')}% do horário eleitoral gratuito."
+                     if seats else f"Sua legenda não tem bancada na Câmara e fica só com a parte igual, cerca de {str(round(pct, 1)).replace('.', ',')}% do horário eleitoral gratuito.")}
 
 
 def apply(delta: float, party: str | None) -> float:

@@ -123,8 +123,8 @@ Objetivo: simular de verdade como uma eleição funciona, na proporção de cada
 | **B** | Menu lateral com atalhos fixados | feita (contadores de pendência ainda não) |
 | **C** | Painel como centro de comando (mapa, pendências, fixados) | feita |
 | **D** | Ligações entre telas (bloco "Ligado a esta tela") | feita: `Related.jsx` |
-| **E** | Apuração ao vivo por boletins, com mapa por estado | feita para a Presidência: `engine/tally.py`, aba Apuração. Falta o sistema proporcional (quociente) e o mapa por município |
-| **F** | Publicações e sátira de redes (modelos guiados pelo motor) | feita: `engine/social_feed.py`, aba Redes. Falta ligar à campanha (cada ação gera publicação) |
+| **E** | Apuração ao vivo por boletins e eleição simulada por cargo | feita: mapa por estado (Presidência), regiões (prefeito, governador, senador), quociente por legenda (vereador, deputado), primeiro e segundo turnos; horário eleitoral e teto de gastos na campanha de carreira. Falta o mapa por município e o tempo de TV na campanha presidencial (sem partido no modo Presidência) |
+| **F** | Publicações e sátira de redes (modelos guiados pelo motor) | feita: `engine/social_feed.py`, aba Redes, reagindo a decisões, crises, pesquisas, números da economia e falas da campanha. A voz continua de modelos fixos até a fase G |
 | **G** | Gemini narrando (0.7) | pendente |
 
 Cada fase fecha com: captura das telas em 1280 px, checagem de largura em 390 px, auditoria de contraste e commit.

@@ -16,7 +16,7 @@ const colorOf = (player) => {
 function Rounds({ rounds }) {
   if (!rounds) return null;
   const Table = ({ title, items }) => <section className="ds-card"><h4>{title}</h4>
-    <ul className="ds-list ds-apu-list">{items.map((c) => <li key={c.name + c.party}><span>{c.is_player ? <b>{c.name} · você</b> : c.name}{c.party ? <small className="ds-muted"> ({c.party})</small> : null}</span><span className="ds-muted">{pct(c.support)}%</span></li>)}</ul></section>;
+    <ul className="ds-list ds-apu-list">{items.map((c) => <li key={c.name + c.party}><span>{c.is_player ? <b>{c.name} · você</b> : c.name}{c.party && !String(c.name).includes(c.party) ? <small className="ds-muted"> ({c.party})</small> : null}</span><span className="ds-muted">{pct(c.support)}%</span></li>)}</ul></section>;
   return <>
     <Table title={rounds.runoff ? 'Primeiro turno' : 'Candidatos'} items={rounds.first} />
     {rounds.runoff && <Table title="Segundo turno" items={rounds.runoff} />}
@@ -52,7 +52,7 @@ function Zonas({ data, i, setI, auto, setAuto }) {
           <h4>Placar <small className="ds-muted">boletim das {step.time}</small></h4>
           {player == null ? <p className="ds-muted">As urnas ainda não começaram a ser apuradas.</p> : <>
             <div className="ds-apu-bar" role="img" aria-label={`Você ${pct(player)}%, adversário ${pct(100 - player)}%`}><i style={{ width: `${player}%` }} /></div>
-            <dl className="ds-kv"><dt>Você</dt><dd>{pct(player)}%</dd><dt>{data.rival?.name || 'Adversário'}{data.rival?.party ? ` (${data.rival.party})` : ''}</dt><dd>{pct(100 - player)}%</dd><dt>Urnas apuradas</dt><dd>{pct(step.counted)}%</dd></dl></>}
+            <dl className="ds-kv"><dt>Você</dt><dd>{pct(player)}%</dd><dt>{data.rival?.name || 'Adversário'}{data.rival?.party && !String(data.rival?.name || '').includes(data.rival.party) ? ` (${data.rival.party})` : ''}</dt><dd>{pct(100 - player)}%</dd><dt>Urnas apuradas</dt><dd>{pct(step.counted)}%</dd></dl></>}
           {last && <p><Badge tone={data.result === 'won' ? 'good' : 'bad'}>{data.result === 'won' ? 'Vitória' : 'Derrota'}</Badge> {data.turning_point ? `A virada aconteceu no boletim das ${data.turning_point}.` : 'Sem virada: o líder do início manteve a frente.'}</p>}
         </section>
         <Rounds rounds={data.rounds} />
