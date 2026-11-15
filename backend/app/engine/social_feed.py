@@ -13,8 +13,11 @@ PROFILES = {
     "apoio": [("@militante_de_plantao", "Militante de Plantão"), ("@tia_do_zap_oficial", "Tia do Zap"), ("@coluna_da_base", "Coluna da Base")],
     "oposicao": [("@analista_de_sofa", "Analista de Sofá"), ("@economista_de_bar", "Economista de Bar"), ("@fiscal_de_tudo", "Fiscal de Tudo")],
     "humor": [("@meme_do_planalto", "Meme do Planalto"), ("@tio_do_pave", "Tio do Pavê"), ("@satira_diaria", "Sátira Diária")],
-    "imprensa": [("@jornal_da_manha_ficticio", "Jornal da Manhã (fictício)"), ("@radio_noticia_ficticia", "Rádio Notícia (fictícia)")],
+    "imprensa": [("@jornal_da_manha_ficticio", "Jornal da Manhã (fictício)"), ("@radio_noticia_ficticia", "Rádio Notícia (fictícia)"), ("@portal_do_dia_ficticio", "Portal do Dia (fictício)")],
 }
+PROFILES["apoio"] += [("@vizinha_que_apoia", "Vizinha que Apoia"), ("@sindicalista_de_bairro", "Sindicalista de Bairro")]
+PROFILES["oposicao"] += [("@contador_de_promessas", "Contador de Promessas"), ("@professor_de_cursinho", "Professor de Cursinho")]
+PROFILES["humor"] += [("@primo_do_churrasco", "Primo do Churrasco"), ("@gatinho_politico", "Gatinho Político")]
 TEMPLATES = {
     "decisao_boa": {"apoio": ["Decisão certeira: “{t}”. Quem disse que não dava? 👏", "“{t}” saiu do papel. Enquanto uns falam, outros fazem."],
                     "oposicao": ["“{t}”… vamos ver quem paga essa conta.", "Anunciou “{t}”. Falta explicar o prazo e o custo."],
@@ -64,6 +67,41 @@ TEMPLATES.update({
               "imprensa": ["Publicação de {t} alcança grande audiência nas redes."]},
 })
 
+TEMPLATES.update({
+    "inflacao_alta": {"apoio": ["Inflação em {v}%: o governo está de olho e as medidas já estão a caminho.", "Preço sobe no mundo todo; aqui a resposta já começou. Inflação em {v}%."],
+                      "oposicao": ["Inflação em {v}%. A feira que o governo nunca visita já sentiu.", "{v}% de inflação e nenhuma explicação convincente."],
+                      "humor": ["Inflação em {v}%: o tomate virou joia e o cafezinho, investimento.", "Com {v}% de inflação, a lista do mercado agora vem com orçamento."],
+                      "imprensa": ["Inflação anual chega a {v}%; economistas fictícios divergem sobre o ritmo de queda."]},
+    "desemprego_alto": {"apoio": ["Desemprego em {v}%: cada vaga criada é uma família que respira.", "Estamos trabalhando para reduzir os {v}% de desemprego."],
+                        "oposicao": ["{v}% de desemprego. Quem disse que a economia ia bem?", "O trabalhador sentiu: desemprego em {v}%."],
+                        "humor": ["Desemprego em {v}%: o LinkedIn virou novela das oito.", "Com {v}% de desemprego, até o currículo pede currículo."],
+                        "imprensa": ["Desemprego em {v}%; mercado de trabalho segue no centro do debate."]},
+    "aprovacao_baixa": {"apoio": ["Aprovação em {v}%? Governar é decidir o que é difícil. Seguimos.", "A pesquisa é retrato; o trabalho é filme. {v}% hoje."],
+                        "oposicao": ["Aprovação de {v}%. O recado das ruas é claro.", "{v}% de aprovação: hora de ouvir mais e anunciar menos."],
+                        "humor": ["Aprovação em {v}%: até o pombo da praça pediu transferência.", "{v}%: o governo pediu revisão da pesquisa; a pesquisa pediu revisão do governo."],
+                        "imprensa": ["Aprovação do governo fica em {v}% na pesquisa simulada."]},
+    "aprovacao_alta": {"apoio": ["Aprovação em {v}%! Obrigado a quem acredita no trabalho.", "{v}% de aprovação e muito trabalho pela frente."],
+                       "oposicao": ["Aprovação em {v}% não paga a conta de luz. Falta resultado.", "{v}% hoje; amanhã é outro dia."],
+                       "humor": ["Aprovação em {v}%: o governo anunciou que vai comemorar... depois da reunião.", "{v}%: a tia do zap mudou o bom-dia para o governo."],
+                       "imprensa": ["Governo tem aprovação de {v}% na pesquisa simulada."]},
+})
+for _k, _extra in {
+    "crise": {"apoio": ["Defesa Civil, prefeituras e governo juntos em “{t}”.", "Sem politizar: “{t}” exige trabalho, e o trabalho começou."],
+              "oposicao": ["“{t}” não é surpresa para quem acompanha. Cadê o plano?", "Quando vem “{t}”, o improviso aparece."],
+              "humor": ["“{t}” e o prédio inteiro virou comitê de crise no grupo.", "A crise é “{t}”; o meme chegou antes do relatório."],
+              "imprensa": ["Governo acompanha “{t}”; reunião de emergência prevista, segundo fontes fictícias."]},
+    "decisao_boa": {"apoio": ["“{t}” saiu e já tem gente sentindo no bolso.", "Promessa feita, “{t}” entregue."],
+                    "oposicao": ["“{t}” é um começo. A pergunta é de onde vem o dinheiro.", "Aplaudo “{t}”, mas quero ver a execução."],
+                    "humor": ["“{t}”: a única notícia boa que o grupo da família não discutiu.", "Anunciaram “{t}” e a oposição pediu um minuto para pensar."],
+                    "imprensa": ["“{t}” é publicado; especialistas fictícios veem efeito gradual."]},
+    "decisao_ruim": {"apoio": ["“{t}” não saiu como queríamos, mas aprendemos e seguimos.", "Revés em “{t}” não muda o rumo."],
+                     "oposicao": ["“{t}” deu errado e o governo vai culpar quem desta vez?", "Alguém avisa que “{t}” precisava de votos."],
+                     "humor": ["“{t}” virou aula de como não fazer.", "Se “{t}” fosse prova, o governo pediria segunda chamada."],
+                     "imprensa": ["“{t}” não avança; governo promete nova tentativa."]},
+}.items():
+    for _kind, _texts in _extra.items():
+        TEMPLATES[_k][_kind] += _texts
+
 GOOD = ("aprov", "conclu", "sancion", "execut", "decidid", "respond")
 BAD = ("rejeit", "veto", "barr", "agrav", "negad", "sem resposta")
 
@@ -103,6 +141,16 @@ def build(state: dict[str, Any], limit: int = 24) -> dict[str, Any]:
     for c in state.get("active_crises") or []:
         facts.append({"id": f"c{c.get('id')}", "date": state["date"], "tmpl": "crise", "fmt": {"t": str(c.get("title", "crise"))[:70]},
                       "origin": f"Crise: {c.get('title', '')[:50]}", "tab": "Crises"})
+    metrics = state.get("metrics") or {}
+    month = str(state["date"])[:7]
+    if float(metrics.get("inflation", 0) or 0) >= 6.0:
+        facts.append({"id": f"i{month}", "date": state["date"], "tmpl": "inflacao_alta", "fmt": {"v": f"{float(metrics['inflation']):.1f}".replace(".", ",")}, "origin": "Inflação", "tab": "Indicadores"})
+    if float(metrics.get("unemployment", 0) or 0) >= 8.5:
+        facts.append({"id": f"u{month}", "date": state["date"], "tmpl": "desemprego_alto", "fmt": {"v": f"{float(metrics['unemployment']):.1f}".replace(".", ",")}, "origin": "Desemprego", "tab": "Indicadores"})
+    approval = metrics.get("approval")
+    if approval is not None and (float(approval) < 35 or float(approval) >= 60):
+        facts.append({"id": f"p{month}", "date": state["date"], "tmpl": "aprovacao_baixa" if float(approval) < 35 else "aprovacao_alta",
+                      "fmt": {"v": f"{float(approval):.1f}".replace(".", ",")}, "origin": "Aprovação do governo", "tab": "Indicadores"})
     campaign = state.get("campaign") or {}
     if campaign.get("national_support") is not None and campaign.get("activities"):
         support = round(float(campaign["national_support"]), 1)

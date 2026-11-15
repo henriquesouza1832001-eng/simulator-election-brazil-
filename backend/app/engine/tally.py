@@ -133,8 +133,18 @@ def _zonas(state: dict[str, Any], career: dict[str, Any]) -> dict[str, Any]:
     rival = next((c for c in (career.get("candidate_results") or []) if not c.get("is_player")), None)
     return {"available": True, "kind": "zonas", "office": career.get("office"), "result": career.get("result"), "steps": steps, "weights": weights,
             "player_final": round(player, 2), "opponent_final": round(100 - player, 2), "turning_point": _turning_point(steps),
-            "rival": {"name": rival.get("name"), "party": rival.get("party")} if rival else None,
+            "rival": {"name": rival.get("name"), "party": rival.get("party")} if rival else None, "rounds": _rounds(career),
             "note": "Boletins simulados por região. O resultado final é o que o motor decidiu; os pesos das regiões são estimativas do jogo."}
+
+
+def _rounds(career: dict[str, Any]) -> dict[str, Any] | None:
+    """Primeiro e segundo turnos, quando a eleição teve os dois: quem disputou e quanto cada um teve."""
+    first = career.get("first_round_results") or []
+    if not first:
+        return None
+    pick = lambda items: [{"name": c.get("name"), "party": c.get("party"), "support": round(float(c.get("support", 0)), 1), "is_player": bool(c.get("is_player"))} for c in items]
+    runoff = career.get("runoff_results") or []
+    return {"first": pick(first), "runoff": pick(runoff) if runoff else None, "had_runoff": bool(runoff or career.get("runoff_finalists"))}
 
 
 def build(state: dict[str, Any]) -> dict[str, Any]:
@@ -162,4 +172,5 @@ def build(state: dict[str, Any]) -> dict[str, Any]:
     steps = _steps({uf: w for uf, (_, w, _) in UFS.items()}, {uf: d for uf, (_, _, d) in UFS.items()}, final, seed)
     return {"available": True, "kind": "mapa", "date": date_, "result": result, "player_final": round(player, 2), "opponent_final": round(100 - player, 2),
             "steps": steps, "turning_point": _turning_point(steps), "weights": {uf: w for uf, (_, w, _) in UFS.items()}, "regions": {uf: r for uf, (r, _, _) in UFS.items()},
+            "rounds": _rounds(career) if career.get("mode") else None,
             "note": "Boletins simulados. Pesos de eleitorado por estado são estimativas do jogo; o resultado final é o que o motor decidiu."}

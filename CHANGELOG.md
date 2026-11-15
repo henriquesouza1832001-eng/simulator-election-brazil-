@@ -2,6 +2,19 @@
 
 A partir da 0.4 a numeração segue o roteiro em [docs/ROADMAP_VERSOES.md](docs/ROADMAP_VERSOES.md). As entradas de 0.1 a 0.25 abaixo eram marcos internos de desenvolvimento.
 
+## 0.5.2 — Revisão de telas e eleição (15 nov. 2026)
+
+- **Linguagem visual:** paleta grafite com dourado fosco, cantos retos e abas com linha no lugar de pílulas; telas antigas sem a moldura de cartão externo.
+- **Navegação:** endereço por tela (`#/orcamento`), botão voltar do navegador e links diretos; atalhos fixados e contador de pendências no menu lateral.
+- **Painel:** mapa do país com camadas, pendências e atalhos fixados.
+- **Escolhas:** o `<select>` nativo virou lista num painel lateral (`Choice.jsx`) em todos os formulários.
+- **Apuração** por boletins: mapa por estado (Presidência), por região (prefeito, governador, senador) e por legenda com quociente (vereador, deputado); mostra primeiro e segundo turno.
+- **Redes sociais fictícias** geradas pelo motor a partir de decisões, crises, pesquisas, números da economia e das falas da campanha.
+- **Congresso:** aba Votações mostra sanções e vetos; Acontecimentos mostra o tamanho da biblioteca de eventos.
+- **Empresas:** catálogo de 71 empresas e bancos com filtros e busca.
+- **Revisão de texto:** números no formato brasileiro, plurais corretos, Território refeito, Carreira sem sentido num mandato de presidente.
+- Testes novos em `tests/test_tally_social.py`.
+
 ## 0.6.0 — Motor: economia e Estado (em andamento)
 
 - **Copom e Selic:** a Selic passa a ser decidida a cada 45 dias por regra (inflação, meta e taxa de equilíbrio), com passo máximo de 0,5 ponto (1,0 se o desvio for grande). Quanto menos autônomo o Banco Central, mais ele puxa os juros para baixo, com ganho curto de atividade e custo em inflação e credibilidade. Painel na aba Empresas e valor refletido nos Indicadores.

@@ -29,6 +29,39 @@ const GRADE_CLASS = { S: 'g-s', A: 'g-a', B: 'g-b', C: 'g-c', D: 'g-d', F: 'g-f'
 const PART_LABELS = { pais: 'O país que você entrega', popularidade: 'Popularidade', governar: 'Capacidade de governar', mundo: 'Posição no mundo', integridade: 'Integridade', promessas: 'Promessas e programas', preco: 'O preço do mandato' };
 
 /* ---------- Congresso ---------- */
+/** Biblioteca: o tamanho do catálogo de acontecimentos que o motor pode sortear. */
+function StoryLibrary({ request }) {
+  const { data } = useLoad(request, '/api/story/library', []);
+  if (!data) return null;
+  const LEVEL = { federal: 'federais', estadual: 'estaduais', municipal: 'municipais', militante: 'de militância', partido: 'de partido', legislativo: 'legislativos' };
+  const KIND = { decisao: 'decisões', oportunidade: 'oportunidades', info: 'informativos' };
+  const n = (v) => Number(v).toLocaleString('pt-BR');
+  return <details className="agenda-more"><summary>Biblioteca de acontecimentos ({n(data.total)})</summary>
+    <p className="ds-muted">O motor sorteia entre {n(data.total)} acontecimentos fictícios, em {data.families} famílias; {n(data.chained_events)} deles são consequências encadeadas de outro. {n(data.by_source.historico_inspirado)} são versões fictícias inspiradas em episódios reais. Nenhum usa nome de pessoa real.</p>
+    <dl className="ds-kv">
+      {Object.entries(data.by_level).map(([k, v]) => [<dt key={k + 't'}>Acontecimentos {LEVEL[k] || k}</dt>, <dd key={k + 'd'}>{n(v)}</dd>])}
+      {Object.entries(data.by_kind).map(([k, v]) => [<dt key={k + 'kt'}>{(KIND[k] || k).replace(/^./, (c) => c.toUpperCase())}</dt>, <dd key={k + 'kd'}>{n(v)}</dd>])}
+    </dl></details>;
+}
+
+/** Sanção e veto: projetos que o Congresso aprovou por conta própria e o que aconteceu com cada veto. */
+function PautaVetos({ request, date }) {
+  const { data, error, loading } = useLoad(request, '/api/congress/agenda', [date]);
+  const dmy = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR');
+  return <>
+    <h3 className="subheading">Sanções e vetos</h3>
+    <Status loading={loading} error={error}>{data && <>
+      {data.overrides.length > 0 && <>
+        <p className="ds-muted">Vetos que voltam ao plenário: derrubar exige maioria absoluta nas duas casas (257 deputados e 41 senadores).</p>
+        <ul className="vote-list">{data.overrides.map((o) => <li key={o.key + o.due}><b>{o.title}</b><span>veto {o.scope === 'total' ? 'total' : 'parcial'} · votação em {dmy(o.due)}{o.author ? ` · autoria: ${o.author}` : ''}</span></li>)}</ul></>}
+      {data.history.length === 0 && data.overrides.length === 0
+        ? <p className="meta-status">Nenhum projeto do Congresso chegou à sua mesa ainda. Quando chegar, aparece em Crises, com 15 dias para sancionar ou vetar.</p>
+        : data.history.length > 0 && <ul className="vote-list">{data.history.map((h) => <li key={h.key + h.date}><b>{h.title}</b>
+          <span className={h.overridden ? 'vote-no' : 'vote-ok'}>{h.overridden ? 'veto derrubado' : 'veto mantido'}</span><small>veto {h.veto === 'total' ? 'total' : 'parcial'} · {dmy(h.date)}</small></li>)}</ul>}
+    </>}</Status>
+  </>;
+}
+
 export function CongressPanel({ request, state }) {
   const { data, error, loading } = useLoad(request, '/api/legislature', [state?.date]);
   const [house, setHouse] = useState('camara');
@@ -74,6 +107,7 @@ export function CongressPanel({ request, state }) {
         </Drawer>}
       </>}
       {house === 'votacoes' && <>
+        <PautaVetos request={request} date={state?.date} />
         <h3 className="subheading">Em tramitação</h3>
         {data.em_tramitacao.length === 0 ? <p className="meta-status">Nenhum projeto aguardando votação. Envie um projeto de lei ou PEC na aba Medidas.</p> :
           <ul className="vote-list">{data.em_tramitacao.map((b) => <li key={b.id}><b>{b.title}</b><span>{b.instrument} · decisão em {new Date(`${b.decision_date}T12:00:00`).toLocaleDateString('pt-BR')}</span></li>)}</ul>}
@@ -180,6 +214,7 @@ export function StoryPanel({ request, state, onNotice }) {
         {(() => { const rows = Object.entries(data.profile).sort((a, b) => b[1] - a[1]); const total = rows.reduce((n, [, v]) => n + v, 0); return <>
           <p className="ds-muted">Em {total} {total === 1 ? 'decisão' : 'decisões'} respondidas, o estilo mais frequente foi <b>{toneName(rows[0][0])}</b>{data.unanswered > 0 ? `; ${data.unanswered} ${data.unanswered === 1 ? 'prazo passou' : 'prazos passaram'} sem resposta` : ''}.</p>
           <dl className="ds-kv">{rows.map(([k, v]) => [<dt key={k + 't'}>{toneName(k)}</dt>, <dd key={k + 'd'}>{v} ({Math.round(100 * v / total)}%)</dd>])}</dl></>; })()}</>}
+      <StoryLibrary request={request} />
       <details className="agenda-more" open={data.pending.length === 0}><summary>Histórico ({data.history.length})</summary>
       {data.history.length === 0 ? <p className="meta-status">Ainda não há histórico.</p> :
 <><ul className="vote-list story-history-list">{data.history.slice(0, 5).map((h) => <li key={h.id}>

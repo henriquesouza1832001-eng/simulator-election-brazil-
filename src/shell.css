@@ -458,3 +458,11 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .ds-choice span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ds-choice i { font-style: normal; color: var(--ds-ink-3); font-size: 18px; line-height: 1; }
 .ds-choice-required { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.appointments-nav { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--ds-line); margin: 10px 0 16px; padding: 0; }
+.appointments-nav button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--ds-ink-2); font: inherit; padding: 8px 14px; min-height: 38px; margin-bottom: -1px; cursor: pointer; }
+.appointments-nav button.active { color: var(--ds-ink); font-weight: 700; border-bottom-color: var(--ds-accent); background: transparent; }
+.appointments-nav button small { color: var(--ds-ink-3); margin-left: 6px; }
+.candidate-stats { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.candidate-stats i { border: 0 !important; padding: 0 !important; background: transparent !important; font-style: normal; color: var(--ds-ink-2); font-size: 13px; }
+.candidate-stats i b { color: var(--ds-ink); margin-left: 3px; }
+.appointment-candidate.selected { border-color: var(--ds-accent); box-shadow: inset 3px 0 0 var(--ds-accent); }

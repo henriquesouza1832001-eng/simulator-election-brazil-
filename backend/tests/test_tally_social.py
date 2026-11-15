@@ -97,5 +97,35 @@ class CampanhaNasRedesTests(unittest.TestCase):
         self.assertTrue(any(p["origin"].startswith("Live") for p in feed["posts"]))
 
 
+class TurnosTests(unittest.TestCase):
+    def test_apuracao_mostra_os_dois_turnos(self):
+        state = _career("presidente", first_round_results=[{"name": "A", "party": "X", "support": 41.0, "is_player": True}, {"name": "B", "party": "Y", "support": 38.0}],
+                        runoff_results=[{"name": "A", "party": "X", "support": 52.0, "is_player": True}, {"name": "B", "party": "Y", "support": 48.0}])
+        data = tally.build(state)
+        self.assertEqual(data["kind"], "mapa")
+        self.assertEqual(len(data["rounds"]["first"]), 2)
+        self.assertEqual(data["rounds"]["runoff"][0]["support"], 52.0)
+
+    def test_sem_segundo_turno(self):
+        state = _career("presidente", first_round_results=[{"name": "A", "party": "X", "support": 55.0, "is_player": True}])
+        self.assertIsNone(tally.build(state)["rounds"]["runoff"])
+
+
+class IndicadoresNasRedesTests(unittest.TestCase):
+    def test_inflacao_e_desemprego_altos_geram_posts_com_o_numero(self):
+        state = _state()
+        state["metrics"] = {"inflation": 7.2, "unemployment": 9.4, "approval": 28.0}
+        feed = social_feed.build(state, limit=200)
+        origins = {p["origin"] for p in feed["posts"]}
+        self.assertTrue({"Inflação", "Desemprego", "Aprovação do governo"} <= origins)
+        self.assertTrue(any("7,2" in p["text"] for p in feed["posts"]))
+
+    def test_numeros_normais_nao_geram_ruido(self):
+        state = _state()
+        state["metrics"] = {"inflation": 4.0, "unemployment": 6.0, "approval": 48.0}
+        origins = {p["origin"] for p in social_feed.build(state, limit=200)["posts"]}
+        self.assertFalse({"Inflação", "Desemprego", "Aprovação do governo"} & origins)
+
+
 if __name__ == "__main__":
     unittest.main()
