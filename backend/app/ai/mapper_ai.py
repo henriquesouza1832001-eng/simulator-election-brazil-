@@ -42,6 +42,8 @@ def validate(raw: Any, ids: list[str]) -> dict[str, Any]:
 
 async def refine(text: str, candidates: list[dict[str, Any]], confirmed: list[dict[str, Any]]) -> dict[str, Any]:
     empty = {"choice": None, "questions": [], "source": "local"}
+    if not gateway.enabled("mapear"):
+        return empty
     key = os.getenv("GEMINI_API_KEY", "").strip()
     ids = [c["id"] for c in candidates]
     if ids and gateway.configured():

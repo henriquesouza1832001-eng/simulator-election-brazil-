@@ -16,6 +16,15 @@ logger = logging.getLogger("civiciclo.gateway")
 DEFAULT_MODEL = "gemini-3.8-flash"
 
 
+def enabled(feature: str) -> bool:
+    """Quais recursos podem usar o Gemini. GEMINI_RECURSOS é uma lista (interpretar, mapear, narrar, perguntar).
+
+    Padrão: só interpretar e mapear, ou seja, o Gemini apenas reconhece o texto do jogador e entrega ao motor.
+    """
+    chosen = os.getenv("GEMINI_RECURSOS", "interpretar,mapear")
+    return feature in {item.strip().lower() for item in chosen.split(",")}
+
+
 def configured() -> bool:
     return bool(os.getenv("GEMINI_GATEWAY_URL", "").strip() and os.getenv("GEMINI_GATEWAY_TOKEN", "").strip())
 

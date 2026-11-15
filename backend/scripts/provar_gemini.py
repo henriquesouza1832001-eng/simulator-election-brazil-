@@ -122,7 +122,8 @@ def online(key: str) -> None:
     models = [m["name"].split("/")[-1] for m in r.json().get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])]
     flash = sorted(m for m in models if "flash" in m and "image" not in m and "tts" not in m and "live" not in m)
     record(True, f"chave válida; {len(models)} modelos geram texto", "flash: " + ", ".join(flash[:12]))
-    candidates = [model] if model else []
+    lite = sorted(m for m in flash if "lite" in m)
+    candidates = [model] if model else lite[-1:]
     candidates += [m for m in (interpreter.DEFAULT_MODEL, narrator.DEFAULT_MODEL) if m not in candidates]
     chosen = next((m for m in candidates if m in models), None)
     for m in candidates:
@@ -170,6 +171,7 @@ def online(key: str) -> None:
 
 
 async def features(key: str) -> None:
+    os.environ["GEMINI_RECURSOS"] = "interpretar,mapear,narrar,perguntar"  # a prova testa todos, mesmo os desligados no jogo
     print("\n== Recursos do jogo de ponta a ponta (fonte 'gemini' = funcionou; 'local' = caiu no reserva)")
     n = await narrator.narrate(FACTS)
     record(n["source"] == "gemini", "narrador", f"fonte={n['source']} · {n['text'][:110]!r}")

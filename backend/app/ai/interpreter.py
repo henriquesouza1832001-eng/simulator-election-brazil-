@@ -180,7 +180,7 @@ def _normalize(data: Any, source_text: str) -> dict[str, Any]:
 
 async def interpret(text: str, examples: list[dict[str, Any]]) -> dict[str, Any]:
     key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not key:
+    if not key or not gateway.enabled("interpretar"):
         return fallback(text)
 
     model = os.getenv("GEMINI_MODEL", DEFAULT_MODEL).strip()

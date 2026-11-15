@@ -66,6 +66,8 @@ def _acceptable(output: str, facts: dict[str, Any]) -> bool:
 async def narrate(facts: dict[str, Any]) -> dict[str, str]:
     key = os.getenv("GEMINI_API_KEY", "").strip()
     fallback = {"text": local(facts), "source": "local"}
+    if not gateway.enabled("narrar"):
+        return fallback
     if gateway.configured():
         via = await gateway.post("/v1/narrate", {"facts": facts})
         text = (via or {}).get("text")

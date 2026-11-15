@@ -45,7 +45,7 @@ def validate(raw: Any, facts: list[dict[str, str]], count: int) -> list[dict[str
 
 async def generate(facts: list[dict[str, str]], weak_topics: list[str], kind: str, office: str, count: int = 2) -> dict[str, Any]:
     none = {"questions": [], "source": "local"}
-    if not facts:
+    if not facts or not gateway.enabled("perguntar"):
         return none
     payload = {"facts": facts[:8], "weak_topics": weak_topics[:5], "kind": kind, "office": office, "count": count}
     via_gateway = await gateway.post("/v1/questions", payload)

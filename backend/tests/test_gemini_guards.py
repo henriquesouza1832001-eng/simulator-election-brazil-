@@ -26,5 +26,24 @@ class ModeloPadraoTests(unittest.TestCase):
         self.assertEqual(event_generator.DEFAULT_MODEL, gateway.DEFAULT_MODEL if not __import__("os").getenv("GEMINI_MODEL") else event_generator.DEFAULT_MODEL)
 
 
+
+class RecursosTests(unittest.TestCase):
+    def test_padrao_so_interpreta_e_mapeia(self):
+        import os
+        saved = os.environ.pop("GEMINI_RECURSOS", None)
+        try:
+            self.assertTrue(gateway.enabled("interpretar"))
+            self.assertTrue(gateway.enabled("mapear"))
+            self.assertFalse(gateway.enabled("narrar"))
+            self.assertFalse(gateway.enabled("perguntar"))
+            os.environ["GEMINI_RECURSOS"] = "Interpretar, narrar"
+            self.assertTrue(gateway.enabled("narrar"))
+            self.assertFalse(gateway.enabled("mapear"))
+        finally:
+            os.environ.pop("GEMINI_RECURSOS", None)
+            if saved is not None:
+                os.environ["GEMINI_RECURSOS"] = saved
+
+
 if __name__ == "__main__":
     unittest.main()
