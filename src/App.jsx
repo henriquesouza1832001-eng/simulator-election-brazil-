@@ -507,7 +507,7 @@ export default function App() {
         : { label: 'Sem pendências', title: 'Nada urgente agora', text: 'Use o tempo para preparar uma decisão ou avance o calendário.', urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }] };
   const monthsToElection = careerOverview?.days_until_campaign;
   const overviewProps = {
-    request, state, go: setActiveTab,
+    request, state, go: setActiveTab, pins, onUnpin: togglePin,
     title: activeTab === 'Visão geral' ? pageGuidance[0] : 'Visão geral', lead: activeTab === 'Visão geral' ? pageGuidance[1] : undefined,
     term: partyMode ? null : { label: careerMode ? careerCardLabel : 'Mandato', value: careerMode ? careerCardValue : termMonth, suffix: careerMode ? careerCardSuffix : ' / 48', progress: careerMode ? careerCardProgress : termMonth / 48 * 100, note: careerMode ? careerCardNote : `${monthsRemaining} meses restantes` },
     stats: localCareer

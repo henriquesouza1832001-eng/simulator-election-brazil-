@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Section, Stat, Badge, fmt } from './ui';
 import Hero, { headline } from './Hero';
 import MandateReview from './MandateReview';
+import PainelMapa from './PainelMapa.jsx';
 
 const dateLabel = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR') : '—');
 
 /** Visão geral: manchete do dia, números, próximo passo, agenda e balanço. Os dados chegam prontos do App. */
-export default function OverviewPanel({ request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go }) {
+export default function OverviewPanel({ request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
   const [review, setReview] = useState(null);
   useEffect(() => {
     if (!showReview) return;
@@ -28,17 +29,17 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
     </Section>
 
     <div className="ds-grid-2">
-      <section className="ds-card ds-next">
-        <Badge tone={next.urgent ? 'bad' : ''}>{next.label}</Badge>
-        <h3>{next.title}</h3>
-        <p>{next.text}</p>
-        {skip && <div className="ds-skip"><p>{skip.text}</p><button type="button" className="secondary-button" disabled={skip.busy} onClick={skip.onSkip}>{skip.busy ? 'Avançando…' : skip.label}</button></div>}
-        <div className="ds-actions">
-          {next.actions.map((a) => <button key={a.label} type="button" className={a.primary ? 'primary-button' : 'secondary-button'} onClick={() => go(a.tab)}>{a.label}</button>)}
-        </div>
-      </section>
-
+      <PainelMapa request={request} state={state} go={go} />
       <div className="ds-side">
+        <section className="ds-card ds-next">
+          <Badge tone={next.urgent ? 'bad' : ''}>{next.label}</Badge>
+          <h3>{next.title}</h3>
+          <p>{next.text}</p>
+          {skip && <div className="ds-skip"><p>{skip.text}</p><button type="button" className="secondary-button" disabled={skip.busy} onClick={skip.onSkip}>{skip.busy ? 'Avançando…' : skip.label}</button></div>}
+          <div className="ds-actions">
+            {next.actions.map((a) => <button key={a.label} type="button" className={a.primary ? 'primary-button' : 'secondary-button'} onClick={() => go(a.tab)}>{a.label}</button>)}
+          </div>
+        </section>
         {governing && <section className="ds-card">
           <h4>Capacidade de governar</h4>
           <div className="ds-meter" role="img" aria-label={`${fmt(governing.governability, 0)} de 100`}><i style={{ width: `${Math.max(0, Math.min(100, governing.governability))}%` }} /></div>
@@ -53,14 +54,15 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
           <dl className="ds-kv">{calendar.map(([k, v]) => [<dt key={`${k}-t`}>{k}</dt>, <dd key={`${k}-d`}>{dateLabel(v)}</dd>])}</dl>
           <p className="ds-muted">Datas do ciclo simulado do jogo.</p>
         </section>}
-        <section className="ds-card">
+        {upcoming.length > 0 && <section className="ds-card">
           <h4>O que vem pela frente <button type="button" className="ds-link" onClick={() => go('Agenda')}>ver agenda</button></h4>
-          {upcoming.length ? <ul className="ds-list">{upcoming.map((e) => <li key={e.id}><span className="ds-when">{e.days_until === 0 ? 'hoje' : `em ${e.days_until} d`}</span><b>{e.title}</b></li>)}</ul> : <p className="ds-muted">Nenhum compromisso próximo.</p>}
-        </section>
+          <ul className="ds-list">{upcoming.map((e) => <li key={e.id}><span className="ds-when">{e.days_until === 0 ? 'hoje' : `em ${e.days_until} d`}</span><b>{e.title}</b></li>)}</ul>
+        </section>}
+        {pins.length > 0 && <section className="ds-card ds-pinned"><h4>Atalhos fixados</h4><div>{pins.map((p) => <span key={p}><button type="button" className="ds-link" onClick={() => go(p)}>{p}</button><button type="button" aria-label={`Tirar ${p} dos fixados`} onClick={() => onUnpin(p)}>×</button></span>)}</div></section>}
         {last && <section className="ds-card"><h4>Última decisão</h4><p className="ds-last"><b>{last.title}</b><span className="ds-muted">{dateLabel(last.date)} · {last.kind}</span></p></section>}
       </div>
     </div>
 
-    {showBalance && <Section><MandateReview request={request} state={state} data={review} /></Section>}
+    {showBalance && <details className="ds-fold"><summary>Balanço do mandato</summary><MandateReview request={request} state={state} data={review} /></details>}
   </section>;
 }

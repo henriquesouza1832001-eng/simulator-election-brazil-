@@ -349,3 +349,19 @@ article > span:first-child { opacity: 1; }
 .ds-tab-pin[aria-pressed="true"] { color: var(--ds-accent); }
 
 html, body { background: var(--ds-bg); }
+
+/* Painel como centro de comando */
+.ds-page .ds-hero { min-height: 190px; }
+.ds-painel-mapa { display: grid; gap: 10px; }
+.ds-painel-mapa header { display: flex; justify-content: space-between; align-items: baseline; }
+.ds-painel-mapa h4 { margin: 0; }
+.ds-pinned > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.ds-pinned span { display: inline-flex; align-items: center; border: 1px solid var(--ds-line-2); border-radius: 4px; }
+.ds-pinned span .ds-link { padding: 4px 8px; }
+.ds-pinned span button:last-child { border: 0; background: transparent; color: var(--ds-ink-3); cursor: pointer; padding: 4px 8px; }
+.ds-fold { margin-top: 20px; border: 1px solid var(--ds-line); border-radius: 6px; background: var(--ds-surface); }
+.ds-fold > summary { cursor: pointer; padding: 12px 16px; font-weight: 700; }
+.ds-fold > :not(summary) { padding: 0 16px 16px; }
+.ds-page .ds-hero { min-height: 250px; }
+.ds-page .ds-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.ds-painel-mapa .ds-geomap svg, .ds-painel-mapa svg { max-height: 400px; margin: 0 auto; }
