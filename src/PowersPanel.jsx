@@ -3,7 +3,7 @@ import Select from './Choice.jsx';
 import { Drawer } from './ui.jsx';
 import './powers.css';
 import './territory.css';
-import { EFFECT, effectText, br } from './format';
+import { EFFECT, effectText, br, dataBr } from './format';
 
 const APPROVAL = {
   decreto: ['Decreto', 'Vale na hora'],
@@ -180,12 +180,12 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
         </details>
       </Drawer>}
       {allActions.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 12)}>Mostrar mais ({allActions.length - shown})</button>}
-      {data.history?.length > 0 && <details className="fold"><summary>Atos recentes <span>{data.history.length}</span></summary><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{h.date} — {h.title}</li>)}</ul></details>}
+      {data.history?.length > 0 && <details className="fold"><summary>Atos recentes <span>{data.history.length}</span></summary><ul className="meta-notes">{data.history.map((h, i) => <li key={i}>{dataBr(h.date)} — {h.title}</li>)}</ul></details>}
     </>}
     {ledger.length > 0 && <details className="fold">
       <summary>Previsto e realizado <span>{ledger.length} {ledger.length === 1 ? "decisão" : "decisões"}</span></summary>
       <ul className="powers-list ledger-list">{ledger.slice(0, 12).map((e) => <li key={e.id}><div>
-        <b>{e.title}</b> <small>{e.date} · {e.status}{e.cost ? ` · ${e.cost}` : ''}</small>
+        <b>{e.title}</b> <small>{dataBr(e.date)} · {e.status}{e.cost ? ` · ${e.cost}` : ''}</small>
         <small>Previsto: {effectText(e.forecast) || 'sem efeito numérico'}</small>
         <small>Realizado: {e.result ? (effectText(e.result) || 'nenhum efeito') : 'aguardando'}</small>
         {e.reason && <small className="powers-precedent">{e.reason}</small>}

@@ -18,7 +18,7 @@ def _row(year, sq, office, uf, city, name, number, party, status="Deferido", res
 
 class ElectorApiTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.old = os.environ.get("DATABASE_PATH")
         os.environ["DATABASE_PATH"] = os.path.join(self.tmp.name, "g.sqlite3")
         initialize()

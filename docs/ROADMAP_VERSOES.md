@@ -39,10 +39,13 @@ O objetivo é uma base visual e de navegação robusta, em que qualquer informa�
 - Mapa por município na apuração (exige o desenho dos municípios); tempo de TV e partido no modo Presidência.
 - Pré-campanha do vereador como militante (alternativa ao pulo).
 
-## 0.6 — Motor: economia e Estado (sugestão)
-Empresas com várias decisões ao mesmo tempo (comprar, vender, privatizar, financiar), Banco Central e Selic (influência, autonomia, juros), concessões, Eletrobras e demais estatais, rodovias e ferrovias. É a base do que vira o 1.0 para a Presidência.
-
-## 0.7 — Gemini conectado
+## 0.6 — Preparar o Gemini (em andamento desde 15 nov. 2026)
+Objetivo: descobrir se o Gemini funciona de verdade antes de ligá-lo ao jogo na 0.7, e deixar o caminho pronto para jogar um mandato inteiro (48 meses) com ele na 0.7 ou na 0.9.
+- Prova real: `backend/scripts/provar_gemini.py` (precisa de `GEMINI_API_KEY` no ambiente ou em `backend/.env`, que o Git ignora). Mostra se a chave vale, quais modelos existem, o erro cru do Google em cada formato de envio, qual recurso do jogo cai no texto local sem avisar e quanto tempo leva um mandato.
+- Já corrigido: o narrador recusava todo texto com decimal em português ("0,9" contra "0.9" do motor); os recursos usavam modelos padrão diferentes e agora usam um só (`gateway.DEFAULT_MODEL`).
+- Falta: rodar a prova com a chave real, ajustar o formato de envio ao que o modelo aceitar, mostrar na interface quando o texto veio do Gemini ou do reserva local, e registrar custo por mandato.
+- A definir: onde entra o que estava sugerido para a 0.6 (empresas com várias decisões, concessões, rodovias e ferrovias). Não foi reatribuído a nenhuma versão.
+## 0.7 — Gemini conectado (ou 0.9 para o mandato inteiro)
 Hoje o Gemini está só provisionado (gateway na Cloudflare e variáveis de ambiente), sem ligação ao jogo em produção. Na 0.7 ele passa a:
 - ler texto livre e mapear para ações do cargo (o motor valida);
 - sugerir perguntas de entrevista e debate a partir do aprendizado;

@@ -5,13 +5,15 @@ export const slugOf = (tab) => tab.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
 
 export default function HashRoute({ tab, tabs, go }) {
   const started = useRef(false);
+  const current = useRef(tab);
+  current.current = tab; // o ouvinte do endereço precisa da tela de agora, não da do primeiro render
   const key = tabs.join('|');
   useEffect(() => {
     const apply = () => {
       const wanted = decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
       if (!wanted) return;
       const found = tabs.find((t) => slugOf(t) === wanted);
-      if (found && found !== tab) go(found);
+      if (found && found !== current.current) go(found);
     };
     apply();
     window.addEventListener('popstate', apply);

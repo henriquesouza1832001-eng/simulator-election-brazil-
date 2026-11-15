@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { br } from './format';
+import { br, dataBr } from './format';
 import GeoMap from './GeoMap.jsx';
 import { AMSUL } from './mapData.js';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -76,7 +76,7 @@ export default function DiplomacyPanel({ date, authEnabled, onState, onNotice, b
       <details className="agenda-more diplomacy-section" open={typeof window !== 'undefined' && window.innerWidth > 760}><summary>Cúpulas e compromissos multilaterais ({view.events.length})</summary>
       {view.events.length ? view.events.map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}<small>{event.place}</small></div><div><h3>{event.name}</h3><p>{event.description}</p><button className="secondary-button" disabled={busy || Boolean(view.active_trip) || event.days_until > 30} onClick={() => act('/api/diplomacy/events/attend', { event_id: event.id })}>{event.days_until > 30 ? 'Confirmação abre 30 dias antes' : `Iniciar missão · ${event.trip_days} ${Number(event.trip_days) === 1 ? 'dia' : 'dias'} · R$ ${br(event.cost_bi * 1000, 0)} mi`}</button></div></div>) : <div className="empty-state">Nenhum evento com tempo suficiente para a viagem.</div>}</details>
       <details className="agenda-more diplomacy-section"><summary>Visitas recentes ({view.visit_log.length})</summary>
-      {view.visit_log.length ? view.visit_log.slice(0, 6).map((visit, index) => <div className="fiscal-line" key={`${visit.date}-${index}`}><span>{visit.date} · {visit.country} · {visit.agenda}</span><b>R$ {br(visit.cost_bi, 3)} bi</b></div>) : <div className="empty-state">Nenhuma visita oficial registrada.</div>}</details>
+      {view.visit_log.length ? view.visit_log.slice(0, 6).map((visit, index) => <div className="fiscal-line" key={`${visit.date}-${index}`}><span>{dataBr(visit.date)} · {visit.country} · {visit.agenda}</span><b>R$ {br(visit.cost_bi, 3)} bi</b></div>) : <div className="empty-state">Nenhuma visita oficial registrada.</div>}</details>
     </>}
   </section>;
 }

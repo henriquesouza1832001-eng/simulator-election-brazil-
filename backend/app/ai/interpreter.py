@@ -11,10 +11,11 @@ import re
 from typing import Any
 
 import httpx
+from . import gateway
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = gateway.DEFAULT_MODEL
 PROMPT_VERSION = "policy-interpretation-v1"
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,100}$")
 CATEGORIES = {

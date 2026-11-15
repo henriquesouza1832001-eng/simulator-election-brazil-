@@ -58,7 +58,7 @@ class LocalInterpreterTests(unittest.TestCase):
                             "labels": {"category": "public_investment"}})
             samples.append({"text": f"auditoria contrato despesa fiscal {index}",
                             "labels": {"category": "fiscal_efficiency"}})
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
             with patch("app.ai.trainer.load_reviewed_examples", return_value={"player-one": samples}):
                 report = train(Path(folder))
             artifact_path = Path(report["reports"][0]["fields"]["category"]["artifact"])

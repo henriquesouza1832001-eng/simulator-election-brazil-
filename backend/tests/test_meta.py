@@ -206,7 +206,7 @@ class MetaTests(unittest.TestCase):
 
 class MetaApiTests(unittest.TestCase):
     def test_endpoints(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             os.environ["DATABASE_PATH"] = os.path.join(tmp, "g.sqlite3")
             from app.main import app
             with TestClient(app) as client:

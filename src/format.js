@@ -11,4 +11,6 @@ export function effectText(effects) {
 }
 
 // Número no formato brasileiro (vírgula decimal e ponto de milhar); usar no lugar de toFixed em textos para o jogador.
+// 2029-09-17 -> 17/09/2029 (as datas do motor chegam em ISO)
+export const dataBr = (s) => (typeof s === 'string' ? s.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1') : s);
 export const br = (v, d = 1) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');

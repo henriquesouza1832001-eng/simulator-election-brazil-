@@ -15,7 +15,7 @@ from . import consequences, ledger
 
 # dias desde o requerimento até cada etapa
 OFFSETS = {"Requerimento": 0, "Instalação": 21, "Oitiva 1": 45, "Oitiva 2": 70, "Oitiva 3": 95, "Relatório final": 125, "Encaminhamento": 150}
-WITNESSES = ["um ex-assessor do gabinete", "o secretário-executivo responsável", "o presidente de uma empresa contratada", "um auditor do tribunal de contas", "o ministro da área"]
+WITNESSES = ["de um ex-assessor do gabinete", "do secretário-executivo responsável", "do presidente de uma empresa contratada", "de um auditor do tribunal de contas", "do ministro da área"]
 SCOPE_NAME = {"vereador": "Câmara Municipal", "deputado_estadual": "Assembleia Legislativa", "deputado_federal": "Câmara dos Deputados", "senador": "Senado Federal",
               "presidente": "Congresso Nacional", "governador": "Assembleia Legislativa", "prefeito": "Câmara Municipal"}
 MONTHLY_CHANCE = 0.10
@@ -102,11 +102,11 @@ def _step(state: dict[str, Any], cpi: dict[str, Any], stage: dict[str, Any], aft
         stage["status"] = "concluída"
         if hit:
             cpi["findings"] += 1
-            _news(state, cpi, name, f"Oitiva de {who} na CPI sobre {cpi['subject']} traz indícios que a oposição explora.")
+            _news(state, cpi, name, f"Oitiva {who} na CPI sobre {cpi['subject']} traz indícios que a oposição explora.")
             if opp:
                 _bump(state, {"approval": -0.8})
         else:
-            _news(state, cpi, name, f"Oitiva de {who} na CPI sobre {cpi['subject']} termina sem fatos novos.", "neutro")
+            _news(state, cpi, name, f"Oitiva {who} na CPI sobre {cpi['subject']} termina sem fatos novos.", "neutro")
         if opp and name == "Oitiva 2":
             consequences.open_crisis(
                 state, crisis_id=f"{cpi['id']}-resp", action_id="cpi", today=after, deadline_days=30, title=f"CPI sobre {cpi['subject']}: como o governo reage?",

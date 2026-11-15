@@ -108,7 +108,7 @@ class SchemaTests(unittest.TestCase):
 
 class GeneratorTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.dir = Path(self.tmp.name)
         self.patches = [mock.patch.object(gen, "GENERATED_DIR", self.dir / "generated"), mock.patch.object(lib_mod, "EVENTS_DIR", self.dir)]
         for p in self.patches:

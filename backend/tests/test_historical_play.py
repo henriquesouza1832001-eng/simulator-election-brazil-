@@ -10,7 +10,7 @@ CAND = lambda sq, name, num, party, res: (2024, sq, 1, "Eleições Municipais 20
 class HistoricalPlayTest(unittest.TestCase):
     def test_play_a_real_past_election_and_compare_with_the_official_result(self):
         os.environ.pop("GEMINI_API_KEY", None)
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             os.environ["DATABASE_PATH"] = os.path.join(tmp, "g.sqlite3")
             from app.main import app
             from app.db import connect

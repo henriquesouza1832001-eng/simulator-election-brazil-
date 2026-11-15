@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 class PowersApiTests(unittest.TestCase):
     def test_interpret_execute_regulators_and_news_endpoints(self):
         os.environ.pop("GEMINI_API_KEY", None)
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             os.environ["DATABASE_PATH"] = os.path.join(tmp, "g.sqlite3")
             from app.main import app
             with TestClient(app) as client:

@@ -12,7 +12,7 @@ from app.main import app
 
 class SkipPreparationTest(unittest.TestCase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.environment = patch.dict(os.environ, {"DATABASE_PATH": str(Path(self.temp_dir.name) / "game.sqlite3"), "COGNITO_REGION": "", "COGNITO_USER_POOL_ID": "",
                                                     "COGNITO_CLIENT_ID": "", "COGNITO_DOMAIN": "", "GEMINI_API_KEY": ""})
         self.environment.start()

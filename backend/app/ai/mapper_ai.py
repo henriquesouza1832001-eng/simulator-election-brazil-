@@ -18,7 +18,7 @@ from . import gateway
 
 logger = logging.getLogger("civiciclo.mapper_ai")
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,80}$")
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+DEFAULT_MODEL = gateway.DEFAULT_MODEL
 INSTRUCTIONS = (
     "Você ajuda um simulador político a entender o que o jogador quis fazer. Escolha no máximo UM id da lista de candidatos "
     "ou 'nenhum'. Se estiver em dúvida, sugira até duas perguntas curtas em português do Brasil que ajudem a decidir. "

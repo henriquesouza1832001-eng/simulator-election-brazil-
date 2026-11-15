@@ -17,7 +17,7 @@ from . import gateway
 
 logger = logging.getLogger("civiciclo.narrator")
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,80}$")
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+DEFAULT_MODEL = gateway.DEFAULT_MODEL
 INSTRUCTIONS = (
     "Você escreve notícias curtas e neutras em português do Brasil para um simulador político. "
     "Use SOMENTE os fatos fornecidos. Não invente números, nomes, datas, citações ou causas. "
@@ -50,7 +50,8 @@ def local(facts: dict[str, Any]) -> str:
 
 
 def _numbers(text: str) -> set[str]:
-    return set(re.findall(r"\d+(?:[.,]\d+)?", text))
+    # "0,9" (texto em português) e "0.9" (JSON do motor) são o mesmo número; compara pelo valor, não pela grafia.
+    return {format(float(n.replace(",", ".")), "g") for n in re.findall(r"\d+(?:[.,]\d+)?", text)}
 
 
 def _acceptable(output: str, facts: dict[str, Any]) -> bool:

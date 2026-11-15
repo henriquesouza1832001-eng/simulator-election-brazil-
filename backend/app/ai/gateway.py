@@ -12,6 +12,8 @@ from typing import Any
 import httpx
 
 logger = logging.getLogger("civiciclo.gateway")
+# Modelo padrão de todos os recursos de IA (interpretar, narrar, mapear, perguntar, gerar eventos). GEMINI_MODEL sobrescreve.
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 
 def configured() -> bool:

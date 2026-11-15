@@ -30,11 +30,12 @@ from typing import Any, Awaitable, Callable
 import httpx
 
 from ..engine import event_schema as schema
+from . import gateway
 from ..engine.event_library import EVENTS_DIR, mentions_real_person, real_person_names
 
 logger = logging.getLogger(__name__)
 GENERATED_DIR = EVENTS_DIR / "generated"
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", gateway.DEFAULT_MODEL)
 MODEL_PATTERN = re.compile(r"[A-Za-z0-9._-]{3,80}")
 
 INSTRUCTIONS = """Você cria acontecimentos para um simulador político brasileiro FICTÍCIO e satírico.

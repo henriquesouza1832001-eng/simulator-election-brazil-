@@ -5,7 +5,7 @@ import unittest
 
 class StampsByGameTests(unittest.TestCase):
     def test_carimbos_antigos_migram_para_a_partida_onde_foram_ganhos(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             os.environ["DATABASE_PATH"] = os.path.join(tmp, "g.sqlite3")
             from app import db
             db.initialize()
@@ -18,7 +18,7 @@ class StampsByGameTests(unittest.TestCase):
             self.assertEqual([(r["player_id"], r["campaign_id"], r["stamp_id"]) for r in rows], [("p1", "campA", "x1")])
 
     def test_o_mesmo_carimbo_pode_existir_em_duas_partidas(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             os.environ["DATABASE_PATH"] = os.path.join(tmp, "g.sqlite3")
             from app import db
             db.initialize()

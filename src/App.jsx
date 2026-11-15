@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Select from './Choice.jsx';
-import { br } from './format';
+import { br, dataBr } from './format';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
 import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
@@ -567,7 +567,7 @@ export default function App() {
           <div className="panel-heading"><div><div className="eyebrow">CENTRO DE DECISÕES</div><h2>Escreva uma medida</h2><p>Descreva a ideia com suas palavras. O motor calcula os efeitos antes de você confirmar.</p></div><span className={`ai-chip ai-chip--${aiStatus}`} title={aiStatusTitle}><i/> {aiStatusLabel}</span></div>
           <label className="field-label" htmlFor="measure">PROPOSTA DO GOVERNO</label>
           <div className="cadence-summary">{(() => { const lim = state.action_limits || {}; const exec = Number(lim.executive_days ?? 0); const leg = Number(lim.legislative_days ?? 0); const every = state.legislative_calendar?.cooldown_days || 60; const wait = (n) => (n <= 0 ? 'liberada agora' : `libera em ${n} ${n === 1 ? 'dia' : 'dias'}`); return <><span><b>Decisão administrativa</b> a cada 7 dias: {wait(exec)}.</span><span><b>Projeto de lei</b> a cada {every} dias: {wait(leg)}. {lim.pending_bills ?? 0} em tramitação · {lim.laws_enacted ?? 0} {Number(lim.laws_enacted ?? 0) === 1 ? 'lei aprovada' : 'leis aprovadas'}.</span></>; })()}</div>
-          {state.legislative_calendar?.pending_bills?.map((bill) => <div className="pending-bill" key={bill.id}><span>TRAMITANDO · VOTAÇÃO {bill.decision_date}</span><b>{bill.title}</b><small>{bill.instrument} · aprovação por regra parlamentar do simulador</small></div>)}
+          {state.legislative_calendar?.pending_bills?.map((bill) => <div className="pending-bill" key={bill.id}><span>TRAMITANDO · VOTAÇÃO {dataBr(bill.decision_date)}</span><b>{bill.title}</b><small>{bill.instrument} · aprovação por regra parlamentar do simulador</small></div>)}
           <textarea id="measure" value={measure} onChange={(e) => setMeasure(e.target.value)} placeholder="Ex.: revisar contratos renováveis, publicar os preços de referência e direcionar a economia comprovada à redução da dívida…" maxLength={3000}/>
           <div className="composer-footer"><span>{measure.length} / 3000 caracteres <span className="muted">· sem compromisso até simular</span></span><button className="primary-button" disabled={busy || !measure.trim()} onClick={interpret}>{busy ? 'Analisando…' : 'Interpretar e simular'}<b>→</b></button></div>
           {notice && <div className="notice">{notice}</div>}

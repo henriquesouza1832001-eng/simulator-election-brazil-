@@ -80,8 +80,14 @@ def database_path() -> Path:
 
 
 def connect() -> sqlite3.Connection:
-    connection = sqlite3.connect(database_path(), factory=_ClosingConnection)
+    connection = sqlite3.connect(database_path(), timeout=30, factory=_ClosingConnection)
     connection.row_factory = sqlite3.Row
+    # Várias telas pedem dados ao mesmo tempo: WAL deixa leitura e escrita conviverem, e a espera evita "database is locked".
+    connection.execute("PRAGMA busy_timeout = 30000")
+    try:
+        connection.execute("PRAGMA journal_mode = WAL")
+    except sqlite3.OperationalError:
+        pass
     return connection
 
 

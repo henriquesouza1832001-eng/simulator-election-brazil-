@@ -53,7 +53,7 @@ async def generate(facts: list[dict[str, str]], weak_topics: list[str], kind: st
         qs = validate(via_gateway, facts, count)
         return {"questions": qs, "source": "gemini"} if qs else none
     key = os.getenv("GEMINI_API_KEY", "").strip()
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+    model = os.getenv("GEMINI_MODEL", gateway.DEFAULT_MODEL).strip()
     if not key or gateway.configured() or not re.fullmatch(r"[A-Za-z0-9._-]{3,80}", model):
         return none
     schema = {"type": "OBJECT", "properties": {"questions": {"type": "ARRAY", "maxItems": count, "items": {"type": "OBJECT", "properties": {"topic": {"type": "STRING"}, "prompt": {"type": "STRING"}}, "required": ["topic", "prompt"]}}}, "required": ["questions"]}

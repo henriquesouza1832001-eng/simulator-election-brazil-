@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { dataBr } from './format';
 import { Page, Section, Badge, Empty } from './ui.jsx';
 
 const STATUS = { suspenso: ['Suspenso', 'bad'], mantido: ['Mantido', 'good'], aberto: ['Aberto', 'warn'], 'com ressalvas': ['Com ressalvas', 'warn'] };
@@ -48,7 +49,7 @@ export default function RegulatorsPanel({ request, state, federalExecutive = tru
         ? <Empty title="Nenhuma decisão ainda">Quando um órgão decidir algo sobre você, aparece aqui.</Empty>
         : <ul className="ds-reg-decisions">{data.decisions.map((d) => {
           const [label, tone] = STATUS[d.status] || [d.status, ''];
-          return <li key={d.id}><span className="ds-muted">{d.decided || d.filed}</span><b>{d.title}</b><Badge tone={tone}>{label}</Badge>{d.chance_pct != null && <small className="ds-muted">risco de suspensão era {d.chance_pct}%</small>}</li>;
+          return <li key={d.id}><span className="ds-muted">{dataBr(d.decided || d.filed)}</span><b>{d.title}</b><Badge tone={tone}>{label}</Badge>{d.chance_pct != null && <small className="ds-muted">risco de suspensão era {d.chance_pct}%</small>}</li>;
         })}</ul>}
     </Section>
   </Page>;

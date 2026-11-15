@@ -12,7 +12,7 @@ START = {"name": "Marina Teste", "state_code": "SP", "municipality_id": "3550308
 
 class PartyPathApiTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.old = os.environ.get("DATABASE_PATH")
         os.environ["DATABASE_PATH"] = os.path.join(self.tmp.name, "g.sqlite3")
 

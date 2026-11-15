@@ -21,7 +21,7 @@ PREFS = {"eleitor": ["reuniao_bairro", "ato_publico"], "militante": ["panfletage
 
 class MunicipalCareerFlowTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.old = os.environ.get("DATABASE_PATH")
         os.environ["DATABASE_PATH"] = os.path.join(self.tmp.name, "g.sqlite3")
         from app.main import app
