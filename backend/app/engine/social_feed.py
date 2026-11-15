@@ -45,6 +45,25 @@ TEMPLATES = {
                        "humor": ["Apuração: o suspense foi maior que o resultado.", "Perdeu a eleição, mas ganhou o direito de dizer “eu avisei”."],
                        "imprensa": ["Fim da apuração simulada: derrota do candidato do jogador."]},
 }
+TEMPLATES.update({
+    "acao_forte": {"apoio": ["{t}: “{m}”. Foi esse o recado que o Brasil queria ouvir.", "“{m}” — {t}. Quem estava lá saiu convencido."],
+                   "oposicao": ["{t} e o discurso “{m}”. Bonito no palanque; falta mostrar como fecha a conta.", "“{m}”… e na prática, quando?"],
+                   "humor": ["“{m}”: o trecho de {t} que já virou áudio de grupo da família.", "{t} rendeu uma frase que vai ser cobrada na ceia."],
+                   "imprensa": ["Em {t}, candidato afirma: “{m}”. Fala repercute entre eleitores."]},
+    "acao_media": {"apoio": ["{t}: “{m}”. Campanha é construção, e hoje foi um bom dia.", "Mais um dia de rua: {t}."],
+                   "oposicao": ["{t} e “{m}”. Nada de novo sob o sol.", "Comício, discurso, promessa… e as respostas?"],
+                   "humor": ["{t}: “{m}”. O grupo de zap ficou dividido entre aplaudir e conferir.", "Frase de {t} ganhou 3 interpretações no jantar."],
+                   "imprensa": ["{t}: candidato repete pontos centrais da campanha."]},
+    "acao_fraca": {"apoio": ["{t} não foi o melhor dia, mas a campanha segue. “{m}” foi tirado de contexto.", "Todo mundo tem um dia ruim. {t} ficou para trás."],
+                   "oposicao": ["“{m}”? Isso foi sério? {t} deixou mais dúvidas que respostas.", "{t}: faltou preparo, faltou conteúdo."],
+                   "humor": ["“{m}”: o corte de {t} que ninguém pediu e todo mundo compartilhou.", "{t} virou meme antes de acabar."],
+                   "imprensa": ["Fala em {t} gera críticas; equipe diz que foi mal interpretada."]},
+    "viral": {"apoio": ["Estourou! {t} bateu recorde de alcance. 🚀", "A campanha viralizou: {t}."],
+              "oposicao": ["Viralizou, mas voto não vem de curtida. {t}.", "Muito barulho em {t}; e as propostas?"],
+              "humor": ["{t} viralizou até na tia que não usa internet.", "O algoritmo escolheu um lado: {t}."],
+              "imprensa": ["Publicação de {t} alcança grande audiência nas redes."]},
+})
+
 GOOD = ("aprov", "conclu", "sancion", "execut", "decidid", "respond")
 BAD = ("rejeit", "veto", "barr", "agrav", "negad", "sem resposta")
 
@@ -95,9 +114,20 @@ def build(state: dict[str, Any], limit: int = 24) -> dict[str, Any]:
     if result in ("won", "lost"):
         facts.append({"id": f"e{election.get('date') or state['date']}", "date": str(election.get("date") or state["date"]),
                       "tmpl": "eleicao_ganhou" if result == "won" else "eleicao_perdeu", "fmt": {}, "origin": "Resultado da eleição", "tab": "Apuração"})
+    activities = list(campaign.get("activities") or []) + list(career.get("activities") or [])
+    for a in sorted(activities, key=lambda x: str(x.get("date", "")))[-6:]:
+        score = a.get("score")
+        place = a.get("municipality_name") or a.get("region_label") or a.get("region") or "campanha"
+        label = str(a.get("label") or a.get("type") or "Atividade")
+        msg = " ".join(str(a.get("message") or "").split())
+        snippet = (msg[:70].rstrip() + ("…" if len(msg) > 70 else "")) if msg else "o recado do dia"
+        virality = int(((a.get("social_result") or {}).get("virality_pct")) or 0)
+        tmpl = "viral" if virality >= 70 else "acao_forte" if (score or 0) >= 75 else "acao_fraca" if (score or 100) < 55 else "acao_media"
+        facts.append({"id": f"a{a.get('id') or a.get('date')}", "date": str(a.get("date") or state["date"]), "tmpl": tmpl,
+                      "fmt": {"t": f"{label} em {place}", "m": snippet}, "origin": f"{label} em {place}", "tab": "Eleição"})
     posts: list[dict[str, Any]] = []
     for fact in facts:
-        kinds = ["apoio", "oposicao", "humor"] + (["imprensa"] if fact["tmpl"] in ("crise", "eleicao_ganhou", "eleicao_perdeu", "decisao_ruim") else [])
+        kinds = ["apoio", "oposicao", "humor"] + (["imprensa"] if fact["tmpl"] in ("crise", "eleicao_ganhou", "eleicao_perdeu", "decisao_ruim", "viral", "acao_fraca") else [])
         order = sorted(kinds, key=lambda k: hashlib.sha256(f"{state.get('campaign_seed', 1)}:{fact['id']}:{k}".encode()).hexdigest())
         for kind in order[:3]:
             posts.append(_post(state, fact, kind, fact["tmpl"], **fact["fmt"]))

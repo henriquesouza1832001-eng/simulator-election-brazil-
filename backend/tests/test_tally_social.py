@@ -53,5 +53,49 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(social_feed.build(_state()), social_feed.build(_state()))
 
 
+def _career(office, **extra):
+    return {"date": "2028-10-08", "campaign_seed": 55, "career": {"mode": True, "office": office, "result": "won", "vote_share": 54.0, "opponent_share": 40.0, **extra}}
+
+
+class FormatosTests(unittest.TestCase):
+    def test_lista_soma_as_cadeiras_da_casa(self):
+        state = _career("vereador", electoral_result={"district_magnitude": 13, "party_vote_share": 18.0, "party_seats": 3, "valid_votes": 1_300_000,
+                                                      "elected": True, "candidate_list_rank": 2, "list": []})
+        data = tally.build(state)
+        self.assertEqual(data["kind"], "lista")
+        final = data["steps"][-1]["parties"]
+        self.assertEqual(sum(p["seats"] for p in final), 13)
+        self.assertEqual(next(p for p in final if p["mine"])["seats"], 3)
+        self.assertEqual(data["quotient"], 100_000)
+
+    def test_zonas_terminam_no_resultado(self):
+        data = tally.build(_career("prefeito"))
+        self.assertEqual(data["kind"], "zonas")
+        self.assertEqual(data["steps"][-1]["counted"], 100.0)
+        self.assertAlmostEqual(data["steps"][-1]["national_player"], data["player_final"], delta=0.3)
+
+    def test_sem_resultado_na_carreira(self):
+        state = _career("vereador")
+        state["career"]["result"] = None
+        self.assertFalse(tally.build(state)["available"])
+
+
+class CampanhaNasRedesTests(unittest.TestCase):
+    def test_acao_de_campanha_vira_publicacao_com_a_fala(self):
+        state = _state()
+        state["campaign"]["activities"] = [{"id": "a1", "date": "2030-09-20", "label": "Comício", "region_label": "Nordeste", "score": 82,
+                                            "message": "Vou cortar juros do povo e investir em escola de tempo integral"}]
+        feed = social_feed.build(state)
+        posts = [p for p in feed["posts"] if p["origin"].startswith("Comício")]
+        self.assertTrue(posts)
+        self.assertTrue(any("tempo integral" in p["text"] or "Comício" in p["text"] for p in posts))
+
+    def test_acao_viral_gera_post_de_alcance(self):
+        state = _state()
+        state["career"] = {"activities": [{"id": "b1", "date": "2030-09-21", "label": "Live", "score": 70, "message": "ola", "social_result": {"virality_pct": 90}}]}
+        feed = social_feed.build(state)
+        self.assertTrue(any(p["origin"].startswith("Live") for p in feed["posts"]))
+
+
 if __name__ == "__main__":
     unittest.main()

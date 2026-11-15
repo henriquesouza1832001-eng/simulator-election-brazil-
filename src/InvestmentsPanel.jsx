@@ -26,14 +26,14 @@ export default function InvestmentsPanel({ view, busy, onTransfer }) {
 
   return <>
     <Section title="Onde o dinheiro está" hint={`Total fixo de R$ ${fmt(total)} bi por ano. Toque em uma área para reforçá-la com verba de outra.`}>
-      <p className="ds-muted">{waiting ? `Próximo remanejamento liberado em ${view.days_until_reallocation} dia(s).` : 'Remanejamento liberado agora.'}</p>
+      <p className="ds-muted">{waiting ? `Próximo remanejamento liberado em ${view.days_until_reallocation} ${Number(view.days_until_reallocation) === 1 ? 'dia' : 'dias'}.` : 'Remanejamento liberado agora.'}</p>
       <div className="ds-inv-grid">
         {sorted.map((a) => <button key={a.key} type="button" className="ds-inv" onClick={() => open(a.key)}>
           <span className="ds-muted">{a.ministry}</span>
           <b>{a.label}</b>
           <strong>R$ {fmt(a.value)} bi<small>/ano</small></strong>
           <i className="ds-inv-bar"><u style={{ width: `${Math.round((a.value / total) * 100)}%` }} /></i>
-          <small className="ds-muted">{Math.round((a.value / total) * 100)}% da carteira · efeito em {a.lag_days} dias</small>
+          <small className="ds-muted">{Math.round((a.value / total) * 100)}% da carteira · efeito em {a.lag_days} {Number(a.lag_days) === 1 ? 'dia' : 'dias'}</small>
         </button>)}
       </div>
     </Section>
@@ -45,8 +45,8 @@ export default function InvestmentsPanel({ view, busy, onTransfer }) {
     </Section>
 
     {t && <Drawer title={`Reforçar ${t.label}`} onClose={() => setTarget(null)} footer={
-      <button className="primary-button" disabled={busy || waiting || !s} onClick={confirm}>{waiting ? `Libera em ${view.days_until_reallocation} dia(s)` : `Mover R$ ${fmt(value)} bi`}</button>}>
-      <p className="ds-muted">Hoje: R$ {fmt(t.value)} bi/ano. Efeito em {t.lag_days} dias.</p>
+      <button className="primary-button" disabled={busy || waiting || !s} onClick={confirm}>{waiting ? `Libera em ${view.days_until_reallocation} ${Number(view.days_until_reallocation) === 1 ? 'dia' : 'dias'}` : `Mover R$ ${fmt(value)} bi`}</button>}>
+      <p className="ds-muted">Hoje: R$ {fmt(t.value)} bi/ano. Efeito em {t.lag_days} {Number(t.lag_days) === 1 ? 'dia' : 'dias'}.</p>
       <h4>1. Tirar de</h4>
       <div className="ds-pick-list">
         {sorted.filter((a) => a.key !== target).map((a) => <button key={a.key} type="button" aria-pressed={source === a.key} onClick={() => setSource(a.key)}>

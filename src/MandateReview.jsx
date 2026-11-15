@@ -15,7 +15,7 @@ export default function MandateReview({ request, state, data: given }) {
     <div className="ds-table-wrap"><table className="ds-table"><thead><tr><th>Indicador</th><th>Início</th><th>Agora</th><th>Variação</th></tr></thead>
       <tbody>{data.metrics.map((r) => <tr key={r.key}><td>{r.label}</td><td>{fmt(r.start)} {r.unit}</td><td>{fmt(r.now)} {r.unit}</td><td><Delta value={r.delta} better={BETTER[r.key] || 'up'} /></td></tr>)}</tbody></table></div>
     <p className="ds-muted" style={{ margin: '12px 4px 0', fontSize: 14 }}>{decisions.recorded} decisões registradas, {decisions.approved} aprovadas e {decisions.setbacks} revezes (rejeições ou crises sem resposta).
-      {cpis.total > 0 ? ` ${cpis.total} CPI(s), ${cpis.against_government} contra o governo e ${cpis.with_indictments} com pedido de indiciamento.` : ''}</p>
+      {cpis.total > 0 ? ` ${cpis.total} ${Number(cpis.total) === 1 ? 'CPI' : 'CPIs'}, ${cpis.against_government} contra o governo e ${cpis.with_indictments} com pedido de indiciamento.` : ''}</p>
     <p className="ds-muted" style={{ margin: '6px 4px 4px', fontSize: 13 }}>{data.note}</p>
   </Group>;
 }

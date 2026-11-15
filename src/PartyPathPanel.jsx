@@ -85,7 +85,7 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
 
   return <section className="panel meta-page party-path">
     <h2>{ov.name} · {ov.stage_label}</h2>
-    <p className="page-description">{ov.municipality} ({ov.state_code}) · causa: {ov.cause}. {ov.party ? `Filiado(a) a ${ov.party}${ov.post ? `, ${ov.post}` : ''}.` : 'Sem partido.'} Próximas eleições: municipal em {new Date(`${ov.next_municipal_election}T12:00:00`).toLocaleDateString('pt-BR')} ({ov.days_to_municipal_election} dias) e geral em {new Date(`${ov.next_general_election}T12:00:00`).toLocaleDateString('pt-BR')} ({ov.days_to_general_election} dias).</p>
+    <p className="page-description">{ov.municipality} ({ov.state_code}) · causa: {ov.cause}. {ov.party ? `Filiado(a) a ${ov.party}${ov.post ? `, ${ov.post}` : ''}.` : 'Sem partido.'} Próximas eleições: municipal em {new Date(`${ov.next_municipal_election}T12:00:00`).toLocaleDateString('pt-BR')} ({ov.days_to_municipal_election} {Number(ov.days_to_municipal_election) === 1 ? 'dia' : 'dias'}) e geral em {new Date(`${ov.next_general_election}T12:00:00`).toLocaleDateString('pt-BR')} ({ov.days_to_general_election} {Number(ov.days_to_general_election) === 1 ? 'dia' : 'dias'}).</p>
 
     <ol className="pp-stages" aria-label="Etapas da trajetória">{STAGES.map(([k, l], i) => <li key={k} className={i < stageIndex ? 'done' : i === stageIndex ? 'current' : ''} aria-current={i === stageIndex ? 'step' : undefined}><span>{i + 1}</span>{l}</li>)}</ol>
 

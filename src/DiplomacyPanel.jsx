@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { br } from './format';
 import GeoMap from './GeoMap.jsx';
 import { AMSUL } from './mapData.js';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -37,16 +38,16 @@ export default function DiplomacyPanel({ date, authEnabled, onState, onNotice, b
     <p className="page-description">Prepare missões, acompanhe o deslocamento no calendário e participe de cúpulas. O tempo fora de Brasília e os custos de viagem entram na simulação; relações e resultados mudam quando a missão termina.</p>
     {!view ? <div className="empty-state">Carregando agenda diplomática...</div> : <>
       {view.active_trip && <section className="flight-card" aria-live="polite">
-        <div className="flight-heading"><div><span className="eyebrow">MISSÃO EM ANDAMENTO · SIMULAÇÃO</span><h3>{view.active_trip.type === 'bilateral' ? `Visita oficial a ${view.active_trip.destination}` : view.active_trip.destination}</h3><p>{view.active_trip.agenda}</p></div><strong>{view.active_trip.days_remaining} dia(s)<small>até o retorno</small></strong></div>
+        <div className="flight-heading"><div><span className="eyebrow">MISSÃO EM ANDAMENTO · SIMULAÇÃO</span><h3>{view.active_trip.type === 'bilateral' ? `Visita oficial a ${view.active_trip.destination}` : view.active_trip.destination}</h3><p>{view.active_trip.agenda}</p></div><strong>{view.active_trip.days_remaining} {Number(view.active_trip.days_remaining) === 1 ? 'dia' : 'dias'}<small>até o retorno</small></strong></div>
         <div className="flight-route"><span>{view.active_trip.route_from.toUpperCase()}</span><div className="flight-track"><i style={{ width: `${view.active_trip.route_progress}%` }}/><b style={{ left: `${view.active_trip.route_progress}%` }} aria-label={view.active_trip.phase}>✈</b></div><span>{view.active_trip.route_to.toUpperCase()}</span></div>
         <small className="flight-phase">{view.active_trip.phase}</small>
-        <div className="flight-footer"><span>Retorno previsto: {new Date(`${view.active_trip.arrival_date}T12:00:00`).toLocaleDateString('pt-BR')}</span><b>R$ {(view.active_trip.cost_bi * 1000).toFixed(0)} mi registrados</b></div>
+        <div className="flight-footer"><span>Retorno previsto: {new Date(`${view.active_trip.arrival_date}T12:00:00`).toLocaleDateString('pt-BR')}</span><b>R$ {br(view.active_trip.cost_bi * 1000, 0)} mi registrados</b></div>
       </section>}
       <div className="diplomacy-summary">
         <article><span>Relação bilateral media</span><b>{view.average_relation}/100</b></article>
         <article><span>Influência multilateral</span><b>{view.multilateral_influence}/100</b></article>
-        <article><span>Intervalo para nova missão</span><b>{view.active_trip ? 'Em andamento' : view.days_until_visit ? `${view.days_until_visit} dias` : 'Disponível'}</b></article>
-        <article><span>Verba anual de viagens</span><b>R$ {view.travel_remaining_bi.toFixed(3)} bi livres</b><small>R$ {view.travel_spent_bi.toFixed(3)} bi usados neste ano</small></article>
+        <article><span>Intervalo para nova missão</span><b>{view.active_trip ? 'Em andamento' : view.days_until_visit ? `${view.days_until_visit} ${Number(view.days_until_visit) === 1 ? 'dia' : 'dias'}` : 'Disponível'}</b></article>
+        <article><span>Verba anual de viagens</span><b>R$ {br(view.travel_remaining_bi, 3)} bi livres</b><small>R$ {br(view.travel_spent_bi, 3)} bi usados neste ano</small></article>
       </div>
       {(() => {
         const selected = view.countries.find((item) => item.code === country) || view.countries[0];
@@ -60,11 +61,11 @@ export default function DiplomacyPanel({ date, authEnabled, onState, onNotice, b
             <span className="ds-label">Missão oficial</span>
             <h3>{selected.name}</h3>
             <p className="ds-muted">{selected.region} · {selected.focus}</p>
-            <div className="ds-after"><span>Relação bilateral<b>{selected.relation}/100</b></span><span>Duração<b>{selected.trip_days} dias</b></span><span>Custo<b>R$ {(selected.travel_cost_bi * 1000).toFixed(0)} mi</b></span></div>
+            <div className="ds-after"><span>Relação bilateral<b>{selected.relation}/100</b></span><span>Duração<b>{selected.trip_days} {Number(selected.trip_days) === 1 ? 'dia' : 'dias'}</b></span><span>Custo<b>R$ {br(selected.travel_cost_bi * 1000, 0)} mi</b></span></div>
             <h4>Pauta</h4>
             <div className="ds-seg" role="group" aria-label="Pauta da missão">{Object.entries(view.agendas).map(([key, label]) => <button key={key} type="button" aria-pressed={agenda === key} onClick={() => setAgenda(key)}>{label}</button>)}</div>
-            <button className="primary-button" disabled={blocked} onClick={() => act('/api/diplomacy/visit', { country_code: country, agenda })}>{view.active_trip ? 'Em missão' : view.days_until_visit ? `Nova visita em ${view.days_until_visit} dias` : 'Iniciar missão oficial'}</button>
-            <small className="ds-muted">O custo sai da verba anual de viagens (índice ×{selected.travel_price_index.toFixed(3)}). O efeito diplomático só entra ao concluir a missão.</small>
+            <button className="primary-button" disabled={blocked} onClick={() => act('/api/diplomacy/visit', { country_code: country, agenda })}>{view.active_trip ? 'Em missão' : view.days_until_visit ? `Nova visita em ${view.days_until_visit} ${Number(view.days_until_visit) === 1 ? 'dia' : 'dias'}` : 'Iniciar missão oficial'}</button>
+            <small className="ds-muted">O custo sai da verba anual de viagens (índice ×{br(selected.travel_price_index, 3)}). O efeito diplomático só entra ao concluir a missão.</small>
           </aside>
         </div>;
       })()}
@@ -73,9 +74,9 @@ export default function DiplomacyPanel({ date, authEnabled, onState, onNotice, b
         <div className="ds-party-chips" role="group" aria-label="Escolher país">{view.countries.map((item) => <button key={item.code} type="button" aria-pressed={country === item.code} onClick={() => setCountry(item.code)}><b>{item.name}</b><span>{item.relation}</span><small>{item.region}</small></button>)}</div>
       </section>
       <details className="agenda-more diplomacy-section" open={typeof window !== 'undefined' && window.innerWidth > 760}><summary>Cúpulas e compromissos multilaterais ({view.events.length})</summary>
-      {view.events.length ? view.events.map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}<small>{event.place}</small></div><div><h3>{event.name}</h3><p>{event.description}</p><button className="secondary-button" disabled={busy || Boolean(view.active_trip) || event.days_until > 30} onClick={() => act('/api/diplomacy/events/attend', { event_id: event.id })}>{event.days_until > 30 ? 'Confirmação abre 30 dias antes' : `Iniciar missão · ${event.trip_days} dias · R$ ${(event.cost_bi * 1000).toFixed(0)} mi`}</button></div></div>) : <div className="empty-state">Nenhum evento com tempo suficiente para a viagem.</div>}</details>
+      {view.events.length ? view.events.map((event) => <div className="agenda-event" key={event.id}><div className="agenda-count">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}<small>{event.place}</small></div><div><h3>{event.name}</h3><p>{event.description}</p><button className="secondary-button" disabled={busy || Boolean(view.active_trip) || event.days_until > 30} onClick={() => act('/api/diplomacy/events/attend', { event_id: event.id })}>{event.days_until > 30 ? 'Confirmação abre 30 dias antes' : `Iniciar missão · ${event.trip_days} ${Number(event.trip_days) === 1 ? 'dia' : 'dias'} · R$ ${br(event.cost_bi * 1000, 0)} mi`}</button></div></div>) : <div className="empty-state">Nenhum evento com tempo suficiente para a viagem.</div>}</details>
       <details className="agenda-more diplomacy-section"><summary>Visitas recentes ({view.visit_log.length})</summary>
-      {view.visit_log.length ? view.visit_log.slice(0, 6).map((visit, index) => <div className="fiscal-line" key={`${visit.date}-${index}`}><span>{visit.date} · {visit.country} · {visit.agenda}</span><b>R$ {visit.cost_bi.toFixed(3)} bi</b></div>) : <div className="empty-state">Nenhuma visita oficial registrada.</div>}</details>
+      {view.visit_log.length ? view.visit_log.slice(0, 6).map((visit, index) => <div className="fiscal-line" key={`${visit.date}-${index}`}><span>{visit.date} · {visit.country} · {visit.agenda}</span><b>R$ {br(visit.cost_bi, 3)} bi</b></div>) : <div className="empty-state">Nenhuma visita oficial registrada.</div>}</details>
     </>}
   </section>;
 }

@@ -65,10 +65,10 @@ export default function InterviewsPanel({ request, state, onState, onNotice }) {
       <p>Melhor desempenho: <b>{summary.winner}</b>. Notas: você {summary.avg} · {Object.entries(summary.opponent_scores).map(([n, v]) => `${n} ${v}`).join(' · ')}.</p>
       <p>Pesquisa: {summary.poll_before} → {summary.poll_after} ({summary.poll_move > 0 ? '+' : ''}{summary.poll_move} ponto).</p></div>}
 
-    {summary && <div className="interview-summary"><h3 className="subheading">{GRADE[summary.grade]}: {summary.avg} pontos</h3>
+    {summary && <div className="interview-summary"><h3 className="subheading">{GRADE[summary.grade]}: {summary.avg} {Number(summary.avg) === 1 ? 'ponto' : 'pontos'}</h3>
       <p>Efeitos persistentes: {Object.entries(summary.effects).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k === 'approval' ? 'aprovação' : k === 'trust' ? 'confiança' : 'momentum'}`).join(' · ') || 'nenhum'}. A repercussão aparece em Imprensa.</p></div>}
 
     {data.history.length > 0 && !cur && <><h3 className="subheading">Histórico</h3>
-      <ul className="ds-reg-decisions">{data.history.map((h) => <li key={h.id}><span className="ds-muted">{h.date.split('-').reverse().join('/')}</span><b>{h.kind}</b><small className="ds-muted">{h.avg} pontos · {h.grade}</small></li>)}</ul></>}
+      <ul className="ds-reg-decisions">{data.history.map((h) => <li key={h.id}><span className="ds-muted">{h.date.split('-').reverse().join('/')}</span><b>{h.kind}</b><small className="ds-muted">{h.avg} {Number(h.avg) === 1 ? 'ponto' : 'pontos'} · {h.grade}</small></li>)}</ul></>}
   </Page>;
 }

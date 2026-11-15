@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Drawer } from './ui.jsx';
 import './powers.css';
 import './territory.css';
-import { EFFECT, effectText } from './format';
+import { EFFECT, effectText, br } from './format';
 
 const APPROVAL = {
   decreto: ['Decreto', 'Vale na hora'],
@@ -74,7 +74,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
       const result = await request('/api/powers/execute', { method: 'POST', body: JSON.stringify({ action: action.id, option: options[action.id] || null }) });
       setData(result.catalog);
       if (result.state) onState?.(result.state);
-      const gained = result.result ? Object.entries(result.result).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${EFFECT[k] || k}`).join(' · ') : '';
+      const gained = result.result ? effectText(result.result) : '';
       onNotice?.(`${result.message}${result.chance != null ? ` (chance estimada ${Math.round(result.chance * 100)}%)` : ''}${gained ? ` Resultado: ${gained}.` : ''}`);
     } catch (e) { onNotice?.(e.message); } finally { setBusy(''); }
   }
@@ -89,7 +89,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
   const chosen = sel ? (data.actions || []).find((x) => x.id === sel) : null;
 
   return <section className="panel powers-page">
-    <h2>{role.label}</h2>
+    <h2>Competências · {role.label}</h2>
     <p className="page-description">Escolha uma ação abaixo. Cada cargo só faz o que a Constituição permite; o resumo jurídico é para o jogo, não é parecer.</p>
     <details className="fold">
       <summary>O que cabe a este cargo <span>e o que não cabe</span></summary>
@@ -167,7 +167,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
         : null}>
         <p>{chosen.summary}</p>
         <p className="powers-meta"><span className={`powers-kind ${chosen.approval}`}>{APPROVAL[chosen.approval][0]}</span> {APPROVAL[chosen.approval][1]}{chosen.legal ? <span className={`legal-chip legal-${chosen.legal.level}`}>risco jurídico {chosen.legal.level}</span> : null}</p>
-        {effectText(chosen.effects) && <p className="powers-effects">Efeito estimado: {effectText(chosen.effects)}{chosen.cost_bi ? ` · ${chosen.cost_bi > 0 ? 'custo' : 'receita'} R$ ${Math.abs(chosen.cost_bi)} bi` : ''}</p>}
+        {effectText(chosen.effects) && <p className="powers-effects">Efeito estimado: {effectText(chosen.effects)}{chosen.cost_bi ? ` · ${chosen.cost_bi > 0 ? 'custo' : 'receita'} R$ ${br(Math.abs(chosen.cost_bi), 2)} bi` : ''}</p>}
         {!chosen.available && <p className="neg">{chosen.reason}</p>}
         {chosen.options.length > 0 && chosen.available && <><h4>Escolha uma opção</h4>
           <div className="ds-pick-list">{chosen.options.map((o) => <button key={o} type="button" aria-pressed={options[chosen.id] === o} onClick={() => setOptions({ ...options, [chosen.id]: o })}><span>{o}</span></button>)}</div></>}

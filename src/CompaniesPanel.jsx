@@ -57,7 +57,7 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
         <Stat label="Credibilidade" value={fmt(bank.credibility, 0)} unit="/100" note={bank.autonomy_label} />
         <Stat label="Inflação x meta" value={fmt(bank.inflation, 1)} unit="% a.a." note={`meta ${fmt(bank.target, 1)}%`} />
       </div>
-      {bank.pressure > 0 && <p className="ds-muted">Você criticou os juros {bank.pressure} vez(es) nos últimos 4 meses; isso aproxima o Copom do que o governo quer, com custo em credibilidade.</p>}
+      {bank.pressure > 0 && <p className="ds-muted">Você criticou os juros {bank.pressure} {Number(bank.pressure) === 1 ? 'vez' : 'vezes'} nos últimos 4 meses; isso aproxima o Copom do que o governo quer, com custo em credibilidade.</p>}
       {bank.history.length > 0 && <details className="agenda-more"><summary>Decisões recentes do Copom ({bank.history.length})</summary>
         <ul className="ds-reg-decisions">{bank.history.map((h) => <li key={h.date}><span className="ds-muted">{h.date.split('-').reverse().join('/')}</span><b>{h.text}</b><small className="ds-muted">equilíbrio {fmt(h.desired, 2)}%</small></li>)}</ul></details>}
       <p className="ds-muted">Para mudar a autonomia, os diretores ou criticar os juros, use Competências &gt; Banco e moeda.</p>

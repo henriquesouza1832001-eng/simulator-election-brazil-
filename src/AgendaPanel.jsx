@@ -3,7 +3,7 @@ import { Page, Section, Badge, Empty } from './ui';
 
 const monthName = (iso) => new Date(`${iso.slice(0, 7)}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 const dayName = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-const when = (days) => (days === 0 ? 'hoje' : days === 1 ? 'amanhã' : `em ${days} dias`);
+const when = (days) => (days === 0 ? 'hoje' : days === 1 ? 'amanhã' : `em ${days} ${Number(days) === 1 ? 'dia' : 'dias'}`);
 
 /** Agenda: o que vem pela frente no calendário e quando o jogador pode agir. */
 export default function AgendaPanel({ state }) {
@@ -24,7 +24,7 @@ export default function AgendaPanel({ state }) {
     {(Number.isFinite(exec) || bills.length > 0) && <Section title="Quando posso agir">
       <div className="ds-card">
         <dl className="ds-kv">
-          {Number.isFinite(exec) && [<dt key="e">Próxima decisão do Executivo</dt>, <dd key="ev">{exec === 0 ? 'liberada agora' : `em ${exec} dia(s)`}</dd>]}
+          {Number.isFinite(exec) && [<dt key="e">Próxima decisão do Executivo</dt>, <dd key="ev">{exec === 0 ? 'liberada agora' : `em ${exec} ${Number(exec) === 1 ? 'dia' : 'dias'}`}</dd>]}
           {bills.map((b) => [<dt key={`${b.id}-t`}>Votação: {b.title}</dt>, <dd key={`${b.id}-d`}>{dayName(b.decision_date)}</dd>])}
         </dl>
       </div>

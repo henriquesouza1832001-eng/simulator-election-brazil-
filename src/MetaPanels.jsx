@@ -142,7 +142,9 @@ function Commitments({ request, version, onNotice }) {
 }
 
 /* ---------- Acontecimentos ---------- */
-const TONE_LABEL = { dialogo: 'Diálogo', dura: 'Linha dura', etica: 'Ética', passiva: 'Omissão', neutra: 'Neutra', fisiologica: 'Fisiologismo' };
+const TONE_LABEL = { dialogo: 'Diálogo', dura: 'Linha dura', etica: 'Ética', passiva: 'Omissão', neutra: 'Neutra', fisiologica: 'Fisiologismo', tecnica: 'Técnica', politica: 'Política', economica: 'Econômica', emergencial: 'Emergencial', cooperativa: 'Cooperativa' };
+const toneName = (k) => TONE_LABEL[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : '');
+const commaDecimals = (s) => String(s || '').replace(/(d).(d)/g, '$1,$2');
 
 export function StoryPanel({ request, state, onNotice }) {
   const [tick, setTick] = useState(0);
@@ -167,14 +169,16 @@ export function StoryPanel({ request, state, onNotice }) {
         data.pending.map((ev) => <article className="story-card" key={ev.id}>
           
           <div className="story-head"><span className={`tag t-${ev.kind === 'decisao' ? 'correcao' : ev.kind === 'oportunidade' ? 'melhor' : 'novo'}`}>{ev.kind === 'decisao' ? 'Decisão' : 'Oportunidade'}</span>
-            {ev.days_left != null && <small>{ev.days_left <= 0 ? 'Último dia' : `${ev.days_left} dia(s) para responder`}</small>}</div>
+            {ev.days_left != null && <small>{ev.days_left <= 0 ? 'Último dia' : `${ev.days_left} ${Number(ev.days_left) === 1 ? 'dia' : 'dias'} para responder`}</small>}</div>
           <h3>{ev.title}</h3>{ev.inspired_by_real_event && <p className="meta-count">Versão fictícia inspirada em um episódio real{ev.remix?.label ? ` · intensidade ${ev.remix.label}` : ''}.</p>}<p>{ev.text}</p>
           <div className="story-choices">{ev.choices.map((c) => <button key={c.id} className="secondary-button" disabled={busy} onClick={() => choose(ev, c.id)}>
-            <b>{c.label}</b><small>{c.hint}{c.cost_bi ? ` · R$ ${c.cost_bi} bi` : ''} · {TONE_LABEL[c.tone] || c.tone}</small></button>)}</div>
+            <b>{c.label}</b><small>{commaDecimals(c.hint)}{c.cost_bi && !/R$/.test(c.hint || '') ? ` · R$ ${commaDecimals(c.cost_bi)} bi` : ''} · {toneName(c.tone)}</small></button>)}</div>
         </article>)}
       {last && <p className="meta-status" role="status"><b>{last.title}:</b> {last.outcome} <small>({last.deltas.map(fmt).join(' · ') || 'sem efeito numérico'})</small></p>}
       {Object.keys(data.profile).length > 0 && <><h3 className="subheading">Seu estilo de governo</h3>
-        <ul className="meta-notes">{Object.entries(data.profile).map(([k, v]) => <li key={k}>{TONE_LABEL[k] || k}: {v}</li>)}{data.unanswered > 0 && <li>Sem resposta no prazo: {data.unanswered}</li>}</ul></>}
+        {(() => { const rows = Object.entries(data.profile).sort((a, b) => b[1] - a[1]); const total = rows.reduce((n, [, v]) => n + v, 0); return <>
+          <p className="ds-muted">Em {total} {total === 1 ? 'decisão' : 'decisões'} respondidas, o estilo mais frequente foi <b>{toneName(rows[0][0])}</b>{data.unanswered > 0 ? `; ${data.unanswered} ${data.unanswered === 1 ? 'prazo passou' : 'prazos passaram'} sem resposta` : ''}.</p>
+          <dl className="ds-kv">{rows.map(([k, v]) => [<dt key={k + 't'}>{toneName(k)}</dt>, <dd key={k + 'd'}>{v} ({Math.round(100 * v / total)}%)</dd>])}</dl></>; })()}</>}
       <details className="agenda-more" open={data.pending.length === 0}><summary>Histórico ({data.history.length})</summary>
       {data.history.length === 0 ? <p className="meta-status">Ainda não há histórico.</p> :
 <><ul className="vote-list story-history-list">{data.history.slice(0, 5).map((h) => <li key={h.id}>
@@ -207,8 +211,8 @@ export function CampaignWeekPanel({ request, onNotice }) {
       const out = await request('/api/campaign-week/act', { method: 'POST', body: JSON.stringify({ action: key, region, jet }) });
       setData(out.overview); setLast(out.result);
       onNotice?.(out.result.refused
-        ? `${out.result.label}: o governador recusou por ora (faltaram ${out.result.shortfall} pontos de disposição), mas ficou mais receptivo.`
-        : `${out.result.label}: +${out.result.gain} ponto(s) de apoio.`);
+        ? `${out.result.label}: o governador recusou por ora (faltaram ${out.result.shortfall} ${Number(out.result.shortfall) === 1 ? 'ponto' : 'pontos'} de disposição), mas ficou mais receptivo.`
+        : `${out.result.label}: +${out.result.gain} ${Number(out.result.gain) === 1 ? 'ponto' : 'pontos'} de apoio.`);
     } catch (e) { onNotice?.(e.message); } finally { setBusy(false); }
   }
   async function close() {
@@ -216,7 +220,7 @@ export function CampaignWeekPanel({ request, onNotice }) {
     try {
       const out = await request('/api/campaign-week/close', { method: 'POST', body: '{}' });
       setData(out.overview); setLast(null);
-      onNotice?.(`Semana fechada: +${out.points_gained} ponto(s) no total.`);
+      onNotice?.(`Semana fechada: +${out.points_gained} ${Number(out.points_gained) === 1 ? 'ponto' : 'pontos'} no total.`);
     } catch (e) { onNotice?.(e.message); } finally { setBusy(false); }
   }
   return <section className="panel meta-page">
@@ -224,18 +228,18 @@ export function CampaignWeekPanel({ request, onNotice }) {
     <p className="page-description">Cada semana você tem algumas ações livres. Ações gastam energia e caixa; repetir a mesma ação no mesmo lugar rende menos, e abaixo de 35 de energia tudo rende 60%.</p>
     <Status loading={loading} error={error}>{data && <>
       <div className="meta-cards">
-        <article><span>SEMANA</span><strong>{data.week}</strong><small>{data.remaining_actions} de {data.free_actions} ações livres</small></article>
+        <article><span>SEMANA</span><strong>{data.week}</strong><small>{data.remaining_actions} de {data.free_actions} {Number(data.free_actions) === 1 ? 'ação livre' : 'ações livres'} restantes</small></article>
         <article><span>ENERGIA</span><strong>{data.energy}/{data.energy_max}</strong><div className="bar" role="progressbar" aria-valuenow={data.energy} aria-valuemin={0} aria-valuemax={data.energy_max} aria-label="Energia"><i style={{ width: `${data.energy}%` }} /></div>{data.low_energy && <small className="neg">Energia baixa: rendimento reduzido.</small>}</article>
         <article><span>CAIXA</span><strong>R$ {data.funds_mi.toLocaleString('pt-BR')} mi</strong><small>Promessas para gastar: {data.promises}</small></article>
         <article><span>APOIO NACIONAL</span><strong>{data.national_support ?? '—'}</strong><small>Média ponderada das regiões</small></article>
       </div>
-      <label className="week-region">Região da ação <select value={region} onChange={(e) => setRegion(e.target.value)}>
-        {data.regions.map((r) => <option key={r.key} value={r.key}>{r.label} · apoio {r.support}</option>)}</select></label>
-      <p className="meta-count">{data.location ? `Você está em: ${data.regions.find((r) => r.key === data.location)?.label}. ` : 'Você ainda não saiu da capital. '}Mudar de região custa {data.travel.other_region_energy} de energia; de jatinho, {data.travel.jet_energy} de energia e R$ {data.travel.jet_mi} mi.</p>
+      <span className="ds-label">Região da ação</span>
+      <div className="ds-seg" role="group" aria-label="Região da ação">{data.regions.map((r) => <button key={r.key} type="button" aria-pressed={region === r.key} onClick={() => setRegion(r.key)}>{r.label} <small>apoio {r.support}</small></button>)}</div>
+      <p className="meta-count">{data.location ? `Você está em: ${data.regions.find((r) => r.key === data.location)?.label}. ` : 'Você ainda não saiu da capital. '}Mudar de região custa {data.travel.other_region_energy} de energia; de jatinho, {data.travel.jet_energy} de energia e R$ {data.travel.jet_mi.toLocaleString('pt-BR')} mi.</p>
       <label className="week-region"><input type="checkbox" checked={jet} onChange={(e) => setJet(e.target.checked)} /> Ir de jatinho quando mudar de região</label>
-      {last && <p className="meta-status" role="status">Último resultado: {last.label} em {last.region}, {last.refused ? `recusado (faltaram ${last.shortfall} pontos)` : `+${last.gain}`}{last.travel_energy ? ` · viagem −${last.travel_energy} energia` : ''}{last.low_energy_penalty ? ' (energia baixa)' : ''}{last.repeat_factor < 1 ? ` · repetição ×${last.repeat_factor}` : ''}{last.raised_mi ? ` · arrecadou R$ ${last.raised_mi} mi` : ''}.</p>}
+      {last && <p className="meta-status" role="status">Último resultado: {last.label} em {last.region}, {last.refused ? `recusado (faltaram ${last.shortfall} ${Number(last.shortfall) === 1 ? 'ponto' : 'pontos'})` : `+${last.gain}`}{last.travel_energy ? ` · viagem −${last.travel_energy} energia` : ''}{last.low_energy_penalty ? ' (energia baixa)' : ''}{last.repeat_factor < 1 ? ` · repetição ×${last.repeat_factor}` : ''}{last.raised_mi ? ` · arrecadou R$ ${last.raised_mi} mi` : ''}.</p>}
       <ul className="week-actions">{data.catalog.filter((a) => a.available).map((a) => <li key={a.key}>
-        <div><b>{a.label}</b><small>{a.money_mi ? `R$ ${a.money_mi} mi` : 'sem custo'} · {a.energy < 0 ? `+${-a.energy} energia` : `${a.energy} energia`}{a.scope === 'regiao' ? ' · região' : ' · nacional'}</small><small>{a.text}</small>{!a.available && <small className="neg">{a.reason}</small>}</div>
+        <div><b>{a.label}</b><small>{a.money_mi ? `R$ ${Number(a.money_mi).toLocaleString('pt-BR')} mi` : 'sem custo'} · {a.energy < 0 ? `+${-a.energy} energia` : `${a.energy} energia`}{a.scope === 'regiao' ? ' · região' : ' · nacional'}</small><small>{a.text}</small>{!a.available && <small className="neg">{a.reason}</small>}</div>
         <button className="secondary-button" disabled={busy} onClick={() => act(a.key)}>Fazer</button></li>)}</ul>
       {data.catalog.some((a) => !a.available) && <details className="agenda-more"><summary>Indisponíveis agora ({data.catalog.filter((a) => !a.available).length})</summary>
         <ul className="week-actions">{data.catalog.filter((a) => !a.available).map((a) => <li key={a.key} className="blocked"><div><b>{a.label}</b><small>{a.reason}</small></div></li>)}</ul></details>}
@@ -269,7 +273,7 @@ export function RankingPanel({ request, state, onNotice }) {
     <p className="page-description">O placar guarda somente mandatos que você concluiu e registrou nesta conta; não há entradas de exemplo.</p>
     <Status loading={score.loading} error={score.error}>{score.data && <div className="score-box">
       <div className={`grade ${GRADE_CLASS[score.data.grade]}`} aria-label={`Nota ${score.data.grade}`}>{score.data.grade}</div>
-      <div><b>{score.data.points} pontos · {score.data.title}</b>
+      <div><b>{score.data.points} {Number(score.data.points) === 1 ? 'ponto' : 'pontos'} · {score.data.title}</b>
         <small>{score.data.ranked ? `Multiplicador de dificuldade ×${score.data.multiplier}` : 'A dificuldade Tranquilo não conta para o ranking.'}</small>
         <ul className="parts">{Object.entries(score.data.parts).map(([k, v]) => <li key={k}><span>{PART_LABELS[k]}</span><b className={v < 0 ? 'neg' : ''}>{v > 0 ? '+' : ''}{v}</b></li>)}</ul></div>
       <button className="primary-button" onClick={submit} disabled={busy || !score.data.ranked}>{busy ? 'Registrando…' : 'Registrar mandato no placar'}</button>

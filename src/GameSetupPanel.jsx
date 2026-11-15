@@ -303,7 +303,7 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
         {setupStep === 2 && <>
           <p className="setup-summary">{chosenOffice?.label} · {isPresidentialCampaign ? 'Brasil' : municipality || catalog?.states.find((item) => item.code === stateCode)?.name} · {selectedParty}</p>
           {characterFields}
-          {alignmentGap > 0 && <label className="party-alignment-warning"><span>O personagem está {alignmentGap} posição(ões) distante da linha escolhida para a legenda. Isso reduz levemente o apoio inicial e cria atrito interno fictício; o jogo não afirma que essa seja a posição real do partido.</span><input type="checkbox" checked={alignmentConfirmed} onChange={(event) => setAlignmentConfirmed(event.target.checked)} /> Confirmo essa divergência para a simulação</label>}
+          {alignmentGap > 0 && <label className="party-alignment-warning"><span>O personagem está {alignmentGap} {Number(alignmentGap) === 1 ? 'posição' : 'posições'} distante da linha escolhida para a legenda. Isso reduz levemente o apoio inicial e cria atrito interno fictício; o jogo não afirma que essa seja a posição real do partido.</span><input type="checkbox" checked={alignmentConfirmed} onChange={(event) => setAlignmentConfirmed(event.target.checked)} /> Confirmo essa divergência para a simulação</label>}
           <button className="primary-button" disabled={busy || (requiresCampaignCity && !municipalityId) || character.name.trim().length < 2 || !partyReady || (alignmentGap > 0 && !alignmentConfirmed)}>Criar personagem e iniciar campanha <b>→</b></button>
         </>}
       </form>}

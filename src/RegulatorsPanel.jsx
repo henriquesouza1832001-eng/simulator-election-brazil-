@@ -14,7 +14,7 @@ function Situation({ r }) {
   }
   if (r.id === 'tse') {
     return r.conduct
-      ? <div className="ds-reg-now"><span>Sua campanha</span><b>{r.conduct.detected} de {r.conduct.attempts} irregularidades detectadas</b><small>Penalidade de votos: {r.conduct.vote_penalty}.</small></div>
+      ? <div className="ds-reg-now"><span>Sua campanha</span><b>{r.conduct.detected} de {r.conduct.attempts} {Number(r.conduct.attempts) === 1 ? 'irregularidade' : 'irregularidades'} detectadas</b><small>Penalidade de votos: {r.conduct.vote_penalty}.</small></div>
       : <div className="ds-reg-now"><small>Atua nas campanhas de carreira. Sem campanha ativa agora.</small></div>;
   }
   return null;

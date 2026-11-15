@@ -33,7 +33,7 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
       <div className="ds-side">
         <section className="ds-card ds-next">
           <Badge tone={next.urgent ? 'bad' : ''}>{next.label}</Badge>
-          <h3>{next.title}</h3>
+          {next.title !== hero.title && <h3>{next.title}</h3>}
           <p>{next.text}</p>
           {skip && <div className="ds-skip"><p>{skip.text}</p><button type="button" className="secondary-button" disabled={skip.busy} onClick={skip.onSkip}>{skip.busy ? 'Avançando…' : skip.label}</button></div>}
           <div className="ds-actions">
