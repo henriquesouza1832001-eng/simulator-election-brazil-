@@ -75,14 +75,15 @@ def _step(diff: float) -> float:
 
 
 def _apply(state: dict[str, Any], delta: float, below_desired: float) -> None:
-    from .fiscal import record_policy_balance_delta
+    from .fiscal import refresh_fiscal_metrics
     from .powers import _bump
     copom = ensure(state)
     if delta:
         _bump(state, "gdp_growth", -0.04 * delta)
         _bump(state, "unemployment", 0.02 * delta)
         _bump(state, "inflation", -0.06 * delta)
-        record_policy_balance_delta(state, -0.02 * delta)
+    if "fiscal" in state:
+        refresh_fiscal_metrics(state)  # o novo custo da dívida entra nas contas
     if below_desired > 1.5:
         copom["credibility"] = round(max(0.0, copom["credibility"] - 3.0), 2)
         _bump(state, "inflation", 0.05)

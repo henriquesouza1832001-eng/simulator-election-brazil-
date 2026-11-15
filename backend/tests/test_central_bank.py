@@ -46,6 +46,16 @@ class CopomTest(unittest.TestCase):
         self.assertLess(sub["copom"]["selic"], auto["copom"]["selic"])
         self.assertLess(sub["copom"]["credibility"], auto["copom"]["credibility"])
 
+    def test_selic_changes_debt_cost(self):
+        from app.engine.fiscal import ensure_fiscal_state, refresh_fiscal_metrics
+        s = president()
+        ensure_fiscal_state(s)
+        central_bank.ensure(s)["selic"] = 10.5
+        base = refresh_fiscal_metrics(s)["interest_rate_pct"] if isinstance(refresh_fiscal_metrics(s), dict) and "interest_rate_pct" in refresh_fiscal_metrics(s) else s["fiscal"]["interest_rate_pct"]
+        s["copom"]["selic"] = 13.5
+        refresh_fiscal_metrics(s)
+        self.assertGreater(s["fiscal"]["interest_rate_pct"], base + 0.9)
+
     def test_local_careers_have_no_copom(self):
         s = career_state("prefeito")
         self.assertEqual(central_bank.tick(s, date(2027, 3, 1), date(2028, 3, 1)), [])
