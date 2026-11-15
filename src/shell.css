@@ -317,3 +317,7 @@ article > span:first-child { opacity: 1; }
 .career-data-shortcut summary { color: var(--ds-ink); cursor: pointer; padding: 12px 16px; }
 .bar, .progress { background: var(--ds-line); }
 .bar i, .progress i { background: var(--ds-accent); }
+
+.cabinet-picker .ds-inv-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.cabinet-picker .ds-inv { padding: 10px 12px; gap: 2px; align-content: start; }
+.cabinet-picker .ds-inv b { font-size: 14px; }

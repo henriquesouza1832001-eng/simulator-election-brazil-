@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Drawer } from './ui.jsx';
 import './appointments.css';
 
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
@@ -10,14 +11,17 @@ export default function GovernmentAppointments({ state, request, onState, onNoti
   const [section, setSection] = useState('Gabinete');
   const [ministry, setMinistry] = useState('');
   const [candidateId, setCandidateId] = useState('');
+  const [drawer, setDrawer] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [only, setOnly] = useState('todas');
 
   async function reload() {
+    setFailed(false);
     const result = await request('/api/government/appointments');
     setData(result);
-    if (!ministry && result.cabinet?.length) setMinistry(result.cabinet[0].id);
   }
 
-  useEffect(() => { reload().catch((error) => onNotice(error.message)); }, []);
+  useEffect(() => { reload().catch(() => new Promise((r) => setTimeout(r, 1500)).then(reload)).catch((error) => { setFailed(true); onNotice(error.message); }); }, []);
 
   const selectedMinistry = useMemo(() => data?.cabinet?.find((item) => item.id === ministry), [data, ministry]);
   const selectedCandidate = selectedMinistry?.candidates?.find((item) => item.id === candidateId);
@@ -37,6 +41,7 @@ export default function GovernmentAppointments({ state, request, onState, onNoti
       onState(result.state);
       setData(result.appointments);
       onNotice(result.result.summary);
+      setDrawer(false);
     } catch (error) { onNotice(error.message); }
     finally { setBusy(false); }
   }
@@ -52,7 +57,7 @@ export default function GovernmentAppointments({ state, request, onState, onNoti
     finally { setBusy(false); }
   }
 
-  if (!data) return <section className="panel appointments-panel"><p>Carregando as instituições…</p></section>;
+  if (!data) return <section className="panel appointments-panel">{failed ? <><p role="alert">Não foi possível carregar as nomeações.</p><button className="secondary-button" onClick={() => reload().catch(() => setFailed(true))}>Tentar de novo</button></> : <p>Carregando as instituições…</p>}</section>;
   const filled = data.cabinet.filter((item) => item.minister).length;
   const vacancy = data.judiciary.vacant;
 
@@ -63,9 +68,10 @@ export default function GovernmentAppointments({ state, request, onState, onNoti
 
     {section === 'Gabinete' && <div className="appointments-grid">
       <section className="panel cabinet-picker"><div className="panel-heading small"><div><span className="eyebrow">PASTAS FIXAS</span><h3>Escolha o ministério</h3></div><b>{filled} nomeados</b></div>
-        <label>Ministério<select value={ministry} onChange={(event) => { setMinistry(event.target.value); setCandidateId(''); }}>
-          {data.cabinet.map((item) => <option value={item.id} key={item.id}>{item.name}{item.minister ? ` · ${item.minister.name}` : ' · vaga aberta'}</option>)}
-        </select></label>
+        <div className="ds-seg" role="group" aria-label="Filtrar pastas">{[['todas', 'Todas'], ['vagas', 'Vagas'], ['titulares', 'Com titular']].map(([k, l]) => <button key={k} type="button" aria-pressed={only === k} onClick={() => setOnly(k)}>{l}</button>)}</div>
+        <div className="ds-inv-grid" style={{ marginTop: 12 }}>{data.cabinet.filter((item) => only === 'todas' || (only === 'vagas' ? !item.minister : item.minister)).map((item) => <button key={item.id} type="button" className="ds-inv" onClick={() => { setMinistry(item.id); setCandidateId(''); setDrawer(true); }}>
+          <b>{item.name}</b><small className="ds-muted">{item.minister ? item.minister.name : 'vaga aberta'}</small></button>)}</div>
+        {drawer && selectedMinistry && <Drawer title={selectedMinistry.name} onClose={() => setDrawer(false)}>
         {selectedMinistry?.minister ? <div className="current-minister"><span>EM EXERCÍCIO</span><b>{selectedMinistry.minister.name}</b><small>{selectedMinistry.minister.background} · desde {dateLabel(selectedMinistry.minister.appointed_on)}</small><small>{selectedMinistry.minister.political_profile?.spectrum_label} · {selectedMinistry.minister.political_profile?.family_label}</small></div> : <div className="current-minister empty"><span>SEM NOMEAÇÃO</span><b>Esta pasta aguarda escolha</b></div>}
         <div className="cabinet-candidate-list">{selectedMinistry?.candidates?.map((candidate) => <button key={candidate.id} className={`appointment-candidate ${candidate.id === candidateId ? 'selected' : ''}`} onClick={() => setCandidateId(candidate.id)}>
           <span className="candidate-name">{candidate.name}</span><span className="candidate-background">{candidate.background} · {candidate.experience_years} anos</span>
@@ -73,6 +79,7 @@ export default function GovernmentAppointments({ state, request, onState, onNoti
           <span className="candidate-stats"><i>Área <b>{candidate.technical_fit}</b></i><i>Coalizão <b>{candidate.coalition_support}</b></i><i>Integridade <b>{candidate.integrity}</b></i><i>Risco <b>{candidate.risk}</b></i></span>
         </button>)}</div>
         {selectedCandidate && <div className="appointment-preview"><b>Se nomear</b><p>{selectedCandidate.political_profile?.spectrum_label} · {selectedCandidate.political_profile?.family_label}. O perfil modifica o apoio simulado de cada grupo nos próximos levantamentos presidenciais; qualificação, coalizão e integridade também pesam na equipe.</p><div className="candidate-effect-list">{Object.entries(selectedCandidate.political_profile?.group_effects || {}).map(([key, value]) => <span key={key}>{data.campaign_groups.find((group) => group.key === key)?.label || key} <b>{effectLabel(value)}</b></span>)}</div><button className="primary-button" disabled={!authorized || busy || data.cabinet_days_until_action > 0} onClick={appoint}>{data.cabinet_days_until_action ? `Próxima escolha em ${data.cabinet_days_until_action} dias` : 'Nomear para esta pasta'}</button></div>}
+        </Drawer>}
       </section>
       <aside className="panel cabinet-summary"><span className="eyebrow">FORMAÇÃO DO GOVERNO</span><h3>Quadro do gabinete</h3><div className="cabinet-progress"><i style={{ width: `${filled / data.cabinet.length * 100}%` }}/></div><p>{filled} de {data.cabinet.length} pastas com titular nesta simulação.</p><details><summary>Ver titulares</summary><div className="cabinet-roster">{data.cabinet.filter((item) => item.minister).map((item) => <article key={item.id}><span>{item.name}</span><b>{item.minister.name}</b></article>)}</div></details><details className="cabinet-group-support"><summary>Ver apoio eleitoral por grupo</summary><div className="cabinet-roster">{data.campaign_groups.map((group) => <article key={group.key}><span>{group.label}</span><b>{number.format(group.support)}%</b></article>)}</div><small>As nomeações podem alterar esses valores em poucos décimos de ponto por escolha.</small></details><div className="appointment-rule"><b>Uma nomeação a cada sete dias</b><small>As pastas são as do catálogo SIORG usado pelo jogo. Os nomes e atributos são inventados; não representam pessoas reais.</small></div></aside>
     </div>}
