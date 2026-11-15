@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import Hemicycle from './Hemicycle.jsx';
+import { Drawer } from './ui.jsx';
 import './meta.css';
 
 function useLoad(request, path, deps = []) {
@@ -32,8 +34,9 @@ export function CongressPanel({ request, state }) {
   const [party, setParty] = useState('todos');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(null);
-  const [shown, setShown] = useState(20);
-  useEffect(() => { setShown(20); }, [house, party, query]);
+  const [shown, setShown] = useState(30);
+  const [listOpen, setListOpen] = useState(false);
+  useEffect(() => { setShown(30); }, [house, party, query]);
   const members = useMemo(() => {
     if (!data) return [];
     const list = house === 'camara' ? data.parlamentares : data.senadores;
@@ -55,17 +58,19 @@ export function CongressPanel({ request, state }) {
         <article><span>EM TRAMITAÇÃO</span><strong>{data.em_tramitacao.length}</strong><small>Aguardando votação</small></article>
       </div>
       {house !== 'votacoes' && <>
-        <h3 className="subheading">Bancadas</h3>
-        <ul className="party-bars">{data.partidos.map((p) => <li key={p.id}>
-          <button className={party === p.id ? 'party-row active' : 'party-row'} onClick={() => setParty(party === p.id ? 'todos' : p.id)} aria-pressed={party === p.id} title={p.name}>
-            <b>{p.id}</b><span className="bar"><i style={{ width: `${(p[house] / maxSeats) * 100}%` }} /></span><em>{p[house]}</em><small>adesão {p.adesao_media}%</small>
-          </button></li>)}</ul>
-        <div className="meta-filter"><label>Buscar parlamentar <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome" /></label>
-          {party !== 'todos' && <button className="quiet-button" onClick={() => setParty('todos')}>Limpar partido {party}</button>}</div>
-        <p className="meta-count">{members.length} parlamentar(es)</p>
-        {members.length === 0 ? <p className="meta-status">Nenhum parlamentar com esse filtro.</p> :
-          <ul className="member-list">{members.slice(0, shown).map((m) => <li key={m.id}><b>{m.name}</b><span>{m.party} · {m.state}</span><small>adesão {Math.round(m.loyalty * 100)}% · {m.ideology > 0.2 ? 'direita' : m.ideology < -0.2 ? 'esquerda' : 'centro'}</small></li>)}</ul>}
-        {members.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 20)}>Mostrar mais ({members.length - shown} restantes)</button>}
+        <h3 className="subheading">Plenário</h3>
+        <Hemicycle parties={data.partidos.map((p) => ({ id: p.id, name: p.name, seats: p[house], adesao: p.adesao_media }))} selected={party === 'todos' ? null : party} onSelect={setParty} />
+        <div className="ds-party-chips" role="group" aria-label="Bancadas">{[...data.partidos].filter((p) => p[house] > 0).sort((x, y) => y[house] - x[house]).map((p) => <button key={p.id} type="button" aria-pressed={party === p.id} title={p.name} onClick={() => setParty(party === p.id ? 'todos' : p.id)}><b>{p.id}</b><span>{p[house]}</span><small>{p.adesao_media}%</small></button>)}</div>
+        <div className="meta-filter">
+          <button className="primary-button" type="button" onClick={() => setListOpen(true)}>Ver parlamentares{party !== 'todos' ? ` do ${party}` : ''} ({members.length})</button>
+          {party !== 'todos' && <button className="quiet-button" onClick={() => setParty('todos')}>Limpar partido {party}</button>}
+        </div>
+        {listOpen && <Drawer title={`Parlamentares${party !== 'todos' ? ' · ' + party : ''} (${members.length})`} onClose={() => setListOpen(false)}>
+          <label>Buscar parlamentar <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome" autoFocus /></label>
+          {members.length === 0 ? <p className="meta-status">Nenhum parlamentar com esse filtro.</p> :
+            <ul className="member-list">{members.slice(0, shown).map((m) => <li key={m.id}><b>{m.name}</b><span>{m.party} · {m.state}</span><small>adesão {Math.round(m.loyalty * 100)}% · {m.ideology > 0.2 ? 'direita' : m.ideology < -0.2 ? 'esquerda' : 'centro'}</small></li>)}</ul>}
+          {members.length > shown && <button className="secondary-button" onClick={() => setShown(shown + 30)}>Mostrar mais ({members.length - shown} restantes)</button>}
+        </Drawer>}
       </>}
       {house === 'votacoes' && <>
         <h3 className="subheading">Em tramitação</h3>
