@@ -31,6 +31,6 @@ export default function Related({ tab, exists, go }) {
   if (!links.length) return null;
   return <nav className="ds-related" aria-label="Telas ligadas a esta">
     <span>Ligado a esta tela</span>
-    <ul>{links.map(([t, why]) => <li key={t}><button type="button" onClick={() => go(t)}><b>{t}</b><small>{why}</small></button></li>)}</ul>
+    <ul>{links.map(([t, why]) => <li key={t}><button type="button" onClick={() => go(t)}><span className="ds-related-title">{t}<i aria-hidden="true">→</i></span><small>{why}</small></button></li>)}</ul>
   </nav>;
 }

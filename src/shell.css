@@ -492,3 +492,15 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .tse-results article small, .tse-results article > div span { color: var(--ds-ink-3); }
 .np-link[disabled], .on > .np-link { color: var(--ds-ink-2); }
 .stamp-hidden { margin: 14px 0; padding: 12px 14px; border: 1px dashed var(--ds-line-2); border-radius: 6px; }
+
+/* Ligado a esta tela: linhas iguais, seta de navegação, sem faixa lateral */
+.ds-related { max-width: 1120px; margin: 24px auto 28px; padding-top: 16px; border-top: 1px solid var(--ds-line); }
+.ds-related > span { font-size: 12px; letter-spacing: .12em; margin-bottom: 10px; }
+.ds-related ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; align-items: stretch; }
+.ds-related li { display: flex; }
+.ds-related button { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 4px; align-content: start; padding: 12px 14px; border: 1px solid var(--ds-line); border-left: 1px solid var(--ds-line); border-radius: 6px; background: var(--ds-surface); text-align: left; transition: border-color .12s, background .12s; }
+.ds-related button:hover { border-color: var(--ds-accent); background: var(--ds-surface-2); }
+.ds-related-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 700; color: var(--ds-ink); font-size: 15px; }
+.ds-related-title i { font-style: normal; color: var(--ds-ink-3); transition: transform .12s, color .12s; }
+.ds-related button:hover .ds-related-title i { color: var(--ds-accent); transform: translateX(3px); }
+.ds-related button small { color: var(--ds-ink-3); font-size: 13px; line-height: 1.4; }
