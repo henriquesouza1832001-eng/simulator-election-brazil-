@@ -251,3 +251,10 @@ article > span:first-child { opacity: 1; }
 .ds-inv-bar u { display: block; height: 100%; background: var(--ds-accent); }
 .ds-link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 12px; }
 .ds-seg { flex-wrap: wrap; }
+
+/* Perfis prontos do personagem */
+.character-presets { display: grid; gap: 8px; margin: 4px 0 12px; }
+.character-presets > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.character-presets button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--ds-line); border-radius: 10px; background: var(--ds-surface-2); color: var(--ds-ink); }
+.character-presets button:hover, .character-presets button:focus-visible { border-color: var(--ds-accent); }
+.character-presets small { color: var(--ds-ink-3); font-size: 12.5px; }

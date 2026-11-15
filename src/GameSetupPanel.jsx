@@ -50,6 +50,14 @@ const traitOptions = [
   ['gestora', 'Gestora', '+1 de capacidade de governar na posse; ações de campanha custam 10% menos.'],
   ['comunitaria', 'Comunitária', '+0,5 de aprovação na posse; pequeno ganho entre grupos alcançados.'],
 ];
+const characterPresets = [
+  ['O Sindicalista', 'Veio da fábrica e da assembleia.', { political_spectrum: 'esquerda', family_background: 'trabalhadora', customs: ['vida_sindical', 'vida_urbana'], traits: ['combativa', 'comunitaria'], economic_axis: 'estado_social', social_axis: 'comunidade', territorial_axis: 'nacional' }],
+  ['A Técnica', 'Planilha na mão, voz baixa.', { political_spectrum: 'centro', family_background: 'servidora_publica', customs: ['vida_urbana'], traits: ['tecnica', 'gestora'], economic_axis: 'equilibrio', social_axis: 'liberdades', territorial_axis: 'federativa' }],
+  ['O Ruralista', 'Chapéu, trator e muita articulação.', { political_spectrum: 'centro_direita', family_background: 'rural', customs: ['vida_rural', 'fe_presente'], traits: ['carismatica', 'gestora'], economic_axis: 'mercado', social_axis: 'tradicao', territorial_axis: 'municipalista' }],
+  ['A Conciliadora', 'Fala com todo mundo, sempre.', { political_spectrum: 'centro', family_background: 'politica', customs: ['vida_comunitaria'], traits: ['conciliadora', 'carismatica'], economic_axis: 'equilibrio', social_axis: 'comunidade', territorial_axis: 'federativa' }],
+  ['O Empreendedor', 'Começou vendendo na esquina.', { political_spectrum: 'centro_direita', family_background: 'empreendedora', customs: ['vida_urbana', 'migracao'], traits: ['gestora', 'carismatica'], economic_axis: 'mercado', social_axis: 'liberdades', territorial_axis: 'federativa' }],
+  ['A Líder de Bairro', 'Resolve o problema da rua primeiro.', { political_spectrum: 'centro_esquerda', family_background: 'lideranca_comunitaria', customs: ['voluntariado', 'vida_comunitaria'], traits: ['comunitaria', 'carismatica'], economic_axis: 'estado_social', social_axis: 'comunidade', territorial_axis: 'municipalista' }],
+];
 const blankCharacter = { name: '', political_spectrum: 'centro', family_background: 'classe_media', customs: [], traits: [], biography: '', economic_axis: 'equilibrio', social_axis: 'liberdades', territorial_axis: 'federativa', birth_state_code: '', birth_municipality_id: null };
 const spectrumSupport = {
   esquerda: { trabalhadores: 2, servidores: 1, negocios: -1 }, centro_esquerda: { trabalhadores: 1.2, familias: .7 },
@@ -206,6 +214,10 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
       <div><span className="eyebrow">PERSONAGEM FICTÍCIO</span><h3 id="character-creator-title">Quem você será nesta partida?</h3>
         <p>Perfil, origem e costumes dão contexto ao personagem. A cidade natal não define onde ele concorre.</p></div>
       <span className="character-avatar" aria-hidden="true">{character.name.trim().slice(0, 1).toUpperCase() || 'C'}</span>
+    </div>
+    <div className="character-presets" role="group" aria-label="Perfis prontos">
+      <span className="ds-label">Comece de um perfil pronto (ficção) e ajuste o que quiser</span>
+      <div>{characterPresets.map(([label, hint, fields]) => <button key={label} type="button" onClick={() => { setCharacter((current) => ({ ...current, ...fields })); setAlignmentConfirmed(false); }}><b>{label}</b><small>{hint}</small></button>)}</div>
     </div>
     <div className="character-fields">
       <label className="character-name">Nome público<input value={character.name} onChange={(event) => setCharacterField('name', event.target.value)} minLength={2} maxLength={80} required placeholder="Nome do personagem" /></label>
