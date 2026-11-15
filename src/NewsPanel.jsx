@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Page, Section, Badge, Empty } from './ui';
+import { Page, Section, Badge, Empty, Segmented } from './ui';
 import { effectText } from './format';
 
 const KIND = { imprensa: 'Imprensa', congresso: 'Congresso', mercado: 'Mercado', crise: 'Crise', regulador: 'Regulador', resposta: 'Resposta do governo' };
@@ -12,6 +12,7 @@ export default function NewsPanel({ request, state, onState, onNotice }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [shown, setShown] = useState(PAGE);
+  const [kind, setKind] = useState('todas');
   const load = () => request('/api/consequences').then(setData).catch((e) => setError(e.message));
   useEffect(() => { load(); }, [state?.date]);
 
@@ -26,13 +27,15 @@ export default function NewsPanel({ request, state, onState, onNotice }) {
 
   const groups = useMemo(() => {
     const out = [];
-    (data?.feed || []).slice(0, shown).forEach((n) => {
+    (data?.feed || []).filter((n) => kind === 'todas' || n.kind === kind).slice(0, shown).forEach((n) => {
       const m = (n.date || '').slice(0, 7);
       if (!out.length || out[out.length - 1].m !== m) out.push({ m, items: [] });
       out[out.length - 1].items.push(n);
     });
     return out;
-  }, [data, shown]);
+  }, [data, shown, kind]);
+  const kinds = useMemo(() => { const c = {}; (data?.feed || []).forEach((n) => { c[n.kind] = (c[n.kind] || 0) + 1; }); return c; }, [data]);
+  const filtered = (data?.feed || []).filter((n) => kind === 'todas' || n.kind === kind).length;
 
   if (error) return <Page title="Imprensa e reações"><p className="ds-empty" role="alert">{error}</p></Page>;
   if (!data) return <Page title="Imprensa e reações"><p className="ds-muted" role="status">Carregando…</p></Page>;
@@ -49,7 +52,7 @@ export default function NewsPanel({ request, state, onState, onNotice }) {
 
     <Section title="Linha do tempo">
       {data.feed.length === 0 ? <Empty title="Nenhuma reação ainda">Tome uma decisão e acompanhe a repercussão nos dias seguintes.</Empty>
-        : <>{groups.map((g) => <div key={g.m}>
+        : <><Segmented label="Tipo de notícia" value={kind} onChange={(k) => { setKind(k); setShown(PAGE); }} options={[['todas', `Todas (${data.feed.length})`], ...Object.entries(kinds).map(([k, n]) => [k, `${KIND[k] || k} (${n})`])]} />{groups.map((g) => <div key={g.m}>
           <h4 className="ds-month">{monthName(g.m + '-15')}</h4>
           <ul className="ds-timeline">{g.items.map((n) => <li key={n.id} className={TONE[n.kind] === 'bad' ? 'bad' : TONE[n.kind] === 'good' ? 'good' : ''}>
             <time dateTime={n.date}>{dayName(n.date)} · <Badge tone={TONE[n.kind] || ''}>{KIND[n.kind] || n.kind}</Badge></time>
@@ -57,7 +60,7 @@ export default function NewsPanel({ request, state, onState, onNotice }) {
             {n.body && n.body !== 'Simulação.' && <p>{n.body}</p>}
           </li>)}</ul>
         </div>)}
-        {data.feed.length > shown && <button className="secondary-button" onClick={() => setShown(shown + PAGE)}>Mostrar mais ({data.feed.length - shown})</button>}</>}
+        {filtered > shown && <button className="secondary-button" onClick={() => setShown(shown + PAGE)}>Mostrar mais ({filtered - shown})</button>}</>}
       {data.scheduled > 0 && <p className="ds-muted" style={{ marginTop: 12 }}>{data.scheduled} reação(ões) ainda por vir.</p>}
     </Section>
   </Page>;
