@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Select from './Choice.jsx';
 import MunicipalityPicker from './MunicipalityPicker';
 import './meta.css';
 import './party.css';
@@ -30,10 +31,10 @@ export function PartyStartForm({ request, onState, onContinue, busy, setBusy, se
     <p className="meta-count">Você começa sem partido e sem mandato. Faça militância, filie-se, ganhe espaço no diretório e lance a pré-candidatura a vereador na sua cidade. O personagem é fictício.</p>
     <div className="career-start-fields">
       <label>Nome público<input value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} maxLength={80} placeholder="Seu nome" required /></label>
-      <label>UF<select value={uf} onChange={(e) => { setUf(e.target.value); setCity({ id: '', name: '' }); }} required><option value="">Escolha…</option>{UFS.map((u) => <option key={u} value={u}>{u}</option>)}</select></label>
+      <label>UF<Select value={uf} onChange={(e) => { setUf(e.target.value); setCity({ id: '', name: '' }); }} required><option value="">Escolha…</option>{UFS.map((u) => <option key={u} value={u}>{u}</option>)}</Select></label>
       <MunicipalityPicker request={request} stateCode={uf} value={city.name} selectedId={city.id} required disabled={!uf} label="Sua cidade (código oficial do IBGE)" onSelect={(item) => setCity({ id: item.id, name: item.name })} />
-      <label>Posição política (sua, não do partido)<select value={spectrum} onChange={(e) => setSpectrum(e.target.value)}>{SPECTRUMS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-      <label>Causa que move você<select value={cause} onChange={(e) => setCause(e.target.value)}>{CAUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      <label>Posição política (sua, não do partido)<Select value={spectrum} onChange={(e) => setSpectrum(e.target.value)}>{SPECTRUMS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></label>
+      <label>Causa que move você<Select value={cause} onChange={(e) => setCause(e.target.value)}>{CAUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></label>
     </div>
     <button className="primary-button" disabled={busy || !ready}>Começar a trajetória <b>→</b></button>
   </form>;
@@ -108,9 +109,9 @@ export default function PartyPathPanel({ request, state, onNotice, onLaunched })
     {ov.stage === 'militante' && <section aria-label="Pedir filiação" className="pp-box">
       <h3 className="subheading">Filiação</h3>
       <div className="elector-filters">
-        <label>Partido<select value={party} onChange={(e) => setParty(e.target.value)}>{(catalog?.parties || []).map((p) => <option key={p} value={p}>{p}</option>)}<option value="__custom__">Criar partido fictício…</option></select></label>
+        <label>Partido<Select value={party} onChange={(e) => setParty(e.target.value)}>{(catalog?.parties || []).map((p) => <option key={p} value={p}>{p}</option>)}<option value="__custom__">Criar partido fictício…</option></Select></label>
         {party === '__custom__' && <label>Nome do partido fictício<input value={custom} onChange={(e) => setCustom(e.target.value)} maxLength={80} placeholder="Nome plausível e original" /></label>}
-        <label>Linha do partido (separada da sua posição)<select value={ideology} onChange={(e) => setIdeology(e.target.value)}>{(catalog?.ideologies || SPECTRUMS.map(([, l]) => l)).map((i) => <option key={i} value={i}>{i}</option>)}</select></label>
+        <label>Linha do partido (separada da sua posição)<Select value={ideology} onChange={(e) => setIdeology(e.target.value)}>{(catalog?.ideologies || SPECTRUMS.map(([, l]) => l)).map((i) => <option key={i} value={i}>{i}</option>)}</Select></label>
       </div>
       <p className="meta-count">O partido analisa por 14 dias e pode recusar: pesam afinidade com a sua posição, militância, contatos e reputação. Prazos aqui são simplificações do jogo.</p>
       <button className="primary-button" disabled={busy || !canAffiliate || !partyName} onClick={() => call('/api/party-path/affiliate', { party: partyName, ideology }, 'Pedido de filiação enviado.')}>Pedir filiação</button>

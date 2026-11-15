@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Select from './Choice.jsx';
 import { Drawer } from './ui.jsx';
 import './powers.css';
 import './territory.css';
@@ -121,7 +122,7 @@ export default function PowersPanel({ request, state, onState, onNotice }) {
             {m.legal && <small className={`legal-${m.legal.level}`}>Risco jurídico {m.legal.level}</small>}
             {!m.available && <small className="neg">{m.reason}</small>}</div>
           {m.available && data.executable && <div className="powers-actions">
-            {m.options.length > 0 && <select aria-label={`Opção para ${m.title}`} value={options[m.id] || ''} onChange={(e) => setOptions({ ...options, [m.id]: e.target.value })}><option value="">Escolher…</option>{m.options.map((o) => <option key={o} value={o}>{o}</option>)}</select>}
+            {m.options.length > 0 && <Select aria-label={`Opção para ${m.title}`} value={options[m.id] || ''} onChange={(e) => setOptions({ ...options, [m.id]: e.target.value })}><option value="">Escolher…</option>{m.options.map((o) => <option key={o} value={o}>{o}</option>)}</Select>}
             <button className="secondary-button" disabled={m.options.length > 0 && !options[m.id]} onClick={() => runMapped(m)}>Usar esta ação</button></div>}
         </div>)}
         {mapped.questions.map((q) => <p className="mapper-question" key={q}>{q}</p>)}

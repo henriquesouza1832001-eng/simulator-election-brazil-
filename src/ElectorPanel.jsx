@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Select from './Choice.jsx';
 import MunicipalityPicker from './MunicipalityPicker';
 import './meta.css';
 
@@ -35,8 +36,8 @@ function HistoricalStart({ request, year, office, uf, cityId, cityName, onState,
     <h4 className="subheading">Disputar esta eleição de {year} como candidato(a)</h4>
     <p className="meta-count">A campanha começa em junho de {year}. Os adversários usam o partido e a força dos mais votados de verdade; depois da apuração o jogo mostra o resultado oficial ao lado do seu.</p>
     <label>Nome do personagem <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} /></label>
-    <label>Partido <select value={party} onChange={(e) => setParty(e.target.value)}>{career.parties.map((p) => <option key={p} value={p}>{p}</option>)}</select></label>
-    <label>Linha partidária <select value={ideology} onChange={(e) => setIdeology(e.target.value)}>{career.ideologies.map((i) => <option key={i} value={i}>{i}</option>)}</select></label>
+    <label>Partido <Select value={party} onChange={(e) => setParty(e.target.value)}>{career.parties.map((p) => <option key={p} value={p}>{p}</option>)}</Select></label>
+    <label>Linha partidária <Select value={ideology} onChange={(e) => setIdeology(e.target.value)}>{career.ideologies.map((i) => <option key={i} value={i}>{i}</option>)}</Select></label>
     {(needsUf && !uf) || (needsCity && !cityId) ? <small className="neg">Escolha {needsCity ? 'o município' : 'a UF'} acima para disputar.</small> : null}
     {error && <small className="neg" role="alert">{error}</small>}
     <button className="primary-button" type="submit" disabled={disabled}>{busy ? 'Criando…' : 'Disputar esta eleição'}</button>
@@ -144,11 +145,11 @@ export default function ElectorPanel({ request, onState, onContinue }) {
 
       <h3 className="subheading">2. Cargo e território</h3>
       <div className="elector-filters">
-        <label>Cargo <select value={office} onChange={(e) => setOffice(e.target.value)}>
+        <label>Cargo <Select value={office} onChange={(e) => setOffice(e.target.value)}>
           <option value="">Escolha…</option>
-          {Object.entries(rules.rules.offices).map(([key, o]) => <option key={key} value={key}>{o.label} · mandato {o.term} anos</option>)}</select></label>
-        {(scope === 'uf' || scope === 'municipio') && <label>UF <select value={uf} onChange={(e) => { setUf(e.target.value); setCity({ id: '', name: '' }); }}>
-          <option value="">Escolha…</option>{UFS.map((u) => <option key={u} value={u}>{u}</option>)}</select></label>}
+          {Object.entries(rules.rules.offices).map(([key, o]) => <option key={key} value={key}>{o.label} · mandato {o.term} anos</option>)}</Select></label>
+        {(scope === 'uf' || scope === 'municipio') && <label>UF <Select value={uf} onChange={(e) => { setUf(e.target.value); setCity({ id: '', name: '' }); }}>
+          <option value="">Escolha…</option>{UFS.map((u) => <option key={u} value={u}>{u}</option>)}</Select></label>}
         {scope === 'municipio' && <MunicipalityPicker request={request} stateCode={uf} value={city.name} selectedId={city.id} required disabled={!uf} label="Município (código oficial do IBGE)" onSelect={(item) => setCity({ id: item.id, name: item.name })} />}
       </div>
       {info && <p className="meta-count">{info.label}: idade mínima {info.min_age} anos · {info.source}</p>}

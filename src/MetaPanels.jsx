@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Select from './Choice.jsx';
 import Hemicycle from './Hemicycle.jsx';
 import { Drawer } from './ui.jsx';
 import './meta.css';
@@ -118,7 +119,7 @@ function DebateBlock({ request, version, onNotice, onWeek }) {
       <div className="meta-tabs">{data.choices.map((c) => <button key={c.key} className={choice === c.key ? 'meta-tab active' : 'meta-tab'} aria-pressed={choice === c.key} onClick={() => setChoice(c.key)} title={c.text}>{c.label}</button>)}</div>
       {choice && <p className="meta-count">{data.choices.find((c) => c.key === choice).text}</p>}
       {choice === 'participar' && <div className="week-region">
-        <label>Tema <select value={issue} onChange={(e) => setIssue(e.target.value)}><option value="">Escolha…</option>{data.issues.map((i) => <option key={i.key} value={i.key}>{i.label}</option>)}</select></label>
+        <label>Tema <Select value={issue} onChange={(e) => setIssue(e.target.value)}><option value="">Escolha…</option>{data.issues.map((i) => <option key={i.key} value={i.key}>{i.label}</option>)}</Select></label>
         <label>Sua resposta (mínimo 40 caracteres)<textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1200} /></label></div>}
       {choice && <button className="primary-button" disabled={busy || (choice === 'participar' && (!issue || message.trim().length < 40))} onClick={() => go(choice)}>{busy ? 'Enviando…' : 'Confirmar'}</button>}
     </> : <p>Debate desta semana resolvido.</p>}

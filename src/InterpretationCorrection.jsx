@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Select from './Choice.jsx';
 import './interpretation-correction.css';
 
 const categories = [
@@ -54,14 +55,14 @@ export default function InterpretationCorrection({ preview, measure, request, on
     <summary>Revisar esta interpretação para o treino offline</summary>
     <p>Os campos escolhidos viram rótulos de treino. Eles não alteram o custo nem o efeito calculado pelo jogo.</p>
     <div className="correction-label-grid">
-      <label>Categoria correta<select value={category} onChange={(event) => setCategory(event.target.value)}>
+      <label>Categoria correta<Select value={category} onChange={(event) => setCategory(event.target.value)}>
         <option value="">Não revisar</option>
         {categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select></label>
-      <label>Instrumento correto<select value={instrument} onChange={(event) => setInstrument(event.target.value)}>
+      </Select></label>
+      <label>Instrumento correto<Select value={instrument} onChange={(event) => setInstrument(event.target.value)}>
         <option value="">Não revisar</option>
         {instruments.map((value) => <option key={value} value={value}>{value}</option>)}
-      </select></label>
+      </Select></label>
     </div>
     <label className="correction-note">Observação opcional<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Explique em poucas palavras o que a leitura entendeu errado." /></label>
     <button className="secondary-button" onClick={save} disabled={busy || !hasCorrection}>Guardar correção</button>
