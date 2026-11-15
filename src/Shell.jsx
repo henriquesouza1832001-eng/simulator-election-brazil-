@@ -11,10 +11,12 @@ const PATHS = {
   Perfil: <path d="M4 20c0-4 3-6 8-6s8 2 8 6M12 4a4 4 0 100 8 4 4 0 000-8z" />,
   Guia: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17.2v.1" /></>,
   Sobre: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.1" /></>,
+  Placar: <path d="M5 20V11M12 20V5M19 20v-7M3 20h18" />,
+  Diario: <><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z" /><path d="M9 8h6M9 12h6" /></>,
   Fixar: <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5" />,
   Partidas: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
 };
-const keyOf = (label) => (label === 'Política' ? 'Politica' : label);
+const keyOf = (label) => (label === 'Política' ? 'Politica' : label === 'Diário' ? 'Diario' : label);
 
 export function Icon({ name }) {
   const body = PATHS[keyOf(name)] || PATHS.Painel;

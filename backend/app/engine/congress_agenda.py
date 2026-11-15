@@ -116,7 +116,7 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
             consequences.open_crisis(
                 state, crisis_id=f"pauta-{key}-{month}", action_id=f"pauta_{key}", today=after, deadline_days=SANCTION_DAYS,
                 title=f"Projeto aprovado pelo Congresso aguarda sanção: {spec['title']}",
-                text=f"De autoria do {author}. O senhor ou a senhora tem 15 dias úteis para sancionar ou vetar; sem resposta, vale a sanção tácita.",
+                text=f"De autoria do {author}. Você tem 15 dias úteis para sancionar ou vetar; sem resposta, vale a sanção tácita.",
                 options=[{"id": "sancionar", "label": "Sancionar integralmente", "effects": s},
                          {"id": "vetar_parcial", "label": "Vetar parcialmente (metade dos efeitos; o Congresso pode derrubar)", "effects": _scale(s, 0.5),
                           "hook": {"veto": key, "scope": "parcial", "author": author}},

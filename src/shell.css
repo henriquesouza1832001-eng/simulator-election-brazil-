@@ -468,3 +468,27 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .appointment-candidate.selected { border-color: var(--ds-accent); box-shadow: inset 3px 0 0 var(--ds-accent); }
 .career-rules { display: grid; gap: 6px; margin: 12px 0; padding: 12px 14px; border-left: 3px solid var(--ds-accent); background: var(--ds-surface); border-radius: 0 6px 6px 0; }
 .career-rules p { margin: 0; color: var(--ds-ink-2); }
+
+/* Carreira e campanha: restos do tema claro e verde */
+.career-poll-opponents article, .career-area-card, .campaign-region-grid article { background: var(--ds-surface); border: 1px solid var(--ds-line); color: var(--ds-ink); }
+.career-poll-opponents article b { color: var(--ds-ink); }
+.career-poll-opponents article small { color: var(--ds-ink-3); }
+.career-poll-opponents article strong { color: var(--ds-accent); }
+.career-poll-opponents > span { color: var(--ds-ink-3); }
+.career-territory-note, .campaign-city-target { background: var(--ds-surface-2); border: 1px solid var(--ds-line); border-left: 3px solid var(--ds-accent); border-radius: 0 6px 6px 0; color: var(--ds-ink-2); }
+.career-territory-note b { color: var(--ds-ink); }
+.career-territory-note small { color: var(--ds-ink-3); }
+.campaign-integrity-choice, .career-conduct { background: var(--ds-surface); border: 1px solid var(--ds-line); color: var(--ds-ink); border-radius: 6px; }
+.campaign-integrity-choice summary, .career-conduct summary { color: var(--ds-ink); cursor: pointer; }
+.career-bars i, .career-bars .bar i { background: var(--ds-accent); }
+.career-bars .bar, .career-bars > div > div { background: var(--ds-line); }
+.campaign-mini-bar, .career-countdown > div, .career-result-box, .career-action-preview { background: var(--ds-surface); border: 1px solid var(--ds-line); color: var(--ds-ink); border-radius: 6px; }
+.career-page details li > span, .campaign-page details li > span { color: var(--ds-ink-2); }
+.career-page details li > b { color: var(--ds-ink); }
+.tse-archive a, .party-data-note a { color: var(--ds-accent); }
+.career-conduct label, .career-conduct p, .career-conduct small, .campaign-integrity-choice label, .campaign-integrity-choice p, .campaign-integrity-choice small { color: var(--ds-ink-2); }
+.tse-archive header > a, .tse-empty > a, .tse-results article a { color: var(--ds-accent); }
+.tse-archive, .tse-results article, .tse-filters label { color: var(--ds-ink); }
+.tse-results article small, .tse-results article > div span { color: var(--ds-ink-3); }
+.np-link[disabled], .on > .np-link { color: var(--ds-ink-2); }
+.stamp-hidden { margin: 14px 0; padding: 12px 14px; border: 1px dashed var(--ds-line-2); border-radius: 6px; }

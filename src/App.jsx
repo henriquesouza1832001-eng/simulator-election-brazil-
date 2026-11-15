@@ -534,8 +534,8 @@ export default function App() {
     .map((group) => ({ ...group, badge: badgeOf(group), rail: ['Painel', 'Política', 'Agenda', 'Militância'].includes(group.label) ? group.label : 'Governo', icon: ['Painel', 'Política', 'Agenda'].includes(group.label) ? group.label : group.label === 'Militância' ? 'Política' : 'Governo' }));
   const moreEntries = [
     ...(tabGroups.find((group) => group.label === 'Mundo')?.items || []).map((tab) => ({ label: tab, icon: 'Mundo', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
-    { label: 'Placar', icon: 'Perfil', hint: TAB_HELP.Placar, go: () => setActiveTab('Placar') },
-    { label: 'Diário', icon: 'Perfil', hint: TAB_HELP['Diário'], go: () => setActiveTab('Diário') },
+    { label: 'Placar', icon: 'Placar', hint: TAB_HELP.Placar, go: () => setActiveTab('Placar') },
+    { label: 'Diário', icon: 'Diário', hint: TAB_HELP['Diário'], go: () => setActiveTab('Diário') },
     { label: 'Guia', hint: 'O que cada aba faz e o glossário', go: () => setGameGuideOpen(true) },
     ...(tabGroups.find((group) => group.label === 'Sobre')?.items || []).map((tab) => ({ label: tab, icon: 'Sobre', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
     { label: 'Partidas', hint: 'Trocar ou começar uma partida', go: () => setShowGameMenu(true) },

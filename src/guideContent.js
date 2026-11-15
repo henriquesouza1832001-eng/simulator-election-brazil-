@@ -35,6 +35,8 @@ export const TAB_HELP = {
   'Trajetória': 'Sua vida política antes do cargo: militância, filiação, quadro do partido e pré-candidatura.',
   'Placar': 'Ranking dos mandatos concluídos e registrados, de qualquer partida.',
   'Carimbos': 'Conquistas desta partida: cada jogo começa do zero.',
+  'Apuração': 'No dia da eleição, a contagem dos votos por boletins: mapa por estado, regiões da cidade ou quociente por legenda, com primeiro e segundo turnos.',
+  'Redes': 'Publicações fictícias e satíricas sobre o que aconteceu: decisões, crises, pesquisas, números da economia e falas da campanha, com o alcance calculado pelo motor.',
   'Diário': 'O que mudou em cada versão do jogo.',
   'O jogo': 'O que o jogo já faz e para onde vai nas próximas versões.',
   'Termos': 'Condições de uso e aviso de que tudo é ficção.',

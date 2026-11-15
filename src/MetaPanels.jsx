@@ -340,10 +340,18 @@ export function CollectionPanel({ request, state }) {
     <Status loading={loading} error={error}>{data && <>
       <p className="meta-count" role="status">{data.obtidos} de {data.total} carimbos{data.novos.length ? ` · ${data.novos.length} novo(s) agora!` : ''}</p>
       <div className="meta-tabs">{[['todos', 'Todos'], ['obtidos', 'Obtidos'], ['faltam', 'Faltam']].map(([id, l]) => <button key={id} className={filter === id ? 'meta-tab active' : 'meta-tab'} aria-pressed={filter === id} onClick={() => setFilter(id)}>{l}</button>)}</div>
-      {list.length === 0 ? <p className="meta-status">Nenhum carimbo neste filtro.</p> :
-        <ul className="stamp-grid">{list.map((c) => <li key={c.id} className={c.obtido ? `stamp got r-${c.raridade}` : 'stamp'}>
-          <span className="stamp-mark" aria-hidden="true">{c.obtido ? '★' : '?'}</span><b>{c.obtido ? c.titulo : 'Carimbo oculto'}</b>
-          <small>{c.obtido ? c.descricao : 'Continue governando para descobrir.'}</small><em>{c.raridade}</em></li>)}</ul>}
+      {(() => {
+        const got = list.filter((c) => c.obtido);
+        const hidden = list.filter((c) => !c.obtido);
+        const RAR = { comum: 'comuns', incomum: 'incomuns', raro: 'raros', epico: 'épicos', lendario: 'lendários' };
+        const byRarity = hidden.reduce((acc, c) => { acc[c.raridade] = (acc[c.raridade] || 0) + 1; return acc; }, {});
+        return <>
+          {got.length === 0 && hidden.length === 0 && <p className="meta-status">Nenhum carimbo neste filtro.</p>}
+          {got.length > 0 && <ul className="stamp-grid">{got.map((c) => <li key={c.id} className={`stamp got r-${c.raridade}`}>
+            <span className="stamp-mark" aria-hidden="true">★</span><b>{c.titulo}</b><small>{c.descricao}</small><em>{c.raridade}</em></li>)}</ul>}
+          {hidden.length > 0 && <p className="ds-muted stamp-hidden">{hidden.length} {hidden.length === 1 ? 'carimbo oculto' : 'carimbos ocultos'} ({Object.entries(byRarity).map(([r, n]) => `${n} ${RAR[r] || r}`).join(', ')}). Continue governando para descobrir.</p>}
+        </>;
+      })()}
     </>}</Status>
   </section>;
 }

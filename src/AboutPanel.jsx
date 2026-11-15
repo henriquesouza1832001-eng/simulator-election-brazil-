@@ -11,7 +11,7 @@ const TODAY = [
 const ROADMAP = [
   ['0.4', 'Base de interface e informação (concluída)'],
   ['0.5', 'Direção visual: identidade, navegação e desempenho (concluída)'],
-  ['0.6', 'Motor: economia e Estado, empresas, Banco Central e Selic (próxima)'],
+  ['0.6', 'Motor: economia e Estado, concessões e mais decisões sobre empresas (próxima)'],
   ['0.7', 'Gemini conectado ao jogo'],
   ['0.8', 'Congresso, eleições, contas e nuvem'],
   ['0.9', 'Balanceamento e acabamento'],
@@ -44,7 +44,7 @@ export default function AboutPanel({ section }) {
 
   return <Page title="O jogo" lead="Quatro Anos é um simulador político do Brasil: você conduz um mandato de 48 meses ou constrói uma carreira de vereador a presidente.">
     <Section title="O que já funciona">{TODAY.map(([t, d]) => <Item key={t} title={t}>{d}</Item>)}</Section>
-    <Section title="Para onde vai" hint="A versão atual é a 0.4. O roteiro completo está em docs/ROADMAP_VERSOES.md.">
+    <Section title="Para onde vai" hint="A versão atual é a 0.5. As próximas etapas, em ordem:">
       <ul className="ds-list">{ROADMAP.map(([v, t]) => <li key={v}><span className="ds-muted">versão {v}</span><b>{t}</b></li>)}</ul>
     </Section>
   </Page>;

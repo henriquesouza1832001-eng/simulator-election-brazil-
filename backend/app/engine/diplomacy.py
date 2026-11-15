@@ -9,7 +9,7 @@ from .fiscal import ensure_fiscal_state
 COUNTRIES: dict[str, dict[str, Any]] = {
     "ARG": {"name": "Argentina", "region": "América do Sul", "relation": 62, "trade_weight": 6, "travel_cost_bi": .045, "focus": "comércio e energia"},
     "CHL": {"name": "Chile", "region": "América do Sul", "relation": 61, "trade_weight": 4, "travel_cost_bi": .05, "focus": "mineração e energia limpa"},
-    "COL": {"name": "Colômbia", "region": "América do Sul", "relation": 57, "trade_weight": 3, "travel_cost_bi": .055, "focus": "segurança e Amazonia"},
+    "COL": {"name": "Colômbia", "region": "América do Sul", "relation": 57, "trade_weight": 3, "travel_cost_bi": .055, "focus": "segurança e Amazônia"},
     "URY": {"name": "Uruguai", "region": "América do Sul", "relation": 64, "trade_weight": 2, "travel_cost_bi": .045, "focus": "Mercosul e fronteira"},
     "USA": {"name": "Estados Unidos", "region": "América do Norte", "relation": 54, "trade_weight": 12, "travel_cost_bi": .18, "focus": "comércio, tecnologia e defesa"},
     "MEX": {"name": "México", "region": "América do Norte", "relation": 53, "trade_weight": 4, "travel_cost_bi": .16, "focus": "indústria e cadeias produtivas"},
@@ -37,7 +37,7 @@ INTERNATIONAL_EVENTS = [
     {"id": "un-assembly-2028", "date": "2028-09-20", "name": "Semana de Alto Nível da ONU", "place": "Nova York", "kind": "multilateral", "cost_bi": .16,
      "description": "Agenda multilateral simulada para encontros bilaterais e coordenação internacional."},
     {"id": "climate-summit-2029", "date": "2029-11-12", "name": "Cúpula Global do Clima", "place": "Internacional", "kind": "climate", "cost_bi": .12,
-     "description": "Cúpula fictícia do calendario do jogo; não representa uma conferência oficial."},
+     "description": "Cúpula fictícia do calendário do jogo; não representa uma conferência oficial."},
 ]
 
 
@@ -53,6 +53,14 @@ def ensure_diplomacy_state(state: dict[str, Any]) -> dict[str, Any]:
     diplomacy.setdefault("trip", None)
     diplomacy.setdefault("events", [{**event, "status": "upcoming"} for event in INTERNATIONAL_EVENTS])
     diplomacy.setdefault("multilateral_influence", 50.0)
+    # Partidas antigas guardaram textos sem acento: o texto de apresentação vem sempre do catálogo atual.
+    for code, country in COUNTRIES.items():
+        saved[code].update({"focus": country["focus"], "region": country["region"]})
+    catalog_events = {e["id"]: e for e in INTERNATIONAL_EVENTS}
+    for event in diplomacy["events"]:
+        source = catalog_events.get(event.get("id"))
+        if source:
+            event.update({"name": source["name"], "place": source["place"], "description": source["description"]})
     operating = state.setdefault("budget", {}).setdefault("operating", {})
     operating.setdefault("spent_by_year", {})
     return diplomacy
