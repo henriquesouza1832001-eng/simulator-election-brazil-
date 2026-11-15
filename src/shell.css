@@ -321,3 +321,20 @@ article > span:first-child { opacity: 1; }
 .cabinet-picker .ds-inv-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
 .cabinet-picker .ds-inv { padding: 10px 12px; gap: 2px; align-content: start; }
 .cabinet-picker .ds-inv b { font-size: 14px; }
+
+/* ===== Fase A: linguagem visual institucional (cantos retos, abas com linha, acento fosco) ===== */
+.ds-btn, .primary-button, .secondary-button, .quiet-button { border-radius: 6px; }
+.primary-button:hover:not(:disabled), .ds-btn.primary:hover { background: #e2bb55; }
+.ds-seg { padding: 0; gap: 0; background: transparent; border: 0; border-bottom: 1px solid var(--ds-line); border-radius: 0; }
+.ds-seg button { border-radius: 0; padding: 8px 14px; min-height: 38px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.ds-seg button[aria-pressed="true"] { background: transparent; color: var(--ds-ink); font-weight: 700; border-bottom-color: var(--ds-accent); }
+.ds-seg button:not([aria-pressed="true"]):hover { background: transparent; color: var(--ds-ink); border-bottom-color: var(--ds-line-2); }
+.ds-pick button, .ds-tag, .ds-badge, .ds-hero-badge span, .ds-subject { border-radius: 4px; }
+.ds-pick button[aria-pressed="true"] { background: var(--ds-surface-2); border-color: var(--ds-accent); color: var(--ds-ink); box-shadow: inset 0 -2px 0 var(--ds-accent); }
+.ds-nav, .ds-stat-btn, .ds-menu, .ds-map-side, .ds-dip-mission, .career-data-shortcut, .ds-tour-spot { border-radius: 6px; }
+.ds-tour-box, .ds-drawer, .ds-start-continue { border-radius: 8px; }
+.ds-start-icon { border-radius: 6px; }
+/* cabeçalho de seção: título pequeno em caixa-alta com régua, como cabeçalho de órgão */
+.ds-section > h3 { font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid var(--ds-line); margin-bottom: 12px; }
+.ds-stat, .ds-inv, .ds-card, .ds-group, .ds-chart, .ds-term { border-radius: 6px; border-top: 2px solid var(--ds-line-2); }
+.ds-inv-bar { border-radius: 2px; }

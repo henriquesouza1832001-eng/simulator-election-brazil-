@@ -4,22 +4,22 @@
 
 :root {
   color-scheme: dark;
-  --ds-bg: #0d1a2c;
-  --ds-surface: #15253d;
-  --ds-surface-2: #1d3556;
-  --ds-line: #2d4669;
-  --ds-line-2: #416289;
-  --ds-ink: #f3f6fb;
-  --ds-ink-2: #c8d4e6;   /* texto secundário: 9:1 sobre a superfície */
-  --ds-ink-3: #9fb4d0;   /* texto de apoio: 6:1 sobre a superfície */
-  --ds-accent: #ffd23f;
-  --ds-accent-2: #f5b800;
-  --ds-on-accent: #1b1500;
-  --ds-good: #4ddc86;
-  --ds-bad: #ff8f86;
-  --ds-warn: #f0c46e;
-  --ds-info: #8ec5ff;
-  --ds-radius: 10px;
+  --ds-bg: #0e1319;
+  --ds-surface: #161d26;
+  --ds-surface-2: #1e2733;
+  --ds-line: #2a3441;
+  --ds-line-2: #3d4a5b;
+  --ds-ink: #eef1f5;
+  --ds-ink-2: #c3ccd8;   /* texto secundário: 9:1 sobre a superfície */
+  --ds-ink-3: #98a4b4;   /* texto de apoio: 6:1 sobre a superfície */
+  --ds-accent: #d9b44a;
+  --ds-accent-2: #cfa63c;
+  --ds-on-accent: #17130a;
+  --ds-good: #5cc98a;
+  --ds-bad: #f08a80;
+  --ds-warn: #e3b95f;
+  --ds-info: #8fb8e8;
+  --ds-radius: 6px;
   --ds-space: 16px;
 }
 
