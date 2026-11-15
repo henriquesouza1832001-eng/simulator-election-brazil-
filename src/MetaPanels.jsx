@@ -335,8 +335,8 @@ export function CollectionPanel({ request, state }) {
   const [filter, setFilter] = useState('todos');
   const list = data ? data.carimbos.filter((c) => filter === 'todos' || (filter === 'obtidos' ? c.obtido : !c.obtido)) : [];
   return <section className="panel meta-page">
-    <h2>Carimbos do mandato</h2>
-    <p className="page-description">Cada mandato carimba o que você fez, inclusive o absurdo. Os carimbos são desbloqueados pelo estado da partida e ficam guardados na sua conta.</p>
+    <h2>Carimbos desta partida</h2>
+    <p className="page-description">Cada partida carimba o que você fez, inclusive o absurdo. Os carimbos são desbloqueados pelo estado do jogo e valem só para esta partida: ao começar outra, a coleção recomeça.</p>
     <Status loading={loading} error={error}>{data && <>
       <p className="meta-count" role="status">{data.obtidos} de {data.total} carimbos{data.novos.length ? ` · ${data.novos.length} novo(s) agora!` : ''}</p>
       <div className="meta-tabs">{[['todos', 'Todos'], ['obtidos', 'Obtidos'], ['faltam', 'Faltam']].map(([id, l]) => <button key={id} className={filter === id ? 'meta-tab active' : 'meta-tab'} aria-pressed={filter === id} onClick={() => setFilter(id)}>{l}</button>)}</div>

@@ -5,6 +5,8 @@ simulation. The rules are deliberately explicit so the UI can explain outcomes.
 """
 from __future__ import annotations
 
+from . import tv_time
+
 import random
 import re
 import unicodedata
@@ -967,6 +969,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "pending_campaign_promises": sum(item.get("status") == "pending" for item in career.get("campaign_promises", [])),
         "momentum": round(career["momentum"], 1), "fatigue": career["fatigue"],
         "campaign_fund_mi": round(career["campaign_fund_mi"], 3), "spent_mi": round(career["spent_mi"], 3),
+        "spending_cap_mi": OFFICES[career["office"]]["fund_mi"], "tv": tv_time.share(career.get("party")),
         "opponent_share": round(career["opponent_share"], 1), "opponents": [
             {"id": item["id"], "name": item["name"], "party": item["party"], "ideology": item["ideology"],
              "issue_focus": item["issue_focus"], "issue_focus_label": ISSUES[item["issue_focus"]]["label"], "simulated": True}
@@ -1420,6 +1423,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         electorate_share_of_national = target_municipality.get("electorate_share_of_national")
     reach *= city_reach_multiplier
     local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1) + (.15 if "carismatica" in traits else 0)))
+    local_delta = tv_time.apply(local_delta, career.get("party"))  # horário eleitoral: bancada maior amplia o ganho
     # A city visit changes support locally. Its contribution to a larger
     # electorate is weighted by that city's share of the relevant electorate.
     # Municipal races are entirely inside their selected municipality.

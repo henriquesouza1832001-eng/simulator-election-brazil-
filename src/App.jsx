@@ -474,14 +474,14 @@ export default function App() {
     { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Indicadores', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Indicadores', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ] : [
-    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico'] },
+    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico', 'Carimbos'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Obras e mapa', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
-  const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Carimbos', 'Diário'] }];
+  const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Diário'] }];
   const availableTabs = tabGroups.flatMap((group) => group.items);
   const activeTab = rawTab && availableTabs.includes(rawTab) ? rawTab : baseGroups[0].items[0];
   const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || baseGroups[0];
@@ -534,6 +534,8 @@ export default function App() {
     .map((group) => ({ ...group, badge: badgeOf(group), rail: ['Painel', 'Política', 'Agenda', 'Militância'].includes(group.label) ? group.label : 'Governo', icon: ['Painel', 'Política', 'Agenda'].includes(group.label) ? group.label : group.label === 'Militância' ? 'Política' : 'Governo' }));
   const moreEntries = [
     ...(tabGroups.find((group) => group.label === 'Mundo')?.items || []).map((tab) => ({ label: tab, icon: 'Mundo', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
+    { label: 'Placar', icon: 'Perfil', hint: TAB_HELP.Placar, go: () => setActiveTab('Placar') },
+    { label: 'Diário', icon: 'Perfil', hint: TAB_HELP['Diário'], go: () => setActiveTab('Diário') },
     { label: 'Guia', hint: 'O que cada aba faz e o glossário', go: () => setGameGuideOpen(true) },
     ...(tabGroups.find((group) => group.label === 'Sobre')?.items || []).map((tab) => ({ label: tab, icon: 'Sobre', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
     { label: 'Partidas', hint: 'Trocar ou começar uma partida', go: () => setShowGameMenu(true) },

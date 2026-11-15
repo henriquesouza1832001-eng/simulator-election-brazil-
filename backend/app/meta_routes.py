@@ -40,7 +40,7 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
 
     def unlocked() -> set[str]:
         with connect() as db:
-            rows = db.execute("SELECT stamp_id FROM stamps_unlocked WHERE player_id = ?", (current_player_id(),)).fetchall()
+            rows = db.execute("SELECT stamp_id FROM stamps_by_game WHERE player_id = ? AND campaign_id = ?", (current_player_id(), current_campaign_id())).fetchall()
         return {r["stamp_id"] for r in rows}
 
     def sync_stamps(state: dict[str, Any]) -> list[str]:
@@ -49,8 +49,8 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         if new:
             with connect() as db:
                 for sid in new:
-                    db.execute("INSERT OR IGNORE INTO stamps_unlocked (player_id, stamp_id, campaign_id) VALUES (?, ?, ?)",
-                               (current_player_id(), sid, current_campaign_id()))
+                    db.execute("INSERT OR IGNORE INTO stamps_by_game (player_id, campaign_id, stamp_id) VALUES (?, ?, ?)",
+                               (current_player_id(), current_campaign_id(), sid))
         return new
 
     @router.get("/api/legislature")
@@ -111,7 +111,7 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         have = unlocked()
         catalog = meta.stamp_catalog(have)
         return {"total": len(catalog), "obtidos": len(have), "novos": new, "carimbos": catalog,
-                "aviso": "Carimbos são desta reconstrução; a raridade é de design, não estatística real."}
+                "aviso": "Os carimbos valem para esta partida: cada jogo começa do zero. A raridade é de design, não estatística real."}
 
     @router.get("/api/campaign-week")
     def campaign_week_overview() -> dict[str, Any]:

@@ -156,6 +156,15 @@ def initialize() -> None:
                 unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (player_id, stamp_id)
             );
+            CREATE TABLE IF NOT EXISTS stamps_by_game (
+                player_id TEXT NOT NULL,
+                campaign_id TEXT NOT NULL,
+                stamp_id TEXT NOT NULL,
+                unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (player_id, campaign_id, stamp_id)
+            );
+            INSERT OR IGNORE INTO stamps_by_game (player_id, campaign_id, stamp_id, unlocked_at)
+                SELECT player_id, campaign_id, stamp_id, unlocked_at FROM stamps_unlocked;
             CREATE TABLE IF NOT EXISTS actions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 date TEXT NOT NULL,

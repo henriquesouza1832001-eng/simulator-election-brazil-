@@ -466,3 +466,5 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .candidate-stats i { border: 0 !important; padding: 0 !important; background: transparent !important; font-style: normal; color: var(--ds-ink-2); font-size: 13px; }
 .candidate-stats i b { color: var(--ds-ink); margin-left: 3px; }
 .appointment-candidate.selected { border-color: var(--ds-accent); box-shadow: inset 3px 0 0 var(--ds-accent); }
+.career-rules { display: grid; gap: 6px; margin: 12px 0; padding: 12px 14px; border-left: 3px solid var(--ds-accent); background: var(--ds-surface); border-radius: 0 6px 6px 0; }
+.career-rules p { margin: 0; color: var(--ds-ink-2); }

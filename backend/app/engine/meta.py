@@ -161,6 +161,15 @@ def stamp_catalog(unlocked: set[str]) -> list[dict[str, Any]]:
 
 # Diário de atualizações desta reconstrução (não é o diário do jogo de referência).
 DIARY: list[dict[str, Any]] = [
+    {"versao": "0.5", "data": "2026-11-15", "notas": [
+        {"tipo": "novo", "texto": "Apuração por boletins: mapa por estado, regiões da cidade e quociente por legenda, com primeiro e segundo turnos."},
+        {"tipo": "novo", "texto": "Redes sociais fictícias geradas pelo motor a partir de decisões, crises, números da economia e falas da campanha."},
+        {"tipo": "novo", "texto": "Painel com mapa do país, atalhos fixados e contador de pendências no menu lateral."},
+        {"tipo": "novo", "texto": "71 empresas e bancos, Selic decidida pelo Copom e compra e venda de participação da União."},
+        {"tipo": "melhor", "texto": "Endereço por tela, listas em painel lateral no lugar dos dropdowns e carimbos que valem por partida."}]},
+    {"versao": "0.4", "data": "2026-11-14", "notas": [
+        {"tipo": "novo", "texto": "Novo sistema de design: paleta única, abas e painéis laterais em todas as telas principais."},
+        {"tipo": "melhor", "texto": "Indicadores com lista, gráfico e o que move cada número."}]},
     {"versao": "0.3", "data": "2026-11-09", "notas": [
         {"tipo": "novo", "texto": "Câmara com 513 deputados e Senado com 81, com votação nominal e placar por partido."},
         {"tipo": "novo", "texto": "Placar da História com nota de S a F, filtros e detalhamento dos pontos."},

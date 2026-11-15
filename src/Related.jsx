@@ -2,7 +2,8 @@
 const RELATED = {
   'Visão geral': [['Indicadores', 'cada número tem origem e o que o move'], ['Crises', 'o que está pedindo resposta'], ['Imprensa', 'como a notícia do dia foi contada'], ['Agenda', 'prazos e compromissos']],
   Indicadores: [['Orçamento', 'onde o dinheiro público muda estes números'], ['Obras e mapa', 'obras que mexem nos indicadores'], ['Histórico', 'a evolução desde o primeiro dia']],
-  Histórico: [['Indicadores', 'estado atual de cada número'], ['Competências', 'decisões que podem mudar a trajetória']],
+  Histórico: [['Indicadores', 'estado atual de cada número'], ['Competências', 'decisões que podem mudar a trajetória'], ['Carimbos', 'conquistas desta partida']],
+  Carimbos: [['Histórico', 'o que foi decidido e o que mudou'], ['Indicadores', 'números que destravam carimbos']],
   Medidas: [['Competências', 'o que o seu cargo permite fazer'], ['Tramitação', 'projetos que dependem do Congresso'], ['Orçamento', 'custo e espaço fiscal da medida']],
   Competências: [['Empresas', 'participação e controle de estatais'], ['Orçamento', 'efeito nas contas'], ['Tramitação', 'leis que dependem de votação']],
   Empresas: [['Orçamento', 'juros e dividendos entram nas contas'], ['Competências', 'privatizar e estatizar exige lei'], ['Indicadores', 'inflação, emprego e atividade']],
