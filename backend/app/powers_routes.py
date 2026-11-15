@@ -173,6 +173,14 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         from .engine import companies
         return companies.overview(get_state())
 
+    @router.get("/api/central-bank")
+    def central_bank_overview() -> dict[str, Any]:
+        from .engine import central_bank
+        state = get_state()
+        out = central_bank.overview(state)
+        save(state)
+        return out
+
     @router.post("/api/companies/act")
     def companies_act(body: CompanyActBody) -> dict[str, Any]:
         from .engine import companies

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Page, Section, Badge, Empty, Drawer } from './ui.jsx';
+import { Page, Section, Badge, Empty, Drawer, Stat, fmt } from './ui.jsx';
 import './powers.css';
 
 const tone = (v) => (v >= 65 ? 'good' : v >= 35 ? 'warn' : 'bad');
@@ -11,8 +11,9 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
   const [choosing, setChoosing] = useState(null); // chave da ação cujas opções estão abertas
   const [pick, setPick] = useState('');
   const [filter, setFilter] = useState('todas');
+  const [bank, setBank] = useState(null);
   const load = () => request('/api/companies').then(setData).catch((e) => setError(e.message));
-  useEffect(() => { load(); }, [state?.date]);
+  useEffect(() => { load(); request('/api/central-bank').then(setBank).catch(() => setBank(null)); }, [state?.date]);
 
   async function act(company, action, option) {
     try {
@@ -42,6 +43,18 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
   const close = () => { setOpenId(null); setChoosing(null); setPick(''); };
 
   return <Page title="Empresas e bancos públicos" lead={data.note}>
+    {bank?.applies && <Section title="Banco Central e Selic" hint={bank.note}>
+      <div className="ds-stats">
+        <Stat label="Selic" value={fmt(bank.selic, 2)} unit="% a.a." note={`Copom busca ${fmt(bank.desired, 2)}% sem pressão`} />
+        <Stat label="Próxima reunião do Copom" value={bank.days_to_meeting} unit={bank.days_to_meeting === 1 ? ' dia' : ' dias'} note={bank.next_meeting.split('-').reverse().join('/')} />
+        <Stat label="Credibilidade" value={fmt(bank.credibility, 0)} unit="/100" note={bank.autonomy_label} />
+        <Stat label="Inflação x meta" value={fmt(bank.inflation, 1)} unit="% a.a." note={`meta ${fmt(bank.target, 1)}%`} />
+      </div>
+      {bank.pressure > 0 && <p className="ds-muted">Você criticou os juros {bank.pressure} vez(es) nos últimos 4 meses; isso aproxima o Copom do que o governo quer, com custo em credibilidade.</p>}
+      {bank.history.length > 0 && <details className="agenda-more"><summary>Decisões recentes do Copom ({bank.history.length})</summary>
+        <ul className="ds-reg-decisions">{bank.history.map((h) => <li key={h.date}><span className="ds-muted">{h.date.split('-').reverse().join('/')}</span><b>{h.text}</b><small className="ds-muted">equilíbrio {fmt(h.desired, 2)}%</small></li>)}</ul></details>}
+      <p className="ds-muted">Para mudar a autonomia, os diretores ou criticar os juros, use Competências &gt; Banco e moeda.</p>
+    </Section>}
     <Section hint="Toque em uma empresa para ver a situação e as decisões possíveis.">
       <div className="ds-seg" role="group" aria-label="Filtrar por controle">
         {controls.map((k) => <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === 'todas' ? 'Todas' : k}</button>)}
@@ -50,7 +63,7 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
         {list.map((x) => <button key={x.id} type="button" className="ds-inv" onClick={() => setOpenId(x.id)}>
           <span className="ds-muted">{x.sector}{x.strategic ? ' · estratégica' : ''}</span>
           <b>{x.name}</b>
-          <small className="ds-muted">{x.control}</small>
+          <small className="ds-muted">{x.control}{x.stake != null ? ` · União ${fmt(x.stake, 0)}%` : ''}</small>
           <span>Saúde <Badge tone={tone(x.health)}>{x.health}</Badge> · Relação <Badge tone={tone(x.relation)}>{x.relation}</Badge></span>
         </button>)}
       </div>
@@ -63,6 +76,8 @@ export default function CompaniesPanel({ request, state, onState, onNotice }) {
       <div className="ds-after">
         <span>Saúde da empresa<b>{c.health}/100</b></span>
         <span>Relação com o governo<b>{c.relation}/100</b></span>
+        {c.stake != null && <span>Participação da União<b>{fmt(c.stake, 1)}%</b></span>}
+        {c.value_bi != null && <span>Valor de referência (fictício)<b>R$ {fmt(c.value_bi, 1)} bi</b></span>}
       </div>
       <h4>Decisões</h4>
       <div className="ds-pick-list">

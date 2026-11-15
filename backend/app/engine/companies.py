@@ -39,6 +39,16 @@ CATALOG: dict[str, dict[str, Any]] = {
                "note": "Saneamento é regulado pelo Marco Legal (Lei 14.026/2020).", "privatize_key": None},
 }
 
+# Participação da União (% do capital com voto, estimativa do jogo) e valor de mercado de referência (R$ bi, fictício).
+# Só empresas federais com participação da União entram na compra e venda de ações.
+STAKES: dict[str, tuple[float, float]] = {
+    "petrobras": (53.0, 450.0), "bb": (55.0, 140.0), "caixa": (100.0, 190.0), "bndes": (100.0, 160.0), "correios": (100.0, 20.0),
+    "eletronuclear": (100.0, 25.0), "eletrobras": (10.0, 100.0), "telebras": (100.0, 3.0),
+}
+CONTROL_LINE = 50.0
+STAKE_OPTIONS = ["5 pontos percentuais", "10 pontos percentuais"]
+STAKE_COOLDOWN = 120
+
 ACTIONS = {
     "visit": {"label": "Visitar a empresa", "who": "all", "cooldown": 45, "text": "Agenda pública na sede ou em uma unidade; melhora a relação e pode render anúncio de investimento.", "options": []},
     "meeting": {"label": "Reunião com a diretoria", "who": "all", "cooldown": 30, "text": "Negocie uma prioridade com a diretoria.",
@@ -47,6 +57,8 @@ ACTIONS = {
                   "options": ["Pedir mais dividendos", "Reter lucros para investir"]},
     "prices": {"label": "Política de preços", "who": "petrobras", "cooldown": 60, "text": "Segurar ou alinhar os preços de combustíveis ao mercado.",
                "options": ["Segurar preços", "Alinhar ao mercado"]},
+    "sell_stake": {"label": "Vender participação", "who": "stake", "cooldown": STAKE_COOLDOWN, "text": "Vende ações no mercado e usa a receita para abater a dívida. Não cruza a linha do controle (50%): isso exige lei.", "options": STAKE_OPTIONS},
+    "buy_stake": {"label": "Comprar participação", "who": "stake", "cooldown": STAKE_COOLDOWN, "text": "Compra ações com recursos do Tesouro (aumenta a dívida). Não cruza a linha do controle (50%): isso exige lei.", "options": STAKE_OPTIONS},
     "leadership": {"label": "Escolher o comando", "who": "controlled", "cooldown": 180, "text": "Trocar a presidência: técnico independente ou aliado político.",
                    "options": ["Nome técnico independente", "Aliado político"]},
 }
@@ -73,6 +85,8 @@ def ensure(state: dict[str, Any]) -> dict[str, Any]:
     comp = state.setdefault("company_state", {})
     for key, c in CATALOG.items():
         comp.setdefault(key, {"control": c["control"], "health": 60.0 + 20 * _roll(f"{state.get('campaign_seed', 1)}:{key}:h"), "relation": 50.0, "last": {}, "last_crisis": None})
+        if key in STAKES and "stake" not in comp[key]:
+            comp[key]["stake"] = STAKES[key][0]
     from .powers import structure
     for key, c in CATALOG.items():
         if c.get("privatize_key") and structure(state)["companies"].get(c["privatize_key"]) == "privada" and not comp[key]["control"].startswith("privada"):
@@ -104,6 +118,30 @@ def _scope_ok(state: dict[str, Any], key: str) -> str | None:
     return "Esta empresa não está sob a competência do seu cargo."
 
 
+def _value_bi(key: str, e: dict[str, Any]) -> float:
+    return round(STAKES[key][1] * (0.7 + 0.6 * float(e["health"]) / 100), 1)
+
+
+def _stake_check(key: str, e: dict[str, Any], action: str, option: str | None) -> tuple[str | None, float]:
+    """Motivo de bloqueio (ou None) e quantos pontos percentuais a operação move."""
+    if key not in STAKES:
+        return "A União não tem participação negociável nesta empresa.", 0.0
+    pp = 10.0 if option == STAKE_OPTIONS[1] else 5.0
+    stake = float(e["stake"])
+    controlled = stake >= CONTROL_LINE
+    if action == "sell_stake":
+        if stake - pp < 0:
+            return "A União não tem essa participação.", pp
+        if controlled and stake - pp < CONTROL_LINE:
+            return "Vender abaixo de 50% é perder o controle: isso exige lei (aba Competências).", pp
+    else:
+        if stake + pp > 100:
+            return "Passaria de 100% do capital.", pp
+        if not controlled and stake + pp >= CONTROL_LINE:
+            return "Comprar até o controle exige lei de estatização (aba Competências).", pp
+    return None, pp
+
+
 def overview(state: dict[str, Any]) -> dict[str, Any]:
     comp = ensure(state)
     today = date.fromisoformat(state["date"])
@@ -117,13 +155,23 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
             if not reason:
                 if a["who"] == "controlled" and not _controlled(e):
                     reason = "A empresa não é controlada pelo governo."
+                elif a["who"] == "stake" and key not in STAKES:
+                    continue
                 elif a["who"] == "petrobras" and key != "petrobras":
                     continue
                 elif (last := e["last"].get(akey)) and (today - date.fromisoformat(last)).days < a["cooldown"]:
                     reason = f"Disponível em {a['cooldown'] - (today - date.fromisoformat(last)).days} dia(s)."
+            if not reason and a["who"] == "stake":
+                if c["level"] != "federal":
+                    reason = "Só participações da União."
+                elif akey == "buy_stake" and (_stake_check(key, e, akey, STAKE_OPTIONS[0])[0] is not None):
+                    reason = _stake_check(key, e, akey, STAKE_OPTIONS[0])[0]
+                elif akey == "sell_stake" and (_stake_check(key, e, akey, STAKE_OPTIONS[0])[0] is not None):
+                    reason = _stake_check(key, e, akey, STAKE_OPTIONS[0])[0]
             acts.append({"key": akey, "label": a["label"], "text": a["text"], "options": a["options"], "available": reason is None, "reason": reason})
         items.append({"id": key, **{k: c[k] for k in ("name", "sector", "hq", "level", "strategic", "note")}, "control": e["control"], "controlled": _controlled(e),
                       "health": round(e["health"], 1), "relation": round(e["relation"], 1), "actions": acts,
+                      "stake": e.get("stake"), "value_bi": _value_bi(key, e) if key in STAKES else None,
                       "can_privatize": bool(c.get("privatize_key")) and _controlled(e) and c["level"] == "federal", "privatize_key": c.get("privatize_key")})
     return {"companies": items, "note": "Saúde e relação são índices do jogo. A venda ou compra de empresas exige lei e fica na aba Competências."}
 
@@ -141,10 +189,20 @@ def act(state: dict[str, Any], key: str, action: str, option: str | None = None)
         raise PermissionError("A empresa não é controlada pelo governo.")
     if spec["who"] == "petrobras" and key != "petrobras":
         raise PermissionError("Ação exclusiva da Petrobras.")
+    if spec["who"] == "stake":
+        if CATALOG[key]["level"] != "federal":
+            raise PermissionError("Só participações da União.")
+        if option not in spec["options"]:
+            raise ValueError("Escolha uma das opções.")
+        blocked, _ = _stake_check(key, e, action, option)
+        if blocked:
+            raise PermissionError(blocked)
     today = date.fromisoformat(state["date"])
     last = e["last"].get(action)
     if last and (today - date.fromisoformat(last)).days < spec["cooldown"]:
         raise RuntimeError(f"Disponível em {spec['cooldown'] - (today - date.fromisoformat(last)).days} dia(s).")
+    if spec["who"] == "stake":
+        return _trade_stake(state, key, action, option, e)
     if spec["options"]:
         if option not in spec["options"]:
             raise ValueError("Escolha uma das opções.")
@@ -166,6 +224,35 @@ def act(state: dict[str, Any], key: str, action: str, option: str | None = None)
         consequences._post(consequences._book(state), state, {"id": f"emp-{key}-{state['date']}", "kind": "mercado", "headline": msg, "body": "O anúncio melhora a expectativa de emprego e atividade, na simulação.", "tone": "positivo", "action_id": f"empresa_{key}"})
     consequences.schedule(state, action_id=f"empresa_{action}", title=title, domain="empresas", effects=eff, ledger_id=entry["id"], local=_office(state)[0] != "presidente")
     return {"entry": entry, "company": next(c for c in overview(state)["companies"] if c["id"] == key), "announcement": msg}
+
+
+def _trade_stake(state: dict[str, Any], key: str, action: str, option: str, e: dict[str, Any]) -> dict[str, Any]:
+    from .fiscal import record_one_off_revenue, record_one_off_spending
+    _, pp = _stake_check(key, e, action, option)
+    value = _value_bi(key, e)
+    sell = action == "sell_stake"
+    price = round(value * pp / 100 * (0.97 if sell else 1.03), 2)  # deságio na venda, ágio na compra
+    name = CATALOG[key]["name"]
+    if sell:
+        e["stake"] = round(float(e["stake"]) - pp, 2)
+        record_one_off_revenue(state, price)
+        eff = {"approval": -0.2 * pp / 5, "congress_support": -0.1 * pp / 5}
+        relation, health = -3.0 * pp / 5, 1.0
+    else:
+        e["stake"] = round(float(e["stake"]) + pp, 2)
+        record_one_off_spending(state, price)
+        eff = {"approval": 0.1 * pp / 5}
+        relation, health = 3.0 * pp / 5, 2.0
+    e["relation"] = round(max(0.0, min(100.0, e["relation"] + relation)), 2)
+    e["health"] = round(max(0.0, min(100.0, e["health"] + health)), 2)
+    e["last"][action] = state["date"]
+    _apply_metrics(state, eff)
+    title = f"{name}: {'venda' if sell else 'compra'} de {pp:g} p.p. de participação (R$ {price:.1f} bi)"
+    forecast = {**eff, "participação da União (p.p.)": -pp if sell else pp, "dívida (R$ bi)": -price if sell else price}
+    entry = ledger.record(state, "empresa", title, forecast, forecast, status="feito")
+    consequences.schedule(state, action_id=f"empresa_{action}", title=title, domain="empresas", effects=eff, ledger_id=entry["id"], local=False)
+    return {"entry": entry, "company": next(c for c in overview(state)["companies"] if c["id"] == key),
+            "announcement": f"{name}: União {'vendeu' if sell else 'comprou'} {pp:g} p.p. e ficou com {e['stake']:g}% (R$ {price:.1f} bi {'abatidos da dívida' if sell else 'somados à dívida'})."}
 
 
 def _apply_metrics(state: dict[str, Any], eff: dict[str, float]) -> None:

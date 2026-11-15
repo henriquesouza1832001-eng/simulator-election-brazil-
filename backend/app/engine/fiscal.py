@@ -242,3 +242,10 @@ def advance_fiscal(state: dict[str, Any], elapsed_days: int, volatility: float =
     annual_interest = float(fiscal["annual_interest_bi"])
     fiscal["debt_stock_bi"] = max(0.0, old_debt + (annual_primary_deficit + annual_interest) * elapsed_days / 365)
     refresh_fiscal_metrics(state)
+
+
+def record_one_off_revenue(state: dict[str, Any], amount_bi: float) -> None:
+    """Receita única (venda de participação): abate a dívida, sem virar fluxo anual."""
+    fiscal = ensure_fiscal_state(state)
+    fiscal["debt_stock_bi"] = max(0.0, float(fiscal["debt_stock_bi"]) - amount_bi)
+    refresh_fiscal_metrics(state)
