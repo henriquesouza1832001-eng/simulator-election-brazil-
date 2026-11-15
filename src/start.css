@@ -36,3 +36,49 @@
 .ds-welcome-actions .ds-btn { min-height: 46px; padding: 0 22px; font-size: 16px; }
 .ds-welcome .welcome-footer { color: var(--ds-ink-3); border-top: 1px solid var(--ds-line); padding: 16px; text-align: center; font-size: 13px; }
 .ds-welcome .welcome-header { display: flex; align-items: center; justify-content: space-between; padding: 12px clamp(16px, 5vw, 64px); }
+
+/* Página de jornal */
+.np-mast { text-align: center; padding: 6px 0 14px; border-bottom: 3px double var(--ds-line-2); position: relative; }
+.np-rule { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-family: var(--ds-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ds-ink-3); border-bottom: 1px solid var(--ds-line); padding-bottom: 6px; }
+.np-mast h1 { margin: 10px 0 0; font-family: var(--ds-display); font-size: clamp(38px, 7vw, 68px); line-height: 1; letter-spacing: .01em; color: var(--ds-accent); }
+.np-tag { margin: 6px 0 0; color: var(--ds-ink-2); font-size: 15px; }
+.np-tour { position: absolute; right: 0; bottom: 12px; }
+.np-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0; margin-top: 16px; }
+.np-main { padding-right: 22px; border-right: 1px solid var(--ds-line); display: grid; gap: 18px; align-content: start; }
+.np-side { padding-left: 22px; display: grid; gap: 20px; align-content: start; }
+.np-sec { margin: 0 0 10px; font-family: var(--ds-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ds-ink-3); border-bottom: 1px solid var(--ds-line); padding-bottom: 6px; }
+.np-lead { padding: 4px 0 16px; border-bottom: 1px solid var(--ds-line); }
+.np-lead h2 { margin: 4px 0 8px; font-family: var(--ds-display); font-size: clamp(26px, 3.6vw, 38px); line-height: 1.1; }
+.np-lead p { margin: 0 0 14px; color: var(--ds-ink-2); max-width: 60ch; }
+.np-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 22px; }
+.np-mode { display: flex; gap: 12px; align-items: flex-start; break-inside: avoid; }
+.np-mode h4 { margin: 2px 0 4px; font-size: 17px; line-height: 1.25; }
+.np-mode p { margin: 0 0 6px; color: var(--ds-ink-2); font-size: 14px; line-height: 1.5; }
+.np-ico { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: var(--ds-surface-2); }
+.np-ico .ds-icon { width: 20px; height: 20px; stroke: var(--ds-accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.np-link { all: unset; cursor: pointer; color: var(--ds-accent); font-weight: 600; font-size: 14px; min-height: 32px; display: inline-flex; align-items: center; }
+.np-link:hover, .np-link:focus-visible { text-decoration: underline; }
+.np-link[disabled] { color: var(--ds-ink-3); cursor: default; text-decoration: none; }
+.np-saved { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.np-saved li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px dotted var(--ds-line); }
+.np-saved li.on b::after { content: ' ●'; color: var(--ds-accent); }
+.np-saved small { display: block; color: var(--ds-ink-3); font-size: 12.5px; }
+.np-more { margin-top: 8px; }
+.np-more summary { cursor: pointer; color: var(--ds-ink-2); font-size: 13.5px; }
+@media (max-width: 860px) {
+  .np-grid { grid-template-columns: 1fr; }
+  .np-main { padding-right: 0; border-right: 0; }
+  .np-side { padding-left: 0; margin-top: 18px; }
+  .np-modes { grid-template-columns: 1fr; }
+  .np-tour { position: static; margin-top: 10px; }
+}
+
+/* Guia passo a passo */
+.ds-tour { position: fixed; inset: 0; z-index: 120; }
+.ds-tour-shade { position: absolute; inset: 0; background: rgba(4, 9, 12, .5); }
+.ds-tour-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(4, 9, 12, .62), 0 0 0 2px var(--ds-accent); pointer-events: none; }
+.ds-tour-box { position: fixed; background: var(--ds-surface); border: 1px solid var(--ds-accent); border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px; box-shadow: 0 12px 40px rgba(0, 0, 0, .5); outline: none; }
+.ds-tour-box b { font-size: 17px; }
+.ds-tour-box p { margin: 0; color: var(--ds-ink-2); font-size: 14.5px; line-height: 1.5; }
+.ds-tour-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; }
+.ds-tour-actions span { display: flex; gap: 8px; }

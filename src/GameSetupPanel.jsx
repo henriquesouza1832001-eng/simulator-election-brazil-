@@ -42,12 +42,6 @@ const axisLabels = { economic_axis: 'Economia', social_axis: 'Costumes e direito
 const spectrumIndex = { esquerda: 0, centro_esquerda: 1, centro: 2, centro_direita: 3, direita: 4 };
 const ideologyToSpectrum = { Esquerda: 'esquerda', 'Centro-esquerda': 'centro_esquerda', Centro: 'centro', 'Centro-direita': 'centro_direita', Direita: 'direita' };
 const bannedPartyTerms = ['nazista', 'nazismo', 'fascista', 'fascismo', 'nsdap'];
-const tutorialSteps = [
-  ['Escolha o caminho', 'Posse direta começa no governo. Carreira política começa numa eleição e pode seguir por outros cargos.'],
-  ['Monte seu personagem', 'A cidade natal é opcional e diferente do território da candidatura. Município de campanha só é obrigatório para vereador e prefeito.'],
-  ['Leia antes de decidir', 'O painel mostra indicadores essenciais. As outras áreas ficam agrupadas nas abas temáticas.'],
-  ['Avance o calendário', 'Uma ação pode gastar dias. Veja o efeito imediato e os riscos futuros antes de confirmar medidas.'],
-];
 const traitOptions = [
   ['carismatica', 'Carismática', '+1 ponto de aprovação na posse; +0,5 de apoio inicial e +0,15 ponto local por ação na campanha.'],
   ['tecnica', 'Técnica', '+1 de confiança institucional na posse; até +3 pontos em falas concretas.'],
@@ -96,7 +90,6 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const [selectedArchive, setSelectedArchive] = useState('');
   const [campaignName, setCampaignName] = useState('');
   const [notice, setNotice] = useState('');
-  const [tutorialStep, setTutorialStep] = useState(-1);
 
   useEffect(() => {
     let mounted = true;
@@ -248,13 +241,7 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
     </header>
     <div className="game-setup-content">
       {!mode ? <>
-      <StartMenu active={campaigns.find((c) => c.active)} hasSavedGame={hasSavedGame} onContinue={onContinue} onPick={updateMode} busy={busy} catalogReady={Boolean(catalog)} tutorial={<section className="setup-tutorial" aria-label="Guia de início">
-        {tutorialStep < 0 ? <><div><b>Primeira vez?</b><span>Veja um guia curto sobre os modos, o calendário e as decisões.</span></div><button className="secondary-button" type="button" onClick={() => setTutorialStep(0)}>Abrir guia rápido</button></> : <>
-          <div className="setup-tutorial-step"><span>GUIA · {tutorialStep + 1} DE {tutorialSteps.length}</span><b>{tutorialSteps[tutorialStep][0]}</b><p>{tutorialSteps[tutorialStep][1]}</p></div>
-          <div className="setup-tutorial-actions"><button className="secondary-button" type="button" disabled={tutorialStep === 0} onClick={() => setTutorialStep((step) => step - 1)}>Anterior</button><button className="secondary-button" type="button" onClick={() => setTutorialStep(-1)}>Pular guia</button>{tutorialStep < tutorialSteps.length - 1 ? <button className="primary-button" type="button" onClick={() => setTutorialStep((step) => step + 1)}>Próximo</button> : <button className="primary-button" type="button" onClick={() => setTutorialStep(-1)}>Concluir</button>}</div>
-        </>}
-      </section>} />
-      {campaigns.length > 0 && <details className="saved-campaign-list"><summary>Minhas partidas salvas ({campaigns.length})</summary><div className="saved-campaign-grid">{campaigns.map((item) => <article className={item.active ? 'active' : ''} key={item.campaign_id}><div><b>{item.name}</b><small>{item.office} · {item.phase.replaceAll('_', ' ')} · {item.date ? new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR') : 'sem data'} · {difficultyOptions.find(([value]) => value === item.difficulty)?.[1] || item.difficulty}</small></div><button className="secondary-button" disabled={busy || item.active} onClick={() => activateCampaign(item.campaign_id)}>{item.active ? 'Em andamento' : 'Abrir'}</button></article>)}</div></details>}
+      <StartMenu active={campaigns.find((c) => c.active)} hasSavedGame={hasSavedGame} onContinue={onContinue} onPick={updateMode} busy={busy} catalogReady={Boolean(catalog)} campaigns={campaigns} onActivate={activateCampaign} difficultyLabel={(d) => difficultyOptions.find(([value]) => value === d)?.[1] || d} />
       </> : <>
         <section className="game-setup-hero game-config-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,24,21,.84), rgba(9,24,21,.20)), url('/assets/backgrounds/${heroImage}')` }}>
           <span className="eyebrow">{setupCopy[0]}</span>
