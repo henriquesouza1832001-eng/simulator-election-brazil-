@@ -34,6 +34,8 @@ O robô pode rodar em outra máquina (a TV box, por exemplo) e você só consult
 - **Pelo terminal do celular (Termux):** `curl -s "http://IP-DA-TV-BOX:8765/?t=SUA_PALAVRA_SECRETA"`.
 - **Aviso de qualquer lugar (ntfy):** instale o app **ntfy** no celular e assine o tópico que você pôs em `ntfy_topic` (use um nome longo e único, porque quem souber o nome lê os avisos). O robô avisa quando inicia, a cada 12 horas que continua rodando, se parar por erro e, com prioridade máxima, quando criar a máquina.
 - **Na própria máquina:** `python cacar_a1.py --status` mostra o `estado.json`.
+- **De fora de casa (link público):** com `"tunel": true` em `robo.local.json` e o `cloudflared` instalado (`pkg install cloudflared` no Termux), o robô abre um túnel da Cloudflare e envia o endereço, já com a palavra secreta, pelo ntfy. **O endereço muda** sempre que o túnel reinicia (a TV box reiniciar, a internet cair); o aviso mais recente do ntfy é o link válido. Como o endereço é público, use um `status_token` longo (24 caracteres ou mais): quem tiver o link e o token pode ver o status e desligar o robô.
+- **Conferir e desligar:** a página tem o botão **Conferir na Oracle agora** (consulta a conta e diz achou/não achou, com o IP), o link para o console da Oracle e o botão **Desligar o robô**, que interrompe a busca.
 
 As opções ficam em `robo.local.json` (`porta_status`, `status_token`, `ntfy_topic`, `heartbeat_horas`). Se a TV box usar firewall, libere a porta 8765 só para a rede local.
 

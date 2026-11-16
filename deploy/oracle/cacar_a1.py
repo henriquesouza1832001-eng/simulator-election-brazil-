@@ -15,9 +15,13 @@ Como acompanhar de longe (tudo opcional, em robo.local.json):
   status_token     se definido, a página só abre com ?t=SEU_TOKEN
   ntfy_topic       tópico do app ntfy (https://ntfy.sh) para receber aviso no celular, de qualquer lugar
   heartbeat_horas  de quantas em quantas horas avisar que continua rodando (padrão 12; 0 desliga)
+  tunel            true: abre um endereço público (túnel Cloudflare, precisa do cloudflared) para abrir a página de fora de casa;
+                   o endereço novo é guardado em estado.json (link_publico) e enviado pelo ntfy com a palavra secreta
 """
 import json
 import random
+import re
+import subprocess
 import sys
 import threading
 import time
@@ -37,7 +41,7 @@ ESTADO_ARQUIVO = AQUI / "estado.json"
 ESTADO = {"iniciado": None, "rodada": 0, "tentativas": 0, "sem_vaga": 0, "erros_rede": 0, "ultima_tentativa": None,
           "ultimo_resultado": "ainda não tentou", "encontrado": False, "ip": None, "parado": None,
           "sinal_ts": None, "proxima_ts": None, "ultima_ts": None,
-          "tentativas_total": 0, "desde": None, "tentativas_anteriores": 0, "conferencia": None, "console_url": None}
+          "tentativas_total": 0, "desde": None, "tentativas_anteriores": 0, "conferencia": None, "console_url": None, "link_publico": None, "por_tamanho": {}}
 CONTEXTO = {"compute": None, "config": None, "compartimento": None}
 _TRAVA = threading.Lock()
 PARAR = threading.Event()  # acionado pelo botão 'Desligar' da página de status
@@ -154,7 +158,8 @@ def texto_status():
     contagem = f"Tentativas no total: {total + antes}" + (f" ({total} nesta TV box desde {e.get('desde')} + {antes} no PC antes)" if antes else f" desde {e.get('desde')}")
     linhas = [f"Robô da Oracle: {situacao}", sinal, f"Iniciado em: {e['iniciado']}", contagem,
               f"Nesta execução: rodadas {e['rodada']} · tentativas {e['tentativas']} · sem vaga {e['sem_vaga']} · falhas de rede {e['erros_rede']}",
-              ultima, *([proxima] if proxima else []), "", texto_conferencia(e.get("conferencia")), "", "Últimas linhas do log:", *ultimas_linhas()]
+              ultima, *[f"   {tam.replace('/', ' núcleo(s) / ')} GB: {info['resultado']} às {info['quando']}" for tam, info in sorted((e.get("por_tamanho") or {}).items(), reverse=True)],
+              *([proxima] if proxima else []), "", texto_conferencia(e.get("conferencia")), "", "Últimas linhas do log:", *ultimas_linhas()]
     return "\n".join(linhas) + "\n"
 
 
@@ -232,6 +237,41 @@ def fim(cfg, uma_vez):
     time.sleep(1)
 
 
+PADRAO_LINK = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
+
+
+def iniciar_tunel(cfg):
+    """Abre um endereço público para a página de status (túnel Cloudflare). O endereço muda quando o túnel reinicia: cada novo vai por ntfy."""
+    if not cfg.get("tunel") or not int(cfg.get("porta_status", 8765)):
+        return
+    porta = int(cfg.get("porta_status", 8765))
+    token = cfg.get("status_token") or ""
+
+    def laco():
+        while not PARAR.is_set():
+            try:
+                proc = subprocess.Popen(["cloudflared", "tunnel", "--no-autoupdate", "--protocol", "http2", "--url", f"http://127.0.0.1:{porta}"],
+                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            except FileNotFoundError:
+                log("tunel ligado, mas o cloudflared não está instalado (pkg install cloudflared).")
+                return
+            for linha in proc.stdout:
+                achado = PADRAO_LINK.search(linha)
+                if achado:
+                    link = f"{achado.group(0)}/?t={token}"
+                    salvar_estado(link_publico=link)
+                    log(f"Link público do painel: {link}")
+                    avisar(cfg, "Link do painel do robo", f"Abra de qualquer lugar: {link}", "high")
+                if PARAR.is_set():
+                    break
+            proc.terminate()
+            salvar_estado(link_publico=None)
+            log("Túnel caiu; abro outro em 15 s.")
+            PARAR.wait(15)
+
+    threading.Thread(target=laco, daemon=True).start()
+
+
 def avisar(cfg, titulo, texto, prioridade="default"):
     """Aviso no celular pelo ntfy (opcional). Qualquer falha é ignorada: aviso nunca derruba o robô."""
     topico = cfg.get("ntfy_topic")
@@ -298,6 +338,30 @@ def ja_existe_a1(compute, compartimento):
     return None
 
 
+def marcar_tamanho(nucleos, gb, resultado):
+    """Guarda o último resultado de cada tamanho (2 núcleos/12 GB e 1 núcleo/6 GB), para a página mostrar os dois."""
+    with _TRAVA:
+        mapa = dict(ESTADO.get("por_tamanho") or {})
+    mapa[f"{nucleos}/{gb}"] = {"quando": agora(), "resultado": resultado}
+    salvar_estado(por_tamanho=mapa)
+
+
+def criar_com_rede(compute, cfg, compartimento, dominio, imagem, chave_ssh, nucleos, gb):
+    """Se a rede falhar (timeout da API), tenta o MESMO tamanho de novo antes de passar para o próximo."""
+    for tentativa in range(1, 4):
+        try:
+            return tentar_criar(compute, cfg, compartimento, dominio, imagem, chave_ssh, nucleos, gb)
+        except oci.exceptions.ServiceError:
+            raise
+        except Exception as erro:  # noqa: BLE001
+            log(f"Falha de rede ao tentar {nucleos}/{gb} GB ({tentativa}/3): {type(erro).__name__}. Tento o mesmo tamanho de novo em 20 s.")
+            salvar_estado(erros_rede=ESTADO["erros_rede"] + 1, ultimo_resultado=f"falha de rede em {nucleos}/{gb} GB")
+            marcar_tamanho(nucleos, gb, "falha de rede")
+            if PARAR.wait(20):
+                raise
+    raise ConnectionError(f"rede indisponível para {nucleos}/{gb} GB depois de 3 tentativas")
+
+
 def tentar_criar(compute, cfg, compartimento, dominio, imagem, chave_ssh, nucleos, gb):
     detalhes = oci.core.models.LaunchInstanceDetails(
         availability_domain=dominio,
@@ -353,6 +417,7 @@ def main():
             pass
     salvar_estado(iniciado=agora(), desde=ESTADO["desde"] or agora(), tentativas_anteriores=int(cfg.get("tentativas_anteriores", 0)))
     iniciar_painel(cfg)
+    iniciar_tunel(cfg)
     threading.Thread(target=batimento, daemon=True).start()
     ultimo_aviso = time.time()
     avisar(cfg, "Robo da Oracle iniciado", f"Procurando vaga A1 desde {agora()}.")
@@ -389,7 +454,7 @@ def main():
                     return
                 try:
                     salvar_estado(tentativas=ESTADO["tentativas"] + 1, tentativas_total=ESTADO["tentativas_total"] + 1, ultima_tentativa=agora(), ultima_ts=time.time())
-                    criada = tentar_criar(compute, cfg, compartimento, dominio, imagem, chave_ssh, nucleos, gb)
+                    criada = criar_com_rede(compute, cfg, compartimento, dominio, imagem, chave_ssh, nucleos, gb)
                     log(f"CRIADA com {nucleos} nucleo(s) e {gb} GB em {dominio}. OCID {criada.id}")
                     break
                 except oci.exceptions.ServiceError as erro:
@@ -397,6 +462,7 @@ def main():
                     if "capacity" in texto.lower() or erro.status == 500:
                         log(f"Rodada {rodada}: sem vaga ({nucleos}/{gb} GB, {dominio}).")
                         salvar_estado(sem_vaga=ESTADO["sem_vaga"] + 1, ultimo_resultado=f"sem vaga ({nucleos} núcleo(s), {gb} GB)")
+                        marcar_tamanho(nucleos, gb, "sem vaga")
                         erros_desconhecidos = 0
                     elif erro.status == 401:
                         log("401 ao criar (chave ainda propagando). Espero 1 minuto.")
