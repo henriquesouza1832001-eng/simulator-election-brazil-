@@ -26,6 +26,19 @@ C:\Users\Dell\.oci-cli-venv\Scripts\python.exe deploy\oracle\cacar_a1.py        
 
 O que acontece fica em `robo.log`. O computador precisa ficar ligado, com internet e sem suspender (Configurações > Energia > nunca suspender enquanto conectado).
 
+## Acompanhar do celular (sem deixar o PC ligado)
+
+O robô pode rodar em outra máquina (a TV box, por exemplo) e você só consulta o estado dele:
+
+- **Página de status (mesmo Wi-Fi):** abra no navegador do celular `http://IP-DA-TV-BOX:8765/?t=SUA_PALAVRA_SECRETA`. Mostra se está rodando, quantas rodadas e tentativas, a última tentativa e o final do log. Atualiza sozinha a cada 30 s. Versão para programas: `/json?t=...`.
+- **Pelo terminal do celular (Termux):** `curl -s "http://IP-DA-TV-BOX:8765/?t=SUA_PALAVRA_SECRETA"`.
+- **Aviso de qualquer lugar (ntfy):** instale o app **ntfy** no celular e assine o tópico que você pôs em `ntfy_topic` (use um nome longo e único, porque quem souber o nome lê os avisos). O robô avisa quando inicia, a cada 12 horas que continua rodando, se parar por erro e, com prioridade máxima, quando criar a máquina.
+- **Na própria máquina:** `python cacar_a1.py --status` mostra o `estado.json`.
+
+As opções ficam em `robo.local.json` (`porta_status`, `status_token`, `ntfy_topic`, `heartbeat_horas`). Se a TV box usar firewall, libere a porta 8765 só para a rede local.
+
+**Importante:** rode o robô em **um** lugar só. Dois robôs com a mesma chave aumentam o limite de requisições (erro 429). Quando ligar o da TV box, pare o do PC.
+
 ## Segurança
 
 A chave de API dá acesso à sua conta Oracle. Ela fica só neste computador (nada disso vai para o Git: `robo.local.json`, `robo.log` e `instancia-oracle.txt` estão no `.gitignore`). Depois de conseguir a máquina, apague a chave em *My profile > API keys*.

@@ -27,3 +27,5 @@ UNIT
 sudo systemctl daemon-reload
 sudo systemctl enable --now robo-oracle
 echo "Pronto. Acompanhe com: tail -f $DEST/robo.log"
+echo "Status no celular: http://$(hostname -I | cut -d' ' -f1):8765/?t=SEU_TOKEN (token em robo.local.json)"
+echo "Estado resumido: $DEST/venv/bin/python $DEST/cacar_a1.py --status"

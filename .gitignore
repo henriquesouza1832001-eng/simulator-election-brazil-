@@ -14,3 +14,4 @@ backend/data/interpreter_models/
 deploy/oracle/robo.local.json
 deploy/oracle/robo.log
 deploy/oracle/instancia-oracle.txt
+deploy/oracle/estado.json
