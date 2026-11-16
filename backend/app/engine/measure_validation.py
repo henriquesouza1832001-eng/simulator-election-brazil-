@@ -24,7 +24,7 @@ _SAVING_CONTEXT = re.compile(
 )
 _SPENDING_CUT = re.compile(
     r"\b(?:cortar|corte|reduzir|reducao|economizar|economia|poupar)\b"
-    r"[^.!?\n]{0,48}\b(?:subsidio|despesa|gasto|gastos|custo|custos|orcamento)\b",
+    r"[^.!?\n]{0,48}\b(?:subsidios?|despesas?|gastos?|custos?|custeio|orcamentos?)\b",
     re.IGNORECASE,
 )
 _TAX_REVENUE_LOSS = re.compile(
@@ -129,3 +129,18 @@ def extract_explicit_policy_cost_bi(text: str) -> tuple[float, bool]:
     if _EXPLICIT_ZERO.search(source):
         return 0.0, True
     return 0.0, False
+
+def extract_explicit_policy_savings_bi(text: str) -> float:
+    """Economia de gasto declarada no texto ("cortar R$ 20 bilhões de custeio"), em R$ bilhões. Não inventa: só valores escritos."""
+    source = _plain(text)
+    factors = {"bilhao": 1.0, "bilhoes": 1.0, "bi": 1.0, "milhao": 0.001, "milhoes": 0.001, "mi": 0.001}
+    benefit_numbers = scale_ruler.benefit_number_starts(source)
+    total = 0.0
+    for match in _AMOUNT.finditer(source):
+        unit = (match.group("unit") or "").lower()
+        if unit not in factors or match.start("number") in benefit_numbers:
+            continue
+        window = source[max(0, match.start() - 64):match.end() + 48]   # "cortar R$ 20 bi de despesas": a palavra do gasto vem depois do valor
+        if _SPENDING_CUT.search(window) and not _TAX_REVENUE_LOSS.search(window):
+            total += _number(match.group("number")) * factors[unit]
+    return round(min(total, 1000.0), 6)

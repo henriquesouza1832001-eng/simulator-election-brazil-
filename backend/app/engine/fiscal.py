@@ -225,7 +225,10 @@ def advance_fiscal(state: dict[str, Any], elapsed_days: int, volatility: float =
     fiscal["nominal_gdp_bi"] = old_gdp * factor
     for line in fiscal["revenue_lines"].values():
         line["annual_bi"] *= factor
-    expense_factor = max(.8, 1 + max(-.1, inflation / 100)) ** (elapsed_days / 365)
+    # despesa obrigatória (previdência, salários, benefícios indexados) acompanha a inflação e parte do crescimento real;
+    # sem isso o resultado primário melhorava sozinho e apagava o efeito de qualquer decisão de gasto
+    expense_factor = max(.8, 1 + max(-.1, (inflation + 0.6 * max(0.0, real_growth)) / 100)) ** (elapsed_days / 365)
+    price_factor = max(.8, 1 + max(-.1, inflation / 100)) ** (elapsed_days / 365)   # preços de custeio seguem só a inflação
     for line in fiscal["mandatory_lines"].values():
         line["annual_bi"] *= expense_factor
     fiscal["procurement_bi"] = float(fiscal["procurement_bi"]) * expense_factor
@@ -233,7 +236,7 @@ def advance_fiscal(state: dict[str, Any], elapsed_days: int, volatility: float =
     for line_key in ("official_travel", "official_residence"):
         line = operating_lines.get(line_key)
         if line is not None:
-            line["price_index"] = max(0.01, float(line.get("price_index", 1.0)) * expense_factor)
+            line["price_index"] = max(0.01, float(line.get("price_index", 1.0)) * price_factor)
             line["annual_cost_bi"] = max(
                 0.0,
                 float(line.get("base_annual_cost_bi", line.get("annual_cost_bi", 0))) * line["price_index"],

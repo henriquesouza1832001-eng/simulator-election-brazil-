@@ -554,6 +554,10 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .ds-mm-stats b { color: var(--ds-ink); font-variant-numeric: tabular-nums; }
 .ds-mm { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
 .ds-mm-grid { display: grid; grid-template-columns: repeat(auto-fill, 13px); grid-auto-rows: 13px; grid-auto-flow: dense; gap: 2px; padding: 10px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); max-height: 560px; overflow: auto; }
+.ds-mm-mapbox { padding: 10px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); }
+.ds-mm-svg { width: 100%; height: auto; max-height: 620px; display: block; }
+.ds-mm-svg path { cursor: pointer; }
+.ds-mm-svg path:hover, .ds-mm-svg path:focus-visible { stroke: #eef1f5; stroke-width: 1.4; outline: none; }
 .ds-mm-tile { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 2px; }
 .ds-mm-tile.m { grid-column: span 2; grid-row: span 2; }
 .ds-mm-tile.l { grid-column: span 3; grid-row: span 3; }

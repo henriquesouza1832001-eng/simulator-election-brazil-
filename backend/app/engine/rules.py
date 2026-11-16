@@ -1,6 +1,8 @@
 from typing import Any
 from .fiscal import ensure_fiscal_state, record_policy_balance_delta
 
+GDP_REF_BI = 15000.0
+
 # All outcome numbers live here, not in the language model's response.
 RULES: dict[str, dict[str, Any]] = {
     "fiscal_efficiency": {"fiscal": 0.15, "gdp": 0.01, "credibility": 1, "approval": 0.3, "label": "Eficiência fiscal"},
@@ -22,10 +24,17 @@ def _measure_result(state: dict[str, Any], interpretation: dict[str, Any]) -> di
     growth = float(metrics.get("gdp_growth", 0))
     approval = float(metrics.get("approval", 0))
     cost = max(0.0, float(interpretation.get("fiscal_cost_bi", 0) or 0))
+    saving = max(0.0, float(interpretation.get("fiscal_saving_bi", 0) or 0))
+    years = max(1.0, float(interpretation.get("duration_days", 0) or 0) / 365)
+    net_annual = (cost - saving) / years                       # R$ bi por ano; negativo = economia líquida
+    net_pct = net_annual / GDP_REF_BI * 100                    # em % do PIB
+    pb_delta = max(-3.0, min(3.0, rule["fiscal"] * 0.12 - net_pct))
+    gdp_delta = max(-1.0, min(1.0, rule["gdp"] * 0.15 + 0.5 * net_pct))   # multiplicador fiscal de referência 0,5
+    approval_delta = rule["approval"] * (1 + min(3.0, cost / 20)) - 0.03 * saving / years
     return {
-        "primary_balance": round(balance + rule["fiscal"] * 0.12 - min(0.1, cost / 10000), 2),
-        "gdp_growth": round(growth + rule["gdp"] * 0.15, 2),
-        "approval": round(min(100, max(0, approval + rule["approval"])), 1),
+        "primary_balance": round(balance + pb_delta, 2),
+        "gdp_growth": round(growth + gdp_delta, 2),
+        "approval": round(min(100, max(0, approval + max(-6.0, min(6.0, approval_delta)))), 1),
     }
 
 

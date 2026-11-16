@@ -34,7 +34,7 @@ from .engine.difficulty import DIFFICULTIES
 from .engine.fiscal import fiscal_overview, refresh_fiscal_metrics
 from .engine.diplomacy import diplomacy_overview, visit_country, attend_international_event
 from .engine.works import start_work, resolve_work_issue, refresh_work_finance, works_overview
-from .engine.measure_validation import extract_explicit_policy_cost_bi
+from .engine.measure_validation import extract_explicit_policy_cost_bi, extract_explicit_policy_savings_bi
 from .bot.agent import choose_action
 
 # Testes não podem usar chaves reais (gastam cota, ficam lentos e instáveis): o executor de testes não carrega o .env.
@@ -1081,6 +1081,7 @@ async def preview(request: MeasureRequest) -> dict[str, Any]:
     model_cost = interpretation.get("fiscal_cost_bi", 0)
     fiscal_cost, fiscal_cost_explicit = extract_explicit_policy_cost_bi(request.text)
     interpretation["fiscal_cost_bi"] = fiscal_cost
+    interpretation["fiscal_saving_bi"] = extract_explicit_policy_savings_bi(request.text)
     interpretation["fiscal_cost_explicit"] = fiscal_cost_explicit
     if fiscal_cost_explicit and fiscal_cost > 0:
         interpretation["fiscal_cost_note"] = "Valor extraído do texto da proposta; a previsão não substitui um orçamento detalhado."
@@ -1134,6 +1135,7 @@ def apply(request: ApplyRequest) -> dict[str, Any]:
                       "instrument": str(interpretation.get("instrument", "Indefinido"))[:40],
                       "duration_days": min(1461, max(0, int(interpretation.get("duration_days", 0)))),
                       "fiscal_cost_bi": fiscal_cost,
+                      "fiscal_saving_bi": extract_explicit_policy_savings_bi(request.text),
                       "fiscal_cost_explicit": fiscal_cost_explicit}
     instrument = interpretation["instrument"].strip().lower()
     today = date.fromisoformat(state["date"])

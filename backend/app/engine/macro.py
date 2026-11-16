@@ -141,7 +141,9 @@ def step(state: dict[str, Any], before: date, after: date, volatility: float = 1
     pb, debt = float(m.get("primary_balance", -1.5)), float(m.get("debt_gdp", 78.0))
     inst, integ = float(m.get("institutional_trust", 58)), float(m.get("integrity", 70))
     selic, cred = float(copom["selic"]), float(copom.get("credibility", 70))
-    infra = float(((state.get("budget") or {}).get("outcomes") or {}).get("infrastructure", 50.0))
+    outcomes = (state.get("budget") or {}).get("outcomes") or {}
+    infra = float(outcomes.get("infrastructure", 50.0))
+    human = 0.02 * (float(outcomes.get("productivity", 50.0)) - 50) + 0.008 * (float(outcomes.get("education", 50.0)) - 50) + 0.005 * (float(outcomes.get("health", 50.0)) - 50)  # investimento acumulado
     key = f"{after.isoformat()}"
     policy = macro.setdefault("policy", {"g": 0.0, "i": 0.0})
     for k in ("g", "i"):
@@ -166,7 +168,7 @@ def step(state: dict[str, Any], before: date, after: date, volatility: float = 1
     d_infl = (macro["expect"] - infl) * (1 - math.exp(-0.25 * dt)) - 0.03 * (real - NEUTRAL_REAL) * dt + 0.06 * macro["gap"] * dt + 0.15 * cambio_pct
     infl = _clamp(infl + d_infl, 0.3, 40.0)
     # 5) crescimento: juros reais, confiança, risco, impulso fiscal e investimento público
-    growth_target = POTENTIAL + 0.07 * (macro["confianca"] - 55) - 0.25 * (real - NEUTRAL_REAL) - 0.12 * (pb + 1.0) - 0.004 * (macro["risco"] - 200) + 0.02 * (infra - 50) + policy["g"]
+    growth_target = POTENTIAL + 0.07 * (macro["confianca"] - 55) - 0.25 * (real - NEUTRAL_REAL) - 0.12 * (pb + 1.0) - 0.004 * (macro["risco"] - 200) + 0.02 * (infra - 50) + human + policy["g"]
     growth = _clamp(growth + (growth_target - growth) * (1 - math.exp(-0.3 * dt)), -6.0, 8.0)
     macro["gap"] = _clamp(macro["gap"] * 0.93 ** dt + (growth - POTENTIAL) * dt / 6, -6.0, 6.0)
     # 6) desemprego: lei de Okun e retorno ao desemprego de equilíbrio

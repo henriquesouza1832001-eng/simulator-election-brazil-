@@ -82,4 +82,4 @@ def build(state: dict[str, Any], uf: str) -> dict[str, Any]:
     total_electorate = sum(t["electorate"] for t in tiles)
     return {"available": True, "uf": uf, "state_share": round(base, 1), "tiles": tiles, "municipalities": len(tiles), "won": len(won),
             "won_electorate_pct": round(100 * sum(t["electorate"] for t in won) / total_electorate, 1) if total_electorate else 0.0,
-            "note": "Cada quadrado é um município, com tamanho pelo eleitorado. A soma bate com o total do estado. Distribuição simulada pelo jogo."}
+            "note": "Cada município é colorido pelo vencedor; no mosaico, o tamanho segue o eleitorado. A soma bate com o total do estado. Distribuição simulada pelo jogo."}

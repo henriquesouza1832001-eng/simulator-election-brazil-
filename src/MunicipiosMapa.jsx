@@ -16,8 +16,22 @@ function colorOf(share) {
   return share >= 50 ? `rgba(217,180,74,${alpha})` : `rgba(111,143,201,${alpha})`;
 }
 
+const meshCache = {};
+
+function Contorno({ mesh, tiles, pick, setPick }) {
+  const byId = useMemo(() => Object.fromEntries(tiles.map((t) => [t.id, t])), [tiles]);
+  return <svg className="ds-mm-svg" viewBox={mesh.viewBox} role="group" aria-label="Mapa dos municípios">
+    <g transform="scale(0.0001,-0.0001)">
+      {mesh.items.map((it) => { const t = byId[it.id]; return <path key={it.id} d={it.d} fill={t ? colorOf(t.share) : '#2a3442'} stroke={pick === it.id ? '#eef1f5' : '#0e1319'} strokeWidth={pick === it.id ? 1.6 : 0.4}
+        vectorEffect="non-scaling-stroke" tabIndex={0} role="button" aria-label={t ? `${t.name}: ${br(t.share, 1)}% para você` : it.id} onClick={() => setPick(it.id)} onKeyDown={(e) => { if (e.key === 'Enter') setPick(it.id); }}><title>{t ? `${t.name}: ${br(t.share, 1)}%` : ''}</title></path>; })}
+    </g>
+  </svg>;
+}
+
 export default function MunicipiosMapa({ request, state, uf: wanted }) {
   const [data, setData] = useState(null);
+  const [view, setView] = useState('mapa');
+  const [mesh, setMesh] = useState(null);
   const [uf, setUf] = useState(wanted || '');
   const [error, setError] = useState('');
   const [pick, setPick] = useState(null);
@@ -27,6 +41,13 @@ export default function MunicipiosMapa({ request, state, uf: wanted }) {
     request(`/api/election/tally/municipal${uf ? `?uf=${uf}` : ''}`).then((d) => { setData(d); setError(''); if (!uf && d.uf) setUf(d.uf); }).catch((e) => setError(e.message));
   }, [uf, state?.date]);
 
+  useEffect(() => {
+    const code = data?.uf;
+    if (!code) return;
+    if (meshCache[code]) { setMesh(meshCache[code]); return; }
+    request(`/api/geo/municipios/${code}`).then((m) => { meshCache[code] = m; setMesh(m); }).catch(() => setMesh(null));
+  }, [data?.uf]);
+
   const tiles = data?.tiles || [];
   const top = useMemo(() => tiles.slice(0, 8), [tiles]);
   if (error) return <Section title="Mapa por município"><p className="meta-status meta-error" role="alert">{error}</p></Section>;
@@ -34,7 +55,7 @@ export default function MunicipiosMapa({ request, state, uf: wanted }) {
   if (!data.available) return <Section title="Mapa por município"><Empty title="Ainda não há mapa">{data.reason}</Empty></Section>;
 
   const sel = pick && tiles.find((t) => t.id === pick);
-  return <Section title="Mapa por município" hint="Cada quadrado é um município, do maior eleitorado ao menor. Dourado: você ganhou. Azul: o adversário ganhou. Quanto mais forte a cor, maior a margem.">
+  return <Section title="Mapa por município" hint="Dourado: você ganhou o município. Azul: o adversário ganhou. Quanto mais forte a cor, maior a margem. Toque em um município para ver os números.">
     <div className="ds-mm-head">
       {data.ufs.length > 1
         ? <label className="ds-mm-pick">Estado<Select value={data.uf} onChange={(e) => setUf(e.target.value)}>{data.ufs.map((u) => <option key={u} value={u}>{NAMES[u] || u}</option>)}</Select></label>
@@ -45,11 +66,12 @@ export default function MunicipiosMapa({ request, state, uf: wanted }) {
         <span>Eleitorado desses municípios <b>{br(data.won_electorate_pct, 1)}%</b></span>
       </div>
     </div>
+    {mesh && <div className="ds-seg" role="group" aria-label="Forma do mapa">{[['mapa', 'Contorno dos municípios'], ['mosaico', 'Mosaico por eleitorado']].map(([k, l]) => <button key={k} type="button" aria-pressed={view === k} onClick={() => setView(k)}>{l}</button>)}</div>}
     <div className="ds-mm">
-      <div className="ds-mm-grid" role="group" aria-label={`Municípios de ${NAMES[data.uf] || data.uf}`}>
+      {mesh && view === 'mapa' ? <div className="ds-mm-mapbox"><Contorno mesh={mesh} tiles={tiles} pick={pick} setPick={setPick} /></div> : <div className="ds-mm-grid" role="group" aria-label={`Municípios de ${NAMES[data.uf] || data.uf}`}>
         {tiles.map((t, i) => <button key={t.id} type="button" className={`ds-mm-tile ${sizeClass(i, tiles.length)} ${pick === t.id ? 'on' : ''}`} style={{ background: colorOf(t.share) }}
           title={`${t.name}: ${br(t.share, 1)}% para você`} aria-label={`${t.name}: ${br(t.share, 1)}% para você, ${t.winner === 'player' ? 'você ganhou' : 'adversário ganhou'}`} onClick={() => setPick(t.id)} />)}
-      </div>
+      </div>}
       <aside className="ds-card ds-mm-side">
         {sel ? <>
           <h4>{sel.name}</h4>
@@ -59,10 +81,10 @@ export default function MunicipiosMapa({ request, state, uf: wanted }) {
             <dt>Eleitorado</dt><dd>{br(sel.electorate, 0)} eleitores</dd>
             <dt>Resultado</dt><dd><Badge tone={sel.winner === 'player' ? 'good' : 'bad'}>{sel.winner === 'player' ? 'Você ganhou' : 'Adversário ganhou'}</Badge></dd>
           </dl>
-        </> : <p className="ds-muted">Toque em um quadrado para ver o município.</p>}
+        </> : <p className="ds-muted">Toque em um município para ver os números.</p>}
         <h4>Maiores colégios</h4>
         <ul className="ds-list ds-mm-top">{top.map((t) => <li key={t.id}><button type="button" className="ds-link" onClick={() => setPick(t.id)}>{t.name}</button><span className="ds-muted">{br(t.share, 1)}%</span></li>)}</ul>
-        <p className="ds-muted">{data.note}</p>
+        <p className="ds-muted">{data.note} Contornos: IBGE.</p>
       </aside>
     </div>
   </Section>;
