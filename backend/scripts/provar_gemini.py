@@ -32,6 +32,7 @@ from app.ai import interpreter, mapper_ai, narrator, question_ai  # noqa: E402
 API = "https://generativelanguage.googleapis.com/v1beta"
 FACTS = {"title": "Reduzir o preço da energia elétrica", "status": "feito", "forecast": {"approval": 1.2, "inflation": -0.1},
          "result": {"approval": 0.9, "inflation": -0.08}, "cost": "R$ 1,2 bi"}
+PAUSA = 7  # segundos entre chamadas, para não estourar a cota por minuto da chave gratuita
 RESULTS: list[tuple[str, str, str]] = []  # (situação, teste, detalhe)
 
 
@@ -59,6 +60,7 @@ def record(ok: bool | None, name: str, detail: str = "") -> None:
 
 
 def raw_call(model: str, key: str, payload: dict) -> tuple[int, float, dict, str]:
+    time.sleep(PAUSA)  # a cota gratuita limita chamadas por minuto
     started = time.perf_counter()
     try:
         r = httpx.post(f"{API}/models/{model}:generateContent", headers={"x-goog-api-key": key}, json=payload, timeout=60)
@@ -175,17 +177,21 @@ async def features(key: str) -> None:
     print("\n== Recursos do jogo de ponta a ponta (fonte 'gemini' = funcionou; 'local' = caiu no reserva)")
     n = await narrator.narrate(FACTS)
     record(n["source"] == "gemini", "narrador", f"fonte={n['source']} · {n['text'][:110]!r}")
+    await asyncio.sleep(PAUSA)
     i = await interpreter.interpret("Reduzir o preço da energia elétrica com um programa de eficiência energética, meta de 10% e prazo de 12 meses.", [])
     src = i.get("source") or i.get("interpreter") or i.get("mode") or "?"
     record(src not in ("local", "fallback", "?") and not i.get("fallback_reason"), "interpretador de medida", f"fonte={src} · motivo={i.get('fallback_reason') or i.get('reason') or '-'}")
+    await asyncio.sleep(PAUSA)
     m = await mapper_ai.refine("quero baixar a conta de luz", [{"id": "energia", "title": "Reduzir tarifa de energia"}, {"id": "gas", "title": "Reduzir preço do gás"}], [])
     record(m.get("source") == "gemini" and bool(m.get("choice") or m.get("questions")), "mapeador de ação", f"fonte={m.get('source')} · escolha={m.get('choice')}")
+    await asyncio.sleep(PAUSA)
     q = await question_ai.generate([{"text": "Inflação em 4,5% e desemprego em 7,8%.", "topic": "economia"}], ["economia"], "entrevista", "presidente", 2)
     record(q["source"] == "gemini", "perguntas de entrevista", f"fonte={q['source']} · {len(q['questions'])} perguntas válidas")
     print("\n== Latência e custo de um mandato inteiro (narrador, 6 chamadas)")
     times = []
     ok = 0
     for _ in range(6):
+        await asyncio.sleep(PAUSA)
         t = time.perf_counter()
         r = await narrator.narrate(FACTS)
         times.append(time.perf_counter() - t)
