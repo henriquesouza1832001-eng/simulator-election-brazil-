@@ -22,7 +22,7 @@ for _s in (sys.stdout, sys.stderr):
     _s.reconfigure(encoding="utf-8", errors="replace")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.engine import powers  # noqa: E402
+from app.engine import events as crises, powers, story  # noqa: E402
 from app.engine.state import advance_state, new_game  # noqa: E402
 
 METRICS = ("approval", "inflation", "unemployment", "gdp_growth", "institutional_trust", "integrity", "congress_support", "governability")
@@ -40,6 +40,9 @@ def choose(strategy: str, state, rng: random.Random):
         return None
     if strategy == "ativista":
         return rng.choice(options)
+    if strategy == "governante":
+        good = [a for a in options if sum(a["effects"].get(k, 0) for k in ("approval", "institutional_trust", "integrity", "gdp_growth")) > 0 and a["cost_bi"] <= 8]
+        return rng.choice(good) if good else None
     if strategy == "cauteloso":
         safe = [a for a in options if a["cost_bi"] <= 3 and a["effects"].get("approval", 0) >= 0 and a["approval"] in {"decreto", "pl"}]
         return rng.choice(safe) if safe else None
@@ -47,6 +50,33 @@ def choose(strategy: str, state, rng: random.Random):
         ranked = sorted(options, key=lambda a: -a["effects"].get("approval", 0))
         return rng.choice(ranked[:5])
     raise ValueError(strategy)
+
+
+def respond(strategy: str, state, rng: random.Random) -> None:
+    """Responde a crises e acontecimentos pendentes, do jeito de cada estratégia. O passivo ignora tudo."""
+    if strategy == "passivo":
+        return
+    for crisis in [c for c in state.get("active_crises", []) if c.get("status") == "active"]:
+        options = crisis.get("options") or []
+        if not options:
+            continue
+        if strategy == "ativista":
+            pick = rng.choice(options)
+        else:  # os demais escolhem a opção de maior efeito esperado na aprovação (governante também pesa o custo)
+            pick = max(options, key=lambda o: o["forecast"].get("approval_pp", 0) - (0.5 * o.get("cost_bi", 0) if strategy == "governante" else 0))
+        try:
+            crises.respond_to_event(state, crisis["id"], pick["id"])
+        except EXPECTED_BLOCK:
+            pass
+    for ev in list(state.get("story", {}).get("pending", [])):
+        choices = ev.get("choices") or []
+        if not choices:
+            continue
+        pick = rng.choice(choices) if strategy in ("ativista",) else choices[0] if strategy == "cauteloso" else rng.choice(choices[:2])
+        try:
+            story.respond(state, ev["id"], pick["id"])
+        except EXPECTED_BLOCK:
+            pass
 
 
 def play(strategy: str, seed: int, months: int = 48) -> dict:
@@ -58,6 +88,7 @@ def play(strategy: str, seed: int, months: int = 48) -> dict:
     low = {m: float(state["metrics"].get(m, 0)) for m in METRICS}
     high = dict(low)
     for month in range(months):
+        respond(strategy, state, rng)
         action = choose(strategy, state, rng)
         if action is not None:
             option = rng.choice(action["options"]) if action["options"] else None
@@ -122,7 +153,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--partidas", type=int, default=6, help="partidas por estratégia")
     parser.add_argument("--semente", type=int, default=1)
-    parser.add_argument("--estrategias", default="passivo,ativista,cauteloso,populista")
+    parser.add_argument("--estrategias", default="passivo,ativista,cauteloso,populista,governante")
     parser.add_argument("--saida", help="grava o relatório completo em JSON")
     args = parser.parse_args()
     results, started = [], time.perf_counter()

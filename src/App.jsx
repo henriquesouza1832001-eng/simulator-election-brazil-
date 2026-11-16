@@ -29,6 +29,7 @@ import Related from './Related';
 import HashRoute from './HashRoute.jsx';
 import ProjetosPanel from './ProjetosPanel.jsx';
 import LeisPanel from './LeisPanel.jsx';
+import MercadoPanel from './MercadoPanel.jsx';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
 import RegulatorsPanel from './RegulatorsPanel';
@@ -461,7 +462,7 @@ export default function App() {
     { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Indicadores', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Indicadores', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ] : [
-    { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico', 'Carimbos'] },
+    { label: 'Painel', items: ['Visão geral', 'Mercado', 'Indicadores', 'Histórico', 'Carimbos'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(careerOffice === 'presidente' ? ['Projetos'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Projetos', 'Obras e mapa', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: [...(presidentCareer ? ['Diplomacia'] : []), 'Leis e história'] },
@@ -477,6 +478,7 @@ export default function App() {
     'Visão geral': localCareer ? ['Sua carreira em movimento.', 'Veja onde você está no calendário e escolha o próximo passo.'] : (monthsRemaining === 0 && termMonth >= 48 ? ['O mandato terminou.', 'Veja o balanço final abaixo e decida se continua jogando ou abre uma nova partida.'] : ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.']),
     'Indicadores': ['Como está o país?', 'Abra os grupos para acompanhar os dados sem sobrecarregar o painel inicial.'],
     'Medidas': ['Prepare uma decisão.', 'Descreva a proposta; revise a interpretação e os efeitos antes de aplicar.'],
+    'Mercado': ['Como o mercado reage?', 'Dólar, bolsa, juros e risco-país mudam com cada decisão sua e com as contas do governo.'],
     'Leis e história': ['O país por trás das regras.', 'Normas que o jogo usa como régua e a linha do tempo da democracia, do regime militar aos dias de hoje.'],
     'Projetos': ['Que obra ou programa abrir?', 'Do viaduto à missão à Lua: escolha o projeto, a empresa e acompanhe as fases até a entrega.'],
     'Orçamento': ['Onde usar os recursos?', 'Escolha entre contas públicas, investimentos e obras. Cada área tem sua própria tela.'],
@@ -571,6 +573,7 @@ export default function App() {
 
       {activeTab === 'Indicadores' && <IndicatorsPanel request={request} state={state} onAct={() => setActiveTab(careerMode ? (careerOverview?.governing ? 'Mandato' : 'Carreira') : 'Medidas')} actLabel={careerMode ? (careerOverview?.governing ? 'Ir para o mandato' : 'Ver minha carreira') : 'Preparar uma medida'} />}
 
+      {activeTab === 'Mercado' && <MercadoPanel request={request} state={state} />}
       {activeTab === 'Leis e história' && <LeisPanel request={request} />}
       {activeTab === 'Projetos' && <ProjetosPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
       {activeTab === 'Obras e mapa' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}

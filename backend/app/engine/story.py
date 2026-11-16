@@ -169,6 +169,9 @@ def _resolve(state: dict[str, Any], ev: dict[str, Any], choice_id: str, day: dat
         deltas = _apply_career_effects(state, effects, float(ev.get("career_costs", {}).get(choice_id, 0.0)))
     else:
         deltas = _apply_effects(state, effects, cost)
+        if current_level(state) == "federal":
+            from . import macro
+            macro.react(state, {k: v * EFFECT_SCALE for k, v in effects.items() if not k.startswith(("pp:", "inst:", "rel:"))}, cost, ev["title"])
     for follow_id, days in choice.get("follow", []):
         story["queue"].append({"def": follow_id, "on": (day + timedelta(days=days)).isoformat()})
     entry = {"id": ev["id"], "def": ev["def"], "title": ev["title"], "kind": ev["kind"], "on": day.isoformat(),

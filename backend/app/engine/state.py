@@ -125,8 +125,6 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     m = state["metrics"]
     difficulty = get_difficulty(state.get("difficulty", "normal"))
     volatility = difficulty["economic_volatility"]
-    m["inflation"] = round(max(0.5, m["inflation"] + (2.4 - m["inflation"]) * elapsed / 5000 * volatility), 2)
-    m["unemployment"] = round(max(2.0, m["unemployment"] + (5.5 - m["unemployment"]) * elapsed / 7000 * volatility), 2)
     work_messages = advance_works(state, before, after)
     diplomacy_messages = advance_diplomacy(state, before, after)
     advance_fiscal(state, elapsed, volatility)
@@ -170,6 +168,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     messages.extend(nation_tick(state, before, after))
     from .central_bank import tick as copom_tick
     messages.extend(copom_tick(state, before, after))
+    from .macro import step as macro_step
+    messages.extend(macro_step(state, before, after, volatility))  # mercado, inflação, PIB e emprego reagem a contas, juros e confiança
     event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
     if event_names:
         messages.append("Agenda simulada: " + ", ".join(event_names) + ".")

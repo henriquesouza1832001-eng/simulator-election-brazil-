@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MercadoFaixa } from './MercadoPanel.jsx';
 import { Section, Stat, Badge, fmt } from './ui';
 import Hero, { headline } from './Hero';
 import MandateReview from './MandateReview';
@@ -21,6 +22,8 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
 
   return <section className="ds-page">
     <Hero name="painel" mood={hero.mood} label={hero.label} title={hero.title} text={hero.text} badge={term ? `${term.label} ${term.value}${term.suffix}` : undefined} />
+
+    <MercadoFaixa request={request} state={state} go={go} />
 
     <Section title={stats.title}>
       <div className="ds-stats">{stats.items.map((s) => <Stat key={s.label} label={s.label} value={s.value} unit={s.unit} note={s.note} />)}</div>

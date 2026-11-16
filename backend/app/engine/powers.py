@@ -136,6 +136,8 @@ def apply(state: dict[str, Any], action: dict[str, Any], option: str | None, *, 
         from . import budget_history
         budget_history.add_extra(state, action["domain"], float(action["cost_bi"]))
         rows.append({"key": "cost_bi", "delta": float(action["cost_bi"])})
+    from . import macro
+    macro.react(state, action["effects"], float(action["cost_bi"] or 0), action["title"], action["id"])  # o mercado reage na hora
     st = structure(state)
     for path, value in action["sets"].items():
         _set(state, path, value)
@@ -218,6 +220,8 @@ def execute(state: dict[str, Any], action_id: str, option: str | None = None) ->
     if locking:
         raise RuntimeError(f"A pauta está trancada pela medida provisória \"{locking['title']}\" (CF art. 62, §6º): já são {locking['day']} dias sem votação. Projetos de lei ordinários só voltam à pauta quando ela for votada ou perder a eficácia em {locking['expires'][8:10]}/{locking['expires'][5:7]}/{locking['expires'][:4]}.")
     bill = _bill(state, action, option, today)
+    from . import macro
+    macro.react(state, action["effects"], float(action["cost_bi"] or 0), f"o envio de “{action['title']}” ao Congresso", action["id"], scale=0.35)  # o mercado antecipa
     entry = ledger.record(state, "presidencia", bill["title"], dict(action["effects"]), None, status="em tramitação",
                           cost=(f"R$ {abs(action['cost_bi'])} bi" if action["cost_bi"] else None))
     bill["ledger_id"] = entry["id"]
@@ -240,6 +244,8 @@ def resolve_bill(state: dict[str, Any], bill: dict[str, Any], approved: bool) ->
             st["done"] = [d for d in st["done"] if not d.startswith(action["id"])]
         return []
     if not approved:
+        from . import macro
+        macro.react(state, action["effects"], float(action["cost_bi"] or 0), f"a rejeição de “{action['title']}”", action["id"], scale=-0.35)  # desfaz a antecipação
         if bill.get("ledger_id"):
             ledger.settle(state, bill["ledger_id"], {}, "rejeitado", ledger.explain_gap(action["effects"], {}, False))
         return []

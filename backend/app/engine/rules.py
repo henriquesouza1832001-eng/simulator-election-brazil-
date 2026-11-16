@@ -97,10 +97,14 @@ def apply_effects(state: dict[str, Any], interpretation: dict[str, Any]) -> list
     rule = RULES.get(interpretation.get("category", "other"), RULES["other"])
     m = state["metrics"]
     previous_primary_balance = float(m["primary_balance"])
+    previous_gdp, previous_approval = float(m["gdp_growth"]), float(m["approval"])
     projected = _measure_result(state, interpretation)
     m["primary_balance"] = projected["primary_balance"]
     m["gdp_growth"] = projected["gdp_growth"]
     m["approval"] = projected["approval"]
     m["governability"] = int(min(100, max(0, m["governability"] + (1 if interpretation.get("instrument") == "Ato do Executivo" else 0))))
     record_policy_balance_delta(state, float(m["primary_balance"]) - previous_primary_balance)
+    from . import macro
+    macro.react(state, {"primary_balance": float(m["primary_balance"]) - previous_primary_balance, "gdp_growth": float(m["gdp_growth"]) - previous_gdp,
+                        "approval": float(m["approval"]) - previous_approval}, 0.0, str(interpretation.get("title") or rule["label"]))
     return [{"label": rule["label"], "fiscal_delta": rule["fiscal"], "gdp_delta": rule["gdp"], "approval_delta": rule["approval"]}]

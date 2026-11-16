@@ -576,3 +576,26 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .ds-timeline-year { font-family: var(--ds-font-mono, monospace); font-size: 15px; color: var(--ds-accent); font-weight: 700; }
 .ds-timeline p { margin: 4px 0 0; color: var(--ds-ink-2); line-height: 1.5; }
 .ds-law .pj-body b { font-size: 15.5px; }
+
+
+/* Mercado */
+.ds-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.ds-quote { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); }
+.ds-quote span { font-size: 12.5px; color: var(--ds-ink-3); letter-spacing: .06em; text-transform: uppercase; font-weight: 700; }
+.ds-quote b { font-size: 26px; font-variant-numeric: tabular-nums; }
+.ds-quote em { font-style: normal; font-size: 13px; color: var(--ds-ink-3); }
+.ds-quote.good em { color: #5fd08f; } .ds-quote.bad em { color: #f07a70; }
+.ds-market-news { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ds-market-news li { padding: 10px 12px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); }
+.ds-market-news time { font-size: 12px; color: var(--ds-ink-3); }
+.ds-market-news p { margin: 2px 0 8px; line-height: 1.45; }
+.ds-market-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.ds-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.ds-charts .ds-card h4 { margin: 0 0 6px; }
+.ds-market-strip { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-wrap: wrap; gap: 8px 22px; width: 100%; margin: 12px 0 4px; padding: 10px 14px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); }
+.ds-market-strip:hover, .ds-market-strip:focus-visible { border-color: var(--ds-accent); }
+.ds-market-strip span { display: grid; gap: 0; }
+.ds-market-strip small { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 700; }
+.ds-market-strip b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.ds-market-strip em { font-style: normal; font-size: 12.5px; color: var(--ds-ink-3); }
+.ds-market-strip .good em { color: #5fd08f; } .ds-market-strip .bad em { color: #f07a70; }

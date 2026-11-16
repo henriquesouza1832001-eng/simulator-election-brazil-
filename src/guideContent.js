@@ -12,6 +12,7 @@ export const TAB_HELP = {
   'Visão geral': 'Resumo de hoje: seus principais números, o que pede atenção e o próximo passo.',
   'Indicadores': 'Todos os números do país (ou de uma cidade): quanto valem, como mudaram e o que os move.',
   'Histórico': 'A evolução mês a mês, as decisões tomadas com o que se esperava e o que aconteceu, e o orçamento.',
+  Mercado: 'Dólar, bolsa, Selic e risco-país. Reagem na hora às suas decisões e seguem déficit, dívida, inflação e confiança; alimentam inflação, PIB e emprego.',
   'Leis e história': 'Base de normas (Constituição, leis e emendas) com ligação às ações do jogo e linha do tempo da história política, incluindo o regime militar e o 8 de janeiro.',
   Projetos: 'Portfólio de obras e programas (rodovias, metrô, hospitais, usinas, programa espacial). Cada projeto é pago pela carteira da sua área e passa por fases até a entrega.',
   'Obras e mapa': 'Obras de transporte e infraestrutura, comparação entre estados e regiões e busca de cidades.',

@@ -1109,6 +1109,12 @@ async def preview(request: MeasureRequest) -> dict[str, Any]:
                                              investment_bi=float(game_state().get("budget", {}).get("annual_investment_bi", 100)))}
 
 
+@app.get("/api/macro")
+def macro_overview() -> dict[str, Any]:
+    from .engine import macro
+    return macro.overview(game_state())
+
+
 @app.post("/api/measures/apply")
 def apply(request: ApplyRequest) -> dict[str, Any]:
     state = game_state()
