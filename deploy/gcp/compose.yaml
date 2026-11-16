@@ -13,6 +13,7 @@ services:
       FRONTEND_ORIGIN: ${PUBLIC_URL:-http://localhost}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GEMINI_RECURSOS: ${GEMINI_RECURSOS:-interpretar,mapear}
       GEMINI_GATEWAY_URL: ${GEMINI_GATEWAY_URL:-}
       GEMINI_GATEWAY_TOKEN: ${GEMINI_GATEWAY_TOKEN:-}
     volumes:

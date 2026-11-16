@@ -302,10 +302,17 @@ _act("jus_indulto_natalino", "Conceder indulto natalino coletivo", "justica", P,
 _act("jus_indulto_8jan", "Indultar condenados pelos atos de 8 de janeiro de 2023", "justica", P, "Decreto", "decreto", "CF art. 84, XII; art. 5º, XLIII; controle pelo STF",
      "Pessoas foram condenadas pelo STF por crimes contra o Estado Democrático de Direito após os ataques de 8 de janeiro de 2023. O indulto é prerrogativa do Presidente, mas o ato pode ser contestado no STF. A decisão divide o país.",
      {"approval": -0.4, "institutional_trust": -1.2, "military_loyalty": 1.0, "congress_support": 0.3, "integrity": -0.4},
-     precedent="O tema segue em debate público e judicial; este é um evento de memória, não uma recomendação.", axis="other")
+     precedent="O tema segue em debate público e judicial; este é um evento de memória, não uma recomendação.", axis="other",
+     sets={"memoria_8jan": "indultado"}, requires=[("structure.memoria_8jan", "==", "em_aberto")])
 _act("jus_anistia_8jan", "Apoiar projeto de anistia aos atos de 8 de janeiro", "justica", P, "Projeto de Lei", "pl", "CF art. 48, VIII e art. 5º, XLIII",
      "A anistia é competência do Congresso, com sanção ou veto do Presidente. O governo pode apoiar, ficar neutro ou combater.", {"congress_support": 0.2, "institutional_trust": -0.6, "approval": -0.2},
-     precedent="O tema aparece em propostas no Congresso desde 2023.", axis="other")
+     precedent="O tema aparece em propostas no Congresso desde 2023.", axis="other",
+     sets={"memoria_8jan": "anistia_apoiada"}, requires=[("structure.memoria_8jan", "==", "em_aberto")])
+_act("jus_8jan_manter", "Manter as condenações dos atos de 8 de janeiro", "justica", P, "Decreto", "decreto", "CF art. 84, XII; art. 5º, XLIII; art. 92 (independência do Judiciário)",
+     "O governo declara que não concederá indulto nem apoiará anistia e que as penas fixadas pelo STF devem ser cumpridas. Reforça a separação dos Poderes, mas aprofunda a divisão com quem pede perdão aos condenados.",
+     {"institutional_trust": 1.0, "military_loyalty": -1.0, "integrity": 0.3, "approval": -0.1, "congress_support": -0.3},
+     precedent="É a outra face do mesmo evento de memória: cada jogador pode escolher o caminho que preferir; o jogo mostra as consequências das duas.", axis="other",
+     sets={"memoria_8jan": "mantido"}, requires=[("structure.memoria_8jan", "==", "em_aberto")])
 _act("jus_pec_stf_mandato", "Propor mandato fixo para ministros do STF", "justica", P, "PEC", "pec", "CF art. 101, parágrafo único",
      "Hoje o cargo vai até a aposentadoria compulsória aos 75 anos. A proposta é trocar por mandato, o que renova a Corte mais rápido.", {"institutional_trust": -0.3, "governability": 0.3},
      precedent="Propostas com esse objetivo tramitam no Congresso.", axis="other")

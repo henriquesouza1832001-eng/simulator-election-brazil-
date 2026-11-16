@@ -20,6 +20,7 @@ DEFAULT_STRUCTURE: dict[str, Any] = {
     "reelection": "permitida",
     "nuclear": "civil",
     "alcantara": "restrito",
+    "memoria_8jan": "em_aberto",
     "blocs": {"brics": True, "opep": False, "otan": False, "mercosul": True},
     "companies": {"Petrobras": "controle_estatal", "Banco do Brasil": "controle_estatal", "Caixa Econômica Federal": "estatal",
                   "Correios": "estatal", "BNDES": "estatal", "Eletronuclear": "estatal", "Eletrobras": "privada"},
@@ -33,6 +34,7 @@ STRUCTURE_LABELS = {
     "police_model": {"dual": "Polícia civil e militar (CF art. 144)", "civil_unificada": "Polícia civil unificada"},
     "government_system": {"presidencialismo": "Presidencialismo", "parlamentarismo": "Parlamentarismo"},
     "currency": {"real": "Real", "sul_americana": "Moeda sul-americana"},
+    "memoria_8jan": {"em_aberto": "Sem decisão do governo", "indultado": "Indulto concedido", "mantido": "Condenações mantidas", "anistia_apoiada": "Anistia apoiada pelo governo"},
 }
 
 METRIC_RANGES = {"approval": (0, 100), "institutional_trust": (0, 100), "integrity": (0, 100), "governability": (0, 100),

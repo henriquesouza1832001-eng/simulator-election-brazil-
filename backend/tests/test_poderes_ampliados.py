@@ -8,7 +8,7 @@ NOVOS = {
     "educacao": ["edu_fundeb", "edu_piso", "edu_ensino_medio"],
     "social": ["soc_bpc"],
     "ambiente": ["amb_fiscalizacao", "amb_terras_indigenas", "amb_licenciamento", "amb_calamidade"],
-    "justica": ["jus_indulto_natalino", "jus_indulto_8jan", "jus_anistia_8jan", "jus_pec_stf_mandato", "jus_stf_numero"],
+    "justica": ["jus_indulto_natalino", "jus_indulto_8jan", "jus_anistia_8jan", "jus_8jan_manter", "jus_pec_stf_mandato", "jus_stf_numero"],
     "legislativo": ["leg_emendas", "leg_sessao_extra", "leg_reforma_politica"],
     "memoria": ["mem_comissao", "mem_arquivos"],
     "espaco": ["espaco_agencia", "espaco_cooperacao"],
@@ -49,6 +49,21 @@ class PoderesAmpliadosTests(unittest.TestCase):
         powers.execute(state, "jus_indulto_8jan")
         self.assertLess(state["metrics"]["institutional_trust"], trust)
         self.assertGreater(state["institutions"]["military_loyalty"], loyalty)
+
+    def test_8_de_janeiro_tem_dois_caminhos_que_se_excluem(self):
+        indulto = new_game()
+        manter = new_game()
+        powers.execute(indulto, "jus_indulto_8jan")
+        powers.execute(manter, "jus_8jan_manter")
+        self.assertEqual(indulto["structure"]["memoria_8jan"], "indultado")
+        self.assertEqual(manter["structure"]["memoria_8jan"], "mantido")
+        # efeitos opostos nas mesmas métricas
+        self.assertLess(indulto["metrics"]["institutional_trust"], new_game()["metrics"]["institutional_trust"])
+        self.assertGreater(manter["metrics"]["institutional_trust"], new_game()["metrics"]["institutional_trust"])
+        self.assertGreater(indulto["institutions"]["military_loyalty"], manter["institutions"]["military_loyalty"])
+        # depois de decidir, o outro caminho fica indisponível
+        for state, other in ((indulto, "jus_8jan_manter"), (manter, "jus_indulto_8jan"), (manter, "jus_anistia_8jan")):
+            self.assertFalse(powers.status(state, powers.BY_ID[other])["available"], other)
 
     def test_pec_vai_ao_congresso_e_nao_vale_na_hora(self):
         state = new_game()
