@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import MunicipiosMapa from './MunicipiosMapa.jsx';
 import { Page, Section, Empty, Badge } from './ui.jsx';
 import { BRASIL } from './mapData.js';
 
@@ -108,7 +109,7 @@ export default function ApuracaoPanel({ request, state }) {
   if (error) return <Page title="Apuração"><p className="meta-status meta-error" role="alert">{error}</p></Page>;
   if (!data) return <Page title="Apuração"><Empty title="Carregando…" /></Page>;
   if (!data.available) return <Page title="Apuração" lead="Acompanhe a contagem dos votos, estado por estado."><Empty title="Ainda não há apuração">{data.reason}</Empty></Page>;
-  if (data.kind === 'zonas') return <Zonas data={data} i={i} setI={setI} auto={auto} setAuto={setAuto} />;
+  if (data.kind === 'zonas') return <><Zonas data={data} i={i} setI={setI} auto={auto} setAuto={setAuto} />{['governador', 'senador'].includes(data.office) && <section className="ds-page"><MunicipiosMapa request={request} state={state} /></section>}</>;
   if (data.kind === 'lista') return <Lista data={data} i={i} setI={setI} auto={auto} setAuto={setAuto} />;
   if (data.kind === 'resumo') return <Page title="Apuração" lead={data.note}>
     <Section title="Resultado"><p><b>{data.result === 'won' ? 'Eleito(a)' : 'Não eleito(a)'}</b>{data.vote_share != null && <> · {pct(data.vote_share)}% dos votos</>}</p></Section>
@@ -153,5 +154,6 @@ export default function ApuracaoPanel({ request, state }) {
         <p className="ds-muted">{data.note}</p>
       </aside>
     </div>
+    {i === data.steps.length - 1 && <MunicipiosMapa request={request} state={state} uf={uf} />}
   </Page>;
 }

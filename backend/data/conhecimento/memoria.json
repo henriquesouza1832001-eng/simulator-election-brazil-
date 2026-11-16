@@ -1,0 +1,201 @@
+{
+  "versao": 1,
+  "atualizado": "2026-11-15",
+  "aviso": "Fatos de história do Brasil em linguagem neutra, com datas conferidas em fontes públicas amplamente aceitas. Temas em disputa mostram os dois lados do debate sem opinião do jogo.",
+  "fatos": [
+    {
+      "ano": 1964,
+      "titulo": "Golpe civil-militar e início do regime militar",
+      "categoria": "Regime militar",
+      "resumo": "Entre 31 de março e 1º de abril, o presidente da República é deposto e começa o regime militar, que dura até 1985.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1965,
+      "titulo": "Ato Institucional nº 2",
+      "categoria": "Regime militar",
+      "resumo": "Extingue os partidos existentes, instala o bipartidarismo e eleva o STF de 11 para 16 ministros.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1968,
+      "titulo": "Ato Institucional nº 5",
+      "categoria": "Regime militar",
+      "resumo": "Em 13 de dezembro, fecha o Congresso, suspende garantias e amplia a censura e a repressão.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "mem_comissao"
+      ]
+    },
+    {
+      "ano": 1979,
+      "titulo": "Lei da Anistia",
+      "categoria": "Regime militar",
+      "resumo": "A Lei 6.683 anistia crimes políticos e conexos do período e permite o retorno de exilados.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "mem_arquivos"
+      ]
+    },
+    {
+      "ano": 1984,
+      "titulo": "Campanha das Diretas Já",
+      "categoria": "Transição",
+      "resumo": "Comícios com milhões de pessoas pedem eleição direta para presidente. A emenda Dante de Oliveira não obtém os votos necessários na Câmara.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1985,
+      "titulo": "Fim do regime militar",
+      "categoria": "Transição",
+      "resumo": "O colégio eleitoral escolhe um civil para a Presidência. Com o adoecimento e a morte do eleito, o vice assume o cargo.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1988,
+      "titulo": "Constituição de 1988",
+      "categoria": "Democracia",
+      "resumo": "Promulgada em 5 de outubro, restabelece eleições diretas, amplia direitos e reorganiza os Poderes.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1989,
+      "titulo": "Primeira eleição direta para presidente desde 1960",
+      "categoria": "Democracia",
+      "resumo": "O país volta a votar diretamente para presidente, em dois turnos.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1992,
+      "titulo": "Impeachment de um presidente eleito",
+      "categoria": "Democracia",
+      "resumo": "O presidente renuncia durante o processo no Senado, que decide pela inabilitação dele para funções públicas.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1994,
+      "titulo": "Plano Real",
+      "categoria": "Economia",
+      "resumo": "Nova moeda e ancoragem cambial derrubam a inflação, que passava de 40% ao mês.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 1997,
+      "titulo": "Emenda da reeleição",
+      "categoria": "Democracia",
+      "resumo": "A EC 16 permite um segundo mandato consecutivo para cargos executivos.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2000,
+      "titulo": "Lei de Responsabilidade Fiscal",
+      "categoria": "Economia",
+      "resumo": "Estabelece limites de gasto com pessoal e endividamento para os três níveis de governo.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2005,
+      "titulo": "Escândalo do mensalão",
+      "categoria": "Integridade",
+      "resumo": "Denúncias de pagamento a parlamentares por apoio no Congresso levam a um julgamento no STF, a partir de 2012.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2012,
+      "titulo": "Comissão Nacional da Verdade",
+      "categoria": "Regime militar",
+      "resumo": "Instalada em maio, investiga violações de direitos humanos e entrega relatório final em 2014.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "mem_comissao",
+        "mem_arquivos"
+      ]
+    },
+    {
+      "ano": 2013,
+      "titulo": "Protestos de junho",
+      "categoria": "Democracia",
+      "resumo": "Manifestações em todo o país começam com tarifa de transporte e se ampliam para serviços públicos e política.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2014,
+      "titulo": "Início da Operação Lava Jato",
+      "categoria": "Integridade",
+      "resumo": "Investigação sobre desvios em contratos da Petrobras, com grande impacto político e empresarial.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2016,
+      "titulo": "Impeachment de uma presidente e teto de gastos",
+      "categoria": "Democracia",
+      "resumo": "O Senado afasta a presidente da República. No mesmo ano, a EC 95 limita o crescimento do gasto federal.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2018,
+      "titulo": "Greve dos caminhoneiros",
+      "categoria": "Economia",
+      "resumo": "Paralisação de rodovias por dias provoca desabastecimento e leva a mudanças na política de combustíveis.",
+      "grau_de_certeza": "forte",
+      "no_jogo": []
+    },
+    {
+      "ano": 2019,
+      "titulo": "Rompimento da barragem em Brumadinho",
+      "categoria": "Crise",
+      "resumo": "Em 25 de janeiro, o rompimento de uma barragem de rejeitos em Minas Gerais deixa centenas de mortos.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "crise:barragem_alerta"
+      ]
+    },
+    {
+      "ano": 2020,
+      "titulo": "Pandemia de covid-19",
+      "categoria": "Crise",
+      "resumo": "O país declara emergência em saúde pública. Há auxílio emergencial, restrições e mais de 600 mil mortes ao longo da pandemia.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "saude_emergencia"
+      ]
+    },
+    {
+      "ano": 2023,
+      "titulo": "Ataques de 8 de janeiro",
+      "categoria": "Instituições",
+      "resumo": "Manifestantes invadem e depredam as sedes dos três Poderes em Brasília. O STF condena centenas de participantes nos anos seguintes; indulto e anistia seguem em debate.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "jus_indulto_8jan",
+        "jus_8jan_manter",
+        "jus_anistia_8jan"
+      ]
+    },
+    {
+      "ano": 2024,
+      "titulo": "Enchentes históricas no Rio Grande do Sul",
+      "categoria": "Crise",
+      "resumo": "Chuvas extremas atingem a maior parte do estado entre abril e maio, com mortes, desabrigados e estado de calamidade pública.",
+      "grau_de_certeza": "forte",
+      "no_jogo": [
+        "amb_calamidade",
+        "drenagem_sul"
+      ]
+    }
+  ]
+}

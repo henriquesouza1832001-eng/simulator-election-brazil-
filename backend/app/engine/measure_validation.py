@@ -4,6 +4,8 @@ from __future__ import annotations
 import re
 import unicodedata
 
+from . import scale_ruler
+
 
 _AMOUNT = re.compile(
     r"(?P<currency>R\$\s*)?"
@@ -88,7 +90,10 @@ def extract_explicit_policy_cost_bi(text: str) -> tuple[float, bool]:
     }
     total_bi = 0.0
     found = False
+    benefit_numbers = scale_ruler.benefit_number_starts(source)  # "gera R$ 15 bi de renda" é benefício, não custo
     for match in _AMOUNT.finditer(source):
+        if match.start("number") in benefit_numbers:
+            continue
         currency = match.group("currency")
         unit = (match.group("unit") or "").lower()
         if not currency and not unit:

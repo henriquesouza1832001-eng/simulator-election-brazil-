@@ -538,3 +538,41 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .ds-drawer .ds-choice { height: auto; padding-top: 8px; padding-bottom: 8px; }
 .ds-drawer .ds-choice span { white-space: normal; text-align: left; overflow-wrap: anywhere; }
 .contractor-picker { min-width: 0; display: grid; grid-template-columns: 1fr; gap: 6px; margin: 10px 0; }
+
+/* Régua de escala na prévia da medida */
+.scale-check { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--ds-line); border-left: 3px solid var(--ds-line-2); border-radius: 6px; background: var(--ds-surface-2); }
+.scale-check b { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.scale-check p { margin: 4px 0 0; color: var(--ds-ink); font-size: 14px; line-height: 1.45; }
+.scale-check .scale-warn { color: #f0b04a; }
+.scale-check.grande, .scale-check.muito_grande { border-left-color: #f0b04a; }
+.scale-check.fora_de_escala { border-left-color: #e2554a; }
+
+/* Mapa por município (cartograma em mosaico) */
+.ds-mm-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; margin-bottom: 12px; }
+.ds-mm-pick { display: grid; gap: 4px; min-width: 220px; font-size: 13px; color: var(--ds-ink-3); }
+.ds-mm-stats { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13.5px; color: var(--ds-ink-2); }
+.ds-mm-stats b { color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+.ds-mm { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.ds-mm-grid { display: grid; grid-template-columns: repeat(auto-fill, 13px); grid-auto-rows: 13px; grid-auto-flow: dense; gap: 2px; padding: 10px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); max-height: 560px; overflow: auto; }
+.ds-mm-tile { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 2px; }
+.ds-mm-tile.m { grid-column: span 2; grid-row: span 2; }
+.ds-mm-tile.l { grid-column: span 3; grid-row: span 3; }
+.ds-mm-tile.xl { grid-column: span 5; grid-row: span 5; }
+.ds-mm-tile:hover, .ds-mm-tile:focus-visible { outline: 2px solid var(--ds-ink); outline-offset: 1px; position: relative; z-index: 1; }
+.ds-mm-tile.on { outline: 2px solid var(--ds-accent); outline-offset: 1px; position: relative; z-index: 1; }
+.ds-mm-side h4 { margin: 10px 0 6px; }
+.ds-mm-side h4:first-child { margin-top: 0; }
+.ds-mm-top { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ds-mm-top li { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+@media (max-width: 900px) { .ds-mm { grid-template-columns: 1fr; } }
+
+.ds-mm-tile { min-height: 0 !important; min-width: 0 !important; padding: 0 !important; display: block; }
+
+
+/* Leis e história */
+.ds-timeline { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 0; border-left: 2px solid var(--ds-line-2); }
+.ds-timeline li { position: relative; display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 0 12px 18px; }
+.ds-timeline li::before { content: ''; position: absolute; left: -6px; top: 18px; width: 10px; height: 10px; border-radius: 50%; background: var(--ds-accent); }
+.ds-timeline-year { font-family: var(--ds-font-mono, monospace); font-size: 15px; color: var(--ds-accent); font-weight: 700; }
+.ds-timeline p { margin: 4px 0 0; color: var(--ds-ink-2); line-height: 1.5; }
+.ds-law .pj-body b { font-size: 15.5px; }

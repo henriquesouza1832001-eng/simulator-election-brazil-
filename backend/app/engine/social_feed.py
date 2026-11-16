@@ -106,6 +106,28 @@ GOOD = ("aprov", "conclu", "sancion", "execut", "decidid", "respond")
 BAD = ("rejeit", "veto", "barr", "agrav", "negad", "sem resposta")
 
 
+# Plataformas fictícias (paródias, para não usar marcas reais). Cada uma tem público e dinâmica próprios:
+# mult = quanto o tipo de perfil rende lá; weight = onde cada tipo de perfil mais publica.
+PLATFORMS = {
+    "instante": {"label": "Instante", "about": "foto e vídeo curto; quem viraliza é o humor",
+                 "mult": {"humor": 1.6, "apoio": 1.0, "oposicao": 0.9, "imprensa": 0.6}, "weight": {"humor": 5, "apoio": 2, "oposicao": 2, "imprensa": 1}},
+    "rostolivro": {"label": "Rostolivro", "about": "família, amigos e grupos; discussão longa e compartilhada",
+                   "mult": {"humor": 1.0, "apoio": 1.2, "oposicao": 1.2, "imprensa": 1.0}, "weight": {"humor": 2, "apoio": 3, "oposicao": 3, "imprensa": 3}},
+    "zapzap": {"label": "ZapZap", "about": "grupos de mensagem; é onde nascem os boatos",
+               "mult": {"humor": 1.1, "apoio": 1.4, "oposicao": 1.5, "imprensa": 0.3}, "weight": {"humor": 2, "apoio": 4, "oposicao": 4, "imprensa": 0}},
+    "passarinho": {"label": "Passarinho", "about": "notícia e debate em tempo real",
+                   "mult": {"humor": 0.9, "apoio": 0.8, "oposicao": 1.1, "imprensa": 1.7}, "weight": {"humor": 1, "apoio": 1, "oposicao": 2, "imprensa": 5}},
+}
+RUMOR_FACTS = ("crise", "decisao_ruim", "aprovacao_baixa", "inflacao_alta", "desemprego_alto")
+RUMOR_TEXT = {"apoio": "Corrente no grupo da família: “{t}” é invenção da oposição. Repassa antes que apaguem!",
+              "oposicao": "URGENTE, repassa: “{t}” é pior do que estão contando e o governo está escondendo. Manda pra todo mundo!"}
+
+
+def _platform(kind: str, seed: str) -> str:
+    pool = [name for name, p in PLATFORMS.items() for _ in range(p["weight"][kind])]
+    return _pick(pool, seed + "p")
+
+
 def _pick(seq: list[Any], seed: str) -> Any:
     return seq[int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16) % len(seq)]
 
@@ -125,8 +147,14 @@ def _post(state: dict[str, Any], fact: dict[str, Any], kind: str, tmpl: str, **f
     seed = f"{state.get('campaign_seed', 1)}:{fact['id']}:{kind}"
     handle, name = _pick(PROFILES[kind], seed + "h")
     text = _pick(TEMPLATES[tmpl][kind], seed + "t").format(**fmt)
-    reach = _reach(state, kind, seed)
+    platform = _platform(kind, seed)
+    rumor = platform == "zapzap" and kind in RUMOR_TEXT and tmpl in RUMOR_FACTS and int(hashlib.sha256((seed + "r").encode()).hexdigest()[:4], 16) / 0xFFFF < 0.45
+    if rumor:
+        t = str(fmt.get("t") or fact.get("origin") or "o que está acontecendo")
+        text = RUMOR_TEXT[kind].format(t=t)
+    reach = int(_reach(state, kind, seed) * PLATFORMS[platform]["mult"][kind] * (1.6 if rumor else 1.0))
     return {"id": f"{fact['id']}-{kind}", "date": fact["date"], "kind": kind, "handle": handle, "name": name, "text": text,
+            "platform": platform, "platform_label": PLATFORMS[platform]["label"], "rumor": rumor,
             "reach": reach, "likes": int(reach * (0.04 + 0.05 * (int(hashlib.sha256(seed.encode()).hexdigest()[12:16], 16) / 0xFFFF))),
             "origin": fact["origin"], "tab": fact.get("tab")}
 
@@ -180,5 +208,5 @@ def build(state: dict[str, Any], limit: int = 24) -> dict[str, Any]:
         for kind in order[:3]:
             posts.append(_post(state, fact, kind, fact["tmpl"], **fact["fmt"]))
     posts.sort(key=lambda p: (p["date"], p["reach"]), reverse=True)
-    return {"posts": posts[:limit], "total": len(posts),
+    return {"posts": posts[:limit], "total": len(posts), "platforms": [{"key": k, "label": p["label"], "about": p["about"]} for k, p in PLATFORMS.items()],
             "note": "Perfis e frases são fictícios e satíricos. O alcance é estimado pelo motor a partir do caixa de campanha, do momentum e do tipo de perfil."}

@@ -244,3 +244,26 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
               "chance_pct": round(b["chance"] * 100)} for b in state.get("local_bills", [])[-8:]]
     return {"bills": bills, "local_bills": list(reversed(local)), "offers": [{"key": k, **{kk: vv for kk, vv in v.items() if kk in {"label", "text"}}} for k, v in OFFERS.items()],
             "note": "Etapas, relator e probabilidades são regras do jogo; a votação nominal final usa a composição real do Congresso com voto simulado."}
+
+
+MP_LOCK_DAY = 45     # CF art. 62, §6º: após 45 dias a MP passa a trancar a pauta da Casa
+MP_FIRST_TERM = 60   # vigência inicial; prorrogada automaticamente por mais 60 dias (§3º)
+MP_MAX_DAYS = 120
+
+
+def mp_status(bill: dict[str, Any], today: date) -> dict[str, Any] | None:
+    """Situação de uma medida provisória: dia de vigência, prorrogação e trancamento de pauta."""
+    if not str(bill.get("status", "")).startswith("medida provisória"):
+        return None
+    day = (today - date.fromisoformat(bill["submitted_date"])).days
+    return {"day": day, "prorrogated": day >= MP_FIRST_TERM, "locks_agenda": day >= MP_LOCK_DAY, "days_left": max(0, MP_MAX_DAYS - day),
+            "expires": (date.fromisoformat(bill["submitted_date"]) + timedelta(days=MP_MAX_DAYS)).isoformat()}
+
+
+def locking_mp(state: dict[str, Any], today: date) -> dict[str, Any] | None:
+    """A MP pendente que está trancando a pauta de projetos de lei ordinários, se houver."""
+    for bill in state.get("legislative_calendar", {}).get("pending_bills", []):
+        info = mp_status(bill, today)
+        if info and info["locks_agenda"]:
+            return {"title": bill["title"], **info}
+    return None

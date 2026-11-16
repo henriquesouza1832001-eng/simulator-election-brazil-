@@ -14,6 +14,7 @@ from typing import Any
 
 from .event_library import get_library
 from .event_remix import is_historical, remap_places, remix, scale_effects
+from . import crises_local
 
 EXPIRES_DAYS = {"decisao": 5, "oportunidade": 14, "info": 0}
 BASE_DAILY_CHANCE = 0.05
@@ -116,7 +117,7 @@ def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | Non
     }
     if is_historical(definition):
         # Fato real "fora de época": lugar, intensidade e redação próprios desta partida (ver event_remix).
-        r = remix(definition, state, day.isoformat())
+        r = remix(definition, state, day.isoformat(), crises_local.preferred_places(definition, state))
         ev["title"], ev["text"] = r["title"], r["text"]
         ev["remix"] = {"places": r["places"], "intensity": r["intensity"], "label": r["intensity_label"]}
         key = f"{def_id}|{day.isoformat()}"
@@ -125,6 +126,9 @@ def _fire(state: dict[str, Any], def_id: str, day: date) -> dict[str, Any] | Non
             c["hint"] = remap_places(c["hint"], state, key, ev["remix"]["places"])
             c["cost_bi"] = round(c["cost_bi"] * r["intensity"], 2)
         ev["inspired_by_real_event"] = True
+    if not is_historical(definition) and "{" in definition["title"] + definition["text"]:
+        ev["title"] = crises_local.fill(definition["title"], definition, state, day)
+        ev["text"] = crises_local.fill(definition["text"], definition, state, day)
     if _career_governance(state) is not None:
         ev["career_level"] = True
         ev["career_costs"] = {}
@@ -271,6 +275,9 @@ def _eligible(state: dict[str, Any], day: date) -> list[tuple[str, float]]:
         weight = float(definition.get("weight", 1.0))
         if weight <= 0 or level not in definition["levels"]:
             continue  # peso 0 = só entra por continuação
+        if not crises_local.allowed(definition, state, day):
+            continue  # crise fora da estação ou longe do lugar de quem governa
+        weight *= crises_local.weight_factor(definition, state)
         last = story["seen"].get(def_id, {}).get("last")
         if last and (day - date.fromisoformat(last)).days < int(definition.get("cooldown", 120)):
             continue

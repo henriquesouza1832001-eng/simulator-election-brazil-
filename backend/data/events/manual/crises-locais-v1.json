@@ -1,0 +1,618 @@
+[
+  {
+    "kind": "decisao",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0.6,
+    "cooldown": 240,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:deslizamento",
+    "family": "crise:deslizamento",
+    "tags": [
+      "clima",
+      "crise",
+      "defesa-civil"
+    ],
+    "where": {
+      "states": [
+        "RJ",
+        "SP",
+        "MG",
+        "ES",
+        "PE",
+        "BA",
+        "SC",
+        "AL",
+        "PB"
+      ],
+      "months": [
+        12,
+        1,
+        2,
+        3
+      ]
+    },
+    "title": "Chuva forte derruba encostas {em_lugar}",
+    "text": "Depois de dias de chuva forte, encostas desabaram {em_lugar} e casas em áreas de morro foram atingidas. Há desabrigados, ruas bloqueadas e pedidos de socorro. A Defesa Civil já trabalha no local, mas faltam abrigos e o mapa de áreas de risco está desatualizado.",
+    "choices": [
+      {
+        "id": "resgate",
+        "label": "Mobilizar resgate, abrigos e auxílio-aluguel imediato",
+        "hint": "Custa cerca de R$ 1,2 bi e protege quem perdeu a casa.",
+        "tone": "dialogo",
+        "cost_bi": 1.2,
+        "effects": {
+          "approval": 1.5,
+          "governability": 0.4,
+          "primary_balance": -0.03
+        },
+        "outcome": "A resposta rápida reduz o sofrimento e melhora a imagem do governo.",
+        "follow": [
+          [
+            "crise:deslizamento_resgate_apos",
+            60
+          ]
+        ]
+      },
+      {
+        "id": "remocao",
+        "label": "Remover famílias das áreas de risco com reassentamento",
+        "hint": "Custa cerca de R$ 3 bi e enfrenta resistência de quem não quer sair.",
+        "tone": "tecnica",
+        "cost_bi": 3,
+        "effects": {
+          "approval": -0.6,
+          "governability": 0.8,
+          "institutional_trust": 0.6,
+          "integrity": 0.3
+        },
+        "outcome": "O reassentamento causa protestos no início, mas tira gente do perigo.",
+        "follow": [
+          [
+            "crise:deslizamento_remocao_apos",
+            90
+          ]
+        ]
+      },
+      {
+        "id": "minimo",
+        "label": "Atuar só na emergência e esperar a chuva passar",
+        "hint": "Gasta pouco e deixa o risco como está.",
+        "tone": "passiva",
+        "cost_bi": 0.3,
+        "effects": {
+          "approval": -1.8,
+          "institutional_trust": -0.6
+        },
+        "outcome": "A sensação de abandono cresce e o problema volta na próxima chuva.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "info",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0,
+    "cooldown": 365,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:deslizamento_resgate_apos",
+    "family": "crise:deslizamento_apos",
+    "tags": [
+      "clima",
+      "defesa-civil"
+    ],
+    "title": "Balanço do socorro às famílias atingidas pelo deslizamento",
+    "text": "Dois meses depois, a maior parte dos desabrigados recebeu o auxílio-aluguel e voltou a ter moradia provisória. A imprensa cobra agora o mapeamento das áreas de risco para que o problema não se repita.",
+    "choices": [
+      {
+        "id": "ok",
+        "label": "Registrar o balanço",
+        "hint": "",
+        "tone": "neutra",
+        "cost_bi": 0,
+        "effects": {
+          "approval": 0.4,
+          "institutional_trust": 0.2
+        },
+        "outcome": "O balanço positivo reforça a confiança na Defesa Civil.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "info",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0,
+    "cooldown": 365,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:deslizamento_remocao_apos",
+    "family": "crise:deslizamento_apos",
+    "tags": [
+      "clima",
+      "defesa-civil"
+    ],
+    "title": "Famílias reassentadas começam a ocupar as novas moradias",
+    "text": "Três meses depois, as primeiras famílias reassentadas ocuparam as novas moradias fora da área de risco. O custo foi alto e houve protestos, mas as encostas esvaziadas deixaram de ser ameaça a quem morava nelas.",
+    "choices": [
+      {
+        "id": "ok",
+        "label": "Registrar a entrega",
+        "hint": "",
+        "tone": "neutra",
+        "cost_bi": 0,
+        "effects": {
+          "approval": 0.8,
+          "governability": 0.3,
+          "integrity": 0.2
+        },
+        "outcome": "A entrega mostra resultado concreto e acalma parte das críticas.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "decisao",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0.6,
+    "cooldown": 240,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:seca_semiarido",
+    "family": "crise:seca",
+    "tags": [
+      "clima",
+      "crise",
+      "agro"
+    ],
+    "where": {
+      "states": [
+        "CE",
+        "PE",
+        "PB",
+        "RN",
+        "BA",
+        "PI",
+        "SE",
+        "AL",
+        "MG"
+      ],
+      "months": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    "title": "Estiagem prolongada castiga o sertão {em_lugar}",
+    "text": "Sem chuva regular há meses, açudes {em_lugar} chegaram a níveis críticos. Cidades dependem de carro-pipa, pequenos produtores perdem lavoura e rebanho e cresce a pressão por socorro. As adutoras previstas ainda não ficaram prontas.",
+    "choices": [
+      {
+        "id": "adutoras",
+        "label": "Ampliar o carro-pipa e acelerar as adutoras",
+        "hint": "Custa cerca de R$ 2,5 bi e resolve o problema de base.",
+        "tone": "tecnica",
+        "cost_bi": 2.5,
+        "effects": {
+          "approval": 1,
+          "institutional_trust": 0.4,
+          "primary_balance": -0.03
+        },
+        "outcome": "A água chega mais rápido às cidades e o plano de longo prazo ganha prioridade.",
+        "follow": [
+          [
+            "crise:seca_apos",
+            120
+          ]
+        ]
+      },
+      {
+        "id": "credito",
+        "label": "Renegociar dívidas e liberar crédito rural emergencial",
+        "hint": "Custa cerca de R$ 1,5 bi e alivia o produtor.",
+        "tone": "populista",
+        "cost_bi": 1.5,
+        "effects": {
+          "approval": 0.8,
+          "primary_balance": -0.04,
+          "integrity": -0.2
+        },
+        "outcome": "O alívio financeiro segura os pequenos produtores, mas não resolve a falta de água.",
+        "follow": []
+      },
+      {
+        "id": "esperar",
+        "label": "Aguardar a chegada das chuvas",
+        "hint": "Quase não gasta e deixa a região sozinha.",
+        "tone": "passiva",
+        "cost_bi": 0.2,
+        "effects": {
+          "approval": -1.6,
+          "governability": -0.4,
+          "institutional_trust": -0.5
+        },
+        "outcome": "A demora gera revolta no interior e imagens de abandono na imprensa.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "info",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0,
+    "cooldown": 365,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:seca_apos",
+    "family": "crise:seca_apos",
+    "tags": [
+      "clima",
+      "agro"
+    ],
+    "title": "Adutoras reduzem a dependência de carro-pipa no sertão",
+    "text": "Quatro meses depois, os primeiros trechos de adutora entraram em operação e algumas cidades deixaram de depender de carro-pipa. A obra mostra que a seca pode ser enfrentada com infraestrutura, e não só com socorro.",
+    "choices": [
+      {
+        "id": "ok",
+        "label": "Registrar o avanço",
+        "hint": "",
+        "tone": "neutra",
+        "cost_bi": 0,
+        "effects": {
+          "approval": 0.6,
+          "institutional_trust": 0.3
+        },
+        "outcome": "A obra entregue vira argumento forte em favor do planejamento.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "decisao",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0.45,
+    "cooldown": 240,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:barragem_alerta",
+    "family": "crise:barragem",
+    "tags": [
+      "mineracao",
+      "crise",
+      "seguranca"
+    ],
+    "where": {
+      "states": [
+        "MG",
+        "PA",
+        "GO",
+        "BA",
+        "MT",
+        "MS",
+        "AP",
+        "RO"
+      ]
+    },
+    "title": "Inspeção aponta risco em barragem de rejeitos {em_lugar}",
+    "text": "Um relatório técnico indica que uma barragem de rejeitos de mineração {em_lugar} perdeu margem de segurança. Abaixo dela há comunidades inteiras e uma estrada importante. A empresa pede mais prazo e lembra que a operação emprega milhares de pessoas.",
+    "choices": [
+      {
+        "id": "evacuar",
+        "label": "Evacuar a zona de risco e suspender a operação",
+        "hint": "Custa cerca de R$ 1 bi e para uma fonte de empregos.",
+        "tone": "etica",
+        "cost_bi": 1,
+        "effects": {
+          "approval": -0.8,
+          "gdp_growth": -0.02,
+          "integrity": 0.8,
+          "institutional_trust": 0.8
+        },
+        "outcome": "A decisão protege vidas e mostra que a segurança vem antes do lucro, ao custo de empregos e da arrecadação local.",
+        "follow": []
+      },
+      {
+        "id": "plano",
+        "label": "Exigir plano, seguro e fiscalização reforçada, mantendo a operação",
+        "hint": "Gasta pouco e depende da palavra da empresa.",
+        "tone": "tecnica",
+        "cost_bi": 0.3,
+        "effects": {
+          "approval": -0.2,
+          "integrity": 0.2
+        },
+        "outcome": "A fiscalização aumenta, mas o risco continua em aberto.",
+        "follow": [
+          [
+            "crise:barragem_agrava",
+            150
+          ]
+        ]
+      },
+      {
+        "id": "minimizar",
+        "label": "Minimizar o alerta para não afetar o emprego",
+        "hint": "Evita o confronto agora e acumula risco.",
+        "tone": "populista",
+        "cost_bi": 0,
+        "effects": {
+          "approval": 0.3,
+          "integrity": -1,
+          "institutional_trust": -1
+        },
+        "outcome": "O alerta é tratado como exagero. Técnicos e a imprensa continuam acompanhando o caso.",
+        "follow": [
+          [
+            "crise:barragem_agrava",
+            120
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "decisao",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0,
+    "cooldown": 365,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:barragem_agrava",
+    "family": "crise:barragem_agrava",
+    "tags": [
+      "mineracao",
+      "crise",
+      "seguranca"
+    ],
+    "title": "Nova inspeção encontra trincas na barragem de rejeitos",
+    "text": "Meses depois do primeiro alerta, uma nova inspeção encontrou trincas e sinais de deslocamento na barragem de rejeitos. Os técnicos dizem que o risco de rompimento aumentou. Evacuar agora tem custo alto; esperar pode custar vidas.",
+    "choices": [
+      {
+        "id": "evacuar_agora",
+        "label": "Evacuar imediatamente e interditar a operação",
+        "hint": "Custa cerca de R$ 1,5 bi e reconhece o risco.",
+        "tone": "etica",
+        "cost_bi": 1.5,
+        "effects": {
+          "approval": -0.4,
+          "integrity": 0.6,
+          "institutional_trust": 0.6
+        },
+        "outcome": "A evacuação é feita a tempo. A decisão tardia é criticada, mas ninguém morre.",
+        "follow": []
+      },
+      {
+        "id": "esperar_mais",
+        "label": "Esperar o laudo final antes de decidir",
+        "hint": "Evita o custo agora e assume o risco.",
+        "tone": "passiva",
+        "cost_bi": 0,
+        "effects": {
+          "approval": -3.5,
+          "integrity": -2,
+          "institutional_trust": -2.5,
+          "governability": -1
+        },
+        "outcome": "A barragem cede antes do laudo. O desastre ambiental e humano domina o noticiário e a pergunta é por que o alerta foi ignorado.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "decisao",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0.35,
+    "cooldown": 240,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:colapso_ponte",
+    "family": "crise:colapso_ponte",
+    "tags": [
+      "infraestrutura",
+      "crise"
+    ],
+    "title": "Viaduto desaba {em_lugar} e interrompe rota importante",
+    "text": "Um viaduto desabou {em_lugar} sem aviso, bloqueou uma rota de carga e deixou feridos. A pergunta nas ruas e no Congresso é a mesma: a obra recebia manutenção? Há dezenas de estruturas parecidas no país sem inspeção em dia.",
+    "choices": [
+      {
+        "id": "vistoria",
+        "label": "Vistoriar todas as estruturas semelhantes e publicar os laudos",
+        "hint": "Custa cerca de R$ 1,8 bi e expõe problemas.",
+        "tone": "tecnica",
+        "cost_bi": 1.8,
+        "effects": {
+          "approval": -0.3,
+          "integrity": 0.6,
+          "institutional_trust": 0.5
+        },
+        "outcome": "A vistoria revela outras estruturas em estado ruim, mas o país passa a saber o que tem.",
+        "follow": []
+      },
+      {
+        "id": "culpar",
+        "label": "Responsabilizar a empresa e abrir processo",
+        "hint": "Custa pouco e desvia o foco da manutenção.",
+        "tone": "dura",
+        "cost_bi": 0.2,
+        "effects": {
+          "approval": 0.3,
+          "integrity": -0.5
+        },
+        "outcome": "A responsabilização satisfaz parte da opinião pública, mas não resolve o risco das outras estruturas.",
+        "follow": []
+      },
+      {
+        "id": "reconstruir",
+        "label": "Reconstruir em 90 dias com obra emergencial",
+        "hint": "Custa cerca de R$ 3,5 bi e devolve a rota rápido.",
+        "tone": "populista",
+        "cost_bi": 3.5,
+        "effects": {
+          "approval": 1,
+          "primary_balance": -0.04
+        },
+        "outcome": "A rota volta rápido e a população aprova, embora a obra emergencial seja mais cara que o normal.",
+        "follow": []
+      }
+    ]
+  },
+  {
+    "kind": "decisao",
+    "levels": [
+      "federal",
+      "estadual",
+      "municipal"
+    ],
+    "weight": 0.5,
+    "cooldown": 240,
+    "review": "aprovado",
+    "reviewed_by": "revisão editorial 15/11/2026",
+    "reviewed_at": "2026-11-15",
+    "source": {
+      "type": "manual",
+      "note": "Crise-modelo inspirada em episódios reais; texto e números são fictícios."
+    },
+    "id": "crise:ciclone",
+    "family": "crise:ciclone",
+    "tags": [
+      "clima",
+      "crise"
+    ],
+    "where": {
+      "states": [
+        "RS",
+        "SC",
+        "PR",
+        "SP",
+        "RJ",
+        "ES"
+      ],
+      "months": [
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "title": "Ciclone extratropical atinge o litoral {em_lugar}",
+    "text": "Um ciclone extratropical derrubou árvores e postes e causou falta de energia {em_lugar}. Ventos fortes destelharam casas, o mar avançou sobre a orla e o transporte ficou parado por horas. Milhares de pessoas estão sem luz e sem aula.",
+    "choices": [
+      {
+        "id": "defesa_civil",
+        "label": "Mobilizar a Defesa Civil e dar apoio aos municípios",
+        "hint": "Custa cerca de R$ 1 bi e acelera a normalização.",
+        "tone": "dialogo",
+        "cost_bi": 1,
+        "effects": {
+          "approval": 1,
+          "governability": 0.3,
+          "primary_balance": -0.02
+        },
+        "outcome": "Equipes percorrem os bairros mais atingidos e a rotina volta em poucos dias.",
+        "follow": []
+      },
+      {
+        "id": "cobrar_energia",
+        "label": "Exigir da concessionária de energia a religação em prazo curto",
+        "hint": "Custa pouco e pressiona uma empresa.",
+        "tone": "dura",
+        "cost_bi": 0.2,
+        "effects": {
+          "approval": 0.8,
+          "institutional_trust": 0.3,
+          "integrity": 0.2
+        },
+        "outcome": "A pressão pública acelera a religação e deixa claro quem é cobrado pela demora.",
+        "follow": []
+      },
+      {
+        "id": "esperar",
+        "label": "Acompanhar à distância e deixar a rotina se restabelecer",
+        "hint": "Quase não gasta e parece indiferente.",
+        "tone": "passiva",
+        "cost_bi": 0.1,
+        "effects": {
+          "approval": -1.3,
+          "institutional_trust": -0.4
+        },
+        "outcome": "A demora na volta da luz vira motivo de revolta nas redes.",
+        "follow": []
+      }
+    ]
+  }
+]

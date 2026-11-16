@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from .ai.interpreter import DEFAULT_MODEL, PROMPT_VERSION, interpret
 from .db import add_correction, archive_state, campaign_exists, campaign_name, connect, correction_count, create_guest_session, current_campaign_id, current_player_id, guest_player_id, initialize, interpretation_count, list_archives, list_campaigns, load_interpretation, load_state, recent_actions, record_action, record_interpretation, restore_archive, save_state, useful_corrections, set_campaign_id, reset_campaign_id, set_player_id, reset_player_id
 from .engine.rules import apply_effects, forecast
+from .engine import scale_ruler
 from .engine.state import advance_state, new_game, refresh_calendar_fields
 from .engine.events import ensure_event_state, respond_to_event
 from .engine.politics import rupture_preview, attempt_rupture
@@ -1102,7 +1103,10 @@ async def preview(request: MeasureRequest) -> dict[str, Any]:
               else "Ato executivo sujeito ao intervalo da agenda; os efeitos começam quando aplicado.")
     return {"interpretation": interpretation, "interpretation_id": interpretation_id,
             "learning": {"interpretations_logged": interpretation_count()},
-            "forecast": forecast(game_state(), interpretation), "examples_used": len(examples), "timing": timing}
+            "forecast": forecast(game_state(), interpretation), "examples_used": len(examples), "timing": timing,
+            "scale_check": scale_ruler.check(float(interpretation.get("fiscal_cost_bi") or 0), int(interpretation.get("duration_days") or 0), instrument,
+                                             request.text, gdp_bi=FISCAL_REFERENCE_GDP_BI,
+                                             investment_bi=float(game_state().get("budget", {}).get("annual_investment_bi", 100)))}
 
 
 @app.post("/api/measures/apply")
@@ -1205,3 +1209,7 @@ app.include_router(build_territory_router(lambda: game_state(), lambda s: save_s
 from .election_routes import build_router as build_election_router  # noqa: E402
 
 app.include_router(build_election_router(lambda: game_state()))
+
+from .knowledge_routes import build_router as build_knowledge_router  # noqa: E402
+
+app.include_router(build_knowledge_router())

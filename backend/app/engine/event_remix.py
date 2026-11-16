@@ -50,12 +50,16 @@ def _pick_intensity(state: dict[str, Any], key: str) -> tuple[str, float]:
     return INTENSITIES[-1][0], INTENSITIES[-1][1]
 
 
-def remap_places(text: str, state: dict[str, Any], key: str, mapping: dict[str, str]) -> str:
+def remap_places(text: str, state: dict[str, Any], key: str, mapping: dict[str, str], prefer: list[str] | None = None) -> str:
     """Troca estados reais por outros estados, de forma consistente dentro do mesmo evento."""
     names = [n for n, _, _ in STATES]
 
     def pick(original: str) -> str:
         if original not in mapping:
+            if prefer:  # crise com áreas de risco reais: o lugar sorteado fica entre os estados expostos
+                pool = [n for n in prefer if n != original and n not in mapping.values()] or [n for n in prefer if n not in mapping.values()] or prefer
+                mapping[original] = pool[int(_u(state, f"{key}|place|{original}") * len(pool)) % len(pool)]
+                return mapping[original]
             options = [n for n in names if n != original and n not in mapping.values()] or [n for n in names if n != original]
             mapping[original] = options[int(_u(state, f"{key}|place|{original}") * len(options)) % len(options)]
         return mapping[original]
@@ -93,12 +97,12 @@ def scale_effects(effects: dict[str, float], k: float) -> dict[str, float]:
     return {key: round(_cap(key, value * k), 3) for key, value in effects.items() if round(value * k, 3)}
 
 
-def remix(definition: dict[str, Any], state: dict[str, Any], day_iso: str) -> dict[str, Any]:
+def remix(definition: dict[str, Any], state: dict[str, Any], day_iso: str, prefer: list[str] | None = None) -> dict[str, Any]:
     """Devolve título, texto, intensidade e mapa de lugares próprios desta instância."""
     key = f"{definition['id']}|{day_iso}"
     mapping: dict[str, str] = {}
     label, mult = _pick_intensity(state, key)
-    title = remap_places(definition["title"], state, key, mapping)
-    text = remap_places(definition["text"], state, key, mapping)
+    title = remap_places(definition["title"], state, key, mapping, prefer)
+    text = remap_places(definition["text"], state, key, mapping, prefer)
     suffix = {"leve": " O episódio tem proporção contida.", "média": "", "grave": " O episódio ganha proporção grave e atrai atenção nacional."}[label]
     return {"title": title.strip(), "text": (text + suffix).strip(), "intensity": mult, "intensity_label": label, "places": mapping}

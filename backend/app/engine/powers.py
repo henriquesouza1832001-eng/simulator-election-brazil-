@@ -214,6 +214,9 @@ def execute(state: dict[str, Any], action_id: str, option: str | None = None) ->
     interval = 180 if approval == "pec" else 60
     if last and (today - date.fromisoformat(last)).days < interval:
         raise RuntimeError(f"A pauta legislativa já tem proposta recente. Aguarde {interval - (today - date.fromisoformat(last)).days} dia(s).")
+    locking = congress_process.locking_mp(state, today) if action["approval"] == "pl" else None
+    if locking:
+        raise RuntimeError(f"A pauta está trancada pela medida provisória \"{locking['title']}\" (CF art. 62, §6º): já são {locking['day']} dias sem votação. Projetos de lei ordinários só voltam à pauta quando ela for votada ou perder a eficácia em {locking['expires'][8:10]}/{locking['expires'][5:7]}/{locking['expires'][:4]}.")
     bill = _bill(state, action, option, today)
     entry = ledger.record(state, "presidencia", bill["title"], dict(action["effects"]), None, status="em tramitação",
                           cost=(f"R$ {abs(action['cost_bi'])} bi" if action["cost_bi"] else None))
