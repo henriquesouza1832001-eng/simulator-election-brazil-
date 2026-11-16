@@ -496,3 +496,45 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .ds-related-title i { font-style: normal; color: var(--ds-ink-3); transition: transform .12s, color .12s; }
 .ds-related button:hover .ds-related-title i { color: var(--ds-accent); transform: translateX(3px); }
 .ds-related button small { color: var(--ds-ink-3); font-size: 13px; line-height: 1.4; }
+
+
+/* Projetos: cartões com arte, fases e carteiras */
+.ds-cardart { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 6px; background: var(--ds-surface-2); }
+.ds-cardart svg, .ds-cardart img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ds-cardart img[hidden] { display: none; }
+.ds-cardart.big { display: block; width: 100%; aspect-ratio: 16 / 8; margin: 0 0 12px; }
+.pj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.pj-card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; border: 1px solid var(--ds-line); border-radius: 8px; background: var(--ds-surface); color: var(--ds-ink); text-align: left; transition: border-color .12s, background .12s; }
+.pj-card:hover { border-color: var(--ds-accent); background: var(--ds-surface-2); }
+.pj-card:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.pj-card.off .ds-cardart { filter: saturate(.55) brightness(.8); }
+.pj-card.alert { border-color: #e2554a; }
+.pj-body { display: grid; gap: 4px; align-content: start; padding: 0 4px 4px; }
+.pj-body b { font-size: 15px; line-height: 1.25; }
+.pj-body small { color: var(--ds-ink-3); font-size: 12.5px; line-height: 1.35; }
+.pj-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ds-ink-2); font-variant-numeric: tabular-nums; }
+.pj-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.pj-bar { height: 6px; border-radius: 3px; background: var(--ds-line); overflow: hidden; margin: 4px 0; }
+.pj-bar i { display: block; height: 100%; background: var(--ds-accent); border-radius: 3px; }
+.pj-areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 18px; }
+.pj-area { display: grid; gap: 2px; font-size: 13px; }
+.pj-area span { color: var(--ds-ink); font-weight: 600; }
+.pj-area small { color: var(--ds-ink-3); }
+.pj-phases { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; counter-reset: fase; }
+.pj-phases li { position: relative; padding: 8px 8px 8px 30px; border: 1px solid var(--ds-line); border-radius: 6px; font-size: 12.5px; color: var(--ds-ink-3); counter-increment: fase; }
+.pj-phases li::before { content: counter(fase); position: absolute; left: 8px; top: 8px; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--ds-line-2); display: grid; place-items: center; font-size: 10px; }
+.pj-phases li.done { color: var(--ds-ink-2); border-color: var(--ds-line-2); }
+.pj-phases li.done::before { background: var(--ds-accent); color: #0e1319; border-color: var(--ds-accent); }
+.pj-phases li.now { color: var(--ds-ink); border-color: var(--ds-accent); }
+.pj-phases li.now::before { border-color: var(--ds-accent); color: var(--ds-accent); }
+@media (max-width: 760px) { .pj-grid { grid-template-columns: 1fr; } }
+
+.pj-facts { display: grid; grid-template-columns: 1fr; margin: 10px 0 14px; }
+.pj-facts dt { margin-top: 10px; color: var(--ds-ink-3); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.pj-facts dd { margin: 2px 0 0; font-size: 15px; color: var(--ds-ink); font-family: inherit; text-align: left; overflow-wrap: anywhere; }
+.ds-drawer .ds-actions { display: grid; gap: 8px; }
+.ds-drawer .ds-actions button { display: grid; gap: 2px; text-align: left; height: auto; padding: 10px 12px; }
+.ds-choice span { min-width: 0; }
+.ds-drawer .ds-choice { height: auto; padding-top: 8px; padding-bottom: 8px; }
+.ds-drawer .ds-choice span { white-space: normal; text-align: left; overflow-wrap: anywhere; }
+.contractor-picker { min-width: 0; display: grid; grid-template-columns: 1fr; gap: 6px; margin: 10px 0; }

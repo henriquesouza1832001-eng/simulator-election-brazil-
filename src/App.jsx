@@ -27,6 +27,7 @@ import ApuracaoPanel from './ApuracaoPanel';
 import RedesPanel from './RedesPanel';
 import Related from './Related';
 import HashRoute from './HashRoute.jsx';
+import ProjetosPanel from './ProjetosPanel.jsx';
 import PartyPathPanel from './PartyPathPanel';
 import PowersPanel from './PowersPanel';
 import RegulatorsPanel from './RegulatorsPanel';
@@ -241,7 +242,6 @@ export default function App() {
   const [budgetSource, setBudgetSource] = useState('education');
   const [budgetTarget, setBudgetTarget] = useState('logistics');
   const [budgetAmount, setBudgetAmount] = useState('1');
-  const [selectedContractorId, setSelectedContractorId] = useState('consorcio_horizonte');
   const [travelCutPct, setTravelCutPct] = useState(0);
   const [residenceCutPct, setResidenceCutPct] = useState(0);
 
@@ -385,23 +385,6 @@ export default function App() {
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
-  async function startPublicWork(workId) {
-    setBusy(true);
-    try {
-      const data = await request('/api/budget/works/start', { method: 'POST', body: JSON.stringify({ work_id: workId, contractor_id: selectedContractorId }) });
-      setBudgetView(data.budget); setState(data.state);
-      setNotice(`Leilão simulado aberto para ${data.result.project.name}. Custo contratado: R$ ${br(data.result.project.contract_cost_bi, 2)} bi; parcela anual aproximada de R$ ${br(data.result.annual_cost_bi, 2)} bi.`);
-    } catch (e) { setNotice(e.message); } finally { setBusy(false); }
-  }
-
-  async function resolvePublicWork(projectId, choice) {
-    setBusy(true);
-    try {
-      const data = await request('/api/budget/works/resolve', { method: 'POST', body: JSON.stringify({ project_id: projectId, choice }) });
-      setBudgetView(data.budget); setState(data.state); setNotice(data.result.message);
-    } catch (e) { setNotice(e.message); } finally { setBusy(false); }
-  }
-
   async function submitOperatingBudget() {
     setBusy(true);
     try {
@@ -478,7 +461,7 @@ export default function App() {
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ] : [
     { label: 'Painel', items: ['Visão geral', 'Indicadores', 'Histórico', 'Carimbos'] },
-    { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Obras e mapa', 'Crises'] },
+    { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(careerOffice === 'presidente' ? ['Projetos'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Projetos', 'Obras e mapa', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: presidentCareer ? ['Diplomacia'] : [] },
     { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
@@ -493,6 +476,7 @@ export default function App() {
     'Visão geral': localCareer ? ['Sua carreira em movimento.', 'Veja onde você está no calendário e escolha o próximo passo.'] : (monthsRemaining === 0 && termMonth >= 48 ? ['O mandato terminou.', 'Veja o balanço final abaixo e decida se continua jogando ou abre uma nova partida.'] : ['O país, em movimento.', 'Veja o que pede atenção hoje e escolha o próximo passo.']),
     'Indicadores': ['Como está o país?', 'Abra os grupos para acompanhar os dados sem sobrecarregar o painel inicial.'],
     'Medidas': ['Prepare uma decisão.', 'Descreva a proposta; revise a interpretação e os efeitos antes de aplicar.'],
+    'Projetos': ['Que obra ou programa abrir?', 'Do viaduto à missão à Lua: escolha o projeto, a empresa e acompanhe as fases até a entrega.'],
     'Orçamento': ['Onde usar os recursos?', 'Escolha entre contas públicas, investimentos e obras. Cada área tem sua própria tela.'],
     'Diplomacia': ['Relações com o mundo.', 'Planeje visitas e compromissos; deslocamentos consomem dias de calendário.'],
     'Crises': ['Responder também é governar.', 'Veja o impacto em curso e compare as opções disponíveis.'],
@@ -585,6 +569,7 @@ export default function App() {
 
       {activeTab === 'Indicadores' && <IndicatorsPanel request={request} state={state} onAct={() => setActiveTab(careerMode ? (careerOverview?.governing ? 'Mandato' : 'Carreira') : 'Medidas')} actLabel={careerMode ? (careerOverview?.governing ? 'Ir para o mandato' : 'Ver minha carreira') : 'Preparar uma medida'} />}
 
+      {activeTab === 'Projetos' && <ProjetosPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
       {activeTab === 'Obras e mapa' && <TerritoryPanel request={request} state={state} onState={setState} onNotice={setNotice} />}
 
       {activeTab === 'Histórico' && <HistoryPanel request={request} state={state} />}
@@ -645,13 +630,9 @@ export default function App() {
           <details className="ministry-roster"><summary>Ver pastas oficiais disponíveis ({ministries.length})</summary><div>{ministries.map((ministry) => <span key={ministry.name}>{ministry.name}</span>)}</div><small>Catálogo baseado no SIORG; estas pastas são fixas no jogo. A carteira de investimentos não cria ministérios.</small></details>
           </>}
           {budgetSection === 'Obras' && <section className="works-section">
-            <div className="operating-heading"><div><span className="eyebrow">CARTEIRA NACIONAL · OBRAS SIMULADAS</span><h3>Rodovias, ferrovias, hidrovias e serviços</h3><p>O índice de obras atualiza a projeção de custo dos contratos ativos; a proposta de cada leilão mostra o valor inicial e a parcela anual.</p></div><strong className="operating-saving">R$ {br(budgetView.works.annual_available_bi, 2)} bi<small>livres por ano em Transportes e logística</small></strong></div>
-            <div className="works-index"><span>Índice de custo de obras <b>{br(budgetView.works.price_index, 3)}×</b></span><span>Carteira anual <b>R$ {br(budgetView.works.annual_allocation_bi, 1)} bi</b></span><span>Comprometido <b>R$ {br(budgetView.works.annual_committed_bi, 2)} bi/ano</b></span>{budgetView.works.annual_overrun_bi > 0 && <span className="red">Pressão sobre o orçamento <b>+R$ {br(budgetView.works.annual_overrun_bi, 2)} bi/ano</b></span>}<small>{budgetView.works.price_note}</small></div>
-            <label className="contractor-picker">Empresa do leilão<Select value={selectedContractorId} onChange={(event) => setSelectedContractorId(event.target.value)}>{budgetView.works.contractors.map((company) => <option key={company.id} value={company.id}>{company.name} · custo {br(company.price_factor, 2)}× · risco financeiro {Math.round(company.financial_risk * 100)}%</option>)}</Select></label>
-            <div className="works-catalog">{budgetView.works.options.map((work) => { const company = budgetView.works.contractors.find((item) => item.id === selectedContractorId) || budgetView.works.contractors[0]; const total = work.quoted_cost_bi * company.price_factor; const annual = total * 365 / work.duration_days; const scale = Math.min(2, total / 20); const canFund = annual <= budgetView.works.annual_available_bi + 1e-9; return <article className="work-card" key={work.id}><div className="work-kind">{work.kind}<span>{work.regions.map((region) => region.replaceAll('_', ' ')).join(' · ')}</span></div><h4>{work.name}</h4><p>{work.description}</p><small className="work-route">{work.route}</small><div className="work-costs"><span>Custo no leilão<strong>R$ {br(total, 2)} bi</strong></span><span>Parcela anual aprox.<strong>R$ {br(annual, 2)} bi/ano</strong></span><span>Prazo base<strong>{Math.ceil(work.duration_days / 365)} anos</strong></span><span>Risco técnico<strong>{Math.round(work.risk * 100)}%</strong></span></div><small className="contractor-profile">{company.profile} Risco financeiro: {Math.round(company.financial_risk * 100)}%; risco de integridade: {Math.round(company.integrity_risk * 100)}%.</small><div className="work-forecast"><b>Se contratar agora</b><span>Reserva R$ {br(annual, 2)} bi/ano da carteira de Transportes.</span><span>Entrega estimada: {new Date(`${work.expected_completion}T12:00:00`).toLocaleDateString('pt-BR')}.</span><span>Na entrega: infraestrutura regional +{br(work.effects.infrastructure * scale, 1)}, atividade +{br(work.effects.economic_activity * scale, 1)} e PIB +{br(.08 * scale, 2)} p.p. estimados.</span><span>Custos podem subir; incidentes podem suspender o cronograma e abrir uma decisão.</span></div><button className="secondary-button" disabled={busy || budgetView.works.days_until_next_award > 0 || !canFund} onClick={() => startPublicWork(work.id)}>{budgetView.works.days_until_next_award > 0 ? `Novo leilão em ${budgetView.works.days_until_next_award} ${Number(budgetView.works.days_until_next_award) === 1 ? 'dia' : 'dias'}` : !canFund ? 'Remaneje verba para Transportes' : 'Abrir leilão simulado'}</button></article>; })}</div>
-            <h4 className="subheading">Obras em execução e histórico</h4>
-            {budgetView.works.projects.length ? <div className="works-projects">{budgetView.works.projects.map((project) => <article className="work-running" key={project.id}><div className="work-running-head"><div><span className="work-kind">{project.kind} · {project.route}</span><h4>{project.name}</h4></div><b className={`work-status ${project.status}`}>{project.status === 'active' ? 'EM EXECUÇÃO' : project.status === 'needs_decision' ? 'AGUARDA DECISÃO' : project.status === 'delivered' ? 'ENTREGUE' : 'CANCELADA'}</b></div><p>{project.description}</p><div className="work-progress"><i style={{ width: `${Math.min(100, project.progress * 100)}%` }}/></div><div className="work-running-meta"><span>{Math.round(project.progress * 100)}% concluída</span><span>Contratada: {project.contractor}</span><span>Estimativa atual: R$ {br(project.current_cost_bi, 2)} bi</span><span>Previsão: {project.target_completion}</span></div>{project.issue && <div className="work-issue"><b>{project.issue.title}</b><p>{project.issue.description}</p><div>{project.issue.options.map((option) => <button className="secondary-button" key={option.id} disabled={busy} onClick={() => resolvePublicWork(project.id, option.id)}>{option.label}<small>{option.detail}</small></button>)}</div></div>}{project.resolved_issues?.length > 0 && <small className="work-history">Ocorrências resolvidas: {project.resolved_issues.length} · registradas no histórico simulado.</small>}</article>)}</div> : <div className="empty-state">Nenhuma obra nacional contratada ainda.</div>}
-            <p className="indicator-footnote">Empresas e ocorrências são fictícias. Durante a execução, problemas financeiros ou alertas de integridade podem suspender a obra e exigir uma decisão; atrasos e sobrecustos ficam no histórico.</p>
+            <div className="operating-heading"><div><span className="eyebrow">CARTEIRA NACIONAL</span><h3>As obras agora ficam em Projetos</h3><p>Lá estão os 37 projetos (do viaduto à missão à Lua), as fases de cada um e a carteira de cada área. O dinheiro continua vindo daqui: ajuste em Investimentos.</p></div></div>
+            <button type="button" className="primary-button" onClick={() => setActiveTab('Projetos')}>Abrir Projetos</button>
+            <p className="indicator-footnote">Em andamento: {budgetView.works.projects.filter((p) => ['active', 'needs_decision'].includes(p.status)).length} · comprometido por ano em Transportes: R$ {br(budgetView.works.annual_committed_bi, 1)} bi.</p>
           </section>}
         </> : <div className="empty-state">Carregando o orçamento...</div>}
       </section>}

@@ -254,6 +254,88 @@ _act("eco_confisco", "Congelar preços", "economia", P, "Medida provisória", "m
 _act("eco_mp", "Editar medida provisória", "economia", P, "Medida provisória", "mp", "CF art. 62",
      "Vale por 60 dias, prorrogável por mais 60. Se o Congresso não converter, perde a eficácia.", {"approval": 0.4, "congress_support": -1.0}, axis="other")
 
+# ---------------------------------------------------------------- Saúde
+_act("saude_sus", "Ampliar o financiamento do SUS", "saude", P, "Projeto de Lei", "pl", "CF art. 196 a 200; EC 86/2015",
+     "Mais recursos para atenção básica, hospitais e filas de cirurgia. Precisa de fonte de custeio.", {"approval": 0.8, "primary_balance": -0.1, "institutional_trust": 0.1}, cost_bi=12.0,
+     precedent="A EC 86/2015 criou o piso federal da saúde.", axis="public_investment")
+_act("saude_provimento", "Programa de provimento de médicos no interior", "saude", P, "Medida provisória", "mp", "CF art. 196 e 62; Lei 12.871/2013",
+     "Leva médicos a municípios sem atendimento. Vale na hora, mas a MP precisa virar lei em 120 dias.", {"approval": 0.9, "primary_balance": -0.04}, cost_bi=3.0,
+     precedent="O Mais Médicos (2013) foi criado por medida provisória.", axis="social_policy")
+_act("saude_vacinacao", "Campanha nacional de vacinação", "saude", P, "Decreto", "decreto", "CF art. 196; Lei 6.259/1975",
+     "Mutirão do Programa Nacional de Imunizações com busca ativa de não vacinados.", {"approval": 0.4, "institutional_trust": 0.3}, cost_bi=1.5, axis="social_policy")
+_act("saude_emergencia", "Declarar emergência em saúde pública", "saude", P, "Decreto", "decreto", "Lei 8.080/1990; Lei 13.979/2020",
+     "Libera compras e contratações rápidas diante de um surto. Mostra liderança, mas assume responsabilidade pelo resultado.", {"governability": 0.4, "institutional_trust": 0.2, "approval": -0.2}, cost_bi=4.0,
+     precedent="Emergência em saúde pública de importância nacional por covid-19 (2020).", axis="social_policy")
+
+# ---------------------------------------------------------------- Educação
+_act("edu_fundeb", "Ampliar a complementação da União ao Fundeb", "educacao", P, "PEC", "pec", "CF art. 212-A (EC 108/2020)",
+     "Eleva a parcela federal do fundo da educação básica. Os percentuais estão na Constituição, por isso exige PEC.", {"approval": 0.5, "primary_balance": -0.08}, cost_bi=8.0,
+     precedent="A EC 108/2020 tornou o Fundeb permanente e subiu a complementação da União.", axis="public_investment")
+_act("edu_piso", "Reajustar o piso salarial do magistério", "educacao", P, "Decreto", "decreto", "CF art. 206, VIII; Lei 11.738/2008",
+     "Reajuste anual do piso dos professores; estados e municípios pagam parte da conta.", {"approval": 0.3, "primary_balance": -0.04}, cost_bi=2.0, axis="social_policy")
+_act("edu_ensino_medio", "Reformular o currículo do ensino médio", "educacao", P, "Projeto de Lei", "pl", "CF art. 22, XXIV; Lei 9.394/1996 (LDB)",
+     "Redefine disciplinas obrigatórias e itinerários. Mexe com escolas, professores e estudantes ao mesmo tempo.", {"approval": -0.2, "institutional_trust": 0.1},
+     precedent="O Novo Ensino Médio (Lei 13.415/2017) foi revisto em 2024.", axis="other")
+
+# ---------------------------------------------------------------- Assistência social
+_act("soc_bpc", "Ampliar o benefício a idosos e pessoas com deficiência", "social", P, "Projeto de Lei", "pl", "CF art. 203, V; Lei 8.742/1993 (LOAS)",
+     "Sobe a renda de quem não tem como se sustentar. Aumenta a despesa obrigatória por muitos anos.", {"approval": 0.7, "primary_balance": -0.1}, cost_bi=10.0,
+     precedent="O BPC garante um salário mínimo a quem cumpre os critérios de renda e idade ou deficiência.", axis="social_policy")
+
+# ---------------------------------------------------------------- Meio ambiente
+_act("amb_fiscalizacao", "Reforçar a fiscalização ambiental", "ambiente", P, "Decreto", "decreto", "CF art. 225; Lei 9.605/1998",
+     "Mais fiscais, satélites e operações contra desmatamento e garimpo ilegais.", {"approval": 0.2, "integrity": 0.3, "gdp_growth": -0.01}, cost_bi=1.0, axis="public_investment")
+_act("amb_terras_indigenas", "Homologar terras indígenas", "ambiente", P, "Decreto", "decreto", "CF art. 231; Decreto 1.775/1996",
+     "Depois da demarcação pela Funai, o Presidente homologa por decreto. Gera reação de setores do campo e do Congresso.", {"approval": -0.2, "institutional_trust": 0.2, "governability": -0.2},
+     precedent="As homologações dependem de decisão do Presidente e podem ser contestadas no STF.", axis="other")
+_act("amb_licenciamento", "Reformar o licenciamento ambiental", "ambiente", P, "Projeto de Lei", "pl", "CF art. 225; Lei 6.938/1981",
+     "Acelera licenças de obras e projetos, com risco de menos controle. O debate divide ambientalistas e setor produtivo.", {"gdp_growth": 0.04, "approval": -0.2, "institutional_trust": -0.2},
+     precedent="O Congresso aprovou uma lei geral do licenciamento ambiental em 2025.", axis="other")
+_act("amb_calamidade", "Reconhecer estado de calamidade pública", "ambiente", P, "Decreto", "decreto", "LRF art. 65; CF art. 167, §3º",
+     "Libera crédito extraordinário e flexibiliza metas fiscais para responder a desastres. O Congresso reconhece por decreto legislativo.", {"governability": 0.3, "approval": 0.2, "primary_balance": -0.05}, cost_bi=5.0,
+     precedent="Calamidade pública reconhecida para o Rio Grande do Sul em 2024.", axis="public_investment")
+
+# ---------------------------------------------------------------- Justiça e Judiciário
+_act("jus_indulto_natalino", "Conceder indulto natalino coletivo", "justica", P, "Decreto", "decreto", "CF art. 84, XII",
+     "O indulto é prerrogativa do Presidente, mas não alcança crimes hediondos, tortura, tráfico e terrorismo (art. 5º, XLIII). O STF pode controlar o ato.", {"approval": -0.1, "institutional_trust": -0.1},
+     precedent="Decretos anuais de indulto natalino definem requisitos e excluem crimes graves.", axis="other")
+_act("jus_indulto_8jan", "Indultar condenados pelos atos de 8 de janeiro de 2023", "justica", P, "Decreto", "decreto", "CF art. 84, XII; art. 5º, XLIII; controle pelo STF",
+     "Pessoas foram condenadas pelo STF por crimes contra o Estado Democrático de Direito após os ataques de 8 de janeiro de 2023. O indulto é prerrogativa do Presidente, mas o ato pode ser contestado no STF. A decisão divide o país.",
+     {"approval": -0.4, "institutional_trust": -1.2, "military_loyalty": 1.0, "congress_support": 0.3, "integrity": -0.4},
+     precedent="O tema segue em debate público e judicial; este é um evento de memória, não uma recomendação.", axis="other")
+_act("jus_anistia_8jan", "Apoiar projeto de anistia aos atos de 8 de janeiro", "justica", P, "Projeto de Lei", "pl", "CF art. 48, VIII e art. 5º, XLIII",
+     "A anistia é competência do Congresso, com sanção ou veto do Presidente. O governo pode apoiar, ficar neutro ou combater.", {"congress_support": 0.2, "institutional_trust": -0.6, "approval": -0.2},
+     precedent="O tema aparece em propostas no Congresso desde 2023.", axis="other")
+_act("jus_pec_stf_mandato", "Propor mandato fixo para ministros do STF", "justica", P, "PEC", "pec", "CF art. 101, parágrafo único",
+     "Hoje o cargo vai até a aposentadoria compulsória aos 75 anos. A proposta é trocar por mandato, o que renova a Corte mais rápido.", {"institutional_trust": -0.3, "governability": 0.3},
+     precedent="Propostas com esse objetivo tramitam no Congresso.", axis="other")
+_act("jus_stf_numero", "Alterar o número de ministros do STF", "justica", P, "PEC", "pec", "CF art. 101",
+     "O número é 11 e está na Constituição. Mudá-lo é lido, em geral, como tentativa de controlar a Corte e custa confiança nas instituições.", {"institutional_trust": -1.5, "governability": 0.5, "approval": -0.4},
+     precedent="O Ato Institucional nº 2 (1965) subiu o STF de 11 para 16 ministros.", axis="other")
+
+# ---------------------------------------------------------------- Relação com o Legislativo
+_act("leg_emendas", "Negociar emendas parlamentares e cargos com a base", "legislativo", P, "Decreto", "decreto", "CF art. 166, §§ 9º a 11 (emendas impositivas)",
+     "Libera emendas e espaços no governo em troca de apoio. Fortalece a base e desgasta a imagem de integridade.", {"congress_support": 2.0, "integrity": -0.8, "approval": -0.2, "primary_balance": -0.03}, cost_bi=4.0,
+     precedent="As emendas individuais e de bancada passaram a ser de execução obrigatória (EC 86/2015 e EC 100/2019).", axis="other")
+_act("leg_sessao_extra", "Convocar sessão legislativa extraordinária", "legislativo", P, "Decreto", "decreto", "CF art. 57, §6º",
+     "Chama o Congresso fora do período normal para votar um tema urgente. Cansa a base e mostra prioridade.", {"governability": 0.4, "congress_support": -0.5}, axis="other")
+_act("leg_reforma_politica", "Propor reforma política do sistema eleitoral", "legislativo", P, "PEC", "pec", "CF art. 14 e art. 45",
+     "Mudanças no voto, nas coligações ou no financiamento. Todo parlamentar tem interesse pessoal no resultado.", {"governability": 0.5, "approval": -0.2},
+     precedent="Reformas parciais vêm por emenda constitucional e lei, como a cláusula de barreira (EC 97/2017).", axis="other")
+
+# ---------------------------------------------------------------- Memória e regime militar
+_act("mem_comissao", "Instituir comissão de memória e verdade", "memoria", P, "Projeto de Lei", "pl", "CF art. 5º, XXXIII; Lei 12.528/2011",
+     "Investiga violações de direitos humanos do regime militar (1964 a 1985). Valoriza as vítimas e tensiona a relação com as Forças Armadas.", {"military_loyalty": -2.0, "institutional_trust": 0.5, "governability": -0.2},
+     precedent="A Comissão Nacional da Verdade funcionou de 2012 a 2014.", axis="other")
+_act("mem_arquivos", "Abrir os arquivos do regime militar", "memoria", P, "Decreto", "decreto", "CF art. 5º, XXXIII; Lei 12.527/2011 (Lei de Acesso à Informação)",
+     "Torna públicos documentos da repressão. Dá acesso a famílias e pesquisadores e desagrada parte dos militares.", {"military_loyalty": -1.0, "institutional_trust": 0.3}, axis="other")
+
+# ---------------------------------------------------------------- Espaço e ciência
+_act("espaco_agencia", "Reforçar a Agência Espacial Brasileira", "espaco", P, "Decreto", "decreto", "Lei 8.854/1994",
+     "Mais orçamento e autonomia para o programa espacial. É o primeiro passo para obras como Alcântara e missões tripuladas.", {"gdp_growth": 0.02, "institutional_trust": 0.2}, cost_bi=1.2, axis="public_investment")
+_act("espaco_cooperacao", "Firmar cooperação internacional para voos tripulados", "espaco", P, "Acordo + decreto legislativo", "tratado", "CF art. 84, VIII e art. 49, I",
+     "Acordo com agência espacial parceira para treinar e levar um astronauta brasileiro ao espaço. Abre caminho ao projeto no menu Projetos.", {"approval": 0.3, "institutional_trust": 0.2}, axis="other")
+
 ACTIONS: list[dict[str, Any]] = _A
 
 # Cargos que não executam o mesmo catálogo: lista curta das principais iniciativas, só descritiva nesta versão.

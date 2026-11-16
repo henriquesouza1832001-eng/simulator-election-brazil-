@@ -16,7 +16,7 @@ def run(coro):
 
 class GatewayTest(unittest.TestCase):
     def setUp(self):
-        self.env = mock.patch.dict(os.environ, {"GEMINI_GATEWAY_URL": "https://gw.example.workers.dev", "GEMINI_GATEWAY_TOKEN": "t" * 24})
+        self.env = mock.patch.dict(os.environ, {"GEMINI_GATEWAY_URL": "https://gw.example.workers.dev", "GEMINI_GATEWAY_TOKEN": "t" * 24, "GEMINI_RECURSOS": "interpretar,mapear,narrar,perguntar"})
         self.env.start()
         os.environ.pop("GEMINI_API_KEY", None)
 

@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import re
 import threading
@@ -35,7 +36,10 @@ from .engine.works import start_work, resolve_work_issue, refresh_work_finance, 
 from .engine.measure_validation import extract_explicit_policy_cost_bi
 from .bot.agent import choose_action
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+# Testes não podem usar chaves reais (gastam cota, ficam lentos e instáveis): o executor de testes não carrega o .env.
+_EXECUTOR = os.path.basename(os.path.dirname(sys.argv[0])).lower() + " " + os.path.basename(sys.argv[0]).lower() if sys.argv else ""
+if not ("unittest" in _EXECUTOR or "pytest" in _EXECUTOR) or os.getenv("QUATRO_ANOS_CARREGAR_ENV"):
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 FISCAL_REFERENCE_GDP_BI = 15000.0
 app = FastAPI(title="Mandato Game API", version="0.1.0")

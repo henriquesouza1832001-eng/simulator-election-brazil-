@@ -2,6 +2,13 @@
 
 Proposta de 15 nov. 2026. Reúne tudo o que foi pedido para o motor (projetos, crises, Congresso, eleições, leis, história, redes e aprendizado), o que o jogo já tem hoje e a ordem sugerida. Os números de versão são sugestão; a única decisão já tomada é que a 0.6 prepara o Gemini (ver `ROADMAP_VERSOES.md`).
 
+## 0. Andamento (atualizado em 15 nov. 2026)
+
+- **Feito: aba Projetos.** 37 projetos em 8 tipos, com ciclo em quatro fases, financiamento pela carteira da própria área e efeito nacional na entrega. Inclui o programa espacial: Centro de Lançamentos de Alcântara (base comercial), constelação de satélites, astronauta brasileiro em órbita e Missão Lunar Brasileira (R$ 150 bi, que exige remanejar o orçamento de Ciência). Cartões com arte própria em SVG, que a imagem real substitui quando existir.
+- **Feito: competências ampliadas.** O catálogo de poderes foi de 51 para 75 ações, com saúde, educação, assistência social, meio ambiente, Justiça e Judiciário (indulto, anistia, mandato e número de ministros do STF), relação com o Legislativo (emendas, sessão extraordinária, reforma política), memória e regime militar e espaço. Cada uma com base legal e precedente real.
+- **Feito: 8 de janeiro.** Entra como decisão de memória: indultar, apoiar anistia no Congresso ou não agir, com custo de confiança institucional e efeito na lealdade militar.
+- **A fazer, nesta ordem:** crises por local (frente B), régua de escala do Gemini (frente C), MP com trancamento de pauta (frente D), mapa por município (frente E), base de leis e fatos (frente F), redes por plataforma (frente G), aprendizado (frente H).
+
 ## 1. Regra que organiza tudo
 
 - **O motor decide.** Custo, efeito, voto, resultado e probabilidade saem de regras e tabelas em Python, com semente da partida (reproduzível).
@@ -13,9 +20,9 @@ Proposta de 15 nov. 2026. Reúne tudo o que foi pedido para o motor (projetos, c
 
 | Frente | Já existe | Lacuna |
 |---|---|---|
-| Obras | `works.py` com **6 obras** (rodovia, ferrovia, 2 hidrovias, porto, saneamento), empreiteiras, risco, atraso | Catálogo minúsculo; sem pontes, viadutos, reformas, habitação, escolas, hospitais; sem aba própria |
+| Obras | `works.py` com 6 obras e, desde 15 nov., 37 projetos (`works_catalog.py`) com aba Projetos | Sem licenciamento ambiental e TCU como fases com eventos próprios; custo ainda por catálogo, não por `custo unitário × tamanho` |
 | Eventos e crises | 2.460 acontecimentos na biblioteca (`story_catalog`), 124 eventos históricos locais, corpus de **67 fatos** 2014–2026 (todos `source_verified: false`) | Poucas crises-tipo por local; nada ligado a risco geográfico real (barragem, encosta, enchente) |
-| Congresso | Câmara 513 e Senado 81 com composição real, voto nominal simulado, PL e PEC, urgência, vetos e sanção (`congress_process`, `congress_agenda`), MP como ato presidencial (`powers.py`) | MP sem prazo de 120 dias e trancamento de pauta; sem PLP, PDL, resolução do Senado, comissão mista; Senado como casa revisora ainda simples |
+| Congresso | Câmara 513 e Senado 81 com composição real, voto nominal simulado, PL e PEC, urgência, vetos e sanção (`congress_process`, `congress_agenda`); MP já vale na hora e vira projeto com prazo de 120 dias, revertida se não for convertida (`powers.py`) | MP sem trancamento de pauta aos 45 dias, prorrogação 60+60 e comissão mista; sem PDL e resolução do Senado; Senado como casa revisora ainda simples |
 | Eleição | Pesquisa, campanha, TV, teto de gastos, apuração por estado, regiões e legenda, 2 turnos | **Mapa por município**; candidatos reais por município (dados TSE já importados em parte) |
 | Leis e história | `COMPETENCIAS_E_PODERES.md`, regras eleitorais, regulação | Base de normas estruturantes com efeito no motor; memória histórica (8 de janeiro, regime militar) |
 | Redes e sátira | `social_feed.py` com modelos por tipo de fato, perfis, alcance | Plataformas por perfil de público, grupos de família, boato; geração que aprende |
@@ -79,7 +86,9 @@ Não identifiquei o que seria "mpp" na sua lista; tratei como MPV. Se for outra 
 
 O motor modela: relator, comissões, calendário e urgência, **negociação** (emendas, cargos, pauta do presidente da Casa), bancadas temáticas e o custo político de cada derrota. A posição de cada parlamentar já existe (`legislature.py`); falta o trancamento de pauta da MP, a comissão mista, o PLP e o PDL.
 
-Aceite: uma MP editada no dia 1 perde a eficácia no dia 121 se não for votada, tranca a pauta no dia 46 e o jogador vê isso na agenda.
+O prazo de 120 dias da MP e a reversão já existem. Falta o trancamento de pauta no dia 46 e a comissão mista.
+
+Aceite: uma MP editada no dia 1 tranca a pauta no dia 46, perde a eficácia no dia 121 se não for votada e o jogador vê isso na agenda.
 
 ## 7. Frente E: eleição com mapa por município
 
@@ -136,7 +145,7 @@ Aceite: uma eleição para governador mostra o mapa dos municípios do estado, e
 |---|---|---|
 | 0.6 | Gemini provado (feito), prova com a chave da Oracle, régua de escala (seção 5) | chave na Oracle |
 | 0.6b | Aba Projetos com 40 tipos de obra e ciclo completo | catálogo de custos |
-| 0.7 | Crises por local (10 modelos) e entrevistas ligadas à crise; MP com 120 dias, PLP e PDL | mapa de exposição |
+| 0.7 | Crises por local (10 modelos) e entrevistas ligadas à crise; MP com trancamento de pauta e comissão mista, PLP e PDL | mapa de exposição |
 | 0.8 | Eleição com mapa por município; núcleo de 150 normas; memória histórica (8 de janeiro, regime militar) | dados TSE completos |
 | 0.9 | Redes por plataforma, bots de balanceamento, calibração histórica, mandato inteiro com Gemini | corpus e dados sintéticos |
 | 1.0 | Imagens finais, sátira de figuras reais com revisão jurídica, Steam | revisão jurídica |

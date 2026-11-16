@@ -14,7 +14,7 @@ const APPROVAL = {
   tratado: ['Tratado', 'Congresso aprova e o Presidente ratifica'],
   blocked: ['Vedado', 'A Constituição não permite'],
 };
-const DOMAINS = { banco: 'Banco e moeda', empresas: 'Empresas e patrimônio', infraestrutura: 'Infraestrutura', defesa: 'Defesa e Forças Armadas', seguranca: 'Segurança e armas', exterior: 'Relações exteriores', regime: 'Regime e instituições', economia: 'Economia e tributos' };
+const DOMAINS = { banco: 'Banco e moeda', empresas: 'Empresas e patrimônio', infraestrutura: 'Infraestrutura', defesa: 'Defesa e Forças Armadas', seguranca: 'Segurança e armas', exterior: 'Relações exteriores', regime: 'Regime e instituições', economia: 'Economia e tributos', saude: 'Saúde', educacao: 'Educação', social: 'Assistência social', ambiente: 'Meio ambiente', justica: 'Justiça e Judiciário', legislativo: 'Relação com o Legislativo', memoria: 'Memória e regime militar', espaco: 'Espaço e ciência' };
 const STRUCTURE_NAMES = { central_bank: 'Banco Central', guns: 'Armas', police_model: 'Polícia', government_system: 'Sistema de governo', currency: 'Moeda' };
 
 

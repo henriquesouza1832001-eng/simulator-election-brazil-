@@ -11,7 +11,7 @@ from typing import Any
 
 from .ministries import INVESTMENT_AREAS
 
-DOMAIN_TO_FUNCTION = {"infraestrutura": "logistics", "defesa": "security", "seguranca": "security", "saneamento": "sanitation", "saude": "health", "educacao": "education"}
+DOMAIN_TO_FUNCTION = {"infraestrutura": "logistics", "defesa": "security", "seguranca": "security", "saneamento": "sanitation", "saude": "health", "educacao": "education", "espaco": "science", "ambiente": "agriculture"}
 LIMIT = 60
 
 

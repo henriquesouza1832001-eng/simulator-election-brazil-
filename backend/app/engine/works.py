@@ -5,6 +5,8 @@ import random
 from datetime import date, timedelta
 from typing import Any
 
+from .works_catalog import AREA_LABEL, EXTRA_WORKS
+
 WORK_CATALOG: dict[str, dict[str, Any]] = {
     "br116_sul": {"name": "Corredor rodoviário Sul-Sudeste", "kind": "Rodovia", "route": "BR-116 · Sul e Sudeste", "regions": ["sul", "sudeste"], "base_cost_bi": 24.0, "duration_days": 1095, "risk": 0.10, "description": "Duplicação e adequação de trechos logísticos prioritários.", "effects": {"infrastructure": 2.0, "economic_activity": 1.2}},
     "fioleste": {"name": "Ferrovia de Integração Leste-Oeste", "kind": "Ferrovia", "route": "FIOL · Bahia e Centro-Oeste", "regions": ["nordeste", "centro_oeste"], "base_cost_bi": 48.0, "duration_days": 1825, "risk": 0.18, "description": "Implantação faseada de corredor ferroviário para carga e integração regional.", "effects": {"infrastructure": 3.0, "economic_activity": 1.8}},
@@ -13,6 +15,13 @@ WORK_CATALOG: dict[str, dict[str, Any]] = {
     "porto_santos": {"name": "Acesso ferroviário e portuário de Santos", "kind": "Porto e ferrovia", "route": "Porto de Santos · Sudeste", "regions": ["sudeste"], "base_cost_bi": 19.0, "duration_days": 1095, "risk": 0.12, "description": "Acessos, pátios e integração de cargas para reduzir filas e gargalos.", "effects": {"infrastructure": 1.8, "economic_activity": 1.6}},
     "saneamento_norte": {"name": "Saneamento e drenagem de cidades do Norte", "kind": "Saneamento", "route": "Carteira regional · Norte", "regions": ["norte"], "base_cost_bi": 13.0, "duration_days": 1460, "risk": 0.12, "description": "Obras por lotes para água, esgoto e drenagem urbana resiliente.", "effects": {"infrastructure": 1.4, "economic_activity": 0.8}},
 }
+
+for _item in WORK_CATALOG.values():
+    _item.setdefault("area", "logistics")
+    _item.setdefault("category", "Transportes")
+    _item.setdefault("delivery", {})
+WORK_CATALOG.update(EXTRA_WORKS)
+DEFAULT_PHASES = ["Estudos e projeto", "Licenciamento", "Execução", "Testes e entrega"]
 
 # All companies are invented game entities. Numbers represent gameplay tradeoffs.
 CONTRACTORS: dict[str, dict[str, Any]] = {
@@ -51,11 +60,26 @@ def refresh_work_finance(state: dict[str, Any]) -> dict[str, Any]:
     works = ensure_works_state(state)
     projects = [item for item in works["projects"] if _active(item)]
     index = float(works["price_index"])
-    annual_commitment = sum(_current_cost(item, index) * 365 / max(1, int(item["duration_days"])) for item in projects)
-    logistics_budget = float(state.get("budget", {}).get("allocations", {}).get("logistics", 0))
-    works["annual_commitment_bi"] = round(annual_commitment, 3)
-    works["annual_overrun_bi"] = round(max(0.0, annual_commitment - logistics_budget), 3)
+    allocations = state.get("budget", {}).get("allocations", {})
+    by_area: dict[str, float] = {}
+    for item in projects:
+        area = item.get("area", "logistics")
+        by_area[area] = by_area.get(area, 0.0) + _current_cost(item, index) * 365 / max(1, int(item["duration_days"]))
+    works["annual_commitment_by_area"] = {key: round(value, 3) for key, value in by_area.items()}
+    works["annual_commitment_bi"] = round(by_area.get("logistics", 0.0), 3)  # carteira de Transportes (tela antiga de Orçamento)
+    works["annual_commitment_total_bi"] = round(sum(by_area.values()), 3)
+    works["annual_overrun_bi"] = round(sum(max(0.0, value - float(allocations.get(key, 0))) for key, value in by_area.items()), 3)
     return works
+
+
+def _phase_info(project: dict[str, Any]) -> dict[str, Any]:
+    template = WORK_CATALOG.get(project.get("work_id"), {})
+    phases = template.get("phases") or DEFAULT_PHASES
+    area = project.get("area") or template.get("area", "logistics")
+    delivered = project.get("status") == "delivered"
+    index = len(phases) - 1 if delivered else min(len(phases) - 1, int(float(project.get("progress", 0)) * len(phases)))
+    return {"phases": phases, "phase_index": index, "phase": "Entregue" if delivered else phases[index], "area": area,
+            "area_label": AREA_LABEL.get(area, ""), "category": project.get("category") or template.get("category", "Transportes")}
 
 
 def works_overview(state: dict[str, Any]) -> dict[str, Any]:
@@ -64,16 +88,18 @@ def works_overview(state: dict[str, Any]) -> dict[str, Any]:
     committed = float(works.get("annual_commitment_bi", 0))
     allocation = float(state.get("budget", {}).get("allocations", {}).get("logistics", 0))
     today = date.fromisoformat(state["date"])
+    by_area = works.get("annual_commitment_by_area", {})
+    allocations = state.get("budget", {}).get("allocations", {})
     options = []
     for key, item in WORK_CATALOG.items():
         quoted = float(item["base_cost_bi"]) * index
-        options.append({"id": key, **item, "quoted_cost_bi": round(quoted, 2),
+        options.append({"id": key, **item, "area_label": AREA_LABEL.get(item.get("area", "logistics"), ""), "quoted_cost_bi": round(quoted, 2),
                         "annual_cost_bi": round(quoted * 365 / item["duration_days"], 2),
                         "expected_completion": (today + timedelta(days=int(item["duration_days"]))).isoformat(),
-                        "affordable": committed + quoted * 365 / item["duration_days"] <= allocation + 1e-9})
+                        "affordable": float(by_area.get(item.get("area", "logistics"), 0)) + quoted * 365 / item["duration_days"] <= float(allocations.get(item.get("area", "logistics"), 0)) + 1e-9})
     projects = []
     for project in works["projects"]:
-        projects.append({**project, "current_cost_bi": round(_current_cost(project, index), 2),
+        projects.append({**project, **_phase_info(project), "current_cost_bi": round(_current_cost(project, index), 2),
                          "current_annual_cost_bi": round(_current_cost(project, index) * 365 / max(1, int(project["duration_days"])), 2)})
     last_award = works.get("last_award_date")
     award_wait = max(0, 30 - (date.fromisoformat(state["date"]) - date.fromisoformat(last_award)).days) if last_award else 0
@@ -83,6 +109,10 @@ def works_overview(state: dict[str, Any]) -> dict[str, Any]:
             "annual_overrun_bi": works["annual_overrun_bi"], "days_until_next_award": award_wait, "options": options,
             "contractors": [{"id": key, **value} for key, value in CONTRACTORS.items()],
             "projects": projects,
+            "areas": [{"key": key, "label": label, "allocation_bi": round(float(allocations.get(key, 0)), 2),
+                       "committed_bi": round(float(by_area.get(key, 0)), 2),
+                       "available_bi": round(max(0.0, float(allocations.get(key, 0)) - float(by_area.get(key, 0))), 2)}
+                      for key, label in AREA_LABEL.items()],
             "price_note": "Valores-base em R$ de 2027. A projeção dos contratos ativos é corrigida pelo índice simulado (inflação + 1,5 p.p. ao ano); reajustes previstos elevam o custo fiscal estimado, enquanto o valor original do leilão permanece no histórico."}
 
 
@@ -98,17 +128,18 @@ def start_work(state: dict[str, Any], work_id: str, contractor_id: str) -> dict[
         wait = 30 - (date.fromisoformat(state["date"]) - date.fromisoformat(last_award)).days
         raise ValueError(f"O próximo leilão federal simulado pode ser aberto em {wait} dia(s).")
     template = WORK_CATALOG[work_id]
+    area = template.get("area", "logistics")
     contractor = CONTRACTORS[contractor_id]
     today = date.fromisoformat(state["date"])
     index = float(works["price_index"])
     total = float(template["base_cost_bi"]) * index * float(contractor["price_factor"])
     annual = total * 365 / int(template["duration_days"])
-    available = max(0.0, float(budget.get("allocations", {}).get("logistics", 0)) - float(works.get("annual_commitment_bi", 0)))
+    available = max(0.0, float(budget.get("allocations", {}).get(area, 0)) - float(works.get("annual_commitment_by_area", {}).get(area, 0)))
     if annual > available + 1e-9:
-        raise ValueError(f"A obra exige cerca de R$ {annual:.2f} bi/ano, mas restam R$ {available:.2f} bi/ano na carteira de Transportes e logística. Remaneje orçamento antes de abrir o leilão.")
+        raise ValueError(f"A obra exige cerca de R$ {annual:.2f} bi/ano, mas restam R$ {available:.2f} bi/ano na carteira de {AREA_LABEL.get(area, area)}. Remaneje orçamento antes de abrir o leilão.")
     project_id = f"obra-{work_id}-{today.isoformat()}-{len(works['projects']) + 1}"
     expected = today + timedelta(days=int(template["duration_days"]))
-    project = {"id": project_id, "work_id": work_id, "name": template["name"], "kind": template["kind"],
+    project = {"id": project_id, "work_id": work_id, "name": template["name"], "kind": template["kind"], "area": area, "category": template.get("category", "Transportes"),
                "route": template["route"], "regions": template["regions"], "description": template["description"],
                "contractor_id": contractor_id, "contractor": contractor["name"],
                "contract_cost_bi": round(total, 3), "award_price_index": index,
@@ -249,14 +280,17 @@ def advance_works(state: dict[str, Any], before: date, after: date) -> list[str]
             project["target_completion"] = completion_date.isoformat()
             scale = min(2.0, float(project["contract_cost_bi"]) / 20)
             outcomes = state.setdefault("budget", {}).setdefault("outcomes", {})
-            outcomes["infrastructure"] = min(100, float(outcomes.get("infrastructure", 50)) + float(WORK_CATALOG[project["work_id"]]["effects"]["infrastructure"]) * scale)
+            outcomes["infrastructure"] = min(100, float(outcomes.get("infrastructure", 50)) + float(WORK_CATALOG[project["work_id"]]["effects"].get("infrastructure", 0)) * scale)
             state["metrics"]["gdp_growth"] = round(min(20, float(state["metrics"].get("gdp_growth", 2)) + .08 * scale), 2)
             state["metrics"]["regional_infrastructure"] = round(min(100, float(state["metrics"].get("regional_infrastructure", 85)) + .8 * scale), 1)
+            for key, value in WORK_CATALOG[project["work_id"]].get("delivery", {}).items():
+                if key in state["metrics"]:
+                    state["metrics"][key] = round(max(0.0, min(100.0, float(state["metrics"][key]) + float(value) * scale)), 2)
             for region in project["regions"]:
                 region_state = state.setdefault("regional_metrics", {}).setdefault(region, {"support": 50, "infrastructure": 85, "economic_activity": 100})
-                region_state["infrastructure"] = min(100, float(region_state.get("infrastructure", 85)) + float(WORK_CATALOG[project["work_id"]]["effects"]["infrastructure"]) * scale)
-                region_state["economic_activity"] = min(150, float(region_state.get("economic_activity", 100)) + float(WORK_CATALOG[project["work_id"]]["effects"]["economic_activity"]) * scale)
-            text = f"Obra simulada entregue: {project['name']} em {project['route']}."
+                region_state["infrastructure"] = min(100, float(region_state.get("infrastructure", 85)) + float(WORK_CATALOG[project["work_id"]]["effects"].get("infrastructure", 0)) * scale)
+                region_state["economic_activity"] = min(150, float(region_state.get("economic_activity", 100)) + float(WORK_CATALOG[project["work_id"]]["effects"].get("economic_activity", 0)) * scale)
+            text = WORK_CATALOG[project["work_id"]].get("delivered_text") or f"Obra simulada entregue: {project['name']} em {project['route']}."
             messages.append(text)
             state.setdefault("simulated_news", []).insert(0, {"id": f"news-{project['id']}-delivered", "date": completion_date.isoformat(), "title": f"Entrega: {project['name']}", "region": project["route"], "description": text, "simulated": True})
             state["simulated_news"] = state["simulated_news"][:20]

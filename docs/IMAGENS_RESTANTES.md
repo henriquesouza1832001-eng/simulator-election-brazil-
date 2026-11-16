@@ -4,6 +4,8 @@ Complementa `IMAGENS_PARA_GERAR.md` (o bloco de estilo que gerou as sete imagens
 
 ## Situação hoje
 
+- **Aba Projetos:** já usa cartões com arte própria em SVG (no mesmo estilo). A imagem real, quando existir, substitui a arte sozinha.
+
 - Prontas e no repositório: `hero-painel-calmo`, `hero-painel-tenso`, `hero-painel-crise` (já aparecem no Painel), `hero-governo`, `hero-politica`, `hero-agenda`, `hero-fim-mandato` (prontas, ainda **não ligadas** a nenhuma tela).
 - O jogo troca de arte sem mexer em código: se o arquivo existe com o nome certo, ele aparece; se não, fica a arte padrão em SVG.
 
@@ -65,6 +67,51 @@ Nome: `cards/obra-<id>.webp`. Estilo normal, luz de dia.
 `obra-rodovia`, `obra-ferrovia`, `obra-ponte`, `obra-viaduto`, `obra-porto`, `obra-aeroporto`, `obra-hidrovia`, `obra-metro`, `obra-saneamento`, `obra-habitacao`, `obra-escola`, `obra-hospital`, `obra-energia`, `obra-reforma-urbana`.
 
 Cena de cada uma: o próprio tipo de obra, em construção e em operação lado a lado (metade esquerda em andaime e guindaste, metade direita pronta), sem pessoas.
+
+
+## C2. Nomes exatos por projeto (37)
+
+O jogo procura `public/assets/cards/obra-<id>.webp` para cada projeto. Enquanto o arquivo não existe, aparece a arte em SVG. Esta tabela substitui a lista genérica da seção C.
+
+| Arquivo | Projeto | Tipo |
+|---|---|---|
+| `obra-br116_sul.webp` | Corredor rodoviário Sul-Sudeste | Rodovia |
+| `obra-fioleste.webp` | Ferrovia de Integração Leste-Oeste | Ferrovia |
+| `obra-hidrovia_tocantins.webp` | Hidrovia Tocantins-Araguaia | Hidrovia |
+| `obra-hidrovia_paraguai.webp` | Hidrovia do Paraguai | Hidrovia |
+| `obra-porto_santos.webp` | Acesso ferroviário e portuário de Santos | Porto e ferrovia |
+| `obra-saneamento_norte.webp` | Saneamento e drenagem de cidades do Norte | Saneamento |
+| `obra-ponte_amazonica.webp` | Ponte da Integração Amazônica | Ponte |
+| `obra-viaduto_metropolitano.webp` | Viadutos e alças do anel metropolitano | Viaduto |
+| `obra-anel_rodoviario.webp` | Anel rodoviário da capital | Rodovia |
+| `obra-metro_capital.webp` | Metrô de capital metropolitana | Metrô |
+| `obra-brt_corredores.webp` | Corredores de ônibus de alta capacidade | BRT |
+| `obra-aeroporto_regional.webp` | Aeroporto internacional regional | Aeroporto |
+| `obra-porto_aguas_profundas.webp` | Porto de águas profundas | Porto |
+| `obra-ferrovia_do_grao.webp` | Ferrovia do Grão | Ferrovia |
+| `obra-drenagem_sul.webp` | Drenagem urbana e contenção de enchentes | Drenagem |
+| `obra-adutoras_semiarido.webp` | Adutoras e dessalinização do Semiárido | Água |
+| `obra-habitacao_popular.webp` | Habitação popular em larga escala | Habitação |
+| `obra-retrofit_predios.webp` | Reforma e eficiência dos prédios públicos | Reforma |
+| `obra-centros_historicos.webp` | Revitalização de centros históricos | Reforma |
+| `obra-hospitais_regionais.webp` | Hospitais federais regionais | Hospital |
+| `obra-rede_upas.webp` | Rede de UPAs e policlínicas | Hospital |
+| `obra-complexo_vacinas.webp` | Complexo industrial de vacinas e insumos | Indústria |
+| `obra-escolas_tempo_integral.webp` | Escolas em tempo integral | Escola |
+| `obra-creches.webp` | Creches e pré-escolas | Escola |
+| `obra-universidades_interior.webp` | Universidades e institutos no interior | Universidade |
+| `obra-fronteira_integrada.webp` | Monitoramento integrado da fronteira | Defesa |
+| `obra-presidios_federais.webp` | Sistema penitenciário federal ampliado | Presídio |
+| `obra-usina_hidreletrica.webp` | Usina hidrelétrica de grande porte | Energia |
+| `obra-eolica_offshore.webp` | Parque eólico no mar | Energia |
+| `obra-linhao_transmissao.webp` | Linhão de transmissão Norte-Sul | Energia |
+| `obra-irrigacao_sao_francisco.webp` | Irrigação e perímetros do Rio São Francisco | Irrigação |
+| `obra-alcantara_comercial.webp` | Centro de Lançamentos de Alcântara: base comercial | Espaço |
+| `obra-satelites_nacionais.webp` | Constelação nacional de satélites | Espaço |
+| `obra-astronauta_orbita.webp` | Programa Astronauta Brasileiro: missão em órbita | Espaço |
+| `obra-missao_lunar.webp` | Missão Lunar Brasileira | Espaço |
+| `obra-reator_pesquisa.webp` | Reator multipropósito de pesquisa | Ciência |
+| `obra-supercomputador.webp` | Supercomputador nacional | Ciência |
 
 ## D. Cartões de cargo (7)
 

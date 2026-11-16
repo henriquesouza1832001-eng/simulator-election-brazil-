@@ -12,6 +12,7 @@ export const TAB_HELP = {
   'Visão geral': 'Resumo de hoje: seus principais números, o que pede atenção e o próximo passo.',
   'Indicadores': 'Todos os números do país (ou de uma cidade): quanto valem, como mudaram e o que os move.',
   'Histórico': 'A evolução mês a mês, as decisões tomadas com o que se esperava e o que aconteceu, e o orçamento.',
+  Projetos: 'Portfólio de obras e programas (rodovias, metrô, hospitais, usinas, programa espacial). Cada projeto é pago pela carteira da sua área e passa por fases até a entrega.',
   'Obras e mapa': 'Obras de transporte e infraestrutura, comparação entre estados e regiões e busca de cidades.',
   'Medidas': 'Escreva uma proposta com suas palavras; o jogo mostra como a entendeu e o efeito projetado antes de aplicar.',
   'Competências': 'As ações que o seu cargo pode executar, com a base legal, o custo e o risco de ser barrada.',
