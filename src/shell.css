@@ -603,3 +603,11 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .ds-market-strip b { font-size: 17px; font-variant-numeric: tabular-nums; }
 .ds-market-strip em { font-style: normal; font-size: 12.5px; color: var(--ds-ink-3); }
 .ds-market-strip .good em { color: #5fd08f; } .ds-market-strip .bad em { color: #f07a70; }
+
+.speech-reading { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--ds-border, #d8dde6); border-radius: 8px; background: var(--ds-surface-2, #f6f8fb); font-size: .88rem; }
+.speech-reading h4 { margin: 0 0 6px; font-size: .95rem; }
+.speech-reading h4 small { margin-left: 8px; font-weight: 400; opacity: .7; }
+.speech-reading ul { margin: 6px 0; padding-left: 18px; }
+.speech-reading .reading-ok { color: #1f7a45; margin-left: 6px; }
+.speech-reading .reading-miss { color: #9a6a00; margin-left: 6px; }
+.speech-reading .reading-flag { color: #a33; margin: 4px 0 0; }

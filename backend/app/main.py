@@ -986,13 +986,22 @@ def campaign_action(request: CampaignActionRequest) -> dict[str, Any]:
 
 
 @app.post("/api/career/action")
-def political_career_action(request: CareerActionRequest) -> dict[str, Any]:
+async def political_career_action(request: CareerActionRequest) -> dict[str, Any]:
     state = game_state()
     action_date = state["date"]
+    reading = None
+    try:  # o Gemini lê o discurso (com leitura local de reserva); o motor decide a nota
+        from .ai import speech_reader
+        from .engine.career import ISSUES as CAREER_ISSUES, _campaign as career_of, _ensure_opponents
+        career = career_of(state)
+        if request.issue in CAREER_ISSUES and len(request.message.strip()) >= 12:
+            reading = await speech_reader.read(request.message, request.issue, career, CAREER_ISSUES, _ensure_opponents(career))
+    except Exception:  # noqa: BLE001 - qualquer problema na leitura cai no cálculo antigo, nunca derruba a ação
+        reading = None
     try:
         result = perform_career_action(
             state, request.activity_type, request.issue, request.message,
-            request.conduct, request.municipality_id,
+            request.conduct, request.municipality_id, reading,
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

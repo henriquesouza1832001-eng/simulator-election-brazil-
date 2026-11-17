@@ -313,6 +313,9 @@ def _projected_public_poll_support(state: dict[str, Any], career: dict[str, Any]
 
 
 def _ensure_opponents(career: dict[str, Any]) -> list[dict[str, Any]]:
+    from . import electoral_field
+    if career.get("office") in electoral_field.MAJORITARIAN:  # campo real: partidos que disputaram o território (TSE), sem o partido do jogador
+        return electoral_field.ensure_field(career)
     opponents = career.get("opponents")
     if isinstance(opponents, list) and len(opponents) == 3:
         return opponents
@@ -334,6 +337,10 @@ def _ensure_opponents(career: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _opponent_supports(career: dict[str, Any], candidate_support: float) -> list[dict[str, Any]]:
+    from . import electoral_field
+    if career.get("office") in electoral_field.MAJORITARIAN:
+        rows = electoral_field.shares(career, candidate_support)
+        return [{**row, "issue_focus_label": ISSUES[row["issue_focus"]]["label"] if row["issue_focus"] in ISSUES else row["issue_focus"]} for row in rows]
     opponents = _ensure_opponents(career)
     opposition_total = round(max(0.0, 100.0 - float(candidate_support)), 1)
     total_weight = sum(float(item.get("support_weight", 1.0)) for item in opponents) or 1.0
@@ -1327,7 +1334,7 @@ def perform_career_preparation(state: dict[str, Any], action_type: str) -> dict[
 
 
 def perform_career_action(state: dict[str, Any], activity_type: str, issue: str, message: str,
-                          conduct: str = "regular", municipality_id: str | None = None) -> dict[str, Any]:
+                          conduct: str = "regular", municipality_id: str | None = None, reading: dict[str, Any] | None = None) -> dict[str, Any]:
     career = _campaign(state)
     overview = career_overview(state)
     if not overview["campaign_active"]:
@@ -1383,6 +1390,18 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     if career["campaign_fund_mi"] < action_cost:
         raise ValueError("O saldo do fundo de campanha não cobre essa atividade.")
     score, rubric = _speech_score(issue, message)
+    reading_public = None
+    if reading is not None:  # leitura estruturada do discurso (Gemini ou local): o motor converte em nota e em pressão sobre rivais
+        from . import electoral_field, speech_score
+        score, rubric = speech_score.score_reading(reading, issue)
+        names = {r["id"]: r["name"] for r in _ensure_opponents(career)}
+        if career.get("office") in electoral_field.MAJORITARIAN:
+            quality = (score - 55) / 45
+            for attack in reading.get("attacks", []):
+                if attack.get("target") in names:
+                    electoral_field.apply_pressure(career, attack["target"], -0.6 if attack.get("personal") else max(0.0, 1.2 * quality))
+            electoral_field.decay_pressure(career)
+        reading_public = speech_score.public(reading, ISSUES, names)
     if "tecnica" in traits and rubric.get("proposta verificável", 0) > 0:
         score = min(100, score + 3)
         rubric["bônus de proposta técnica"] = 3
@@ -1515,7 +1534,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         "travel_from_municipality_id": travel_from["ibge_code"] if travel_from else None,
         "travel_from_municipality_name": travel_from["name"] if travel_from else None,
         "city_reach_multiplier": city_reach_multiplier,
-        "message": message.strip(), "score": score, "rubric": rubric, "local_change": round(local_delta + conduct_delta, 2),
+        "message": message.strip(), "score": score, "rubric": rubric, "reading": reading_public, "local_change": round(local_delta + conduct_delta, 2),
         "state_change": round(state_delta + conduct_delta * .55, 2),
         "national_change": round(national_delta, 4),
         "poll_support": career["poll_support"], "cost_mi": round(action_cost, 4),
@@ -1529,7 +1548,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
     result_message = "Ação registrada. A atividade consome o tempo indicado e a campanha continua sujeita ao voto simulado."
     if travel_days:
         result_message += f" O deslocamento de {travel_from['name']} até {target_municipality['name']} consumiu mais {travel_days} dia(s)."
-    return {"activity": record, "campaign_promise": campaign_promise, "score": score, "rubric": rubric, "days_cost": days_cost, "poll_support": career["poll_support"],
+    return {"activity": record, "campaign_promise": campaign_promise, "score": score, "rubric": rubric, "reading": reading_public, "days_cost": days_cost, "poll_support": career["poll_support"],
             "local_support": career["local_support"], "state_support": career["state_support"], "campaign_fund_mi": career["campaign_fund_mi"],
             "municipality_support": target_city_support,
             "social_result": social_result, "debate": debate_result, "forecast": _forecast(career, score), "message": result_message}
