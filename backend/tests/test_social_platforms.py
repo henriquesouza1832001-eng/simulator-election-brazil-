@@ -58,3 +58,18 @@ class PlataformasTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FeedNuncaVazioTests(unittest.TestCase):
+    def test_feed_tem_posts_de_rotina_desde_o_primeiro_dia(self):
+        from app.engine.state import new_game
+        feed = social_feed.build(new_game())
+        self.assertGreaterEqual(len(feed["posts"]), 4)
+        self.assertTrue({p["kind"] for p in feed["posts"]} >= {"apoio", "oposicao", "humor", "imprensa"})
+
+    def test_rotina_muda_de_tom_conforme_o_cenario(self):
+        from app.engine.state import new_game
+        s = new_game()
+        s["career"] = {"mode": True, "office": "prefeito", "phase": "campaign", "municipality": "Cidade Teste"}
+        textos = " ".join(p["text"] for p in social_feed.build(s)["posts"])
+        self.assertIn("Cidade Teste", textos)

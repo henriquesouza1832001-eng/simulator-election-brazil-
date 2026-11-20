@@ -41,3 +41,8 @@ e. **Plataforma e preço:** recomendação dele é web PWA primeiro, desktop dep
 
 ## Rodadas seguintes com o Gemini
 Depois de cada marco: reenviar zip + capturas novas + `INVENTARIO_AUTOMATICO.md` regenerado, pedindo nota por dimensão e só o delta. Meta de cada rodada: nenhuma dimensão cair e as abertas subirem.
+
+## Andamento (19 nov. 2026)
+Decisões do criador: manter nomes reais com aviso de sátira, congelar novos sistemas por ~2 semanas, cortar multiplayer e editor de cenários, menu em 5 pilares.
+- **Feito:** aviso de paródia no Congresso (tela e lista de parlamentares); redes nunca vazias (posts de rotina por quinzena, por cenário); mesa de despacho no Painel; menu em pilares (Painel, Governo, Política, Imprensa, Mais; Agenda foi para o Painel; Mercado só para presidente); cenário "Os primeiros 100 dias" com 5 metas e balanço (`engine/scenario_100.py`, botão na tela inicial).
+- **Próximo (M1/M2):** perfilar o mandato de 48 meses (hoje ~70 s), dividir `career.py`, guia de voz e reescrita dos textos mais frequentes, "Por que mudou?" nos cargos locais.

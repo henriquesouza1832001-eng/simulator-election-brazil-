@@ -6,6 +6,7 @@ const PATHS = {
   Governo: <path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-6 10 6" />,
   Politica: <path d="M4 20c0-4 3-6 8-6s8 2 8 6M12 4a4 4 0 100 8 4 4 0 000-8z" />,
   Agenda: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /></>,
+  Imprensa: <><path d="M4 5h13a2 2 0 012 2v12H6a2 2 0 01-2-2V5z" /><path d="M8 9h7M8 13h7M8 16h4" /></>,
   Mais: <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>,
   Mundo: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" /></>,
   Perfil: <path d="M4 20c0-4 3-6 8-6s8 2 8 6M12 4a4 4 0 100 8 4 4 0 000-8z" />,

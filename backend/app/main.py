@@ -210,6 +210,7 @@ class PlayerCharacterRequest(BaseModel):
 class PresidentialStartRequest(DifficultyRequest):
     character: PlayerCharacterRequest = Field(default_factory=PlayerCharacterRequest)
     campaign_name: str = Field(default="", max_length=80)
+    scenario: str = Field(default="", max_length=20)
 
 
 class DashboardRequest(BaseModel):
@@ -385,6 +386,8 @@ def public_state(state: dict[str, Any]) -> dict[str, Any]:
     legislative_cooldown = int(state.get("legislative_calendar", {}).get("cooldown_days", 60))
     legislative_wait = max(0, legislative_cooldown - (now - date.fromisoformat(legislative_last)).days) if legislative_last else 0
     light = {k: v for k, v in state.items() if k not in _STATE_NOT_SENT}
+    from .engine import scenario_100
+    light["scenario_view"] = scenario_100.public(state)
     light["indicator_history"] = list(state.get("indicator_history", []))[-13:]  # a interface só compara com 12 meses atrás
     return {**light, "campaign_id": current_campaign_id(),
             "campaign_name": state.get("campaign_name") or campaign_name(),
@@ -901,6 +904,9 @@ def begin_presidential_game(request: PresidentialStartRequest) -> dict[str, Any]
             character["birthplace"] = None
         state["player_character"] = character
         state["campaign_name"] = request.campaign_name.strip() or f"Mandato de {character['name']}"
+        if request.scenario == "cem_dias":
+            from .engine import scenario_100
+            scenario_100.apply(state)
         metrics = state.setdefault("metrics", {})
         for trait, changes in {
             "carismatica": {"approval": 1.0}, "tecnica": {"institutional_trust": 1.0},

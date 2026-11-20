@@ -466,11 +466,11 @@ export default function App() {
     { label: 'Militância', items: careerMode ? ['Trajetória', 'Carreira', 'Competências', 'Indicadores', 'Acontecimentos'] : ['Trajetória', 'Competências', 'Indicadores', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ] : [
-    { label: 'Painel', items: ['Visão geral', 'Mercado', 'Indicadores', 'Histórico', 'Carimbos'] },
+    { label: 'Painel', items: ['Visão geral', 'Agenda', ...(!careerMode || careerOffice === 'presidente' ? ['Mercado'] : []), 'Indicadores', 'Histórico', 'Carimbos'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(careerOffice === 'presidente' ? ['Projetos'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Projetos', 'Obras e mapa', 'Crises'] },
     { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', ...(careerOffice === 'presidente' ? ['Instituições', 'Reguladores'] : []), ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: [...(presidentCareer ? ['Diplomacia'] : []), 'Leis e história'] },
-    { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
+    { label: 'Imprensa', items: ['Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
   const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Diário'] }];
@@ -509,8 +509,20 @@ export default function App() {
     : nextCrisis ? { label: 'Crise em andamento', title: nextCrisis.title, text: nextCrisis.description, urgent: true, actions: [{ label: careerMode ? 'Ver situação da carreira' : 'Ver opções de resposta', tab: careerMode ? 'Carreira' : 'Crises', primary: true }, { label: 'Abrir agenda', tab: 'Agenda' }] }
       : nextEvent ? { label: nextEvent.days_until === 0 ? 'Acontece hoje' : `Próximo evento · em ${nextEvent.days_until} ${Number(nextEvent.days_until) === 1 ? 'dia' : 'dias'}`, title: nextEvent.title, text: nextEvent.description, urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }, { label: 'Abrir agenda', tab: 'Agenda' }] }
         : { label: 'Sem pendências', title: 'Nada urgente agora', text: 'Use o tempo para preparar uma decisão ou avance o calendário.', urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }] };
+  const daysTo = (iso) => (iso ? Math.round((new Date(`${iso}T12:00:00`) - new Date(`${state.date}T12:00:00`)) / 864e5) : null);
+  const despacho = mandateOver || partyMode ? [] : [
+    ...(state.scenario_view?.status === 'em_andamento' ? state.scenario_view.goals.filter((g) => !g.done).slice(0, 2).map((g) => ({ key: `m-${g.id}`, kind: 'Meta', title: g.label, detail: g.progress, days: null, tab: g.tab, urgent: false })) : []),
+    ...(localCareer ? [] : (state.consequences?.pending || []).map((c) => ({
+      key: `p-${c.id}`, kind: String(c.action_id || '').startsWith('pauta_') ? 'Sanção' : c.regulator ? 'Regulador' : 'Crise', title: c.title, detail: 'Escolha uma resposta antes do prazo; sem resposta vale a pior opção.', days: daysTo(c.deadline), tab: 'Imprensa', urgent: true }))),
+    ...((localCareer ? [] : state.active_crises || []).filter((c) => c.status === 'active').map((c) => ({
+      key: `c-${c.id}`, kind: 'Crise', title: c.title, detail: 'Está em andamento e muda indicadores todo mês.', days: null, tab: 'Crises', urgent: true }))),
+    ...(localCareer && careerOverview?.can_act && ['campaign', 'runoff_campaign'].includes(careerPhase) ? [{ key: 'camp', kind: 'Campanha', title: 'Atividade de campanha liberada', detail: `Faltam ${careerOverview.days_until_election} dias para a eleição.`, days: null, tab: 'Carreira', urgent: false }] : []),
+    ...(!localCareer && Number.isFinite(state.action_limits?.executive_days) && state.action_limits.executive_days === 0 && state.office_status === 'incumbent' ? [{ key: 'exec', kind: 'Decisão', title: 'Você pode assinar uma decisão do Executivo', detail: 'Decreto ou medida provisória liberados agora.', days: null, tab: careerMode ? 'Competências' : 'Medidas', urgent: false }] : []),
+    ...((state.legislative_calendar?.pending_bills || []).slice(0, 3).map((b) => ({ key: `b-${b.id}`, kind: 'Votação', title: b.title, detail: 'Projeto aguardando votação no plenário.', days: daysTo(b.decision_date), tab: 'Tramitação', urgent: false }))),
+  ].sort((a, b) => (b.urgent - a.urgent) || ((a.days ?? 999) - (b.days ?? 999)));
   const monthsToElection = careerOverview?.days_until_campaign;
   const overviewProps = {
+    despacho,
     request, state, go: setActiveTab, pins, onUnpin: togglePin,
     scope: !careerMode || careerOffice === 'presidente' ? 'nacional' : 'local',
     rivals: careerOverview?.rivals || [], rivalEvents: careerOverview?.rival_events || [], territory: careerOverview ? (careerOverview.campaign_territory || careerOverview.municipality || careerOverview.state_name) : null,
@@ -528,10 +540,10 @@ export default function App() {
     showBalance: !localCareer && !partyMode && monthsRemaining === 0 && termMonth >= 48,
   };
   // contadores do menu: o que está pedindo atenção em cada grupo (só entra o que o jogo realmente tem)
-  const pendingByTab = { Crises: (state.active_crises || []).length, Tramitação: (state.legislative_calendar?.pending_bills || []).length, Agenda: (state.events || []).filter((e) => Number(e.days_until) <= 7).length };
+  const pendingByTab = { Crises: (state.active_crises || []).length, Tramitação: (state.legislative_calendar?.pending_bills || []).length, Agenda: (state.events || []).filter((e) => Number(e.days_until) <= 7).length, Imprensa: (state.consequences?.pending || []).length };
   const badgeOf = (group) => group.items.reduce((n, tab) => n + (pendingByTab[tab] || 0), 0);
   const railGroups = tabGroups.filter((group) => !group.hidden && !['Mundo', 'Sobre'].includes(group.label))
-    .map((group) => ({ ...group, badge: badgeOf(group), rail: ['Painel', 'Política', 'Agenda', 'Militância'].includes(group.label) ? group.label : 'Governo', icon: ['Painel', 'Política', 'Agenda'].includes(group.label) ? group.label : group.label === 'Militância' ? 'Política' : 'Governo' }));
+    .map((group) => ({ ...group, badge: badgeOf(group), rail: ['Painel', 'Política', 'Imprensa', 'Militância'].includes(group.label) ? group.label : 'Governo', icon: ['Painel', 'Política', 'Imprensa'].includes(group.label) ? group.label : group.label === 'Militância' ? 'Política' : 'Governo' }));
   const moreEntries = [
     ...(tabGroups.find((group) => group.label === 'Mundo')?.items || []).map((tab) => ({ label: tab, icon: 'Mundo', hint: TAB_HELP[tab], go: () => setActiveTab(tab) })),
     { label: 'Placar', icon: 'Placar', hint: TAB_HELP.Placar, go: () => setActiveTab('Placar') },
@@ -576,7 +588,7 @@ export default function App() {
         <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">REGISTRO</div><h2>Últimas decisões</h2></div></div>{state.recent_actions?.length ? state.recent_actions.slice(0, 3).map((action) => <div className="decision" key={action.id}><span>✓</span><div><b>{action.title}</b><small>{new Date(`${action.date}T12:00:00`).toLocaleDateString('pt-BR')} · {action.kind}</small></div></div>) : <p className="empty-state">Nenhuma medida assinada ainda.</p>}</section></aside>
       </div>}</>}
 
-      {activeTab === 'Agenda' && <AgendaPanel state={state} goals={careerOverview?.goals || []} campaign={Boolean(careerOverview?.campaign_active)} go={setActiveTab} />}
+      {activeTab === 'Agenda' && <AgendaPanel state={state} goals={state.scenario_view?.goals || careerOverview?.goals || []} campaign={Boolean(careerOverview?.campaign_active)} go={setActiveTab} />}
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 

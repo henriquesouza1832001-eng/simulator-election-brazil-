@@ -80,6 +80,7 @@ export function CongressPanel({ request, state }) {
   return <section className="panel meta-page">
     <h2>Câmara e Senado</h2>
     <p className="page-description">513 deputados e 81 senadores, com nomes, partidos e estados dos dados abertos da Câmara e do Senado. A adesão de cada um ao governo é uma simulação do jogo. Projetos enviados pelo cargo são votados um a um quando chega a data da decisão.</p>
+    <p className="satire-notice" role="note"><b>Paródia.</b> Os nomes são de parlamentares reais, usados só como elenco de uma sátira política. Votos, falas, atos e escândalos que aparecem no jogo são invenção da simulação e não são fatos sobre essas pessoas.</p>
     <Status loading={loading} error={error}>{data && <>
       <div className="meta-tabs" role="tablist" aria-label="Casa legislativa">
         {[['camara', `Câmara · ${data.camara_total}`], ['senado', `Senado · ${data.senado_total}`], ['votacoes', 'Votações']].map(([id, label]) =>
@@ -100,6 +101,7 @@ export function CongressPanel({ request, state }) {
           {party !== 'todos' && <button className="quiet-button" onClick={() => setParty('todos')}>Limpar partido {party}</button>}
         </div>
         {listOpen && <Drawer title={`Parlamentares${party !== 'todos' ? ' · ' + party : ''} (${members.length})`} onClose={() => setListOpen(false)}>
+          <p className="satire-notice" role="note">Paródia: nomes reais como elenco. Adesão, votos e atitudes são simulados e não retratam essas pessoas.</p>
           <label>Buscar parlamentar <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome" autoFocus /></label>
           {members.length === 0 ? <p className="meta-status">Nenhum parlamentar com esse filtro.</p> :
             <ul className="member-list">{members.slice(0, shown).map((m) => <li key={m.id}><b>{m.name}</b><span>{m.party} · {m.state}</span><small>adesão {Math.round(m.loyalty * 100)}% · {m.ideology > 0.2 ? 'direita' : m.ideology < -0.2 ? 'esquerda' : 'centro'}</small></li>)}</ul>}

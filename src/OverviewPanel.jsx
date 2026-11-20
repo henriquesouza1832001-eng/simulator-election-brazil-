@@ -8,7 +8,7 @@ import PainelMapa from './PainelMapa.jsx';
 const dateLabel = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR') : '—');
 
 /** Visão geral: manchete do dia, números, próximo passo, agenda e balanço. Os dados chegam prontos do App. */
-export default function OverviewPanel({ scope = 'nacional', rivals = [], rivalEvents = [], territory, request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
+export default function OverviewPanel({ despacho = [], scope = 'nacional', rivals = [], rivalEvents = [], territory, request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
   const [review, setReview] = useState(null);
   useEffect(() => {
     if (!showReview) return;
@@ -22,6 +22,9 @@ export default function OverviewPanel({ scope = 'nacional', rivals = [], rivalEv
 
   return <section className="ds-page">
     <Hero name="painel" mood={hero.mood} label={hero.label} title={hero.title} text={hero.text} badge={term ? `${term.label} ${term.value}${term.suffix}` : undefined} />
+
+    {state.scenario_view && <BalancoCemDias view={state.scenario_view} go={go} />}
+    <MesaDeDespacho items={despacho} go={go} />
 
     {scope === 'nacional' && <MercadoFaixa request={request} state={state} go={go} />}
 
@@ -101,4 +104,36 @@ function PorQueMudou({ why }) {
       </article>;
     })}</div>
   </Section>;
+}
+
+/** Mesa de despacho: o que pede decisão agora, em ordem de urgência. Fica no topo para o jogador saber o que fazer antes de avançar o tempo. */
+function MesaDeDespacho({ items, go }) {
+  const when = (d) => (d == null ? null : d <= 0 ? 'vence hoje' : d === 1 ? 'falta 1 dia' : `faltam ${d} dias`);
+  return <section className="ds-despacho" aria-label="Mesa de despacho">
+    <header><h3>Mesa de despacho</h3><span>{items.length ? `${items.length} ${items.length === 1 ? 'assunto' : 'assuntos'} para você` : 'tudo em dia'}</span></header>
+    {items.length === 0
+      ? <p className="ds-muted">Nada pede decisão agora. Você pode avançar o calendário.</p>
+      : <ul>{items.slice(0, 5).map((it) => <li key={it.key} className={it.urgent ? 'urgent' : ''}>
+        <span className="ds-despacho-kind">{it.kind}</span>
+        <div><b>{it.title}</b><small>{it.detail}{when(it.days) ? ` · ${when(it.days)}` : ''}</small></div>
+        <button type="button" className={it.urgent ? 'primary-button' : 'secondary-button'} onClick={() => go(it.tab)}>Abrir</button>
+      </li>)}</ul>}
+  </section>;
+}
+
+/** Cenário "100 dias": andamento das metas e, no fim, o balanço. */
+function BalancoCemDias({ view, go }) {
+  const done = view.goals.filter((g) => g.done).length;
+  if (view.status === 'concluido') {
+    return <section className="ds-despacho ds-balanco" aria-label="Balanço dos 100 dias">
+      <header><h3>Balanço dos 100 dias: {view.result.title}</h3><span>{view.result.done} de {view.result.total} metas</span></header>
+      <p>{view.result.text}</p>
+      <ul>{view.goals.map((g) => <li key={g.id} className={g.done ? '' : 'urgent'}><span className="ds-despacho-kind">{g.done ? 'Cumprida' : 'Faltou'}</span><div><b>{g.label}</b><small>{g.progress}</small></div><span /></li>)}</ul>
+      <button type="button" className="secondary-button" onClick={() => go('Histórico')}>Ver a evolução do governo</button>
+    </section>;
+  }
+  return <section className="ds-despacho" aria-label="Cenário dos 100 dias">
+    <header><h3>Os primeiros 100 dias · dia {view.day} de 100</h3><span>{done} de {view.goals.length} metas cumpridas</span></header>
+    <div className="ds-meter" role="img" aria-label={`Dia ${view.day} de 100`}><i style={{ width: `${view.day}%` }} /></div>
+  </section>;
 }

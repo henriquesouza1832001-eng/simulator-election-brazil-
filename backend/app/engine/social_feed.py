@@ -102,6 +102,47 @@ for _k, _extra in {
     for _kind, _texts in _extra.items():
         TEMPLATES[_k][_kind] += _texts
 
+# Posts de rotina: o feed nunca fica vazio. A cada quinzena nasce um fato de "dia a dia" do cenário em que o jogador está.
+TEMPLATES.update({
+    "rotina_nacional": {"apoio": ["Quinzena de trabalho, sem holofote: entrega boa não precisa de escândalo.", "Governo trabalhando em silêncio. Quem acompanha, sabe.", "Agenda cheia em {t}: reunião, despacho e menos palanque."],
+                        "oposicao": ["Silêncio demais em {t}. Quando ninguém explica nada, o que está sendo escondido?", "Duas semanas e nenhuma explicação sobre o custo das promessas.", "Rotina em {t}: muito café, pouca resposta."],
+                        "humor": ["Notícia do dia: nada explodiu. Os analistas de sofá entraram em luto.", "Quinzena calma: o grupo da família voltou a falar de futebol.", "Brasília em modo avião: nem o boato quis pousar."],
+                        "imprensa": ["Semana de pouca notícia em {t}; bastidores seguem em negociação, dizem fontes fictícias.", "Calendário de {t} é de despachos e reuniões técnicas nesta quinzena."]},
+    "rotina_local": {"apoio": ["{t} segue funcionando: obra andando, serviço no lugar e prefeitura de portas abertas.", "Quem mora em {t} sabe quem aparece no bairro."],
+                     "oposicao": ["{t} merece mais que anúncio: cadê o prazo de cada obra?", "Buraco de {t} é democrático: atinge todo partido."],
+                     "humor": ["{t}: o único lugar onde o trânsito é assunto antes do bom-dia.", "A fila do posto em {t} já virou ponto turístico."],
+                     "imprensa": ["Gestão de {t} mantém agenda de obras e serviços; oposição cobra prazos, segundo fontes fictícias."]},
+    "rotina_campanha": {"apoio": ["Rua, café e conversa em {t}: campanha se ganha ouvindo.", "Equipe em campo em {t}. Cada voto é uma conversa."],
+                        "oposicao": ["Campanha em {t} promete muito e detalha pouco. Mostrem a conta.", "Nas ruas de {t}, a pergunta é: quem paga?"],
+                        "humor": ["Em {t}, cada santinho vira cartão de feira e promessa vira aviãozinho.", "Campanha em {t}: o jingle já está na cabeça do eleitor, queira ele ou não."],
+                        "imprensa": ["Candidaturas em {t} intensificam agendas de rua; pesquisas seguem sendo acompanhadas."]},
+    "rotina_precampanha": {"apoio": ["Pré-campanha em {t}: conversa de base, sem pressa e sem pedir voto.", "Montando equipe e ouvindo gente em {t}."],
+                           "oposicao": ["Pré-campanha em {t} que finge que não é pré-campanha.", "Muito encontro, pouca proposta em {t}."],
+                           "humor": ["Em {t}, todo mundo é pré-candidato até o fim da convenção.", "O café da manhã político em {t} custa caro e rende pouco."],
+                           "imprensa": ["Articulações para a eleição em {t} começam nos bastidores, segundo fontes fictícias."]},
+})
+
+
+def _routine_facts(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """Um fato de rotina por quinzena (até seis), do cenário atual: o feed não fica vazio entre crises e decisões."""
+    from datetime import date, timedelta
+    today = date.fromisoformat(str(state["date"]))
+    start = date.fromisoformat(str(state.get("term_start") or state["date"])) if state.get("term_start") else today
+    career = state.get("career") or {}
+    place = career.get("municipality") or (career.get("state_name") if career.get("office") in {"governador", "deputado_estadual"} else None) or "Brasília"
+    if career.get("mode") and career.get("office") != "presidente":
+        tmpl = "rotina_campanha" if career.get("phase") in {"campaign", "runoff_campaign"} else "rotina_precampanha" if career.get("phase") == "pre_campaign" else "rotina_local"
+    else:
+        tmpl = "rotina_nacional"
+    facts = []
+    for i in range(6):
+        day = today - timedelta(days=15 * i)
+        if day < start - timedelta(days=15):
+            break
+        facts.append({"id": f"r{day.isoformat()[:7]}-{(day.day - 1) // 15}", "date": day.isoformat(), "tmpl": tmpl, "fmt": {"t": place}, "origin": "Rotina do período", "tab": "Agenda"})
+    return facts
+
+
 GOOD = ("aprov", "conclu", "sancion", "execut", "decidid", "respond")
 BAD = ("rejeit", "veto", "barr", "agrav", "negad", "sem resposta")
 
@@ -201,11 +242,12 @@ def build(state: dict[str, Any], limit: int = 24) -> dict[str, Any]:
         tmpl = "viral" if virality >= 70 else "acao_forte" if (score or 0) >= 75 else "acao_fraca" if (score or 100) < 55 else "acao_media"
         facts.append({"id": f"a{a.get('id') or a.get('date')}", "date": str(a.get("date") or state["date"]), "tmpl": tmpl,
                       "fmt": {"t": f"{label} em {place}", "m": snippet}, "origin": f"{label} em {place}", "tab": "Eleição"})
+    facts.extend(_routine_facts(state))
     posts: list[dict[str, Any]] = []
     for fact in facts:
-        kinds = ["apoio", "oposicao", "humor"] + (["imprensa"] if fact["tmpl"] in ("crise", "eleicao_ganhou", "eleicao_perdeu", "decisao_ruim", "viral", "acao_fraca") else [])
+        kinds = ["apoio", "oposicao", "humor"] + (["imprensa"] if fact["tmpl"] in ("crise", "eleicao_ganhou", "eleicao_perdeu", "decisao_ruim", "viral", "acao_fraca") or fact["tmpl"].startswith("rotina") else [])
         order = sorted(kinds, key=lambda k: hashlib.sha256(f"{state.get('campaign_seed', 1)}:{fact['id']}:{k}".encode()).hexdigest())
-        for kind in order[:3]:
+        for kind in order[:4 if fact["tmpl"].startswith("rotina") else 3]:
             posts.append(_post(state, fact, kind, fact["tmpl"], **fact["fmt"]))
     posts.sort(key=lambda p: (p["date"], p["reach"]), reverse=True)
     return {"posts": posts[:limit], "total": len(posts), "platforms": [{"key": k, "label": p["label"], "about": p["about"]} for k, p in PLATFORMS.items()],

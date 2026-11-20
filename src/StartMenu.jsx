@@ -5,6 +5,7 @@ import Tour, { tourSeen, markTour } from './Tour';
 import { NOVIDADES, EM_BREVE, VERSAO } from './novidades';
 
 const MODES = [
+  { key: 'cem_dias', icon: 'Agenda', kicker: 'Sessão rápida · 15 minutos', title: 'Os primeiros 100 dias', text: 'Você assume com aprovação baixa, inflação alta e Congresso dividido. Cumpra 5 metas em 100 dias e veja o balanço.', cta: 'Jogar agora' },
   { key: 'presidency', icon: 'Governo', kicker: 'Governo federal · 48 meses', title: 'Tomar posse no primeiro dia', text: 'Comece em 1º de janeiro de 2027 como presidente e conduza o governo pelos quatro anos.', cta: 'Assumir o governo' },
   { key: 'career', icon: 'Politica', kicker: 'Campanha e carreira', title: 'Disputar uma eleição', text: 'De vereador a presidente: faça campanha, dispute a eleição e exerça o mandato se vencer.', cta: 'Montar candidatura', needsCatalog: true },
   { key: 'party', icon: 'Agenda', kicker: 'Militância e partido', title: 'Começar como militante', text: 'Ganhe espaço no partido e chegue à candidatura a vereador.', cta: 'Entrar no partido', needsCatalog: true },

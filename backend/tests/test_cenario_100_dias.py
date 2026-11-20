@@ -1,0 +1,48 @@
+import unittest
+
+from app.engine import scenario_100
+from app.engine.state import advance_state, new_game
+
+
+def partida():
+    state = new_game()
+    state.pop("setup_pending", None)
+    scenario_100.apply(state)
+    return state
+
+
+class CenarioCemDiasTests(unittest.TestCase):
+    def test_parte_de_numeros_piores_e_cinco_metas_abertas(self):
+        s = partida()
+        self.assertEqual(s["metrics"]["approval"], 44.0)
+        view = scenario_100.public(s)
+        self.assertEqual(len(view["goals"]), 5)
+        self.assertEqual(view["status"], "em_andamento")
+        self.assertEqual(view["day"], 0)
+        self.assertFalse(view["goals"][0]["done"])   # aprovação 44 < 50
+
+    def test_meta_de_inflacao_usa_virgula_e_reage_ao_estado(self):
+        s = partida()
+        s["metrics"]["inflation"] = 5.0
+        meta = next(g for g in scenario_100.goals(s) if g["id"] == "inflacao")
+        self.assertTrue(meta["done"])
+        self.assertIn("5,0", meta["progress"])
+
+    def test_balanco_fecha_uma_vez_no_centesimo_dia_com_nota_pelo_numero_de_metas(self):
+        s = partida()
+        for _ in range(4):
+            s, _msg = advance_state(s, 30)
+        view = scenario_100.public(s)
+        self.assertEqual(view["status"], "concluido")
+        feitas = sum(1 for g in view["goals"] if g["done"])
+        self.assertEqual(view["result"]["done"], feitas)
+        resultado = dict(view["result"])
+        s, _msg = advance_state(s, 30)
+        self.assertEqual(scenario_100.public(s)["result"], resultado)   # não recalcula depois de fechado
+
+    def test_partida_normal_nao_tem_cenario(self):
+        self.assertIsNone(scenario_100.public(new_game()))
+
+
+if __name__ == "__main__":
+    unittest.main()

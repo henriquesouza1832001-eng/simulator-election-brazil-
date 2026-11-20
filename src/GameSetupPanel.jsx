@@ -139,7 +139,17 @@ export default function GameSetupPanel({ state, request, onState, onContinue, bu
   const initialSupport = { ...spectrumSupport[character.political_spectrum], ...{} };
   Object.entries(familySupport[character.family_background] || {}).forEach(([group, amount]) => { initialSupport[group] = (initialSupport[group] || 0) + amount; });
   const setCharacterField = (key, value) => setCharacter((current) => ({ ...current, [key]: value }));
+  async function startHundredDays() {
+    setBusy(true); setNotice('');
+    try {
+      const data = await request('/api/game/new', { method: 'POST', body: JSON.stringify({ difficulty: 'normal', scenario: 'cem_dias', campaign_name: 'Primeiros 100 dias' }) });
+      onState(data);
+      onContinue();
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(false); }
+  }
   const updateMode = (next) => {
+    if (next === 'cem_dias') { startHundredDays(); return; }
     if (!next && new URLSearchParams(window.location.search).has('novo')) {
       const url = new URL(window.location.href);
       url.searchParams.delete('novo');
