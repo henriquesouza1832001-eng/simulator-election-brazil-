@@ -1054,6 +1054,31 @@ async def political_career_action(request: CareerActionRequest) -> dict[str, Any
     return {"state": public_state(state), "result": result, "calendar_message": calendar_message}
 
 
+class CoalitionRequest(BaseModel):
+    party: str = Field(min_length=2, max_length=30)
+    offer: str = Field(min_length=3, max_length=20)
+
+
+@app.post("/api/career/coalition")
+def career_coalition(request: CoalitionRequest) -> dict[str, Any]:
+    from .engine import coalition
+    from .engine.career import _campaign as career_of, _projected_public_poll_support
+    state = game_state()
+    career = career_of(state)
+    if not career or not career.get("mode"):
+        raise HTTPException(status_code=409, detail="Coligações exigem uma carreira em andamento.")
+    try:
+        result = coalition.invite(state, career, request.party, request.offer, _projected_public_poll_support(state, career))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    save_state(state)
+    record_action(state["date"], "carreira", f"Convite de coligação a {request.party}", "", {"party": request.party, "offer": request.offer},
+                  [{"accepted": result["accepted"], "chance_pct": result["chance_pct"]}])
+    return {"state": public_state(state), "result": result}
+
+
 @app.post("/api/career/preparation")
 def political_career_preparation(request: CareerPreparationRequest) -> dict[str, Any]:
     state = game_state()

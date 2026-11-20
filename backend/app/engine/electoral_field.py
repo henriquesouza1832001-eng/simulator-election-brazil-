@@ -148,7 +148,7 @@ def decay_pressure(career: dict[str, Any], factor: float = 0.92) -> None:
 
 def shares(career: dict[str, Any], player_support: float) -> list[dict[str, Any]]:
     """Divide entre os rivais o que o jogador não tem: os mais próximos dele no espectro perdem mais quando ele cresce."""
-    field = ensure_field(career)
+    field = [r for r in ensure_field(career) if not r.get("coalition")]   # partido que entrou na chapa do jogador não tem candidato próprio
     p = max(1.0, min(95.0, float(player_support)))
     p0 = float(career.get("field_baseline") or DEFAULT_PLAYER_SHARE)
     weights = [float(r["support_weight"]) * math.exp(-0.04 * (p - p0) * float(r.get("proximity", 0.5))) * math.exp(-0.12 * float(r.get("pressure", 0.0))) for r in field]

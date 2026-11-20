@@ -4,7 +4,7 @@ Parte do ciclo de carreira (antes tudo em career.py; ver career.py, que reexport
 """
 from __future__ import annotations
 
-from . import tv_time
+from . import coalition, tv_time
 
 from datetime import date, timedelta
 from typing import Any
@@ -179,7 +179,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "pending_campaign_promises": sum(item.get("status") == "pending" for item in career.get("campaign_promises", [])),
         "momentum": round(career["momentum"], 1), "fatigue": career["fatigue"],
         "campaign_fund_mi": round(career["campaign_fund_mi"], 3), "spent_mi": round(career["spent_mi"], 3),
-        "spending_cap_mi": OFFICES[career["office"]]["fund_mi"], "tv": tv_time.share(career.get("party")),
+        "spending_cap_mi": OFFICES[career["office"]]["fund_mi"], "tv": tv_time.share(career.get("party"), coalition.partner_parties(career)), "coalition": coalition.view(state, career, vote_intent),
         "vote_intent": vote_intent, "rivals": rivals_now, "rival_events": list(career.get("rival_events", []))[:6], "goals": _goals(career, vote_intent, rivals_now), "opponent_share": round(career["opponent_share"], 1), "opponents": [
             {"id": item["id"], "name": item["name"], "party": item["party"], "ideology": item["ideology"],
              "issue_focus": item["issue_focus"], "issue_focus_label": ISSUES[item["issue_focus"]]["label"], "simulated": True}

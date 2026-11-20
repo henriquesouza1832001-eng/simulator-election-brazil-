@@ -4,7 +4,7 @@ Parte do ciclo de carreira (antes tudo em career.py; ver career.py, que reexport
 """
 from __future__ import annotations
 
-from . import tv_time
+from . import coalition, tv_time
 
 import random
 from datetime import date
@@ -195,7 +195,7 @@ def perform_career_action(state: dict[str, Any], activity_type: str, issue: str,
         electorate_share_of_national = target_municipality.get("electorate_share_of_national")
     reach *= city_reach_multiplier
     local_delta = max(-1.0, min(2.6, quality * reach + (0.45 if activity_type in {"comicio", "porta_a_porta"} else 0.1) + (.15 if "carismatica" in traits else 0)))
-    local_delta = tv_time.apply(local_delta, career.get("party"))  # horário eleitoral: bancada maior amplia o ganho
+    local_delta = tv_time.apply(local_delta, career.get("party"), coalition.partner_parties(career))  # horário eleitoral: bancada maior amplia o ganho
     # A city visit changes support locally. Its contribution to a larger
     # electorate is weighted by that city's share of the relevant electorate.
     # Municipal races are entirely inside their selected municipality.

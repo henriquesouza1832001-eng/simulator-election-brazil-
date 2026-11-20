@@ -131,7 +131,7 @@ def resolve_career_election(state: dict[str, Any], election_day: date) -> str:
         vote_share = electoral_result["candidate_vote_share"]   # voto nominal do jogador (% dos válidos)
         opposition_share = 100 - electoral_result["party_vote_share"]
     elif round_number == 1:
-        vote_share = round(_clamp(career["poll_support"] * 0.82 + organization + career["momentum"] * 0.35
+        vote_share = round(_clamp(career["poll_support"] * 0.82 + organization + career["momentum"] * 0.35 + float(career.get("coalition_bonus", 0.0))
                                   - fatigue_penalty - conduct_result["vote_penalty"] - opposition_drag
                                   + rng.uniform(-volatility, volatility) * opposition_pressure), 1)
         opposition_results = _opponent_supports(career, vote_share)

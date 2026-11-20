@@ -56,7 +56,7 @@ def _projected_public_poll_support(state: dict[str, Any], career: dict[str, Any]
         estimate = float(career.get("poll_support", 0)) * 0.78 + organization + float(career.get("momentum", 0)) * 0.35
     else:
         estimate = float(career.get("poll_support", 0)) * 0.82 + organization + float(career.get("momentum", 0)) * 0.35
-    return _clamp(estimate - fatigue_penalty - conduct_penalty - opposition_drag)
+    return _clamp(estimate - fatigue_penalty - conduct_penalty - opposition_drag + float(career.get("coalition_bonus", 0.0)))   # coligação: votos dos partidos aliados
 
 
 def _ensure_opponents(career: dict[str, Any]) -> list[dict[str, Any]]:

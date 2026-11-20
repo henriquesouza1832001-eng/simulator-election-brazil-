@@ -690,3 +690,13 @@ aside.career-rules { align-self: start; }
 .bloc-card header { display: grid; gap: 2px; }
 .bloc-card header span, .bloc-card small { opacity: .78; font-size: .84rem; }
 .bloc-card div { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.coalition { display: grid; gap: 10px; }
+.coalition-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.coalition-head h4 { margin: 4px 0 0; font-size: 1.1rem; }
+.coalition-bonus { font-size: 1.4rem; color: var(--ds-accent, #c9a540); text-align: right; }
+.coalition-bonus small { display: block; font-size: .72rem; opacity: .75; font-weight: 400; }
+.coalition-tv, .coalition-note { margin: 0; opacity: .85; font-size: .9rem; }
+.coalition-partners { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.coalition-partners li { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-left: 3px solid #2f9e62; background: var(--ds-surface, transparent); }
+.coalition-partners li span { opacity: .8; font-size: .86rem; }
