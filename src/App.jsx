@@ -19,6 +19,8 @@ import { TAB_HELP } from './guideContent';
 import Brand from './Brand';
 import IndicatorsPanel from './IndicatorsPanel';
 import OverviewPanel from './OverviewPanel';
+import Gabinete from './Gabinete.jsx';
+import Decidir from './Decidir.jsx';
 import ApuracaoPanel from './ApuracaoPanel';
 import RedesPanel from './RedesPanel';
 import Related from './Related';
@@ -320,7 +322,7 @@ export default function App() {
     { label: 'Imprensa', items: ['Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
   ].filter((group) => group.items.length);
-  const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Diário'] }];
+  const tabGroups = [...baseGroups, { label: 'Perfil', hidden: true, items: ['Placar', 'Diário', 'Decidir'] }];
   const availableTabs = tabGroups.flatMap((group) => group.items);
   const activeTab = rawTab && availableTabs.includes(rawTab) ? rawTab : baseGroups[0].items[0];
   const selectedTabGroup = tabGroups.find((group) => group.items.includes(activeTab)) || baseGroups[0];
@@ -360,7 +362,7 @@ export default function App() {
   const despacho = mandateOver || partyMode ? [] : [
     ...(state.scenario_view?.status === 'em_andamento' ? state.scenario_view.goals.filter((g) => !g.done).slice(0, 2).map((g) => ({ key: `m-${g.id}`, kind: 'Meta', title: g.label, detail: g.progress, days: null, tab: g.tab, urgent: false })) : []),
     ...(localCareer ? [] : (state.consequences?.pending || []).map((c) => ({
-      key: `p-${c.id}`, kind: String(c.action_id || '').startsWith('pauta_') ? 'Sanção' : c.regulator ? 'Regulador' : 'Crise', title: c.title, detail: 'Escolha uma resposta antes do prazo; sem resposta vale a pior opção.', days: daysTo(c.deadline), tab: 'Imprensa', urgent: true }))),
+      key: `p-${c.id}`, kind: String(c.action_id || '').startsWith('pauta_') ? 'Sanção' : c.regulator ? 'Regulador' : 'Crise', title: c.title, detail: 'Escolha uma resposta antes do prazo; sem resposta vale a pior opção.', days: daysTo(c.deadline), tab: 'Imprensa', decide: true, urgent: true }))),
     ...((localCareer ? [] : state.active_crises || []).filter((c) => c.status === 'active').map((c) => ({
       key: `c-${c.id}`, kind: 'Crise', title: c.title, detail: 'Está em andamento e muda indicadores todo mês.', days: null, tab: 'Crises', urgent: true }))),
     ...(localCareer && careerOverview?.can_act && ['campaign', 'runoff_campaign'].includes(careerPhase) ? [{ key: 'camp', kind: 'Campanha', title: 'Atividade de campanha liberada', detail: `Faltam ${careerOverview.days_until_election} dias para a eleição.`, days: null, tab: 'Carreira', urgent: false }] : []),
@@ -368,6 +370,7 @@ export default function App() {
     ...((state.legislative_calendar?.pending_bills || []).slice(0, 3).map((b) => ({ key: `b-${b.id}`, kind: 'Votação', title: b.title, detail: 'Projeto aguardando votação no plenário.', days: daysTo(b.decision_date), tab: 'Tramitação', urgent: false }))),
   ].sort((a, b) => (b.urgent - a.urgent) || ((a.days ?? 999) - (b.days ?? 999)));
   const monthsToElection = careerOverview?.days_until_campaign;
+  const useGabinete = !careerMode && !partyMode && !mandateOver;
   const overviewProps = {
     despacho,
     request, state, go: setActiveTab, pins, onUnpin: togglePin,
@@ -414,7 +417,10 @@ export default function App() {
 
 
 
-      {activeTab === 'Visão geral' && <OverviewPanel {...overviewProps} />}
+      {activeTab === 'Visão geral' && useGabinete && <Gabinete state={state} despacho={despacho} go={setActiveTab} advance={advance} busy={busy} />}
+      {activeTab === 'Visão geral' && useGabinete && <details className="gb-more"><summary>Painel completo (mapa, números, agenda)</summary><OverviewPanel {...overviewProps} /></details>}
+      {activeTab === 'Visão geral' && !useGabinete && <OverviewPanel {...overviewProps} />}
+      {activeTab === 'Decidir' && <Decidir request={request} state={state} onState={setState} onNotice={setNotice} go={setActiveTab} />}
 
       {dashboardTab && <>
 
