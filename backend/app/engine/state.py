@@ -166,12 +166,12 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     from .story import tick as story_tick
     messages.extend(story_tick(state, before, after))
     advance_social_indicators(state, elapsed)
-    from .indicator_engine import tick as nation_tick
-    messages.extend(nation_tick(state, before, after))
     from .central_bank import tick as copom_tick
     messages.extend(copom_tick(state, before, after))
     from .macro import step as macro_step
     messages.extend(macro_step(state, before, after, volatility))  # mercado, inflação, PIB e emprego reagem a contas, juros e confiança
+    from .indicator_engine import tick as nation_tick
+    messages.extend(nation_tick(state, before, after))   # por último: as telas de Indicadores copiam os números já atualizados pela economia (uma só verdade)
     event_names = [e["title"] for e in state.get("events", []) if before < date.fromisoformat(e["date"]) <= after]
     if event_names:
         messages.append("Agenda simulada: " + ", ".join(event_names) + ".")

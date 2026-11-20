@@ -1,0 +1,43 @@
+# Plano até 9,5 (rodada 2 com o Gemini, 19 nov. 2026)
+
+Fonte: `docs/revisoes/GEMINI_RODADA_2.md` (resposta completa). Abaixo, o que conferi no código, o que já corrigi e o que depende de você.
+
+## Conferido no código
+| Achado do Gemini | Resultado |
+|---|---|
+| Inflação 4,0 (topo) × 4,3 (IPCA) × 4,1 (Painel) na mesma rodada | **Verdadeiro.** A cópia dos indicadores era feita antes do passo da economia. **Corrigido:** Indicadores passam a copiar o valor depois da economia (`state.py`) |
+| Risco-país 220 (Mercado) × 279 (Orçamento) | **Verdadeiro.** O Orçamento usava uma fórmula fiscal antiga. **Corrigido:** usa o risco do mercado (`fiscal.py`) |
+| Teste de fonte única | Novo: `test_fonte_unica_indicadores.py` |
+| "Por que mudou?" repete "Tendência da economia" | **Desatualizado:** a captura foi tirada antes de reavançar o mês. Hoje cada termo de inflação, PIB e desemprego aparece com nome |
+| Redes: "Nada nas redes ainda" mesmo após meses de governo | **Verdadeiro.** Posts só nascem de crise, decisão ou pesquisa. Entra no plano (6.2) |
+| Corte de viagens e residência move 0,000% do PIB | Verdadeiro no desenho: são R$ 3 bi num PIB de R$ 15 tri. Falta alavanca fiscal de peso (5.1) |
+| Arquivos grandes, 70 s por mandato | Confirmado (`career.py` 2.006 linhas) |
+| Nomes reais de 513 deputados e 81 senadores na tela Congresso | Verdadeiro; ver decisão (a) |
+
+## Decisões suas
+a. **Nomes reais de parlamentares.** Você pediu antes Congresso real; o Gemini recomenda nomes fictícios (mantendo partido, estado e bancada reais) por risco jurídico em jogo com CPI e corrupção. Minha sugestão: nomes fictícios gerados de forma estável, e manter só números e bancadas reais.
+b. **Congelar novos subsistemas por ~3 semanas** para refatorar monolitos, mesa de despacho e textos. Sugestão: sim, por 2 semanas, só fechando o que a campanha e a presidência já começaram.
+c. **Cortar multiplayer e editor de cenários** do caminho até 9,5 (ficam documentados, sem desenvolvimento).
+d. **Menu de 5 pilares** no lugar de 15+ itens.
+e. **Plataforma e preço:** recomendação dele é web PWA primeiro, desktop depois, jogo pago único com demo grátis. Fica para depois do M2.
+
+## Ordem de execução (junta a sugestão dele com a nossa)
+**M1 — coerência e rapidez**
+1. Fonte única dos números: feito para inflação, PIB, desemprego, aprovação e risco-país; falta revisar dólar, Selic e dívida (2.1).
+2. "Por que mudou?" com termos nomeados: feito para o Painel nacional (2.2); falta nos cargos locais.
+3. Anonimizar nomes (10.1), depende da decisão (a).
+4. Perfilar e acelerar o mandato de 48 meses (11.2).
+5. Dividir `career.py`, `App.jsx` e `CareerPanel.jsx` por fatias (11.1).
+
+**M2 — fluxo, onboarding e tom**
+6. Mesa de despacho no Painel (1.1) e badges nas abas (1.3).
+7. Redes e Imprensa nunca vazias (6.2).
+8. Cenário "100 dias" (onboarding).
+9. Guia de voz e reescrita de textos (6.1).
+
+**M3 — profundidade:** coalizões e líderes de bloco (3.1), judicialização no STF (3.2), coligações, tempo de TV e segundo turno (4.1, 4.2), alavancas fiscais (5.1), narrador com cache e teto de custo (7.1).
+
+**M4 — acabamento:** 53 artes, áudio, mobile e acessibilidade, 300+ eventos, playtest com 30 pessoas.
+
+## Rodadas seguintes com o Gemini
+Depois de cada marco: reenviar zip + capturas novas + `INVENTARIO_AUTOMATICO.md` regenerado, pedindo nota por dimensão e só o delta. Meta de cada rodada: nenhuma dimensão cair e as abertas subirem.

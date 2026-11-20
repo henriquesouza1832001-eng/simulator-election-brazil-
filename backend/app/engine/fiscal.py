@@ -121,6 +121,9 @@ def refresh_fiscal_metrics(state: dict[str, Any]) -> dict[str, Any]:
     debt_pct = debt / gdp * 100
     credibility = max(0.0, min(100.0, 70 - max(0.0, debt_pct - 60) * .65 + primary_pct * 2))
     risk = max(70.0, min(900.0, 100 + (100 - credibility) * 3 + max(0.0, debt_pct - 60) * 2 + max(0.0, -primary_pct) * 5))
+    market_risk = (state.get("macro") or {}).get("risco")
+    if market_risk:   # uma só verdade: o risco-país que o mercado mostra é o mesmo que encarece a dívida e aparece no Orçamento
+        risk = max(70.0, min(900.0, float(market_risk)))
     rate = BASE_EFFECTIVE_INTEREST_RATE * 100 + risk * .01
     # parte da dívida é indexada à Selic: cada ponto acima ou abaixo de 10,5% move o custo médio em 0,35 ponto
     rate += 0.35 * (float((state.get("copom") or {}).get("selic", 10.5)) - 10.5)
