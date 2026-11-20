@@ -59,7 +59,7 @@ async def player_authentication(request: Request, call_next):
     pool_id = os.getenv("COGNITO_USER_POOL_ID", "")
     client_id = os.getenv("COGNITO_CLIENT_ID", "")
     if not any((region, pool_id, client_id)):
-        player_token = set_player_id("local")
+        player_token = set_player_id(os.getenv("LOCAL_PLAYER_ID", "local").strip() or "local")   # sem login: cada nome dá uma lista de partidas própria (o jogo de verdade usa "jogador")
         campaign_token = _set_request_campaign(request)
         try:
             blocked = _inauguration_gate(request)

@@ -21,3 +21,19 @@ class CarreiraDivididaTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FrontDivididoTests(unittest.TestCase):
+    """O problema dos arquivos grandes do front é tamanho em KB (linhas muito longas), então o limite é em KB."""
+
+    def test_app_e_painel_da_carreira_ficam_abaixo_de_50_kb(self):
+        src = pathlib.Path(__file__).resolve().parents[2] / "src"
+        for name in ("App.jsx", "CareerPanel.jsx"):
+            kb = (src / name).stat().st_size / 1024
+            self.assertLessEqual(kb, 50, f"{name} tem {kb:.0f} KB; extraia blocos para componentes")
+
+    def test_componentes_extraidos_existem(self):
+        src = pathlib.Path(__file__).resolve().parents[2] / "src"
+        for name in ("BudgetSection", "CrisesSection", "InstitutionsSection", "MeasuresSection", "TopBar", "TabNav", "appData",
+                     "CareerMandate", "CareerCampaignForm", "CareerSummaryColumns", "CareerHistory"):
+            self.assertTrue((src / f"{name}.jsx").exists(), name)

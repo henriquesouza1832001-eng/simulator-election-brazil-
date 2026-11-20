@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import Select from './Choice.jsx';
-import { br, dataBr, roundHalfUp } from './format';
+import { br } from './format';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
 import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 import { CookieStorage } from 'aws-amplify/utils';
 import DiplomacyPanel from './DiplomacyPanel';
-import FiscalPanel from './FiscalPanel';
-import FiscalLevers from './FiscalLevers.jsx';
 import CampaignPanel from './CampaignPanel';
 import CareerPanel from './CareerPanel';
 import GovernmentAppointments from './GovernmentAppointments';
@@ -20,8 +17,6 @@ import GameGuide from './GameGuide';
 import { Nav, AdvanceMenu, MoreSheet } from './Shell';
 import { TAB_HELP } from './guideContent';
 import Brand from './Brand';
-import InterpretationCorrection from './InterpretationCorrection';
-import MeasureForecast from './MeasureForecast';
 import IndicatorsPanel from './IndicatorsPanel';
 import OverviewPanel from './OverviewPanel';
 import ApuracaoPanel from './ApuracaoPanel';
@@ -38,186 +33,21 @@ import NewsPanel from './NewsPanel';
 import InterviewsPanel from './InterviewsPanel';
 import CompaniesPanel from './CompaniesPanel';
 import CongressProcessPanel from './CongressProcessPanel';
-import MandateReview from './MandateReview';
 import HistoryPanel from './HistoryPanel';
 import './territory.css';
 import TerritoryPanel from './TerritoryPanel';
 import { StoryPanel, CampaignWeekPanel, CongressPanel, RankingPanel, CollectionPanel, DiaryPanel } from './MetaPanels';
 import AgendaPanel from './AgendaPanel';
 import AboutPanel from './AboutPanel';
-import InvestmentsPanel from './InvestmentsPanel';
 import './diplomacy.css';
 import './ai-status.css';
-
-const fmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
-const difficultyLabels = { tranquilo: 'Tranquilo', normal: 'Normal', dificil: 'Difícil', complicado: 'Complicado', realismo_puro: 'Realismo Puro' };
-
-const indicatorPrecision = {
-  human_development_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
-  gini_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
-  country_risk: { minimumFractionDigits: 0, maximumFractionDigits: 0 },
-  // indicadores em % ou pontos com uma casa fixa: "4,0" e não "4", para o jogador comparar de relance
-  gdp_growth: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-  inflation: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-  unemployment: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-  debt_gdp: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-  primary_balance: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-  approval: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-};
-const indicatorFormatters = new Map();
-
-function formatIndicator(value, key) {
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) return '—';
-  const precision = indicatorPrecision[key] ?? { minimumFractionDigits: 0, maximumFractionDigits: 1 };
-  const formatKey = `${precision.minimumFractionDigits}:${precision.maximumFractionDigits}`;
-  if (!indicatorFormatters.has(formatKey)) {
-    indicatorFormatters.set(formatKey, new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: precision.minimumFractionDigits,
-      maximumFractionDigits: precision.maximumFractionDigits,
-    }));
-  }
-  const out = indicatorFormatters.get(formatKey).format(roundHalfUp(numericValue, precision.maximumFractionDigits));
-  // evita "-0" quando o valor é pequeno e negativo: mostra duas casas
-  if (/^[-−]0(,0+)?$/.test(out) && numericValue !== 0) return numericValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-  return out;
-}
-
-function Metric({ label, value, unit = '', tone = '', detail, indicatorKey }) {
-  return <article className="metric"><div className="metric-label">{label}</div><div className={`metric-value ${tone}`}>{formatIndicator(value, indicatorKey)}<small>{unit}</small></div>{detail && <div className="metric-detail">{detail}</div>}</article>;
-}
-
-const indicatorOptions = [
-  { key: 'gdp_growth', label: 'Atividade econômica', unit: '%', detail: 'Crescimento anual do PIB', tone: 'green' },
-  { key: 'inflation', label: 'Inflação', unit: '%', detail: 'Variação anual de preços', tone: 'amber' },
-  { key: 'unemployment', label: 'Desemprego', unit: '%', detail: 'Força de trabalho' },
-  { key: 'debt_gdp', label: 'Dívida pública', unit: '% do PIB', detail: 'Trajetória da dívida', tone: 'amber' },
-  { key: 'primary_balance', label: 'Resultado fiscal', unit: '% do PIB', detail: 'Saldo antes dos juros' },
-  { key: 'nominal_result', label: 'Resultado nominal', unit: '% PIB', detail: 'Saldo após juros da dívida', tone: 'amber' },
-  { key: 'country_risk', label: 'Risco-país', unit: 'pontos', detail: 'Prêmio de risco soberano', tone: 'amber' },
-  { key: 'fiscal_credibility', label: 'Credibilidade fiscal', unit: '/100', detail: 'Confiança na trajetória das contas', tone: 'blue' },
-  { key: 'approval', label: 'Aprovação', unit: '%', detail: 'Apoio ao governo', tone: 'green' },
-  { key: 'governability', label: 'Governabilidade', unit: '/100', detail: 'Capacidade de formar maioria', tone: 'green' },
-  { key: 'integrity', label: 'Integridade', unit: '/100', detail: 'Confiança e transparência', tone: 'blue' },
-  { key: 'regional_infrastructure', label: 'Infraestrutura regional', unit: '/100', detail: 'Resiliência de estradas e serviços', tone: 'blue' },
-  { key: 'nominal_gdp_bi', label: 'PIB nominal', unit: 'R$ bi', detail: 'Tamanho nominal da economia no cenário', source: 'fiscal' },
-  { key: 'annual_revenue_bi', label: 'Receita anual', unit: 'R$ bi', detail: 'Arrecadação anual estimada', source: 'fiscal', tone: 'green' },
-  { key: 'annual_primary_spending_bi', label: 'Despesa primária', unit: 'R$ bi', detail: 'Despesa antes dos juros da dívida', source: 'fiscal', tone: 'amber' },
-  { key: 'annual_interest_bi', label: 'Juros anuais', unit: 'R$ bi', detail: 'Custo anual estimado da dívida', source: 'fiscal', tone: 'amber' },
-  { key: 'interest_rate_pct', label: 'Juro médio da dívida', unit: '%', detail: 'Taxa média aplicada ao estoque da dívida', source: 'fiscal', tone: 'amber' },
-  { key: 'population_millions', label: 'População', unit: 'mi', detail: 'População total do cenário', source: 'social' },
-  { key: 'human_development_index', label: 'IDH', unit: '/1', detail: 'Desenvolvimento humano agregado', source: 'social', tone: 'blue' },
-  { key: 'gini_index', label: 'Desigualdade (Gini)', unit: '/1', detail: 'Desigualdade de renda; menor é melhor', source: 'social', tone: 'amber' },
-  { key: 'poverty_rate_pct', label: 'Pobreza', unit: '%', detail: 'Parcela estimada da população em pobreza', source: 'social', tone: 'amber' },
-  { key: 'life_expectancy_years', label: 'Expectativa de vida', unit: 'anos', detail: 'Expectativa de vida ao nascer no cenário', source: 'social' },
-  { key: 'infant_mortality_per_1000', label: 'Mortalidade infantil', unit: '/1.000', detail: 'Óbitos infantis estimados por mil nascidos vivos', source: 'social', tone: 'amber' },
-  { key: 'homicide_rate_per_100k', label: 'Homicídios', unit: '/100 mil', detail: 'Taxa estimada de homicídios', source: 'social', tone: 'amber' },
-  { key: 'sanitation_coverage_pct', label: 'Cobertura de saneamento', unit: '%', detail: 'Cobertura estimada de saneamento', source: 'social' },
-  { key: 'school_completion_pct', label: 'Conclusão escolar', unit: '%', detail: 'Conclusão escolar estimada', source: 'social' },
-];
-
-const detailedIndicatorGroups = [
-  { title: 'Economia e trabalho', items: [
-    { label: 'Crescimento do PIB', key: 'gdp_growth', unit: '%', source: 'metric', detail: 'Variação anual estimada da atividade econômica.' },
-    { label: 'Inflação', key: 'inflation', unit: '%', source: 'metric', detail: 'Variação anual de preços no cenário.' },
-    { label: 'Desemprego', key: 'unemployment', unit: '%', source: 'metric', detail: 'Parcela estimada da força de trabalho sem ocupação.' },
-  ] },
-  { title: 'Contas públicas', items: [
-    { label: 'Resultado primário', key: 'primary_balance', unit: '% do PIB', source: 'metric', detail: 'Receitas menos despesas antes dos juros.' },
-    { label: 'Resultado nominal', key: 'nominal_result', unit: '% do PIB', source: 'metric', detail: 'Saldo depois dos juros da dívida.' },
-    { label: 'Dívida pública', key: 'debt_gdp', unit: '% do PIB', source: 'metric', detail: 'Estoque da dívida em relação ao tamanho da economia.' },
-    { label: 'Credibilidade fiscal', key: 'fiscal_credibility', unit: '/100', source: 'metric', detail: 'Confiança calculada pelo modelo fiscal do jogo.' },
-    { label: 'Risco-país', key: 'country_risk', unit: 'pontos', source: 'metric', detail: 'Prêmio de risco estimado pelo modelo.' },
-    { label: 'PIB nominal', key: 'nominal_gdp_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Tamanho nominal da economia no cenário; não é uma série oficial.' },
-    { label: 'Receita anual', key: 'annual_revenue_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Arrecadação agregada estimada no livro-caixa fiscal do jogo.' },
-    { label: 'Despesa primária anual', key: 'annual_primary_spending_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Despesas antes dos juros, incluindo itens obrigatórios e discricionários.' },
-    { label: 'Juros anuais da dívida', key: 'annual_interest_bi', unit: 'R$ bi', source: 'fiscal', detail: 'Estimativa anual de juros sobre a dívida pública simulada.' },
-    { label: 'Juro médio da dívida', key: 'interest_rate_pct', unit: '%', source: 'fiscal', detail: 'Taxa média estimada do estoque; não representa diretamente a Selic.' },
-    { label: 'Investimento público anual', key: 'annual_investment_bi', unit: 'R$ bi', source: 'budget', detail: 'Dotação anual simulada para investimentos federais.' },
-  ] },
-  { title: 'Apoio e capacidade de governar', items: [
-    { label: 'Aprovação', key: 'approval', unit: '%', source: 'metric', detail: 'Apoio nacional ao governo.' },
-    { label: 'Governabilidade', key: 'governability', unit: '/100', source: 'metric', detail: 'Capacidade de sustentar decisões e formar maioria.' },
-    { label: 'Apoio no Congresso', key: 'congress_support', unit: '%', source: 'metric', detail: 'Apoio parlamentar agregado no cenário.' },
-    { label: 'Confiança institucional', key: 'institutional_trust', unit: '/100', source: 'metric', detail: 'Confiança geral nas instituições.' },
-    { label: 'Integridade', key: 'integrity', unit: '/100', source: 'metric', detail: 'Transparência pública e exposição a escândalos.' },
-  ] },
-  { title: 'Instituições e estabilidade', items: [
-    { label: 'Lealdade militar à Constituição', key: 'military_loyalty', unit: '/100', source: 'institution', detail: 'Relação institucional das Forças Armadas com a ordem constitucional.' },
-    { label: 'Ordem constitucional', key: 'constitutional_order', unit: '/100', source: 'institution', detail: 'Estabilidade das regras e continuidade institucional.' },
-    { label: 'Legitimidade civil', key: 'civilian_legitimacy', unit: '/100', source: 'institution', detail: 'Reconhecimento da autoridade civil no cenário.' },
-    { label: 'Resistência institucional', key: 'institutional_resistance', unit: '/100', source: 'institution', detail: 'Capacidade de instituições conterem rupturas simuladas.' },
-  ] },
-  { title: 'Serviços e investimento', items: [
-    { label: 'Educação', key: 'education', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em educação.' },
-    { label: 'Saúde', key: 'health', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em saúde.' },
-    { label: 'Segurança pública', key: 'security', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em segurança.' },
-    { label: 'Infraestrutura', key: 'infrastructure', unit: '/100', source: 'outcome', detail: 'Entrega agregada de infraestrutura financiada.' },
-    { label: 'Produtividade', key: 'productivity', unit: '/100', source: 'outcome', detail: 'Efeito dos investimentos produtivos.' },
-    { label: 'Resiliência rural', key: 'rural_resilience', unit: '/100', source: 'outcome', detail: 'Capacidade de adaptação rural a choques climáticos.' },
-  ] },
-  { title: 'Diplomacia e regiões', items: [
-    { label: 'Influência multilateral', key: 'multilateral_influence', unit: '/100', source: 'diplomacy', detail: 'Presença e influência do país em fóruns internacionais.' },
-    { label: 'Relação média com países', key: 'average_relation', unit: '/100', source: 'diplomacy', detail: 'Média das relações bilaterais cadastradas no cenário.' },
-    { label: 'Apoio regional médio', key: 'support', unit: '%', source: 'regional', detail: 'Média das regiões atualmente representadas na partida.' },
-    { label: 'Atividade regional média', key: 'economic_activity', unit: '/100', source: 'regional', detail: 'Atividade econômica regional relativa no cenário.' },
-    { label: 'Infraestrutura regional', key: 'regional_infrastructure', unit: '/100', source: 'metric', detail: 'Resiliência agregada de estradas e serviços no cenário.' },
-  ] },
-  { title: 'População e qualidade de vida', items: [
-    { label: 'População', key: 'population_millions', unit: 'milhões', source: 'social', detail: 'População total simulada; varia lentamente ao longo dos anos.' },
-    { label: 'IDH', key: 'human_development_index', unit: '/1', source: 'social', detail: 'Índice agregado ligado a educação, saúde e produtividade.' },
-    { label: 'Desigualdade (Gini)', key: 'gini_index', unit: '/1', source: 'social', detail: 'Estimativa agregada; valores menores representam menor desigualdade.' },
-    { label: 'Pobreza', key: 'poverty_rate_pct', unit: '%', source: 'social', detail: 'Estimativa influenciada por crescimento, emprego e educação.' },
-    { label: 'Expectativa de vida', key: 'life_expectancy_years', unit: 'anos', source: 'social', detail: 'Indicador de longo prazo influenciado por saúde e segurança.' },
-    { label: 'Mortalidade infantil', key: 'infant_mortality_per_1000', unit: 'por 1.000', source: 'social', detail: 'Estimativa influenciada pela saúde e pela cobertura de saneamento.' },
-    { label: 'Homicídios', key: 'homicide_rate_per_100k', unit: 'por 100 mil', source: 'social', detail: 'Taxa estimada influenciada por segurança e condições econômicas.' },
-  ] },
-  { title: 'Serviços básicos', items: [
-    { label: 'Cobertura de saneamento', key: 'sanitation_coverage_pct', unit: '%', source: 'social', detail: 'Estimativa de cobertura que melhora gradualmente com infraestrutura.' },
-    { label: 'Conclusão escolar', key: 'school_completion_pct', unit: '%', source: 'social', detail: 'Estimativa que responde lentamente a resultados de educação.' },
-  ] },
-];
-
-const institutionLabels = {
-  military_loyalty: 'Lealdade militar à Constituição',
-  constitutional_order: 'Ordem constitucional',
-  civilian_legitimacy: 'Legitimidade civil',
-  institutional_resistance: 'Resistência institucional',
-};
-
-const OFFICE_STATUS_LABEL = { incumbent: 'em exercício', incumbent_caretaker: 'em transição após a eleição', reelected_transition: 'reeleito, em transição', former_president: 'ex-presidente', detained_after_failed_rupture: 'preso após ruptura fracassada' };
-
-function readIndicator(item, state) {
-  // Itens sem `source` (cartões do painel inicial) vivem em state.metrics.
-  if (!item.source || item.source === 'metric') return state.metrics?.[item.key];
-  if (item.source === 'institution') return state.institutions?.[item.key];
-  if (item.source === 'outcome') return state.budget?.outcomes?.[item.key];
-  if (item.source === 'fiscal') return state.fiscal?.[item.key];
-  if (item.source === 'budget') return state.budget?.[item.key];
-  if (item.source === 'social') return state.social_indicators?.[item.key];
-  if (item.source === 'diplomacy' && item.key === 'multilateral_influence') return state.diplomacy?.multilateral_influence;
-  if (item.source === 'diplomacy' && item.key === 'average_relation') {
-    const relations = Object.values(state.diplomacy?.countries || {}).map((country) => Number(country.relation)).filter(Number.isFinite);
-    return relations.length ? relations.reduce((sum, value) => sum + value, 0) / relations.length : undefined;
-  }
-  if (item.source === 'regional') {
-    const values = Object.values(state.regional_metrics || {}).map((region) => Number(region[item.key])).filter(Number.isFinite);
-    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : undefined;
-  }
-  return undefined;
-}
-
-function indicatorTrend(item, state) {
-  const history = state.indicator_history || [];
-  if (history.length < 2) return null;
-  const baselineIndex = Math.max(0, history.length - 13);
-  const baseline = Number(readIndicator(item, history[baselineIndex]));
-  const current = Number(readIndicator(item, state));
-  if (!Number.isFinite(baseline) || !Number.isFinite(current)) return null;
-  const delta = current - baseline;
-  const unit = item.unit === '%' || item.unit.includes('%') ? ' p.p.' : ` ${item.unit}`;
-  return `${history.length >= 13 ? '12m' : 'desde início'} ${delta > 0 ? '+' : ''}${formatIndicator(delta, item.key)}${unit}`;
-}
+import { OFFICE_STATUS_LABEL, formatIndicator, indicatorOptions, readIndicator } from './appData.jsx';
+import BudgetSection from './BudgetSection.jsx';
+import CrisesSection from './CrisesSection.jsx';
+import InstitutionsSection from './InstitutionsSection.jsx';
+import MeasuresSection from './MeasuresSection.jsx';
+import TopBar from './TopBar.jsx';
+import TabNav from './TabNav.jsx';
 
 export default function App() {
   const [authConfig, setAuthConfig] = useState(null);
@@ -405,7 +235,7 @@ export default function App() {
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
-  async function useFiscalLever(lever, option, label) {
+  async function applyFiscalLever(lever, option, label) {
     if (!window.confirm(`Aplicar: ${label}? A decisão entra em vigor agora e não pode ser desfeita.`)) return;
     setBusy(true);
     try {
@@ -574,11 +404,11 @@ export default function App() {
   ];
   return <div className={`app-shell ${railOpen ? 'rail-open' : ''}`}>
     <HashRoute tab={activeTab} tabs={tabGroups.flatMap((g) => g.items)} go={setActiveTab} />
-    <header className="ds-top"><Brand /><div className="ds-date"><span>{dateLabel}</span><small>{careerMode ? `${state.career_overview.office_label} · ${state.career_overview.campaign_territory || state.career_overview.state_name} · ${({ pre_campaign: 'pré-campanha', campaign: 'campanha', transition: 'transição para a posse', office: 'no mandato', opposition: 'fora do cargo', term_complete: 'mandato concluído', runoff_campaign: 'segundo turno', runoff_observer: 'apuração do segundo turno' })[state.career_overview.phase] || state.career_overview.phase.replaceAll('_', ' ')}` : (partyMode ? `TRAJETÓRIA PARTIDÁRIA · ${String(state.party_path.stage).replaceAll('_', ' ').toUpperCase()}` : `MÊS ${termMonth} DE 48 · DIA ${state.day_of_mandate} DE 1461 · ${OFFICE_STATUS_LABEL[state.office_status || 'incumbent'] || String(state.office_status).replaceAll('_', ' ')}`)}</small></div><div className="ds-top-actions">{authConfig?.enabled && (authUser?.isGuest ? <button className="ds-btn" onClick={() => { setShowAuthPanel(true); setNotice(""); }}>Entrar / criar conta</button> : <><button className="ds-btn" onClick={() => setShowAccountPanel(true)}>Conta</button><button className="ds-btn" onClick={async () => { await signOut(); setAuthUser(null); setState(null); setShowGameMenu(true); }}>Sair</button></>)}<button type="button" className="ds-btn" onClick={() => setGameGuideOpen((open) => !open)} aria-pressed={gameGuideOpen}>Guia</button><button type="button" className="ds-btn" onClick={() => setShowGameMenu(true)}>Partidas</button><AdvanceMenu open={advanceOpen} setOpen={setAdvanceOpen} busy={busy} advance={advance} /></div></header>
+    <TopBar advance={advance} advanceOpen={advanceOpen} authConfig={authConfig} authUser={authUser} busy={busy} careerMode={careerMode} dateLabel={dateLabel} gameGuideOpen={gameGuideOpen} partyMode={partyMode} setAdvanceOpen={setAdvanceOpen} setAuthUser={setAuthUser} setGameGuideOpen={setGameGuideOpen} setNotice={setNotice} setShowAccountPanel={setShowAccountPanel} setShowAuthPanel={setShowAuthPanel} setShowGameMenu={setShowGameMenu} setState={setState} state={state} termMonth={termMonth} />
     <Nav expanded={railOpen} onToggle={toggleRail} items={railGroups} current={selectedTabGroup.label} moreActive={['Mundo', 'Sobre', 'Perfil'].includes(selectedTabGroup.label)} onGo={(group) => { if (!group.items.includes(activeTab)) setActiveTab(group.items[0]); }} onMore={() => setMoreOpen(true)} pins={pins} activePin={activeTab} onPin={setActiveTab} />
     <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} entries={moreEntries} />
     <AdvanceMenu floating open={advanceFabOpen} setOpen={setAdvanceFabOpen} busy={busy} advance={advance} />
-    {(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <nav className="ds-tabs" aria-label={`Seções de ${selectedTabGroup.label}`}>{selectedTabGroup.hidden && <button type="button" className="ds-tab back" onClick={() => setActiveTab(baseGroups[0].items[0])}>← Voltar ao jogo</button>}{selectedTabGroup.items.map((tab) => <button key={tab} className="ds-tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}<button type="button" className="ds-tab-pin" aria-pressed={pins.includes(activeTab)} title={pins.includes(activeTab) ? 'Tirar do menu lateral' : 'Fixar no menu lateral'} onClick={() => togglePin(activeTab)}>{pins.includes(activeTab) ? '★ Fixada' : '☆ Fixar'}</button></nav>}
+    {(selectedTabGroup.items.length > 1 || selectedTabGroup.hidden) && <TabNav activeTab={activeTab} baseGroups={baseGroups} pins={pins} selectedTabGroup={selectedTabGroup} setActiveTab={setActiveTab} togglePin={togglePin} />}
 
     <main className="content">
 
@@ -588,22 +418,7 @@ export default function App() {
 
       {dashboardTab && <>
 
-      {activeTab === 'Medidas' && <div className="main-grid">
-        <section className="panel measure-panel">
-          <div className="panel-heading"><div><div className="eyebrow">CENTRO DE DECISÕES</div><h2>Escreva uma medida</h2><p>Descreva a ideia com suas palavras. O motor calcula os efeitos antes de você confirmar.</p></div><span className={`ai-chip ai-chip--${aiStatus}`} title={aiStatusTitle}><i/> {aiStatusLabel}</span></div>
-          <label className="field-label" htmlFor="measure">PROPOSTA DO GOVERNO</label>
-          <div className="cadence-summary">{(() => { const lim = state.action_limits || {}; const exec = Number(lim.executive_days ?? 0); const leg = Number(lim.legislative_days ?? 0); const every = state.legislative_calendar?.cooldown_days || 60; const wait = (n) => (n <= 0 ? 'liberada agora' : `libera em ${n} ${n === 1 ? 'dia' : 'dias'}`); return <><span><b>Decisão administrativa</b> a cada 7 dias: {wait(exec)}.</span><span><b>Projeto de lei</b> a cada {every} dias: {wait(leg)}. {lim.pending_bills ?? 0} em tramitação · {lim.laws_enacted ?? 0} {Number(lim.laws_enacted ?? 0) === 1 ? 'lei aprovada' : 'leis aprovadas'}.</span></>; })()}</div>
-          {state.legislative_calendar?.pending_bills?.map((bill) => <div className="pending-bill" key={bill.id}><span>TRAMITANDO · VOTAÇÃO {dataBr(bill.decision_date)}</span><b>{bill.title}</b><small>{bill.instrument} · aprovação por regra parlamentar do simulador</small></div>)}
-          <textarea id="measure" value={measure} onChange={(e) => setMeasure(e.target.value)} placeholder="Ex.: revisar contratos renováveis, publicar os preços de referência e direcionar a economia comprovada à redução da dívida…" maxLength={3000}/>
-          <div className="composer-footer"><span>{measure.length} / 3000 caracteres <span className="muted">· sem compromisso até simular</span></span><button className="primary-button" disabled={busy || !measure.trim()} onClick={interpret}>{busy ? 'Analisando…' : 'Interpretar e simular'}<b>→</b></button></div>
-          {notice && <div className="notice">{notice}</div>}
-          {preview && <div className="preview-card"><div className="preview-top"><div><div className="eyebrow">PRÉVIA · NÃO APLICADA</div><h3>{preview.interpretation.title}</h3></div><div className="preview-provenance"><span>{preview.interpretation.source === 'gemini' ? 'Gemini' : 'Leitura local'}</span><span className="confidence">{Math.round(preview.interpretation.confidence * 100)}% confiança</span></div></div><p>{preview.interpretation.summary}</p><div className="simulation-timing">{preview.timing}<br/><b>Custo fiscal usado no motor: R$ {Number(preview.interpretation.fiscal_cost_bi || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} bi.</b> {preview.interpretation.fiscal_cost_note}</div>{preview.scale_check?.message && <div className={`scale-check ${preview.scale_check.verdict}`}><b>Régua de escala</b><p>{preview.scale_check.message}</p>{preview.scale_check.warnings.map((w) => <p key={w} className="scale-warn">{w}</p>)}</div>}<div className="preview-tags"><span>{preview.interpretation.instrument}</span><span>{preview.interpretation.policy_area}</span><span>{preview.interpretation.duration_days ? `${preview.interpretation.duration_days} ${Number(preview.interpretation.duration_days) === 1 ? 'dia' : 'dias'}` : 'efeito permanente'}</span></div><MeasureForecast forecast={preview.forecast} /><div className="preview-bottom"><span>{preview.interpretation.constraints?.length ? preview.interpretation.constraints.join(' · ') : 'Regras e efeitos estimados pelo motor do jogo'}</span><button className="primary-button" onClick={signMeasure} disabled={busy}>Aplicar medida <b>→</b></button></div><InterpretationCorrection preview={preview} measure={measure} request={request} onSaved={(data) => setState((current) => current ? ({ ...current, learning: { ...current.learning, corrections_saved: data.corrections_saved } }) : current)} onNotice={setNotice} busy={busy} setBusy={setBusy} /></div>}
-        </section>
-
-        <aside className="side-column"><section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">ESTABILIDADE</div><h2>Capacidade de governar</h2></div><strong className="score">{formatIndicator(m.governability, 'governability')}<small>/100</small></strong></div><div className="bar"><i style={{ width: `${m.governability}%` }}/></div><div className="mini-stats"><div><span>Base no Congresso</span><b>{formatIndicator(m.congress_support, 'congress_support')}%</b></div><div><span>Confiança institucional</span><b>{formatIndicator(m.institutional_trust, 'institutional_trust')}/100</b></div></div></section>
-        <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">AGENDA PRÓXIMA</div><h2>O que vem pela frente</h2></div><button className="icon-button" onClick={() => setActiveTab('Agenda')}>↗</button></div>{state.events?.length ? state.events.slice(0, 3).map((event) => <div className="event" key={event.id}><span className="event-date">{event.days_until === 0 ? 'HOJE' : `EM ${event.days_until} DIAS`}</span><div><b>{event.title}</b><small>{event.description}</small></div></div>) : <p className="empty-state">Agenda tranquila por enquanto. Avance alguns dias para acompanhar o mandato.</p>}</section>
-        <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">REGISTRO</div><h2>Últimas decisões</h2></div></div>{state.recent_actions?.length ? state.recent_actions.slice(0, 3).map((action) => <div className="decision" key={action.id}><span>✓</span><div><b>{action.title}</b><small>{new Date(`${action.date}T12:00:00`).toLocaleDateString('pt-BR')} · {action.kind}</small></div></div>) : <p className="empty-state">Nenhuma medida assinada ainda.</p>}</section></aside>
-      </div>}</>}
+      {activeTab === 'Medidas' && <MeasuresSection aiStatus={aiStatus} aiStatusLabel={aiStatusLabel} aiStatusTitle={aiStatusTitle} busy={busy} interpret={interpret} m={m} measure={measure} notice={notice} preview={preview} request={request} setActiveTab={setActiveTab} setBusy={setBusy} setMeasure={setMeasure} setNotice={setNotice} setState={setState} signMeasure={signMeasure} state={state} />}</>}
 
       {activeTab === 'Agenda' && <AgendaPanel state={state} goals={state.scenario_view?.goals || careerOverview?.goals || []} campaign={Boolean(careerOverview?.campaign_active)} go={setActiveTab} />}
 
@@ -640,53 +455,13 @@ export default function App() {
         {activeTab === 'Carimbos' && <CollectionPanel state={state} request={request} />}
         {activeTab === 'Diário' && <DiaryPanel request={request} />}
         {['O jogo', 'Termos', 'Créditos'].includes(activeTab) && <AboutPanel section={activeTab} />}
-      {activeTab === 'Orçamento' && <section className="panel agenda-page">
-        <div className="eyebrow">EXECUTIVO FEDERAL · DESPESAS E INVESTIMENTOS</div>
-        <h2>Orçamento do governo</h2>
-        <p className="page-description">Viagens oficiais e manutenção das residências entram nas despesas do governo. Para mexer de verdade no resultado primário, use as alavancas fiscais; cortes de viagens e residências rendem pouco.</p>
-        {budgetView ? <>
-          <div className="budget-subnav" role="tablist" aria-label="Seções do orçamento">{['Contas públicas', 'Investimentos', 'Obras'].map((section) => <button key={section} role="tab" aria-selected={budgetSection === section} className={budgetSection === section ? 'active' : ''} onClick={() => setBudgetSection(section)}>{section}</button>)}</div>
-          {notice && <div className="notice">{notice}</div>}
-          {budgetSection === 'Contas públicas' && <>
-          <FiscalPanel data={budgetView.fiscal} />
-          <FiscalLevers levers={budgetView.levers} history={budgetView.levers_history} busy={busy} onUse={useFiscalLever} />
-          <div className="operating-budget">
-            <div className="operating-heading">
-              <div><span className="eyebrow">DESPESAS DE FUNCIONAMENTO</span><h3>Viagens e moradia oficial</h3><p>Revisão a cada 30 dias. O corte afeta o gasto anual e a trajetória fiscal.</p></div>
-              <strong className="operating-saving">R$ {br(proposedOperatingSavings, 3)} bi<small>economia anual selecionada</small></strong>
-            </div>
-            <div className="operating-lines">
-              {Object.entries(budgetView.operating.lines).map(([key, line]) => {
-                const isTravel = key === 'official_travel';
-                const cut = isTravel ? Number(travelCutPct) : Number(residenceCutPct);
-                const max = isTravel ? 75 : 50;
-                return <article key={key}>
-                  <div><b>{line.label}</b><small>{line.description}</small><span>Orçamento: R$ {br(Number(line.annual_cost_bi), 1)} bi/ano · após o corte: R$ {br(Number(line.annual_cost_bi) * (1 - cut / 100), 3)} bi/ano</span></div>
-                  <div className="ds-seg" role="group" aria-label={`Reduzir ${line.label}`}>{[0, 10, 25, 50, 75].filter((value) => value <= max).map((value) => <button type="button" key={value} aria-pressed={cut === value} onClick={() => isTravel ? setTravelCutPct(value) : setResidenceCutPct(value)}>{value === 0 ? 'Manter' : `−${value}%`}</button>)}</div>
-                </article>;
-              })}
-            </div>
-            <div className="operating-impact"><span>Resultado primário atual <b>{br(Number(m.primary_balance), 3)}% do PIB</b></span><span>Após aplicar <b>{br(Number(proposedPrimaryBalance), 3)}% do PIB</b></span><small>Estimativa proporcional ao PIB nominal de referência do simulador (R$ {br(fiscalReferenceGdp / 1000, 0)} tri). A trajetória da dívida acumula o efeito ao longo dos dias.</small></div>
-            <div className="operating-footer"><small>{budgetView.operating.days_until_review ? `Próxima revisão em ${budgetView.operating.days_until_review} ${Number(budgetView.operating.days_until_review) === 1 ? 'dia' : 'dias'}.` : 'Ajuste disponível agora.'} As rubricas fazem parte da despesa primária anual. Os limites evitam cortar integralmente deslocamentos institucionais ou manutenção essencial.</small><button className="primary-button" disabled={busy || budgetView.operating.days_until_review > 0 || (Number(budgetView.operating.travel_cut_pct) === Number(travelCutPct) && Number(budgetView.operating.residence_cut_pct) === Number(residenceCutPct))} onClick={submitOperatingBudget}>Aplicar cortes</button></div>
-          </div>
-          </>}
-          {budgetSection === 'Investimentos' && <>
-          <InvestmentsPanel view={budgetView} busy={busy} onTransfer={submitBudgetTransfer} />
-          <details className="ministry-roster"><summary>Ver pastas oficiais disponíveis ({ministries.length})</summary><div>{ministries.map((ministry) => <span key={ministry.name}>{ministry.name}</span>)}</div><small>Catálogo baseado no SIORG; estas pastas são fixas no jogo. A carteira de investimentos não cria ministérios.</small></details>
-          </>}
-          {budgetSection === 'Obras' && <section className="works-section">
-            <div className="operating-heading"><div><span className="eyebrow">CARTEIRA NACIONAL</span><h3>As obras agora ficam em Projetos</h3><p>Lá estão os 37 projetos (do viaduto à missão à Lua), as fases de cada um e a carteira de cada área. O dinheiro continua vindo daqui: ajuste em Investimentos.</p></div></div>
-            <button type="button" className="primary-button" onClick={() => setActiveTab('Projetos')}>Abrir Projetos</button>
-            <p className="indicator-footnote">Em andamento: {budgetView.works.projects.filter((p) => ['active', 'needs_decision'].includes(p.status)).length} · comprometido por ano em Transportes: R$ {br(budgetView.works.annual_committed_bi, 1)} bi.</p>
-          </section>}
-        </> : <div className="empty-state">Carregando o orçamento...</div>}
-      </section>}
-      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">CRISES · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} {Number(event.days_active) === 1 ? 'dia' : 'dias'} · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {br(option.cost_bi, 1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <ul className="ds-timeline">{Object.values(state.simulated_news.reduce((acc, item) => { const g = acc[item.title] || { ...item, count: 0 }; g.count += 1; acc[item.title] = g; return acc; }, {})).slice(0, 8).map((item) => <li key={item.id}><time dateTime={item.date}>{item.date.split('-').reverse().join('/')}</time><b>{item.title}{item.count > 1 && <span className="ds-muted"> · {item.count} {Number(item.count) === 1 ? 'vez' : 'vezes'}</span>}</b><p className="ds-muted">{item.description}</p></li>)}</ul> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
+      {activeTab === 'Orçamento' && <BudgetSection applyFiscalLever={applyFiscalLever} budgetSection={budgetSection} budgetView={budgetView} busy={busy} fiscalReferenceGdp={fiscalReferenceGdp} m={m} ministries={ministries} notice={notice} proposedOperatingSavings={proposedOperatingSavings} proposedPrimaryBalance={proposedPrimaryBalance} residenceCutPct={residenceCutPct} setActiveTab={setActiveTab} setBudgetSection={setBudgetSection} setResidenceCutPct={setResidenceCutPct} setTravelCutPct={setTravelCutPct} submitBudgetTransfer={submitBudgetTransfer} submitOperatingBudget={submitOperatingBudget} travelCutPct={travelCutPct} />}
+      {activeTab === 'Crises' && <CrisesSection busy={busy} respondEvent={respondEvent} state={state} />}
 
       {activeTab === 'Eleição' && <CampaignPanel state={state} request={request} onState={setState} busy={busy} setBusy={setBusy} onNotice={setNotice} />}
       {['Carreira', 'Mandato'].includes(activeTab) && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} standaloneMandate={activeTab === 'Mandato'} />}
 
-      {activeTab === 'Instituições' && <section className="panel agenda-page"><div className="eyebrow">CENÁRIO INSTITUCIONAL FICTÍCIO</div><h2>Instituições e estabilidade</h2><p className="page-description">Indicadores agregados mudam com as decisões. A opção de ruptura é uma mecânica de alto risco, inteiramente abstrata; não há passos operacionais.</p><div className="institution-grid">{Object.entries(state.institutions || {}).map(([key, value]) => <article key={key}><span>{institutionLabels[key] || key.replaceAll('_', ' ')}</span><strong>{formatIndicator(value, key)}/100</strong><div className="bar"><i style={{ width: `${value}%` }}/></div></article>)}</div>{presidentCareer && <div className="rupture-box"><h3>Ruptura institucional simulada</h3><p>Sucesso: governo de facto, resistência institucional, isolamento e choque econômico. Fracasso: prisão e remoção do cargo. Os resultados são calculados pelo motor e pela semente da partida.</p><button className="secondary-button" onClick={loadRupturePreview}>Ver chance e consequências</button>{ruptureInfo && <div className="rupture-preview"><b>Chance abstrata de sucesso: {ruptureInfo.chance}%</b><p>{ruptureInfo.success}</p><p>{ruptureInfo.failure}</p><button className="danger-button" disabled={busy} onClick={attemptRupture}>Tentar ruptura no cenário</button></div>}</div>}</section>}
+      {activeTab === 'Instituições' && <InstitutionsSection attemptRupture={attemptRupture} busy={busy} loadRupturePreview={loadRupturePreview} presidentCareer={presidentCareer} ruptureInfo={ruptureInfo} state={state} />}
 
       {activeTab === 'Nomeações' && <GovernmentAppointments state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 

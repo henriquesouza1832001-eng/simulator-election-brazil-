@@ -76,6 +76,20 @@ await step('Aplicar uma alavanca fiscal (com confirmação) entra em vigor', asy
 await step('Segunda alavanca é bloqueada pelo intervalo de 60 dias', async () => { await sleep(500); return ev(`!![...document.querySelectorAll('.lever-card button')].every(x=>x.disabled)`); });
 
 await step('Tramitação abre sem erro', async () => { await ev("location.hash='#/tramitacao'"); return waitText('Tramitação no Congresso', 6000); });
+await step('Medidas: texto livre é interpretado e simulado', async () => {
+  await ev("location.hash='#/medidas'"); await sleep(1200);
+  const typed = await ev(`(()=>{const t=document.querySelector('#measure');if(!t)return false;const set=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;set.call(t,'Reduzir em 10% as despesas com viagens e eventos do governo e usar a economia para ampliar o atendimento nos postos de saúde, com prestação de contas trimestral.');t.dispatchEvent(new Event('input',{bubbles:true}));return true})()`);
+  if (!typed) return { ok: false, detail: 'campo de medida não encontrado' };
+  await sleep(300);
+  if (!(await click('Interpretar e simular'))) return { ok: false, detail: 'botão desabilitado ou ausente' };
+  for (let i = 0; i < 60; i += 1) { await sleep(500); if (await ev("!![...document.querySelectorAll('button')].find(b=>b.innerText.trim().startsWith('Aplicar medida'))")) return { ok: true, detail: `prévia em ${(i + 1) * 0.5}s` }; }
+  return { ok: false, detail: 'a prévia não apareceu em 30s' };
+});
+await step('Medidas: aplicar a medida registra o efeito', async () => {
+  if (!(await click('Aplicar medida'))) return false;
+  for (let i = 0; i < 30; i += 1) { await sleep(400); if (!(await ev("!![...document.querySelectorAll('button')].find(b=>b.innerText.trim().startsWith('Aplicar medida'))"))) return true; }
+  return { ok: false, detail: 'o botão continuou na tela' };
+});
 await step('Mercado mostra manchetes', async () => { await ev("location.hash='#/mercado'"); return waitText('POR QUE O MERCADO ESTÁ ASSIM', 6000); });
 
 for (let i = 0; i < 3; i += 1) {
