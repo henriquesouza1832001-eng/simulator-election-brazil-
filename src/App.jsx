@@ -55,6 +55,13 @@ const indicatorPrecision = {
   human_development_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
   gini_index: { minimumFractionDigits: 3, maximumFractionDigits: 3 },
   country_risk: { minimumFractionDigits: 0, maximumFractionDigits: 0 },
+  // indicadores em % ou pontos com uma casa fixa: "4,0" e não "4", para o jogador comparar de relance
+  gdp_growth: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+  inflation: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+  unemployment: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+  debt_gdp: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+  primary_balance: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+  approval: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
 };
 const indicatorFormatters = new Map();
 

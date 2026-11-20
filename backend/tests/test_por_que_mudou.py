@@ -40,6 +40,16 @@ class PorQueMudouTests(unittest.TestCase):
         state, _ = advance_state(state, 30)
         self.assertEqual(state["why_window"]["items"], [])
 
+    def test_acontecimento_do_dia_aparece_como_causa_da_aprovacao(self):
+        from app.engine import story
+        state = new_game()
+        with drivers.because("Crise de teste"):
+            story._apply_effects(state, {"approval": -5.0}, 0.0)
+        why = drivers.close(state, "2027-01-01", "2027-02-01")
+        causas = why["metrics"]["approval"]["causes"]
+        self.assertEqual(causas[0]["label"], "Crise de teste")
+        self.assertLess(causas[0]["delta"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

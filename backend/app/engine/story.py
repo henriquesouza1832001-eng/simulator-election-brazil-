@@ -91,6 +91,8 @@ def _apply_effects(state: dict[str, Any], effects: dict[str, float], cost_bi: fl
         before = float(metrics.get(key, 0))
         metrics[key] = round(max(low, min(high, before + delta)), 2)
         deltas.append({"key": key, "label": key.replace("_", " "), "delta": round(metrics[key] - before, 2)})
+        from . import drivers
+        drivers.note(state, key, metrics[key] - before)   # causa da variação (o acontecimento que a produziu, via `because`)
     if cost_bi:
         # Gasto único (não vira déficit recorrente): entra na dívida e nas despesas extras do ano corrente.
         record_one_off_spending(state, cost_bi)
@@ -168,7 +170,9 @@ def _resolve(state: dict[str, Any], ev: dict[str, Any], choice_id: str, day: dat
         # Do not scale it again here; only base event effects/costs need scaling at resolution.
         deltas = _apply_career_effects(state, effects, float(ev.get("career_costs", {}).get(choice_id, 0.0)))
     else:
-        deltas = _apply_effects(state, effects, cost)
+        from . import drivers
+        with drivers.because(ev.get("title") or "Acontecimento"):
+            deltas = _apply_effects(state, effects, cost)
         if current_level(state) == "federal":
             from . import macro
             macro.react(state, {k: v * EFFECT_SCALE for k, v in effects.items() if not k.startswith(("pp:", "inst:", "rel:"))}, cost, ev["title"])
