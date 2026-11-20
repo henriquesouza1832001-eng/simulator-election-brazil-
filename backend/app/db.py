@@ -86,6 +86,7 @@ def connect() -> sqlite3.Connection:
     connection.execute("PRAGMA busy_timeout = 30000")
     try:
         connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA synchronous = NORMAL")   # com WAL é seguro contra corrupção e evita um fsync por gravação (cada avanço do jogo salva a partida)
     except sqlite3.OperationalError:
         pass
     return connection

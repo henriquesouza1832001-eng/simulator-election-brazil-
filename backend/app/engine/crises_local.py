@@ -41,6 +41,19 @@ RULES: list[tuple[str, dict[str, Any]]] = [
 
 def exposure(definition: dict[str, Any]) -> dict[str, Any] | None:
     """Estados e meses da crise: o campo `where` do próprio evento ou uma regra pelo título do fato histórico."""
+    cached = _EXPOSURE.get(id(definition), _MISSING)
+    if cached is not _MISSING and cached[0] is definition:   # a regra de um evento não muda: calcula uma vez por definição
+        return cached[1]
+    result = _compute_exposure(definition)
+    _EXPOSURE[id(definition)] = (definition, result)
+    return result
+
+
+_MISSING = object()
+_EXPOSURE: dict[int, tuple[dict[str, Any], dict[str, Any] | None]] = {}
+
+
+def _compute_exposure(definition: dict[str, Any]) -> dict[str, Any] | None:
     explicit = definition.get("where")
     if isinstance(explicit, dict):
         return explicit
