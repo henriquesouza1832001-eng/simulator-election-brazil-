@@ -166,12 +166,26 @@ def step(state: dict[str, Any], before: date, after: date, volatility: float = 1
     macro["cambio"] = cambio
     # 4) inflação: expectativas, política monetária, demanda e repasse cambial
     d_infl = (macro["expect"] - infl) * (1 - math.exp(-0.25 * dt)) - 0.03 * (real - NEUTRAL_REAL) * dt + 0.06 * macro["gap"] * dt + 0.15 * cambio_pct
+    from . import drivers
+    k_i = 1 - math.exp(-0.25 * dt)
+    for why, part in (
+            ("Expectativas de inflação", (macro["expect"] - infl) * k_i), ("Juros (Selic) frente à inflação esperada", -0.03 * (real - NEUTRAL_REAL) * dt),
+            ("Demanda da economia", 0.06 * macro["gap"] * dt), ("Câmbio (dólar)", 0.15 * cambio_pct)):
+        drivers.note(state, "inflation", part, why)   # "Por que mudou?": cada termo da inflação vira uma causa
     infl = _clamp(infl + d_infl, 0.3, 40.0)
     # 5) crescimento: juros reais, confiança, risco, impulso fiscal e investimento público
     growth_target = POTENTIAL + 0.07 * (macro["confianca"] - 55) - 0.25 * (real - NEUTRAL_REAL) - 0.12 * (pb + 1.0) - 0.004 * (macro["risco"] - 200) + 0.02 * (infra - 50) + human + policy["g"]
-    growth = _clamp(growth + (growth_target - growth) * (1 - math.exp(-0.3 * dt)), -6.0, 8.0)
+    k_g = 1 - math.exp(-0.3 * dt)
+    for why, part in (
+            ("Retorno ao ritmo normal da economia", POTENTIAL - growth), ("Confiança de empresas e consumidores", 0.07 * (macro["confianca"] - 55)),
+            ("Juros reais", -0.25 * (real - NEUTRAL_REAL)), ("Contas públicas (resultado primário)", -0.12 * (pb + 1.0)), ("Risco-país", -0.004 * (macro["risco"] - 200)),
+            ("Investimento em infraestrutura", 0.02 * (infra - 50)), ("Educação, saúde e produtividade", human), ("Estímulo ou aperto das suas decisões", policy["g"])):
+        drivers.note(state, "gdp_growth", part * k_g, why)
+    growth = _clamp(growth + (growth_target - growth) * k_g, -6.0, 8.0)
     macro["gap"] = _clamp(macro["gap"] * 0.93 ** dt + (growth - POTENTIAL) * dt / 6, -6.0, 6.0)
     # 6) desemprego: lei de Okun e retorno ao desemprego de equilíbrio
+    drivers.note(state, "unemployment", -0.5 * (growth - POTENTIAL) * dt / 12, "Atividade econômica (PIB)")
+    drivers.note(state, "unemployment", 0.04 * (NAIRU - unemp) * dt, "Retorno ao desemprego de equilíbrio")
     unemp = _clamp(unemp - 0.5 * (growth - POTENTIAL) * dt / 12 + 0.04 * (NAIRU - unemp) * dt, 2.0, 25.0)
     # 7) confiança de empresas e consumidores
     conf_target = 55 + 0.5 * (inst - 58) + 0.15 * (integ - 70) - 0.05 * (macro["risco"] - 220) - 2.0 * max(0.0, infl - 5.0) - 1.5 * max(0.0, -pb - 1.5)
@@ -185,7 +199,10 @@ def step(state: dict[str, Any], before: date, after: date, volatility: float = 1
     m["inflation"], m["unemployment"], m["gdp_growth"] = round(infl, 2), round(unemp, 2), round(growth, 2)
     # 9) a economia do dia a dia pesa na popularidade: crescimento ajuda; desemprego e inflação alta cobram a conta
     econ = 0.8 * (growth - 2.0) - 0.9 * (unemp - 6.5) - 0.5 * (infl - 4.5)
+    approval_before = float(m["approval"])
     m["approval"] = round(_clamp(float(m["approval"]) + dt * (0.12 * econ - 0.05 * (float(m["approval"]) - 50.0)), 0.0, 100.0), 2)  # a popularidade volta à média sem mérito novo
+    from . import drivers
+    drivers.note(state, "approval", float(m["approval"]) - approval_before, "Economia: crescimento, inflação e desemprego")
     _sync_nation(state)
     messages: list[str] = []
     bolsa_pct = (macro["bolsa"] / old["bolsa"] - 1) * 100

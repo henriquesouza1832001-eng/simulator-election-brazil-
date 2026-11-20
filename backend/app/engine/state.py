@@ -110,6 +110,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
     before = date.fromisoformat(state["date"])
     from .indicator_engine import ensure as _ensure_nation
     _ensure_nation(state)
+    from . import drivers as _drivers
+    _drivers.open_window(state)
     after = before + timedelta(days=days)
     next_election = election_date(state)
     if before < next_election < after:
@@ -175,6 +177,8 @@ def advance_state(state: dict[str, Any], days: int) -> tuple[dict[str, Any], str
         messages.append("Agenda simulada: " + ", ".join(event_names) + ".")
     if not messages:
         messages.append(f"Calendário simulado avançou {elapsed} dia(s).")
+    from . import drivers
+    drivers.close(state, before.isoformat(), after.isoformat())   # "Por que mudou?": causas da variação desde o último avanço
     return refresh_calendar_fields(state), " ".join(messages)
 
 

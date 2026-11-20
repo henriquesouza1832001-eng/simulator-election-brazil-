@@ -195,9 +195,13 @@ def process_events(state: dict[str, Any], before: date, after: date) -> list[str
                 _adjust(target, key, monthly_delta * scale)
             elif key == "institutional_trust":
                 _adjust(state.setdefault("metrics", {}), key, monthly_delta * scale)
+                from . import drivers
+                drivers.note(state, key, monthly_delta * scale, crisis.get("title") or "Crise em andamento")
             else:
                 floor = -10 if key == "gdp_growth" else .5 if key == "inflation" else 0
                 _adjust(state.setdefault("metrics", {}), key, monthly_delta * scale, floor, 100)
+                from . import drivers
+                drivers.note(state, key, monthly_delta * scale, crisis.get("title") or "Crise em andamento")
         regional = state.setdefault("regional_metrics", {})
         for region_key in crisis.get("region_keys", []):
             region = regional.setdefault(region_key, {"support": 50, "infrastructure": 70, "economic_activity": 80})

@@ -114,11 +114,19 @@ def _bump(state: dict[str, Any], key: str, delta: float) -> float:
     low, high = METRIC_RANGES[key]
     before = float(metrics.get(key, 0))
     metrics[key] = round(max(low, min(high, before + delta)), 2)
+    from . import drivers
+    drivers.note(state, key, metrics[key] - before)   # anota a causa da variação (tela "Por que mudou?")
     return metrics[key] - before
 
 
 def apply(state: dict[str, Any], action: dict[str, Any], option: str | None, *, revertible: bool = False) -> list[dict[str, Any]]:
     """Aplica efeitos, custo e mudanças estruturais. Retorna a lista de variações registradas."""
+    from . import drivers
+    with drivers.because(action.get("title") or "Decisão do governo"):
+        return _apply_effects(state, action, option, revertible=revertible)
+
+
+def _apply_effects(state: dict[str, Any], action: dict[str, Any], option: str | None, *, revertible: bool = False) -> list[dict[str, Any]]:
     ensure_fiscal_state(state)
     rows: list[dict[str, Any]] = []
     for key, delta in action["effects"].items():

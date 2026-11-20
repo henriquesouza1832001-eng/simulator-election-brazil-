@@ -370,7 +370,7 @@ def require_presidential_authority(state: dict[str, Any], action: str) -> None:
 
 
 # Partes grandes do estado que a interface nunca lê (ela busca o que precisa por rotas próprias). Mandá-las em toda resposta pesava ~0,5 MB.
-_STATE_NOT_SENT = ("government_appointments", "nation", "story", "budget_history")
+_STATE_NOT_SENT = ("government_appointments", "nation", "story", "budget_history", "why_window")
 
 
 def public_state(state: dict[str, Any]) -> dict[str, Any]:

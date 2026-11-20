@@ -38,3 +38,7 @@ Dossiê contra rival no debate; teto de rejeição separado do voto fiel; palanq
 4. **Passada de tom** nos textos + manchetes do motor (Gemini depois).
 5. **Dividir `career.py`** em módulos, uma fatia por vez, sempre com a suíte verde.
 6. Retomar o motor eleitoral (coalizões, TV, debate) em cima disso.
+
+## Andamento
+- **Item 1 feito (19/11/2026):** "Por que mudou?" no Painel (`engine/drivers.py`): as 3 maiores causas da variação de aprovação, inflação, PIB, desemprego, base no Congresso e confiança institucional; inflação, PIB e desemprego decompostos por termo do motor macro. Testes em `test_por_que_mudou.py`.
+- **Segundo envio ao Gemini:** pacote com capturas de tela, textos reais das telas, inventário do código, autoavaliação em 12 dimensões e meta 9,5 em cada uma.

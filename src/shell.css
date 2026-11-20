@@ -638,3 +638,13 @@ aside.career-rules { align-self: start; }
 .ds-rival-moves h5 { margin: 14px 0 6px; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
 .ds-rival-moves ul { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; font-size: .88rem; }
 .ds-rival-moves time { font-variant-numeric: tabular-nums; opacity: .65; margin-right: 6px; }
+
+.ds-why { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+.ds-why article { border: 1px solid var(--ds-line-2, #2a3340); border-left-width: 3px; padding: 10px 12px; background: var(--ds-surface, transparent); }
+.ds-why article.good { border-left-color: #2f9e62; }
+.ds-why article.bad { border-left-color: #c2503f; }
+.ds-why header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ds-why strong { font-variant-numeric: tabular-nums; }
+.ds-why ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; font-size: .86rem; }
+.ds-why li { display: flex; justify-content: space-between; gap: 10px; opacity: .88; }
+.ds-why li em { font-style: normal; font-variant-numeric: tabular-nums; opacity: .8; }

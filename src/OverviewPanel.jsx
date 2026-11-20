@@ -31,6 +31,8 @@ export default function OverviewPanel({ scope = 'nacional', rivals = [], rivalEv
         <div>{customize.options.map((o) => <label key={o.key}><input type="checkbox" checked={customize.selected.includes(o.key)} onChange={() => customize.toggle(o.key)} /> {o.label}</label>)}</div></details>}
     </Section>
 
+    {scope === 'nacional' && <PorQueMudou why={state.why} />}
+
     <div className="ds-grid-2">
       {scope === 'nacional' ? <PainelMapa request={request} state={state} go={go} /> : <TerritorioCard territory={territory} rivals={rivals} events={rivalEvents} go={go} />}
       <div className="ds-side">
@@ -81,4 +83,22 @@ function TerritorioCard({ territory, rivals, events = [], go }) {
     {events.length > 0 && <div className="ds-rival-moves"><h5>Movimentos recentes</h5><ul>{events.slice(0, 3).map((e, i) => <li key={`${e.date}-${i}`}><time dateTime={e.date}>{dateLabel(e.date)}</time> {e.text}</li>)}</ul></div>}
     {rivals.length > 0 && <p className="ds-muted">Partidos que mais votaram na última eleição deste cargo, com força real do TSE; candidaturas simuladas.</p>}
   </section>;
+}
+
+const sign = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}`;
+
+/** Por que mudou? As maiores causas da variação de cada indicador desde o último avanço do calendário. */
+function PorQueMudou({ why }) {
+  const rows = Object.entries(why?.metrics || {}).filter(([, r]) => Math.abs(r.total) >= 0.05);
+  if (!rows.length) return null;
+  return <Section title="Por que mudou?">
+    <p className="ds-muted">De {dateLabel(why.from)} a {dateLabel(why.to)}. Cada linha mostra o que mais pesou na variação.</p>
+    <div className="ds-why">{rows.map(([key, r]) => {
+      const good = (r.total > 0) === r.good_when_up;
+      return <article key={key} className={good ? 'good' : 'bad'}>
+        <header><b>{r.label}</b><strong>{sign(r.total)} {r.unit}</strong></header>
+        <ul>{r.causes.map((c) => <li key={c.label}><span>{c.label}</span><em>{sign(c.delta)}</em></li>)}</ul>
+      </article>;
+    })}</div>
+  </Section>;
 }
