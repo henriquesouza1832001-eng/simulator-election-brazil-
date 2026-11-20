@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from typing import Any
 
 SCENARIO_ID = "cem_dias"
+APPROVAL_GOAL = 47.0
 DAYS = 100
 START_METRICS = {"approval": 44.0, "inflation": 6.1, "unemployment": 8.0, "congress_support": 41.0, "governability": 48.0,
                  "institutional_trust": 52.0, "primary_balance": -2.0}
@@ -36,18 +37,20 @@ def goals(state: dict[str, Any]) -> list[dict[str, Any]]:
     m = state.get("metrics", {})
     start = sc["start"]
     aggravated = sum(1 for e in state.get("ledger") or [] if str(e.get("date") or "") >= start and "agrav" in str(e.get("status") or "").lower())
-    laws = int((state.get("legislative_calendar") or {}).get("laws_enacted", 0))
+    cal = state.get("legislative_calendar") or {}
+    sent = len(cal.get("pending_bills") or []) + int(cal.get("laws_enacted", 0))   # a votação leva mais de 100 dias: a meta é enviar e negociar, não esperar o resultado
     pending_overdue = sum(1 for c in (state.get("consequences") or {}).get("pending", []) if str(c.get("deadline") or "9999") < state["date"])
     n = lambda v: f"{float(v):.1f}".replace(".", ",")  # noqa: E731
     return [
-        {"id": "aprovacao", "label": "Fechar os 100 dias com aprovação de 50% ou mais", "detail": "Decisões populares ajudam; a economia pesa todo mês.", "done": float(m.get("approval", 0)) >= 50,
+        {"id": "aprovacao", "label": "Fechar os 100 dias com aprovação de 47% ou mais", "detail": "Decisões populares ajudam; a economia pesa todo mês.", "done": float(m.get("approval", 0)) >= APPROVAL_GOAL,
          "progress": f"{n(m.get('approval', 0))}% agora", "tab": "Indicadores"},
-        {"id": "inflacao", "label": "Levar a inflação para menos de 5,5%", "detail": "Juros, câmbio e demanda movem a inflação; o Banco Central decide a Selic.", "done": float(m.get("inflation", 99)) < 5.5,
-         "progress": f"{n(m.get('inflation', 0))}% agora", "tab": "Mercado"},
+        {"id": "fiscal", "label": "Melhorar o resultado primário em pelo menos 0,1 ponto do PIB", "detail": "Use uma alavanca fiscal em Orçamento; a inflação e o mercado reagem às contas públicas.",
+         "done": float(m.get("primary_balance", -99)) >= float(START_METRICS["primary_balance"]) + 0.1,
+         "progress": f"{n(m.get('primary_balance', 0))}% do PIB (partida: {n(START_METRICS['primary_balance'])}%)", "tab": "Orçamento"},
         {"id": "decisoes", "label": "Assinar pelo menos 2 decisões do seu cargo", "detail": "Decretos e medidas provisórias estão em Medidas.", "done": _decisions_since(state, start) >= 2,
          "progress": f"{min(_decisions_since(state, start), 2)}/2", "tab": "Medidas"},
-        {"id": "lei", "label": "Aprovar um projeto de lei no Congresso", "detail": "Envie um projeto e acompanhe a votação em Tramitação.", "done": laws >= 1,
-         "progress": f"{laws} aprovado(s)", "tab": "Tramitação"},
+        {"id": "lei", "label": "Enviar um projeto de lei ao Congresso", "detail": "A votação leva meses: envie o projeto e negocie com as bancadas em Tramitação.", "done": sent >= 1,
+         "progress": f"{sent} projeto(s) enviado(s)", "tab": "Tramitação"},
         {"id": "crises", "label": "Não deixar nenhuma crise sem resposta", "detail": "Responda dentro do prazo; sem resposta vale a pior opção.", "done": aggravated == 0 and pending_overdue == 0,
          "progress": "em dia" if aggravated == 0 and pending_overdue == 0 else f"{aggravated + pending_overdue} sem resposta", "tab": "Imprensa"},
     ]

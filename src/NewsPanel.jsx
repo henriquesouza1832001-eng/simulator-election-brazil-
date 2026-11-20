@@ -27,7 +27,8 @@ export default function NewsPanel({ request, state, onState, onNotice }) {
 
   const groups = useMemo(() => {
     const out = [];
-    (data?.feed || []).filter((n) => kind === 'todas' || n.kind === kind).slice(0, shown).forEach((n) => {
+    // notícias com data própria (movimentos de rivais, pesquisas) podem chegar fora de ordem: ordena por data para não repetir o mês
+    [...(data?.feed || [])].sort((x, y) => String(y.date || '').localeCompare(String(x.date || ''))).filter((n) => kind === 'todas' || n.kind === kind).slice(0, shown).forEach((n) => {
       const m = (n.date || '').slice(0, 7);
       if (!out.length || out[out.length - 1].m !== m) out.push({ m, items: [] });
       out[out.length - 1].items.push(n);
@@ -54,7 +55,7 @@ export default function NewsPanel({ request, state, onState, onNotice }) {
       {data.feed.length === 0 ? <Empty title="Nenhuma reação ainda">Tome uma decisão e acompanhe a repercussão nos dias seguintes.</Empty>
         : <><Segmented label="Tipo de notícia" value={kind} onChange={(k) => { setKind(k); setShown(PAGE); }} options={[['todas', `Todas (${data.feed.length})`], ...Object.entries(kinds).map(([k, n]) => [k, `${KIND[k] || k} (${n})`])]} />{groups.map((g) => <div key={g.m}>
           <h4 className="ds-month">{monthName(g.m + '-15')}</h4>
-          <ul className="ds-timeline">{g.items.map((n) => <li key={n.id} className={TONE[n.kind] === 'bad' ? 'bad' : TONE[n.kind] === 'good' ? 'good' : ''}>
+          <ul className="ds-timeline">{g.items.map((n, idx) => <li key={`${n.id}-${n.date}-${idx}`} className={TONE[n.kind] === 'bad' ? 'bad' : TONE[n.kind] === 'good' ? 'good' : ''}>
             <time dateTime={n.date}>{dayName(n.date)} · <Badge tone={TONE[n.kind] || ''}>{KIND[n.kind] || n.kind}</Badge></time>
             <b>{n.headline}</b>
             {n.body && n.body !== 'Simulação.' && <p>{n.body}</p>}

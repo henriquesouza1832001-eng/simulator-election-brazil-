@@ -188,7 +188,8 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
       const data = await request('/api/career/coalition', { method: 'POST', body: JSON.stringify({ party, offer }) });
       onState(data.state);
       onNotice(data.result.message);
-    } catch (error) { onNotice(error.message); }
+      return data.result.message;
+    } catch (error) { onNotice(error.message); return error.message; }
     finally { setBusy(false); }
   }
 

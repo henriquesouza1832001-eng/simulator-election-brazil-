@@ -700,3 +700,6 @@ aside.career-rules { align-self: start; }
 .coalition-partners { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .coalition-partners li { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-left: 3px solid #2f9e62; background: var(--ds-surface, transparent); }
 .coalition-partners li span { opacity: .8; font-size: .86rem; }
+
+.coalition-answer { margin: 0; padding: 8px 12px; border-left: 3px solid var(--ds-accent, #c9a540); background: var(--ds-surface, transparent); font-size: .9rem; }
+.coalition-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: .82rem; opacity: .75; }

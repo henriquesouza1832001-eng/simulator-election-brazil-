@@ -58,7 +58,8 @@ const AUDIT = `(() => {
 
 const all = new Map();
 for (const t of tabs) {
-  const ok = await ev(`(async()=>{const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const find=()=>[...document.querySelectorAll('.tabs button')].find(x=>x.innerText.trim()===${JSON.stringify(t)});if(!find()){for(const g of [...document.querySelectorAll('.tabs button')]){g.click();await sleep(120);if(find())break;}}const b=find();if(b){b.click();return true}return false})()`);
+  const slug = t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');   // mesmo endereço de tela do HashRoute
+  const ok = await ev(`(()=>{location.hash='#/${slug}';return true})()`);
   await sleep(1400);
   // abre todos os <details> para auditar também o conteúdo recolhido
   await ev("document.querySelectorAll('details').forEach(d=>d.open=true)"); await sleep(300);

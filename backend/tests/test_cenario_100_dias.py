@@ -21,12 +21,21 @@ class CenarioCemDiasTests(unittest.TestCase):
         self.assertEqual(view["day"], 1)   # primeiro dia = dia 1, como no cabeçalho "DIA 1 DE 1461"
         self.assertFalse(view["goals"][0]["done"])   # aprovação 44 < 50
 
-    def test_meta_de_inflacao_usa_virgula_e_reage_ao_estado(self):
+    def test_meta_fiscal_usa_virgula_e_so_se_cumpre_com_alavanca(self):
+        from app.engine import fiscal_levers
         s = partida()
-        s["metrics"]["inflation"] = 5.0
-        meta = next(g for g in scenario_100.goals(s) if g["id"] == "inflacao")
-        self.assertTrue(meta["done"])
-        self.assertIn("5,0", meta["progress"])
+        meta = next(g for g in scenario_100.goals(s) if g["id"] == "fiscal")
+        self.assertFalse(meta["done"])
+        self.assertIn(",", meta["progress"])
+        fiscal_levers.apply(s, "contingenciamento", "10")
+        self.assertTrue(next(g for g in scenario_100.goals(s) if g["id"] == "fiscal")["done"])
+
+    def test_meta_de_lei_conta_projeto_enviado(self):
+        from app.engine import powers
+        s = partida()
+        self.assertFalse(next(g for g in scenario_100.goals(s) if g["id"] == "lei")["done"])
+        powers.execute(s, "empresa_privatizar", "Correios")
+        self.assertTrue(next(g for g in scenario_100.goals(s) if g["id"] == "lei")["done"])
 
     def test_balanco_fecha_uma_vez_no_centesimo_dia_com_nota_pelo_numero_de_metas(self):
         s = partida()

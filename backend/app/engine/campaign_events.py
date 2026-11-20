@@ -88,7 +88,7 @@ def tick_rivals(state: dict[str, Any], career: dict[str, Any], before: date, aft
         messages.append(text)
         try:
             from .consequences import _book, _post
-            _post(_book(state), state, {"id": f"rival-{w}", "kind": "imprensa", "headline": spec["head"].format(party=rival["party"]), "body": text, "tone": "neutro", "date": day.isoformat()})
+            _post(_book(state), state, {"id": f"rival-{w}-{rival['id']}-{kind}", "kind": "imprensa", "headline": spec["head"].format(party=rival["party"]), "body": text, "tone": "neutro", "date": day.isoformat()})
         except Exception:  # noqa: BLE001 - a notícia é acessória; nunca derruba o avanço do dia
             pass
     del events[MAX_EVENTS_KEPT:]
