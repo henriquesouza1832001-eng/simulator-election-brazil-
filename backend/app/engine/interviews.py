@@ -12,7 +12,7 @@ import re
 from datetime import date, timedelta
 from typing import Any
 
-from . import consequences, debate as deb, ledger
+from . import consequences, debate as deb, ledger, voice
 from .action_mapper import plain, tokens
 
 KINDS = {
@@ -182,8 +182,12 @@ def build_questions(state: dict[str, Any], kind: str) -> list[dict[str, Any]]:
         return stages
     pool = pool or [{"topic": "prioridades", "terms": ["governo", "proposta", "prioridade"], "fact": None, "prompt": "Quais são as suas prioridades agora e como serão financiadas?"}]
     out = []
+    leads = voice.REPORTER_LEADS.get(kind, [])
     for i in range(n):
-        out.append(dict(pool[i % len(pool)]))
+        q = dict(pool[i % len(pool)])
+        if leads and i % 2 == 0:   # metade das perguntas abre com uma deixa do repórter ou do senador (a pergunta em si não muda)
+            q["prompt"] = voice.pick(leads, f"{seed}:{i}") + q["prompt"][:1].lower() + q["prompt"][1:]
+        out.append(q)
     return out
 
 

@@ -41,13 +41,13 @@ EVENTS: dict[str, dict[str, Any]] = {
         "regional_monthly": {"support": -.08},
         "options": [("teams", "Enviar equipes móveis e insumos às unidades lotadas", 1.5), ("protocol", "Publicar protocolo e apoiar vigilância municipal", .35), ("wait", "Aguardar os dados consolidados", 0.0)]},
     "service_outage": {"title": "Falha interrompe um serviço público digital", "region": "Nacional", "region_keys": ["norte", "nordeste", "centro_oeste", "sudeste", "sul"],
-        "description": "Uma falha técnica suspende agendamentos e consultas em parte da rede federal; o contrato de manutenção entra em revisão.",
+        "description": "A fila virtual do governo digital travou: agendamentos suspensos, consultas fora do ar e o contrato de manutenção, de repente, merece uma leitura atenta.",
         "monthly": {"institutional_trust": -.5, "integrity": -.18, "approval": -.1},
-        "options": [("restore", "Ativar contingência e reparar os sistemas", .75), ("audit", "Auditar o contrato e publicar prazo de retorno", .25), ("wait", "Aguardar a contratada normalizar o serviço", 0.0)]},
+        "options": [("restore", "Ativar contingência e reparar os sistemas", .75), ("audit", "Auditar o contrato e publicar prazo de retorno", .25), ("wait", "Esperar a contratada acordar para o problema", 0.0)]},
     "integrity": {"title": "Contrato público entra sob questionamento", "region": "Nacional", "region_keys": ["norte", "nordeste", "centro_oeste", "sudeste", "sul"],
-        "description": "Documentos de um contrato federal geram dúvidas sobre preço e fiscalização. Ainda não há conclusão nem culpa atribuída.",
+        "description": "Um contrato federal amanheceu com dúvidas: preço estranho, fiscalização distraída e, por enquanto, ninguém é culpado de nada.",
         "monthly": {"integrity": -.65, "institutional_trust": -.4, "approval": -.08},
-        "options": [("independent_audit", "Abrir apuração independente e preservar documentos", .3), ("publish", "Publicar contrato, aditivos e responsáveis pela fiscalização", .05), ("wait", "Aguardar a conclusão interna", 0.0)]},
+        "options": [("independent_audit", "Abrir apuração independente e preservar documentos", .3), ("publish", "Publicar contrato, aditivos e responsáveis pela fiscalização", .05), ("wait", "Aguardar a conclusão interna, que costuma concluir pouco", 0.0)]},
 }
 
 

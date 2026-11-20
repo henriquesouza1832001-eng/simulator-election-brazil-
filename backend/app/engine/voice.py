@@ -49,6 +49,10 @@ POLL_TRAIL = [
     "O levantamento acende o alerta no comitê; ninguém assume, mas a reunião de segunda ficou mais comprida.",
     "A pesquisa não agradou: a campanha promete reagir e a margem de erro vira assunto de primeira hora.",
 ]
+REPORTER_LEADS = {
+    "entrevista": ["O repórter não larga o bloquinho: ", "Sem rodeio, a pergunta é direta: ", "Gravador ligado, câmera no rosto: ", "O microfone avança antes do sorriso: "],
+    "sabatina": ["O senador ajeita os óculos e abre o processo: ", "Com a voz de quem já leu o seu histórico: ", "Pausa longa, olhar por cima dos óculos: ", "A sala fica em silêncio para ouvir isto: "],
+}
 EXPIRED_PAUTA = "O prazo de 15 dias úteis terminou sem decisão; vale a sanção tácita: o silêncio também assina."
 EXPIRED_CRISIS = "O prazo passou, ninguém respondeu e a crise tomou a vaga do governo na pauta."
 MARKET_DESC = [

@@ -113,6 +113,8 @@ def _bump(state: dict[str, Any], key: str, delta: float) -> float:
     metrics = state["metrics"]
     low, high = METRIC_RANGES[key]
     before = float(metrics.get(key, 0))
+    if key == "approval" and delta > 0:   # popularidade alta é difícil de subir mais: o ganho encolhe conforme a aprovação passa de 50
+        delta *= max(0.25, min(1.2, (95.0 - before) / 45.0))
     metrics[key] = round(max(low, min(high, before + delta)), 2)
     from . import drivers
     drivers.note(state, key, metrics[key] - before)   # anota a causa da variação (tela "Por que mudou?")

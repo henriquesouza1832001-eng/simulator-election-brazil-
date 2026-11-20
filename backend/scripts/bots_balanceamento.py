@@ -79,10 +79,11 @@ def respond(strategy: str, state, rng: random.Random) -> None:
             pass
 
 
-def play(strategy: str, seed: int, months: int = 48) -> dict:
+def play(strategy: str, seed: int, months: int = 48, difficulty: str = "normal") -> dict:
     rng = random.Random(seed)
     state = new_game()
     state.pop("setup_pending", None)
+    state["difficulty"] = difficulty
     state["campaign_seed"] = seed
     done, blocked, unexpected = 0, 0, []
     low = {m: float(state["metrics"].get(m, 0)) for m in METRICS}
@@ -154,12 +155,13 @@ def main() -> int:
     parser.add_argument("--partidas", type=int, default=6, help="partidas por estratégia")
     parser.add_argument("--semente", type=int, default=1)
     parser.add_argument("--estrategias", default="passivo,ativista,cauteloso,populista,governante")
+    parser.add_argument("--dificuldade", default="normal", help="tranquilo, normal, dificil, complicado ou realismo_puro")
     parser.add_argument("--saida", help="grava o relatório completo em JSON")
     args = parser.parse_args()
     results, started = [], time.perf_counter()
     for strategy in args.estrategias.split(","):
         for k in range(args.partidas):
-            results.append(play(strategy, args.semente * 1000 + k))
+            results.append(play(strategy, args.semente * 1000 + k, difficulty=args.dificuldade))
         print(f"{strategy}: {args.partidas} partidas prontas ({time.perf_counter() - started:.0f}s)", flush=True)
     summary = summarize(results)
     print("\n== Fim do mandato (média, mínimo e máximo)")

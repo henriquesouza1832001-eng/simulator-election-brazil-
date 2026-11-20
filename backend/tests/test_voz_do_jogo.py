@@ -32,3 +32,28 @@ class VozDoJogoTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VozNasEntrevistasTests(unittest.TestCase):
+    def test_perguntas_de_entrevista_e_sabatina_ganham_deixa_sem_perder_o_fato(self):
+        from app.engine import interviews
+        from app.engine.state import new_game
+        s = new_game()
+        s["date"] = "2027-05-01"
+        for kind in ("entrevista", "sabatina"):
+            perguntas = interviews.build_questions(s, kind)
+            com_deixa = [q for q in perguntas if any(q["prompt"].startswith(lead) for lead in voice.REPORTER_LEADS[kind])]
+            self.assertTrue(com_deixa, kind)
+            self.assertLess(len(com_deixa), len(perguntas))   # só parte delas ganha deixa
+        base = interviews._fact_questions(s, interviews._context(s))
+        self.assertTrue(base)   # o fato (número do motor) continua na pergunta de origem
+
+    def test_deixas_nao_citam_simulacao(self):
+        for leads in voice.REPORTER_LEADS.values():
+            for lead in leads:
+                self.assertNotIn("simula", lead.lower())
+
+    def test_crises_genericas_sem_a_palavra_simulado(self):
+        from app.engine.events import EVENTS
+        for event in EVENTS.values():
+            self.assertNotIn("simula", event["description"].lower())

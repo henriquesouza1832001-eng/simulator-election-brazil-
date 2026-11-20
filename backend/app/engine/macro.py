@@ -203,7 +203,9 @@ def step(state: dict[str, Any], before: date, after: date, volatility: float = 1
     # 9) a economia do dia a dia pesa na popularidade: crescimento ajuda; desemprego e inflação alta cobram a conta
     econ = 0.8 * (growth - 2.0) - 0.9 * (unemp - 6.5) - 0.5 * (infl - 4.5)
     approval_before = float(m["approval"])
-    m["approval"] = round(_clamp(float(m["approval"]) + dt * (0.12 * econ - 0.05 * (float(m["approval"]) - 50.0)), 0.0, 100.0), 2)  # a popularidade volta à média sem mérito novo
+    from .difficulty import get_difficulty
+    opposition = float(get_difficulty(state.get("difficulty", "normal")).get("opposition_pressure", 1.0))   # oposição forte desgasta o governo todo mês; oposição fraca ajuda
+    m["approval"] = round(_clamp(float(m["approval"]) + dt * (0.12 * econ - 0.08 * (float(m["approval"]) - 50.0) - 1.6 * (opposition - 1.0)), 0.0, 100.0), 2)  # a popularidade volta à média sem mérito novo
     from . import drivers
     drivers.note(state, "approval", float(m["approval"]) - approval_before, "Economia: crescimento, inflação e desemprego")
     _sync_nation(state)
