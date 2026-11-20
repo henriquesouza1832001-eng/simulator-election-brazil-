@@ -180,9 +180,14 @@ def _speech_score(issue: str, message: str) -> tuple[int, dict[str, int]]:
                    "ataques pessoais": -personal_attack}
 
 
+def speech_issues() -> dict[str, Any]:
+    """Temas da campanha presidencial no formato que a leitura de discurso espera (rótulo, grupos e palavras-chave)."""
+    return {key: {**item, "terms": tuple(TOPIC_TERMS.get(key, ()))} for key, item in ISSUES.items() if key != "servicos"}
+
+
 def perform_campaign_action(state: dict[str, Any], activity_type: str, region: str,
                             issue: str, message: str, conduct: str = "regular",
-                            municipality_id: str | None = None) -> dict[str, Any]:
+                            municipality_id: str | None = None, reading: dict[str, Any] | None = None) -> dict[str, Any]:
     today = date.fromisoformat(state["date"])
     campaign = ensure_campaign_state(state)
     overview = campaign_overview(state)
@@ -221,6 +226,11 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
     days_cost = activity["days"] + travel_days
 
     score, rubric = _speech_score(issue, message)
+    reading_public = None
+    if reading is not None:  # leitura estruturada (Gemini ou local); a nota continua sendo decidida pelo motor
+        from . import speech_score
+        score, rubric = speech_score.score_reading(reading, issue)
+        reading_public = speech_score.public(reading, speech_issues(), {})
     quality = (score - 55) / 45
     regional = campaign["regional_support"]
     groups = campaign["group_support"]
@@ -265,7 +275,7 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
         "municipality_support": round(city_support[city_id], 1) if target_municipality else None,
         "issue": issue, "issue_label": ISSUES[issue]["label"],
         "canonical_issue_ids": list(canonical_issue_ids(issue)),
-        "message": message.strip(), "score": score, "rubric": rubric,
+        "message": message.strip(), "score": score, "rubric": rubric, "reading": reading_public,
         "support_change": round((regional_delta + conduct_result["immediate_support_delta"]) * REGIONS[region]["weight"], 2),
         "regional_change": round(regional_delta + conduct_result["immediate_support_delta"], 2),
         "municipal_change": round(local_delta + conduct_result["immediate_support_delta"], 2) if target_municipality else None,
@@ -279,7 +289,7 @@ def perform_campaign_action(state: dict[str, Any], activity_type: str, region: s
     }
     campaign["activities"].append(activity_record)
     campaign["activities"] = campaign["activities"][-40:]
-    return {"activity": activity_record, "score": score, "rubric": rubric,
+    return {"activity": activity_record, "score": score, "rubric": rubric, "reading": reading_public,
             "national_support": campaign["national_support"], "regional_support": round(regional[region], 1),
             "momentum": campaign["momentum"], "days_cost": days_cost,
             "cost_bi": activity["cost_bi"], "message": "A atividade foi registrada; o calendário do governo também avança durante a campanha."}

@@ -28,6 +28,8 @@ LABELS = [(-0.75, "Esquerda"), (-0.25, "Centro-esquerda"), (0.25, "Centro"), (0.
 FOCUS = {"PRTB": "seguranca", "DC": "seguranca", "PT": "economia", "PSOL": "integridade", "PSB": "educacao", "MDB": "saude", "PSD": "mobilidade", "PP": "mobilidade", "PL": "seguranca",
          "NOVO": "economia", "PSDB": "saude", "UNIÃO": "seguranca", "UNIAO": "seguranca", "REPUBLICANOS": "seguranca", "PDT": "educacao", "PCdoB": "economia",
          "PRTB": "seguranca", "PODE": "seguranca", "CIDADANIA": "integridade", "AVANTE": "economia", "SOLIDARIEDADE": "economia", "PV": "integridade", "REDE": "integridade"}
+FOCUS_LABEL = {"seguranca": "segurança pública", "economia": "economia e custo de vida", "integridade": "transparência e integridade", "educacao": "educação", "saude": "saúde",
+               "mobilidade": "mobilidade", "trabalho": "trabalho e renda", "servicos": "serviços públicos"}
 FALLBACK_POOL = ["PT", "MDB", "PSD", "PL", "PSB", "PP", "PSDB", "NOVO", "PSOL", "UNIÃO", "REPUBLICANOS", "PDT"]
 DEFAULT_PLAYER_SHARE = 8.0
 # Siglas fora da tabela do Congresso, com posição aproximada no espectro (classificação editorial, não oficial).

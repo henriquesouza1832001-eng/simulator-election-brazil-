@@ -437,8 +437,11 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
     polls = career.setdefault("public_polls", [])
     if any(item.get("date") == field_date.isoformat() for item in polls):
         return None
-    sample_size = _public_poll_sample_size(career)
+    from . import campaign_events, electoral_field
+    institute = campaign_events.institute_for(len(polls))
+    sample_size = max(300, round(_public_poll_sample_size(career) * institute["sample_factor"]))
     margin = round(1.96 * sqrt(0.25 / sample_size) * 100, 1)
+    house = campaign_events.house_effect(institute, electoral_field.position(career.get("party"), career.get("ideology")))
     seed = f"{career.get('seed', 1)}:public-poll:{field_date.isoformat()}"
     noise = random.Random(seed).uniform(-margin, margin)
     if career.get("phase") == "runoff_campaign":
@@ -454,7 +457,7 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
             "support": item["support"], "simulated": True,
         } for item in runoff_results if not item.get("is_player")]
     else:
-        candidate_support = round(_clamp(_projected_public_poll_support(state, career) + noise), 1)
+        candidate_support = round(_clamp(_projected_public_poll_support(state, career) + noise + house), 1)
         opponents = _opponent_supports(career, candidate_support)
     career["opponent_share"] = max((item["support"] for item in opponents), default=0.0)
     record = {
@@ -466,6 +469,7 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
         "opponents": opponents,
         "margin_of_error": margin,
         "sample_size": sample_size,
+        "institute": institute["name"], "house_effect": house,
         "simulated": True,
     }
     polls.append(record)
@@ -1007,7 +1011,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "momentum": round(career["momentum"], 1), "fatigue": career["fatigue"],
         "campaign_fund_mi": round(career["campaign_fund_mi"], 3), "spent_mi": round(career["spent_mi"], 3),
         "spending_cap_mi": OFFICES[career["office"]]["fund_mi"], "tv": tv_time.share(career.get("party")),
-        "vote_intent": vote_intent, "rivals": rivals_now, "goals": _goals(career, vote_intent, rivals_now), "opponent_share": round(career["opponent_share"], 1), "opponents": [
+        "vote_intent": vote_intent, "rivals": rivals_now, "rival_events": list(career.get("rival_events", []))[:6], "goals": _goals(career, vote_intent, rivals_now), "opponent_share": round(career["opponent_share"], 1), "opponents": [
             {"id": item["id"], "name": item["name"], "party": item["party"], "ideology": item["ideology"],
              "issue_focus": item["issue_focus"], "issue_focus_label": ISSUES[item["issue_focus"]]["label"], "simulated": True}
             for item in opponents
@@ -1871,6 +1875,8 @@ def advance_career(state: dict[str, Any], before: date, after: date) -> list[str
         _record_public_poll(state, career, campaign_start)
         messages.append("A janela eleitoral da reta final abriu. A avaliação do mandato e as novas atividades passam a afetar a tentativa de reeleição.")
     if career["phase"] in {"campaign", "runoff_campaign"}:
+        from . import campaign_events
+        messages.extend(campaign_events.tick_rivals(state, career, before, after))
         for poll_date in _campaign_poll_schedule(career):
             if before < poll_date <= after:
                 _record_public_poll(state, career, poll_date)

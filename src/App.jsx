@@ -513,7 +513,7 @@ export default function App() {
   const overviewProps = {
     request, state, go: setActiveTab, pins, onUnpin: togglePin,
     scope: !careerMode || careerOffice === 'presidente' ? 'nacional' : 'local',
-    rivals: careerOverview?.rivals || [], territory: careerOverview ? (careerOverview.campaign_territory || careerOverview.municipality || careerOverview.state_name) : null,
+    rivals: careerOverview?.rivals || [], rivalEvents: careerOverview?.rival_events || [], territory: careerOverview ? (careerOverview.campaign_territory || careerOverview.municipality || careerOverview.state_name) : null,
     title: activeTab === 'Visão geral' ? pageGuidance[0] : 'Visão geral', lead: activeTab === 'Visão geral' ? pageGuidance[1] : undefined,
     term: partyMode ? null : { label: careerMode ? careerCardLabel : 'Mandato', value: careerMode ? careerCardValue : termMonth, suffix: careerMode ? careerCardSuffix : ' / 48', progress: careerMode ? careerCardProgress : termMonth / 48 * 100, note: careerMode ? careerCardNote : `${monthsRemaining} meses restantes` },
     stats: localCareer

@@ -73,3 +73,5 @@ Cada item entra com teste e captura de tela antes de seguir para o próximo.
 - **Passo 2 feito:** metas da fase na Agenda (campanha, pré-campanha, mandato), tela de fim de mandato, vão do cartão "Poderes do cargo" e linha do tempo da Agenda corrigidos.
 - Testes: `test_coerencia_telas.py` (novo) e ajuste em `test_congress_agenda.py`.
 - Próximo: passo 3 (motor eleitoral: campanha presidencial com leitura de discurso, pesquisas por instituto, ações dos rivais).
+- **Passo 3, parte 1 feita:** leitura de discurso também na campanha presidencial sem carreira (`/api/campaign/action`); institutos de pesquisa fictícios (Datafato, Vox Pública, Brasil Real) com amostra e viés próprios, mostrados na pesquisa; rivais agem uma vez por semana (ataque, proposta, escândalo, apoio) com efeito limitado, viram notícia na Imprensa e aparecem em "Movimentos recentes" no Painel. Testes: `test_campanha_presidencial_leitura.py`, `test_campanha_rivais_institutos.py`.
+- Falta no passo 3: coalizões e convenção, tempo de TV ligado às ações, eventos de campanha (debate, decisão do TSE), apuração e Redes contando a mesma história.

@@ -963,15 +963,24 @@ def inaugural_address(request: InauguralAddressRequest) -> dict[str, Any]:
 
 
 @app.post("/api/campaign/action")
-def campaign_action(request: CampaignActionRequest) -> dict[str, Any]:
+async def campaign_action(request: CampaignActionRequest) -> dict[str, Any]:
     state = game_state()
     if (state.get("career") or {}).get("mode"):
         raise HTTPException(status_code=409, detail="Use a campanha do cargo atual na aba Carreira.")
     action_date = state["date"]
+    reading = None
+    try:  # o Gemini lê o discurso (com leitura local de reserva); o motor decide a nota
+        from .ai import speech_reader
+        from .engine.campaign import speech_issues
+        issues = speech_issues()
+        if request.issue in issues and len(request.message.strip()) >= 12:
+            reading = await speech_reader.read(request.message, request.issue, {"office": "presidente", "office_label": "Presidência", "municipality": "Brasil"}, issues, [])
+    except Exception:  # noqa: BLE001 - qualquer problema cai no cálculo antigo
+        reading = None
     try:
         result = perform_campaign_action(
             state, request.activity_type, request.region, request.issue, request.message,
-            request.conduct, request.municipality_id,
+            request.conduct, request.municipality_id, reading,
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

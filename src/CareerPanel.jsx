@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Select from './Choice.jsx';
 import TSEArchivePanel from './TSEArchivePanel';
 import MunicipalityPicker from './MunicipalityPicker';
+import SpeechReading from './SpeechReading.jsx';
 import { Page, Section } from './ui.jsx';
 import './career.css';
 import './career-debate.css';
@@ -252,7 +253,7 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
     {!overview || showSetup ? <>{setup}<details className="career-data-shortcut"><summary>Consultar candidaturas históricas do TSE</summary><TSEArchivePanel request={request} stateCode={stateCode} /></details></> : <>
       <header className="career-hero panel">
         <div className="career-hero-main"><span className="eyebrow">CARREIRA POLÍTICA · SIMULAÇÃO</span><h2>{overview.candidate_name}</h2><p>{overview.office_label} · {overview.campaign_territory || overview.state_name} · {overview.party} · {overview.ideology}</p><div className="career-tags"><span>{overview.phase === 'campaign' ? 'EM CAMPANHA' : overview.phase === 'runoff_campaign' ? '2º TURNO' : overview.phase === 'runoff_observer' ? 'AGUARDA 2º TURNO' : overview.phase === 'pre_campaign' ? 'PRÉ-CAMPANHA' : overview.phase === 'transition' && !overview.governing ? 'TRANSIÇÃO' : overview.governing ? (overview.phase === 'outgoing' ? 'GOVERNO DE SAÍDA' : 'NO CARGO') : overview.phase === 'opposition' ? 'NA OPOSIÇÃO' : 'MANDATO ENCERRADO'}</span><span>{overview.electorate}</span><span>ELEIÇÃO · {dateLabel(overview.election_date)}</span><span>REPUTAÇÃO · {number.format(overview.reputation)}/100</span></div>{overview.character?.birthplace && <div className="career-municipality-context"><b>Natural de {overview.character.birthplace.municipality}/{overview.character.birthplace.state_code}</b><span>Cidade natal do personagem; o território eleitoral é {overview.campaign_territory || overview.state_name}.</span></div>}{municipalityProfile && <div className="career-municipality-context"><b>{municipalityProfile.city_size_label} · {number.format(municipalityProfile.population_estimate)} habitantes</b><span>Estimativa municipal do IBGE, referência {municipalityProfile.population_reference_year} · código {municipalityProfile.ibge_code}</span></div>}</div>
-        <div className="career-poll"><span>{overview.phase === 'runoff_campaign' ? 'PROJEÇÃO NO 2º TURNO' : overview.result ? 'VOTOS NA ELEIÇÃO' : overview.campaign_active ? 'INTENÇÃO DE VOTO' : overview.governing ? 'AVALIAÇÃO DO MANDATO' : overview.phase === 'pre_campaign' ? 'APOIO INICIAL' : 'INTENÇÃO DE VOTO'}</span><strong>{overview.phase === 'runoff_campaign' && overview.runoff_projection?.length ? `${number.format(overview.runoff_projection.find((item) => item.is_player)?.support || 0)}%` : overview.result ? `${number.format(overview.vote_share)}%` : `${number.format(overview.governing ? overview.poll_support : (overview.vote_intent ?? overview.poll_support))}%`}</strong><small>{overview.phase === 'runoff_campaign' ? 'projeção atual ? não é pesquisa' : overview.result === 'won' ? 'vitória simulada' : overview.result === 'lost' ? 'resultado simulado' : overview.governing ? 'apoio ao mandato' : overview.phase === 'pre_campaign' ? `campanha abre em ${overview.days_until_campaign} ${Number(overview.days_until_campaign) === 1 ? 'dia' : 'dias'}` : `eleição em ${overview.days_until_election} ${Number(overview.days_until_election) === 1 ? 'dia' : 'dias'}${overview.campaign_active && overview.latest_public_poll ? ` · última pesquisa ${number.format(overview.latest_public_poll.candidate_support)}% (±${number.format(overview.latest_public_poll.margin_of_error)})` : ''}`}</small></div>
+        <div className="career-poll"><span>{overview.phase === 'runoff_campaign' ? 'PROJEÇÃO NO 2º TURNO' : overview.result ? 'VOTOS NA ELEIÇÃO' : overview.campaign_active ? 'INTENÇÃO DE VOTO' : overview.governing ? 'AVALIAÇÃO DO MANDATO' : overview.phase === 'pre_campaign' ? 'APOIO INICIAL' : 'INTENÇÃO DE VOTO'}</span><strong>{overview.phase === 'runoff_campaign' && overview.runoff_projection?.length ? `${number.format(overview.runoff_projection.find((item) => item.is_player)?.support || 0)}%` : overview.result ? `${number.format(overview.vote_share)}%` : `${number.format(overview.governing ? overview.poll_support : (overview.vote_intent ?? overview.poll_support))}%`}</strong><small>{overview.phase === 'runoff_campaign' ? 'projeção atual ? não é pesquisa' : overview.result === 'won' ? 'vitória simulada' : overview.result === 'lost' ? 'resultado simulado' : overview.governing ? 'apoio ao mandato' : overview.phase === 'pre_campaign' ? `campanha abre em ${overview.days_until_campaign} ${Number(overview.days_until_campaign) === 1 ? 'dia' : 'dias'}` : `eleição em ${overview.days_until_election} ${Number(overview.days_until_election) === 1 ? 'dia' : 'dias'}${overview.campaign_active && overview.latest_public_poll ? ` · última pesquisa ${overview.latest_public_poll.institute ? `${overview.latest_public_poll.institute}: ` : ''}${number.format(overview.latest_public_poll.candidate_support)}% (±${number.format(overview.latest_public_poll.margin_of_error)})` : ''}`}</small></div>
       </header>
       {overview.historical_compare && <aside className="panel historical-compare" aria-label="Resultado oficial e simulado"><b>Eleição de {overview.historical_compare.year}: oficial × simulado</b><p>{overview.historical_compare.text}</p>
         <ol className="results-list">{overview.historical_compare.real_top.map((c) => <li key={c.id}><span>{c.name} <small>({c.party})</small></span><b>{c.votes.toLocaleString('pt-BR')}</b><small>{c.share_pct}% · {c.result}</small></li>)}</ol></aside>}
@@ -355,20 +356,6 @@ export default function CareerPanel({ state, request, onState, onNotice, busy, s
     </>}
     {!overview && archives.length > 0 && <section className="panel career-archive-shortcut"><b>Partidas arquivadas</b><Select value={selectedArchive} onChange={(event) => setSelectedArchive(event.target.value)}><option value="">Restaurar uma partida anterior</option>{archives.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}</Select><button className="secondary-button" disabled={busy || !selectedArchive} onClick={restore}>Restaurar</button></section>}
   </section>;
-}
-
-function SpeechReading({ reading }) {
-  const mark = (ok, label) => <span className={ok ? 'reading-ok' : 'reading-miss'}>{ok ? '✓' : '✗'} {label}</span>
-  return (
-    <section className="speech-reading">
-      <h4>Como o eleitorado entendeu seu discurso <small>{reading.source === 'gemini' ? 'leitura por IA' : 'leitura automática simples'}</small></h4>
-      {reading.summary && <p>{reading.summary}</p>}
-      <p>Temas: <b>{reading.themes.join(', ') || '—'}</b> · Tom: <b>{reading.tone}</b></p>
-      {reading.promises.length > 0 && <ul>{reading.promises.map((p, i) => <li key={i}>“{p.text}” {mark(true, 'meta')} {mark(p.deadline, 'prazo')} {mark(p.funding, 'recurso')}</li>)}</ul>}
-      {reading.attacks.length > 0 && <p>Ataques a: {reading.attacks.map((a) => a.target + (a.personal ? ' (pessoal)' : '')).join(', ')}</p>}
-      {reading.flags.map((f, i) => <p key={i} className="reading-flag">{f}</p>)}
-    </section>
-  )
 }
 
 function topRival(overview) {

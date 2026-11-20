@@ -634,3 +634,7 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 
 .career-rules { align-content: start; }
 aside.career-rules { align-self: start; }
+
+.ds-rival-moves h5 { margin: 14px 0 6px; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.ds-rival-moves ul { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; font-size: .88rem; }
+.ds-rival-moves time { font-variant-numeric: tabular-nums; opacity: .65; margin-right: 6px; }

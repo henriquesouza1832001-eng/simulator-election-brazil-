@@ -8,7 +8,7 @@ import PainelMapa from './PainelMapa.jsx';
 const dateLabel = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR') : '—');
 
 /** Visão geral: manchete do dia, números, próximo passo, agenda e balanço. Os dados chegam prontos do App. */
-export default function OverviewPanel({ scope = 'nacional', rivals = [], territory, request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
+export default function OverviewPanel({ scope = 'nacional', rivals = [], rivalEvents = [], territory, request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
   const [review, setReview] = useState(null);
   useEffect(() => {
     if (!showReview) return;
@@ -32,7 +32,7 @@ export default function OverviewPanel({ scope = 'nacional', rivals = [], territo
     </Section>
 
     <div className="ds-grid-2">
-      {scope === 'nacional' ? <PainelMapa request={request} state={state} go={go} /> : <TerritorioCard territory={territory} rivals={rivals} go={go} />}
+      {scope === 'nacional' ? <PainelMapa request={request} state={state} go={go} /> : <TerritorioCard territory={territory} rivals={rivals} events={rivalEvents} go={go} />}
       <div className="ds-side">
         <section className="ds-card ds-next">
           <Badge tone={next.urgent ? 'bad' : ''}>{next.label}</Badge>
@@ -71,13 +71,14 @@ export default function OverviewPanel({ scope = 'nacional', rivals = [], territo
 }
 
 /** Cargo local ou estadual: o painel fala do território do jogador, não do país. Em campanha, mostra quem disputa e quanto cada um tem. */
-function TerritorioCard({ territory, rivals, go }) {
+function TerritorioCard({ territory, rivals, events = [], go }) {
   const sorted = [...rivals].sort((a, b) => b.support - a.support);
   return <section className="ds-card ds-territorio" aria-label="Seu território">
     <header><h4>{rivals.length ? `Quem disputa ${territory || 'o cargo'}` : territory || 'Seu território'}</h4><button type="button" className="ds-link" onClick={() => go('Indicadores')}>ver indicadores</button></header>
     {rivals.length > 0
       ? <ul className="ds-rivals">{sorted.map((r) => <li key={r.id}><span><b>{r.party}</b><small>{r.ideology} · foco: {r.issue_focus_label || '—'}</small></span><strong>{fmt(r.support, 1)}%</strong><i style={{ width: `${Math.min(100, r.support * 2)}%` }} /></li>)}</ul>
       : <p className="ds-muted">Os indicadores deste painel são do seu território. Para o quadro nacional, use a tela Indicadores.</p>}
+    {events.length > 0 && <div className="ds-rival-moves"><h5>Movimentos recentes</h5><ul>{events.slice(0, 3).map((e, i) => <li key={`${e.date}-${i}`}><time dateTime={e.date}>{dateLabel(e.date)}</time> {e.text}</li>)}</ul></div>}
     {rivals.length > 0 && <p className="ds-muted">Partidos que mais votaram na última eleição deste cargo, com força real do TSE; candidaturas simuladas.</p>}
   </section>;
 }
