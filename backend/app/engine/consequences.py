@@ -147,7 +147,8 @@ def open_crisis(state: dict[str, Any], *, crisis_id: str, action_id: str, title:
               "deadline": (after + timedelta(days=deadline_days)).isoformat(), "ledger_id": ledger_id,
               "options": [{"id": o["id"], "label": o["label"], "effects": o["effects"], "note": o.get("note"), "hook": o.get("hook")} for o in options]}
     book["pending"].append(crisis)
-    _post(book, state, {"id": crisis_id, "kind": "crise" if not regulator else "regulador", "headline": title, "body": text, "tone": "negativo", "action_id": action_id})
+    kind = "regulador" if regulator else "congresso" if action_id.startswith("pauta_") else "crise"  # projeto do Congresso à espera de sanção é pauta, não crise
+    _post(book, state, {"id": crisis_id, "kind": kind, "headline": title, "body": text, "tone": "neutro" if kind == "congresso" else "negativo", "action_id": action_id})
     return crisis
 
 
@@ -174,7 +175,11 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
             worst = crisis["options"][-1]
             _apply(state, worst["effects"])
             book["pending"].remove(crisis)
-            _post(book, state, {"id": crisis["id"] + "-exp", "kind": "crise", "headline": f"{crisis['title']}: sem resposta do governo", "body": "O prazo passou e a crise se agravou, na simulação.", "tone": "negativo", "action_id": crisis["action_id"]})
+            if str(crisis["action_id"]).startswith("pauta_"):
+                _post(book, state, {"id": crisis["id"] + "-exp", "kind": "congresso", "headline": crisis["title"].replace("aguarda sanção", "virou lei por sanção tácita"),
+                                    "body": "O prazo de 15 dias úteis terminou sem decisão; vale a sanção tácita.", "tone": "neutro", "action_id": crisis["action_id"]})
+            else:
+                _post(book, state, {"id": crisis["id"] + "-exp", "kind": "crise", "headline": f"{crisis['title']}: sem resposta do governo", "body": "O prazo passou e a crise se agravou, na simulação.", "tone": "negativo", "action_id": crisis["action_id"]})
             ledger.record(state, "crise", f"{crisis['title']} (sem resposta)", {}, {k: v for k, v in worst["effects"].items()}, status="agravada")
     return messages
 

@@ -60,7 +60,9 @@ class CongressAgendaTest(unittest.TestCase):
         before = s["metrics"]["institutional_trust"]
         consequences.tick(s, date(2027, 4, 1), date(2027, 6, 1))
         self.assertEqual([c for c in s["consequences"]["pending"] if c["action_id"].startswith("pauta_")], [])
-        self.assertTrue(any("sem resposta" in f["headline"] for f in s["consequences"]["feed"]))
+        expired = [f for f in s["consequences"]["feed"] if "sanção tácita" in f["headline"]]
+        self.assertTrue(expired)
+        self.assertEqual(expired[0]["kind"], "congresso")   # prazo de sanção é pauta do Congresso, não crise que "se agravou"
 
     def test_only_the_presidency_receives_bills_to_sanction(self):
         s = career_state("prefeito")

@@ -611,3 +611,26 @@ input[type="checkbox"] { accent-color: var(--ds-accent); width: 18px; height: 18
 .speech-reading .reading-ok { color: #1f7a45; margin-left: 6px; }
 .speech-reading .reading-miss { color: #9a6a00; margin-left: 6px; }
 .speech-reading .reading-flag { color: #a33; margin: 4px 0 0; }
+
+.ds-territorio header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ds-rivals { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 10px; }
+.ds-rivals li { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding-bottom: 8px; }
+.ds-rivals li span { display: grid; }
+.ds-rivals li small { opacity: .7; }
+.ds-rivals li strong { font-variant-numeric: tabular-nums; }
+.ds-rivals li i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--ds-accent, #c9a540); opacity: .7; }
+
+.ds-goals { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ds-goals li { display: grid; grid-template-columns: 24px 1fr auto auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--ds-border, #2a3340); background: var(--ds-surface, transparent); }
+.ds-goals li.done { opacity: .72; }
+.ds-goals li div { display: grid; gap: 2px; }
+.ds-goals li small { opacity: .75; }
+.ds-goals li em { font-style: normal; font-variant-numeric: tabular-nums; opacity: .85; }
+.ds-goal-mark { color: var(--ds-accent, #c9a540); font-weight: 700; }
+
+.ds-agenda-line li { grid-template-columns: 190px 1fr; align-items: baseline; }
+.ds-agenda-line time { grid-row: 1 / span 2; white-space: nowrap; }
+.ds-agenda-line p { grid-column: 2; margin: 0; }
+
+.career-rules { align-content: start; }
+aside.career-rules { align-self: start; }

@@ -562,9 +562,9 @@ def start_career(state: dict[str, Any], office: str, state_code: str, municipali
     spectrum_gap = abs(SPECTRUM_ORDER.index(character["political_spectrum"]) - SPECTRUM_ORDER.index(party_spectrum))
     initial_poll = _clamp(role["base_support"] + (previous_reputation - 50) * .22 + (.5 if "carismatica" in traits else 0) - spectrum_gap * .45)
     group_support = {key: 45.0 for key in GROUPS}
-    for adjustment in (SPECTRUM_GROUP_EFFECTS[character["political_spectrum"]], FAMILY_GROUP_EFFECTS[character["family_background"]]):
-        for group, amount in adjustment.items():
-            group_support[group] = _clamp(group_support[group] + amount)
+    for adjustment, weight in ((SPECTRUM_GROUP_EFFECTS[character["political_spectrum"]], 4.0), (FAMILY_GROUP_EFFECTS[character["family_background"]], 3.0)):
+        for group, amount in adjustment.items():  # diferenças entre grupos: quem cada perfil alcança melhor (só exibição; o voto sai da projeção única)
+            group_support[group] = _clamp(group_support[group] + amount * weight)
     state["career"] = {
         "mode": True, "version": 1, "office": office, "office_label": role["label"], "scope": role["scope"],
         "phase": phase, "candidate_name": candidate_name.strip() or "Candidatura do jogador", "party": party,
@@ -872,6 +872,31 @@ def _review_campaign_promises(state: dict[str, Any], career: dict[str, Any], bef
     return messages
 
 
+def _goals(career: dict[str, Any], vote_intent: float, rivals: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Metas da fase atual: o que fazer agora, com o quanto já foi feito. Servem à Agenda; não alteram o jogo."""
+    phase = career.get("phase")
+    acts = career.get("activities", [])
+    pending = sum(1 for item in career.get("campaign_promises", []) if item.get("status") == "pending")
+    n = lambda value: f"{float(value):.1f}".replace(".", ",")  # noqa: E731 - número no padrão brasileiro
+    if phase == "pre_campaign":
+        return [{"id": "base", "label": "Montar a base antes da campanha", "detail": "Use as ações de preparação (equipe, mapeamento, aliados).", "done": len(acts) >= 3, "progress": f"{min(len(acts), 3)}/3 ações", "tab": "Carreira"}]
+    if phase in {"campaign", "runoff_campaign"}:
+        top = max(rivals, key=lambda r: r["support"], default=None)
+        goals = [
+            {"id": "visitas", "label": "Fazer campanha de rua e de imprensa", "detail": "Comício, porta a porta e entrevistas movem a intenção de voto; o corpo da equipe cansa.", "done": len(acts) >= 6, "progress": f"{min(len(acts), 6)}/6 atividades", "tab": "Carreira"},
+            {"id": "debate", "label": "Participar de um debate", "detail": "Debate muda a imagem dos candidatos; exige tema e proposta claros.", "done": any(item.get("type") == "debate" for item in acts), "progress": "feito" if any(item.get("type") == "debate" for item in acts) else "ainda não", "tab": "Carreira"},
+        ]
+        if top:
+            goals.insert(0, {"id": "lider", "label": f"Passar {top['party']} na intenção de voto", "detail": f"Você tem {n(vote_intent)}%; o maior rival tem {n(top['support'])}%.", "done": vote_intent > top["support"], "progress": f"{n(vote_intent)}% contra {n(top['support'])}%", "tab": "Apuração"})
+        return goals
+    if career.get("governing") or phase == "office":
+        return [
+            {"id": "promessas", "label": "Cumprir as promessas de campanha", "detail": "O jogo confere as promessas depois de um ano no cargo.", "done": pending == 0, "progress": f"{pending} pendente(s)", "tab": "Carreira"},
+            {"id": "aprovacao", "label": "Manter aprovação acima de 50%", "detail": f"Hoje: {n(career.get('poll_support', 0))}%.", "done": float(career.get("poll_support", 0)) >= 50, "progress": f"{n(career.get('poll_support', 0))}%", "tab": "Indicadores"},
+        ]
+    return [{"id": "proxima", "label": "Escolher a próxima candidatura ou cargo", "detail": "A carreira continua; veja as opções na tela Carreira.", "done": False, "progress": "", "tab": "Carreira"}]
+
+
 def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     career = state.get("career")
     if not career or not career.get("mode"):
@@ -890,6 +915,11 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
     last_action = career.get("last_action_date")
     wait = max(0, 7 - (today - date.fromisoformat(last_action)).days) if last_action else 0
     opponents = _ensure_opponents(career)
+    # Um só número de intenção de voto: a projeção que o motor usa para decidir a eleição (sem o ruído da pesquisa pública).
+    vote_intent = round(_projected_public_poll_support(state, career), 1)
+    group_mean = sum(float(career["group_support"][key]) for key in GROUPS) / len(GROUPS)
+    rivals_now = [{"id": r["id"], "name": r["name"], "party": r["party"], "ideology": r["ideology"], "issue_focus_label": r.get("issue_focus_label"), "support": r["support"],
+                   "real_share_pct": r.get("real_share_pct")} for r in _opponent_supports(career, vote_intent)] if career.get("phase") in {"pre_campaign", "campaign"} else []
     role = OFFICES[career["office"]]
     governance = career.get("governance") or {}
     _ensure_scaled_governance_budget(career, governance)
@@ -977,7 +1007,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "momentum": round(career["momentum"], 1), "fatigue": career["fatigue"],
         "campaign_fund_mi": round(career["campaign_fund_mi"], 3), "spent_mi": round(career["spent_mi"], 3),
         "spending_cap_mi": OFFICES[career["office"]]["fund_mi"], "tv": tv_time.share(career.get("party")),
-        "opponent_share": round(career["opponent_share"], 1), "opponents": [
+        "vote_intent": vote_intent, "rivals": rivals_now, "goals": _goals(career, vote_intent, rivals_now), "opponent_share": round(career["opponent_share"], 1), "opponents": [
             {"id": item["id"], "name": item["name"], "party": item["party"], "ideology": item["ideology"],
              "issue_focus": item["issue_focus"], "issue_focus_label": ISSUES[item["issue_focus"]]["label"], "simulated": True}
             for item in opponents
@@ -985,7 +1015,7 @@ def career_overview(state: dict[str, Any]) -> dict[str, Any] | None:
         "result": career.get("result"), "vote_share": career.get("vote_share"),
         "conduct_review": career.get("conduct_review"), "electoral_result": career.get("electoral_result"),
         "can_start_campaign": career.get("phase") in {"opposition", "term_complete"},
-        "groups": [{"key": key, "label": label, "support": round(career["group_support"][key], 1)} for key, label in GROUPS.items()],
+        "groups": [{"key": key, "label": label, "support": round(_clamp(vote_intent + (career["group_support"][key] - group_mean)), 1)} for key, label in GROUPS.items()],
         "activities": list(reversed(career["activities"][-10:])),
         "campaign_city_support": campaign_city_support,
         "debate_prompts": {key: career_debate_prompt(career, key) for key in ISSUES},

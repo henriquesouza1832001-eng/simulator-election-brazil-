@@ -67,3 +67,9 @@ Falta:
 5. **Limpeza de CSS e telas antigas** (F).
 
 Cada item entra com teste e captura de tela antes de seguir para o próximo.
+
+## Andamento (19 nov. 2026)
+- **Passo 1 feito:** uma só "Intenção de voto" (a projeção que o motor usa na eleição; a pesquisa pública aparece como nota com margem), grupos em torno dela e diferentes entre si, rivais com apoio no Painel; Painel de cargo local sem mapa do país nem mercado; Instituições e Reguladores só para presidente; sem crise nacional genérica para candidato ou cargo local; projeto aguardando sanção sai de "Crise" e vira pauta do Congresso.
+- **Passo 2 feito:** metas da fase na Agenda (campanha, pré-campanha, mandato), tela de fim de mandato, vão do cartão "Poderes do cargo" e linha do tempo da Agenda corrigidos.
+- Testes: `test_coerencia_telas.py` (novo) e ajuste em `test_congress_agenda.py`.
+- Próximo: passo 3 (motor eleitoral: campanha presidencial com leitura de discurso, pesquisas por instituto, ações dos rivais).

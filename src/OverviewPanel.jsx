@@ -8,7 +8,7 @@ import PainelMapa from './PainelMapa.jsx';
 const dateLabel = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR') : '—');
 
 /** Visão geral: manchete do dia, números, próximo passo, agenda e balanço. Os dados chegam prontos do App. */
-export default function OverviewPanel({ request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
+export default function OverviewPanel({ scope = 'nacional', rivals = [], territory, request, state, term, stats, customize, next, upcoming, last, calendar, governing, skip, showReview, showBalance, go, pins = [], onUnpin }) {
   const [review, setReview] = useState(null);
   useEffect(() => {
     if (!showReview) return;
@@ -16,14 +16,14 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
   }, [state?.date, showReview]);
 
   const crisis = state.active_crises?.[0];
-  const hero = showReview
+  const hero = showReview && next.label !== 'FIM DO MANDATO'
     ? { ...headline(review, crisis), label: 'Hoje no país' }
     : { mood: next.urgent ? 'crise' : 'calmo', title: next.title, text: next.text, label: next.label };
 
   return <section className="ds-page">
     <Hero name="painel" mood={hero.mood} label={hero.label} title={hero.title} text={hero.text} badge={term ? `${term.label} ${term.value}${term.suffix}` : undefined} />
 
-    <MercadoFaixa request={request} state={state} go={go} />
+    {scope === 'nacional' && <MercadoFaixa request={request} state={state} go={go} />}
 
     <Section title={stats.title}>
       <div className="ds-stats">{stats.items.map((s) => <Stat key={s.label} label={s.label} value={s.value} unit={s.unit} note={s.note} />)}</div>
@@ -32,7 +32,7 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
     </Section>
 
     <div className="ds-grid-2">
-      <PainelMapa request={request} state={state} go={go} />
+      {scope === 'nacional' ? <PainelMapa request={request} state={state} go={go} /> : <TerritorioCard territory={territory} rivals={rivals} go={go} />}
       <div className="ds-side">
         <section className="ds-card ds-next">
           <Badge tone={next.urgent ? 'bad' : ''}>{next.label}</Badge>
@@ -67,5 +67,17 @@ export default function OverviewPanel({ request, state, term, stats, customize, 
     </div>
 
     {showBalance && <details className="ds-fold"><summary>Balanço do mandato</summary><MandateReview request={request} state={state} data={review} /></details>}
+  </section>;
+}
+
+/** Cargo local ou estadual: o painel fala do território do jogador, não do país. Em campanha, mostra quem disputa e quanto cada um tem. */
+function TerritorioCard({ territory, rivals, go }) {
+  const sorted = [...rivals].sort((a, b) => b.support - a.support);
+  return <section className="ds-card ds-territorio" aria-label="Seu território">
+    <header><h4>{rivals.length ? `Quem disputa ${territory || 'o cargo'}` : territory || 'Seu território'}</h4><button type="button" className="ds-link" onClick={() => go('Indicadores')}>ver indicadores</button></header>
+    {rivals.length > 0
+      ? <ul className="ds-rivals">{sorted.map((r) => <li key={r.id}><span><b>{r.party}</b><small>{r.ideology} · foco: {r.issue_focus_label || '—'}</small></span><strong>{fmt(r.support, 1)}%</strong><i style={{ width: `${Math.min(100, r.support * 2)}%` }} /></li>)}</ul>
+      : <p className="ds-muted">Os indicadores deste painel são do seu território. Para o quadro nacional, use a tela Indicadores.</p>}
+    {rivals.length > 0 && <p className="ds-muted">Partidos que mais votaram na última eleição deste cargo, com força real do TSE; candidaturas simuladas.</p>}
   </section>;
 }

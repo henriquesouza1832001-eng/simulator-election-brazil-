@@ -436,9 +436,13 @@ export default function App() {
       : 'Não foi possível consultar o estado do serviço. O jogo continua disponível e usa o fallback local quando necessário.';
   const presidentCareer = !careerMode || (careerOffice === 'presidente' && careerOverview?.governing);
   const localCareer = careerMode && careerOffice !== 'presidente';
-  const careerCards = localCareer ? [
-    { label: 'Intenção de voto', value: careerOverview.poll_support, unit: '%', detail: 'Pesquisa simulada no seu território', tone: 'green' },
-    { label: 'Apoio local', value: careerOverview.local_support, unit: '%', detail: careerOverview.campaign_territory },
+  const careerCards = localCareer && careerOverview?.governing ? [
+    { label: 'Aprovação do mandato', value: careerOverview.poll_support, unit: '%', detail: `Avaliação em ${careerOverview.campaign_territory || careerOverview.state_name}`, tone: 'green' },
+    { label: 'Reputação', value: careerOverview.reputation, unit: '/100', detail: 'Construída na militância e no mandato' },
+    { label: 'Compromissos pendentes', value: careerOverview.pending_campaign_promises, unit: '', detail: 'Promessas de campanha que podem ser cobradas' },
+  ] : localCareer ? [
+    { label: 'Intenção de voto', value: careerOverview.vote_intent ?? careerOverview.poll_support, unit: '%', detail: `Projeção para a eleição em ${careerOverview.campaign_territory || 'seu território'}`, tone: 'green' },
+    ...(careerOverview.rivals?.length ? [(() => { const top = [...careerOverview.rivals].sort((a, b) => b.support - a.support)[0]; return { label: 'Maior rival', value: top.support, unit: '%', detail: `${top.party} · foco: ${top.issue_focus_label || '—'}`, tone: 'amber' } })()] : []),
     { label: 'Reputação', value: careerOverview.reputation, unit: '/100', detail: 'Construída na militância e no mandato' },
     { label: 'Fundo de campanha', value: careerOverview.campaign_fund_mi, unit: ' mi', detail: 'Recurso fictício disponível', tone: 'amber' },
     { label: 'Embalo', value: careerOverview.momentum, unit: '', detail: 'Tendência recente da campanha' },
@@ -464,7 +468,7 @@ export default function App() {
   ] : [
     { label: 'Painel', items: ['Visão geral', 'Mercado', 'Indicadores', 'Histórico', 'Carimbos'] },
     { label: careerMode && careerOverview?.governing ? officeTabLabel : 'Governo', items: careerMode ? (careerOverview?.governing ? ['Mandato', 'Competências', ...(['presidente', 'governador'].includes(careerOffice) ? ['Empresas'] : []), ...(careerOffice === 'presidente' ? ['Projetos'] : []), ...(['presidente', 'governador', 'prefeito'].includes(careerOffice) ? ['Obras e mapa'] : [])] : []) : ['Medidas', 'Competências', 'Empresas', 'Orçamento', 'Projetos', 'Obras e mapa', 'Crises'] },
-    { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', 'Instituições', 'Reguladores', ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
+    { label: 'Política', items: careerMode ? ['Carreira', 'Apuração', ...(careerOffice === 'presidente' ? ['Instituições', 'Reguladores'] : []), ...(careerOffice === 'presidente' && careerOverview?.governing ? ['Tramitação', 'Nomeações'] : []), ...(['vereador', 'deputado_estadual', 'deputado_federal', 'senador', 'governador', 'prefeito'].includes(careerOffice) && careerOverview?.governing ? ['Tramitação'] : [])] : ['Carreira', 'Eleição', 'Apuração', 'Semana', 'Congresso', 'Tramitação', 'Instituições', 'Reguladores', 'Nomeações'] },
     { label: 'Mundo', items: [...(presidentCareer ? ['Diplomacia'] : []), 'Leis e história'] },
     { label: 'Agenda', items: ['Agenda', 'Imprensa', 'Redes', 'Entrevistas', 'Acontecimentos'] },
     { label: 'Sobre', items: ['O jogo', 'Termos', 'Créditos'] },
@@ -497,7 +501,10 @@ export default function App() {
   const nextEvent = state.events?.[0];
   const mainTab = careerMode ? 'Carreira' : 'Medidas';
   const mainLabel = careerMode ? 'Acompanhar carreira' : 'Preparar uma decisão';
-  const overviewNext = localCareer
+  const mandateOver = !partyMode && !localCareer && ['former_president', 'detained_after_failed_rupture', 'former_official'].includes(state.office_status);
+  const overviewNext = mandateOver
+    ? { label: 'FIM DO MANDATO', title: 'Seu mandato terminou', text: 'Não há mais decisões do cargo a tomar. Veja o balanço do mandato e o histórico ou comece uma nova carreira.', urgent: false, actions: [{ label: 'Começar nova carreira', tab: 'Carreira', primary: true }, { label: 'Ver histórico', tab: 'Histórico' }] }
+    : localCareer
     ? { label: careerNextStep.label, title: careerNextStep.title, text: careerNextStep.text, urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }, { label: 'Ver acontecimentos', tab: 'Acontecimentos' }] }
     : nextCrisis ? { label: 'Crise em andamento', title: nextCrisis.title, text: nextCrisis.description, urgent: true, actions: [{ label: careerMode ? 'Ver situação da carreira' : 'Ver opções de resposta', tab: careerMode ? 'Carreira' : 'Crises', primary: true }, { label: 'Abrir agenda', tab: 'Agenda' }] }
       : nextEvent ? { label: nextEvent.days_until === 0 ? 'Acontece hoje' : `Próximo evento · em ${nextEvent.days_until} ${Number(nextEvent.days_until) === 1 ? 'dia' : 'dias'}`, title: nextEvent.title, text: nextEvent.description, urgent: false, actions: [{ label: mainLabel, tab: mainTab, primary: true }, { label: 'Abrir agenda', tab: 'Agenda' }] }
@@ -505,6 +512,8 @@ export default function App() {
   const monthsToElection = careerOverview?.days_until_campaign;
   const overviewProps = {
     request, state, go: setActiveTab, pins, onUnpin: togglePin,
+    scope: !careerMode || careerOffice === 'presidente' ? 'nacional' : 'local',
+    rivals: careerOverview?.rivals || [], territory: careerOverview ? (careerOverview.campaign_territory || careerOverview.municipality || careerOverview.state_name) : null,
     title: activeTab === 'Visão geral' ? pageGuidance[0] : 'Visão geral', lead: activeTab === 'Visão geral' ? pageGuidance[1] : undefined,
     term: partyMode ? null : { label: careerMode ? careerCardLabel : 'Mandato', value: careerMode ? careerCardValue : termMonth, suffix: careerMode ? careerCardSuffix : ' / 48', progress: careerMode ? careerCardProgress : termMonth / 48 * 100, note: careerMode ? careerCardNote : `${monthsRemaining} meses restantes` },
     stats: localCareer
@@ -567,7 +576,7 @@ export default function App() {
         <section className="panel compact-panel"><div className="panel-heading small"><div><div className="eyebrow">REGISTRO</div><h2>Últimas decisões</h2></div></div>{state.recent_actions?.length ? state.recent_actions.slice(0, 3).map((action) => <div className="decision" key={action.id}><span>✓</span><div><b>{action.title}</b><small>{new Date(`${action.date}T12:00:00`).toLocaleDateString('pt-BR')} · {action.kind}</small></div></div>) : <p className="empty-state">Nenhuma medida assinada ainda.</p>}</section></aside>
       </div>}</>}
 
-      {activeTab === 'Agenda' && <AgendaPanel state={state} />}
+      {activeTab === 'Agenda' && <AgendaPanel state={state} goals={careerOverview?.goals || []} campaign={Boolean(careerOverview?.campaign_active)} go={setActiveTab} />}
 
       {activeTab === 'Diplomacia' && <DiplomacyPanel date={state.date} authEnabled={authConfig?.enabled} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} />}
 

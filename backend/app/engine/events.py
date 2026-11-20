@@ -171,7 +171,9 @@ def process_events(state: dict[str, Any], before: date, after: date) -> list[str
             pressure = get_difficulty(state.get("difficulty", "normal"))["event_pressure"]
             chance = max(.05, min(.65, .24 * pressure))
             active_count = sum(item.get("status") == "active" for item in state["active_crises"])
-            if active_count < 2 and rng.random() < chance:
+            career = state.get("career") or {}
+            local_only = bool(career.get("mode")) and career.get("office") != "presidente"  # crise nacional genérica não é problema de prefeito, governador ou parlamentar
+            if active_count < 2 and not local_only and rng.random() < chance:
                 event = _make_follow_up(state, cursor, rng) or _make_event(state, cursor, rng, pressure)
                 state["active_crises"].append(event)
                 _add_news(state, event)
