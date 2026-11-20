@@ -11,7 +11,7 @@ import hashlib
 from datetime import date, timedelta
 from typing import Any
 
-from . import ledger
+from . import ledger, voice
 from .legislature import PARTIES
 
 FEED_LIMIT = 120
@@ -92,18 +92,18 @@ def schedule(state: dict[str, Any], *, action_id: str, title: str, domain: str, 
     lean = LEAN.get(action_id, 0.0)
     items = [{"kind": "imprensa", "after": 3 + int(_roll(seed + "p") * 10),
               "headline": f"{'Governo' if not local else 'Gestão'} {TONE_WORDS['up'] if direction > 0 else TONE_WORDS['down']} com a decisão: {title}",
-              "body": "Jornais e portais repercutem a decisão, na simulação. A avaliação de especialistas varia conforme o campo político.", "tone": "positivo" if direction > 0 else "negativo",
+              "body": voice.pick(voice.PRESS_UP if direction > 0 else voice.PRESS_DOWN, seed + "b"), "tone": "positivo" if direction > 0 else "negativo",
               "effects": {"approval": 0.3 * direction} if not local else {"trust": 0.3 * direction}}]
     if not local and abs(lean) >= 0.3:
         for party in _opposing_parties(lean):
             items.append({"kind": "congresso", "after": 6 + int(_roll(seed + party) * 20), "headline": f"Bancada do {party} critica: {title}",
-                          "body": f"O {party} anuncia oposição à medida, na simulação, e pode dificultar votações ligadas ao tema.", "tone": "negativo", "effects": {"congress_support": -0.6}})
+                          "body": voice.pick(voice.OPPOSITION, seed + party).format(party=party), "tone": "negativo", "effects": {"congress_support": -0.6}})
         for party in _supporting_parties(lean)[:1]:
             items.append({"kind": "congresso", "after": 8 + int(_roll(seed + party + "s") * 15), "headline": f"Bancada do {party} apoia: {title}",
-                          "body": f"O {party} defende a medida, na simulação, e promete ajudar na tramitação.", "tone": "positivo", "effects": {"congress_support": 0.5}})
+                          "body": voice.pick(voice.SUPPORT, seed + party).format(party=party), "tone": "positivo", "effects": {"congress_support": 0.5}})
     if not local and domain in {"economia", "banco", "empresas", "exterior"}:
         items.append({"kind": "mercado", "after": 2 + int(_roll(seed + "m") * 6), "headline": f"Mercado reage a: {title}",
-                      "body": "Investidores reavaliam risco e câmbio, na simulação, conforme a credibilidade da medida.", "tone": "positivo" if direction > 0 else "negativo",
+                      "body": voice.pick(voice.MARKET_BY_DECISION, seed + "mk"), "tone": "positivo" if direction > 0 else "negativo",
                       "effects": {"institutional_trust": 0.4 * direction}})
     for it in items:
         days = it.pop("after")
@@ -177,9 +177,9 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
             book["pending"].remove(crisis)
             if str(crisis["action_id"]).startswith("pauta_"):
                 _post(book, state, {"id": crisis["id"] + "-exp", "kind": "congresso", "headline": crisis["title"].replace("aguarda sanção", "virou lei por sanção tácita"),
-                                    "body": "O prazo de 15 dias úteis terminou sem decisão; vale a sanção tácita.", "tone": "neutro", "action_id": crisis["action_id"]})
+                                    "body": voice.EXPIRED_PAUTA, "tone": "neutro", "action_id": crisis["action_id"]})
             else:
-                _post(book, state, {"id": crisis["id"] + "-exp", "kind": "crise", "headline": f"{crisis['title']}: sem resposta do governo", "body": "O prazo passou e a crise se agravou, na simulação.", "tone": "negativo", "action_id": crisis["action_id"]})
+                _post(book, state, {"id": crisis["id"] + "-exp", "kind": "crise", "headline": f"{crisis['title']}: sem resposta do governo", "body": voice.EXPIRED_CRISIS, "tone": "negativo", "action_id": crisis["action_id"]})
             ledger.record(state, "crise", f"{crisis['title']} (sem resposta)", {}, {k: v for k, v in worst["effects"].items()}, status="agravada")
     return messages
 

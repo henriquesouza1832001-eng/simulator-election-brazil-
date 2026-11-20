@@ -101,7 +101,7 @@ def _make_event(state: dict[str, Any], current: date, rng: random.Random,
     return {"id": f"{kind}-{current:%Y%m}", "kind": kind, "date": current.isoformat(), "title": template["title"],
             "region": template["region"], "severity": severity, "status": "active", "days_active": 0,
             "region_keys": template.get("region_keys", []), "regional_monthly_effects": template.get("regional_monthly", {}),
-            "description": f"Evento fictício do simulador: {template['description']}", "monthly_effects": template["monthly"],
+            "description": template["description"], "monthly_effects": template["monthly"],
             "options": options, "simulated": True}
 
 
@@ -136,7 +136,7 @@ def _make_follow_up(state: dict[str, Any], current: date, rng: random.Random) ->
             "title": FOLLOW_UP_TITLES[memory["kind"]], "region": template["region"],
             "severity": severity, "status": "active",
             "region_keys": template.get("region_keys", []), "regional_monthly_effects": template.get("regional_monthly", {}),
-            "description": (f"Evento fictício do simulador: o problema voltou à pauta depois da resposta dada a "
+            "description": (f"O problema voltou à pauta depois da resposta dada a "
                             f"'{memory['original_title']}' em {memory['source_date']}. A equipe precisa decidir se corrige a causa."),
             "monthly_effects": template["monthly"], "options": options, "simulated": True,
             "follow_up_of": memory["id"], "follow_up_number": count}
@@ -177,7 +177,7 @@ def process_events(state: dict[str, Any], before: date, after: date) -> list[str
                 event = _make_follow_up(state, cursor, rng) or _make_event(state, cursor, rng, pressure)
                 state["active_crises"].append(event)
                 _add_news(state, event)
-                messages.append(f"Evento simulado: {event['title'].lower()}.")
+                messages.append(f"Acontecimento: {event['title'].lower()}.")
         cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
 
     for crisis in state["active_crises"]:

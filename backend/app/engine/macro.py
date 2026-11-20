@@ -20,6 +20,8 @@ import math
 from datetime import date
 from typing import Any
 
+from . import voice
+
 NEUTRAL_REAL = 4.5       # juro real neutro (% a.a.)
 POTENTIAL = 2.2          # crescimento potencial (% a.a.)
 NAIRU = 6.0              # desemprego de equilíbrio (%)
@@ -77,7 +79,7 @@ def _news(state: dict[str, Any], text: str, bolsa_pct: float, cambio_pct: float,
     if abs(bolsa_pct) >= 2.0 or abs(cambio_pct) >= 1.5:
         board = state.setdefault("simulated_news", [])
         board.insert(0, {"id": f"mkt-{state.get('date')}-{len(macro['news'])}", "date": state.get("date"), "title": text, "region": "Nacional",
-                         "description": "Reação simulada do mercado financeiro.", "simulated": True})
+                         "description": voice.pick(voice.MARKET_DESC, str(state.get("date")) + text), "simulated": True})
         del board[20:]
 
 
@@ -113,7 +115,8 @@ def react(state: dict[str, Any], effects: dict[str, float], cost_bi: float = 0.0
         verb_d = "sobe" if cambio > 0 else "cai"
         verb_b = "sobe" if bolsa > 0 else "cai"
         quoted = label if "“" in label else f"“{label}”"
-        _news(state, f"Mercado reage a {quoted}: dólar {verb_d} {_pct(abs(cambio), False)}, bolsa {verb_b} {_pct(abs(bolsa), False)}, risco-país {'+' if risco >= 0 else '−'}{abs(round(risco))} pontos.",
+        _news(state, voice.market_reaction(f"{state.get('campaign_seed', 1)}:{state.get('date')}:{label}", quoted, verb_d, verb_b, _pct(abs(cambio), False), _pct(abs(bolsa), False),
+                                           f"{'+' if risco >= 0 else '−'}{abs(round(risco))}"),
               bolsa, cambio, risco, label)
     return {"bolsa_pct": round(bolsa, 2), "cambio_pct": round(cambio, 2), "risco_bps": round(risco, 1)}
 
@@ -208,7 +211,7 @@ def step(state: dict[str, Any], before: date, after: date, volatility: float = 1
     bolsa_pct = (macro["bolsa"] / old["bolsa"] - 1) * 100
     risco_bps = macro["risco"] - old["risco"]
     if abs(bolsa_pct) >= 6 or abs(cambio_pct) >= 4 or abs(risco_bps) >= 40:
-        text = f"Mercado em movimento: dólar {_pct(cambio_pct)}, bolsa {_pct(bolsa_pct)}, risco-país {'+' if risco_bps >= 0 else '−'}{abs(round(risco_bps))} pontos no período."
+        text = voice.market_day(f"{state.get('campaign_seed', 1)}:{after.isoformat()}", bolsa_pct, cambio_pct, risco_bps, _pct, lambda r: f"{'+' if r >= 0 else '−'}{abs(round(r))} pontos")
         _news(state, text, bolsa_pct, cambio_pct, risco_bps, "movimento do período")
         messages.append(text)
     month = after.isoformat()[:7]

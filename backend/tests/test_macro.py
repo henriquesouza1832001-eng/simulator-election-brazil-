@@ -55,7 +55,7 @@ class DecisoesMexemNoMercado(unittest.TestCase):
         state = new_game()
         powers.execute(state, "jus_8jan_manter")
         self.assertTrue(state["macro"]["news"])
-        self.assertIn("Mercado reage", state["macro"]["news"][0]["text"])
+        self.assertTrue(all(word in state["macro"]["news"][0]["text"] for word in ("dólar", "bolsa", "risco-país")))
         self.assertNotIn("cai +", state["macro"]["news"][0]["text"])
 
     def test_envio_de_pec_mexe_um_pouco_e_a_rejeicao_desfaz(self):
