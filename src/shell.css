@@ -681,3 +681,12 @@ aside.career-rules { align-self: start; }
 .lever-card li small .good { color: #4cb985; }
 .lever-card li small .bad { color: #e0826f; }
 .lever-card li em { font-style: normal; font-size: .78rem; color: #d6a85a; }
+
+.bloc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0; }
+.bloc-card { border: 1px solid var(--ds-line-2, #2a3340); border-left-width: 3px; padding: 10px 12px; display: grid; gap: 6px; background: var(--ds-surface, transparent); }
+.bloc-card.bloc-base { border-left-color: #2f9e62; }
+.bloc-card.bloc-centrao { border-left-color: #c9a540; }
+.bloc-card.bloc-oposicao { border-left-color: #c2503f; }
+.bloc-card header { display: grid; gap: 2px; }
+.bloc-card header span, .bloc-card small { opacity: .78; font-size: .84rem; }
+.bloc-card div { display: flex; flex-wrap: wrap; gap: 6px; }

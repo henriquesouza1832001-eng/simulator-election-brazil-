@@ -32,6 +32,7 @@ REGULATORS: dict[str, dict[str, Any]] = {
 }
 
 # risco jurídico (0 a 1) por ação presidencial; o padrão depende do instrumento
+LIMINAR_MIN_RISK = 0.30   # risco efetivo a partir do qual o STF decide uma liminar logo após o ajuizamento
 RISK = {"bc_revogar_autonomia": 0.35, "bc_pressao_juros": 0.02, "bc_moeda_comum": 0.30, "bc_autonomia_constitucional": 0.15, "bc_meta_inflacao": 0.04,
         "defesa_bomba": 0.90, "defesa_glo": 0.15, "defesa_intervencao": 0.30, "defesa_estado_defesa": 0.40, "defesa_guerra": 0.30, "defesa_alcantara": 0.12,
         "seg_armas_afrouxar": 0.35, "seg_armas_restringir": 0.10, "seg_estatuto_alterar": 0.15, "seg_desmilitarizar": 0.25,
@@ -91,6 +92,9 @@ def schedule_review(state: dict[str, Any], *, action_id: str, approval: str, tit
     case = {"id": f"adi-{len(r['cases']) + len(r['decisions']) + 1}-{state['date']}", "regulator": "stf", "action_id": action_id, "title": title,
             "risk": risk, "ledger_id": ledger_id, "sets": dict(sets), "effects": dict(effects), "filed": today.isoformat(),
             "decide_on": (today + timedelta(days=45 + int(_roll(f"{action_id}:{state['date']}:when") * 75))).isoformat(), "status": "em julgamento"}
+    if risk * (1 - 0.6 * court_alignment(state)) >= LIMINAR_MIN_RISK:   # ato de risco jurídico alto: o pedido de liminar sai em 7 a 15 dias
+        case["liminar_on"] = (today + timedelta(days=7 + int(_roll(f"{action_id}:{state['date']}:liminar") * 9))).isoformat()
+        case["liminar"] = "pendente"
     r["cases"].append(case)
     if risk >= 0.2:
         consequences.open_crisis(
@@ -117,6 +121,7 @@ def _revert(state: dict[str, Any], case: dict[str, Any]) -> None:
     for path in case["sets"]:
         powers._set(state, path, powers._default_for(path))
     st = powers.structure(state)
+    case["_removed_done"] = [d for d in st["done"] if d.startswith(case["action_id"])]
     st["done"] = [d for d in st["done"] if not d.startswith(case["action_id"])]
     for key, value in case["effects"].items():
         if key == "primary_balance":
@@ -125,23 +130,62 @@ def _revert(state: dict[str, Any], case: dict[str, Any]) -> None:
             powers._bump(state, key, -value * 0.6)
 
 
+def _liminar(state: dict[str, Any], case: dict[str, Any], before: date, after: date) -> list[str]:
+    """Pedido de liminar em atos de risco alto: sai em 7 a 15 dias, suspende o ato até o julgamento do mérito."""
+    if case.get("liminar") != "pendente" or not (before < date.fromisoformat(case["liminar_on"]) <= after):
+        return []
+    chance = case["risk"] * (1 - 0.6 * court_alignment(state)) * 0.8
+    m = state.setdefault("metrics", {})
+    if _roll(f"{state.get('campaign_seed', 1)}:{case['id']}:liminar") < chance:
+        _revert(state, case)
+        case["liminar"] = "concedida"
+        m["institutional_trust"] = round(max(0, float(m.get("institutional_trust", 50)) - 1.0), 2)
+        m["approval"] = round(max(0, float(m.get("approval", 50)) - 0.6), 2)
+        return [f"O STF concedeu liminar e suspendeu o ato até o julgamento do mérito: {case['title']}."]
+    case["liminar"] = "negada"
+    m["institutional_trust"] = round(min(100, float(m.get("institutional_trust", 50)) + 0.2), 2)
+    return [f"O STF negou a liminar contra o ato: {case['title']}. O mérito será julgado depois."]
+
+
+def _restore(state: dict[str, Any], case: dict[str, Any]) -> None:
+    """Liminar revogada: devolve ao ato o que a suspensão tirou (estrutura, marcas de execução e os efeitos revertidos)."""
+    from . import powers
+    from .fiscal import record_policy_balance_delta
+    for path, value in case["sets"].items():
+        powers._set(state, path, value)
+    st = powers.structure(state)
+    for done in case.get("_removed_done", []):
+        if done not in st["done"]:
+            st["done"].append(done)
+    for key, value in case["effects"].items():
+        if key == "primary_balance":
+            record_policy_balance_delta(state, value * 0.6)
+        elif key in powers.METRIC_RANGES:
+            powers._bump(state, key, value * 0.6)
+
+
 def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
     r = _st(state)
     messages: list[str] = []
     still = []
     for case in r["cases"]:
+        messages.extend(_liminar(state, case, before, after))
         if before < date.fromisoformat(case["decide_on"]) <= after:
             chance = case["risk"] * (1 - 0.6 * court_alignment(state))
             struck = _roll(f"{state.get('campaign_seed', 1)}:{case['id']}") < chance
             m = state.setdefault("metrics", {})
+            granted = case.get("liminar") == "concedida"
             if struck:
-                _revert(state, case)
-                m["institutional_trust"] = round(max(0, float(m.get("institutional_trust", 50)) - 1.5), 2)
-                m["approval"] = round(max(0, float(m.get("approval", 50)) - 1.0), 2)
-                outcome, text = "suspenso", f"O STF suspendeu, na simulação: {case['title']}."
+                if not granted:   # com liminar concedida o ato já está suspenso: o mérito só confirma
+                    _revert(state, case)
+                m["institutional_trust"] = round(max(0, float(m.get("institutional_trust", 50)) - (0.5 if granted else 1.5)), 2)
+                m["approval"] = round(max(0, float(m.get("approval", 50)) - (0.3 if granted else 1.0)), 2)
+                outcome, text = "suspenso", f"O STF julgou o mérito e derrubou o ato: {case['title']}."
             else:
+                if granted:
+                    _restore(state, case)
                 m["institutional_trust"] = round(min(100, float(m.get("institutional_trust", 50)) + 0.5), 2)
-                outcome, text = "mantido", f"O STF manteve, na simulação: {case['title']}."
+                outcome, text = "mantido", (f"O STF revogou a liminar e manteve o ato: {case['title']}." if granted else f"O STF manteve o ato: {case['title']}.")
             case.update(status=outcome, decided=after.isoformat(), chance_pct=round(chance * 100))
             r["decisions"].insert(0, case)
             del r["decisions"][40:]
@@ -173,7 +217,7 @@ def _audits(state: dict[str, Any], after: date) -> list[str]:
         if "integrity" in m:
             m["integrity"] = round(max(0, float(m["integrity"]) - 2), 2)
         m["approval"] = round(max(0, float(m.get("approval", 50)) - 1.5), 2)
-        out.append("PF e Ministério Público abriram inquérito sobre o governo, na simulação; a aprovação caiu. Escolha como responder.")
+        out.append("PF e Ministério Público abriram inquérito sobre o governo; a aprovação caiu. Escolha como responder.")
         r["decisions"].insert(0, {"id": f"inq-{month}", "regulator": "pf_mp", "title": "Inquérito aberto", "status": "aberto", "decided": after.isoformat()})
         consequences.open_crisis(
             state, crisis_id=f"inq-{month}", action_id="inquerito", regulator="pf_mp", deadline_days=30, today=after,
@@ -189,7 +233,7 @@ def _audits(state: dict[str, Any], after: date) -> list[str]:
         gov = career.get("governance") if career.get("mode") else None
         if gov is not None:
             gov["trust"] = round(max(0.0, float(gov.get("trust", 50)) - 1.0), 2)
-        out.append(f"O Tribunal de Contas auditou a obra {p['name']}, na simulação, e apontou ressalvas.")
+        out.append(f"O Tribunal de Contas auditou a obra {p['name']} e apontou ressalvas.")
         consequences.open_crisis(
             state, crisis_id=f"tc-{month}", action_id="auditoria", regulator="tcu", deadline_days=30, today=after,
             title=f"Auditoria do Tribunal de Contas: {p['name']}", text="O tribunal apontou ressalvas no contrato e pede providências.",

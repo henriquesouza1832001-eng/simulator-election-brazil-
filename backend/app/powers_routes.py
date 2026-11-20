@@ -35,6 +35,12 @@ class NegotiateBody(BaseModel):
     offer: str = Field(min_length=3, max_length=20)
 
 
+class BlocNegotiateBody(BaseModel):
+    bill: str = Field(min_length=3, max_length=80)
+    bloc: str = Field(min_length=3, max_length=20)
+    offer: str = Field(min_length=3, max_length=20)
+
+
 class UrgencyBody(BaseModel):
     bill: str = Field(min_length=3, max_length=80)
 
@@ -148,6 +154,19 @@ def build_router(get_state: Callable[[], dict[str, Any]], save: Callable[[dict[s
         state = get_state()
         try:
             out = congress_process.negotiate(state, body.bill, body.party, body.offer)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        save(state)
+        return {**out, "overview": congress_process.overview(state), "state": public(state)}
+
+    @router.post("/api/congress/negotiate-bloc")
+    def congress_negotiate_bloc(body: BlocNegotiateBody) -> dict[str, Any]:
+        from .engine import congress_process
+        state = get_state()
+        try:
+            out = congress_process.negotiate_bloc(state, body.bill, body.bloc, body.offer)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except PermissionError as exc:

@@ -89,6 +89,65 @@ def party_outlook(state: dict[str, Any], bill: dict[str, Any]) -> list[dict[str,
     return rows
 
 
+BLOC_CUTS = (58, 47)   # apoio previsto (%) a partir do qual o partido é da base (>= 58) ou do centrão (>= 47); abaixo disso, oposição
+BLOCS = [("base", "Base governista", 58), ("centrao", "Centrão", 47), ("oposicao", "Oposição", 0)]
+BLOC_PACKAGE_RELATION = 0.7   # cada partido do bloco recebe 70% do efeito individual; o líder, 100%
+BLOC_PACKAGE_COST_PER_EXTRA_PARTY = 0.5   # o pacote custa mais por cada partido a mais que ele cobre
+
+
+def _bloc_of(support_pct: float) -> str:
+    return "base" if support_pct >= BLOC_CUTS[0] else "centrao" if support_pct >= BLOC_CUTS[1] else "oposicao"
+
+
+def blocs(state: dict[str, Any], bill: dict[str, Any]) -> list[dict[str, Any]]:
+    """Agrupa os partidos em blocos pela disposição prevista a favor do projeto e indica o líder (a maior bancada) de cada um."""
+    rows = party_outlook(state, bill)
+    out = []
+    for key, label, floor in BLOCS:
+        members = [r for r in rows if _bloc_of(r["support_pct"]) == key]
+        if not members:
+            continue
+        seats = sum(r["seats"] for r in members)
+        leader = max(members, key=lambda r: r["seats"])
+        support = round(sum(r["support_pct"] * r["seats"] for r in members) / seats)
+        out.append({"id": key, "label": label, "parties": [r["party"] for r in members], "seats": seats, "leader": leader["party"], "support_pct": support,
+                    "offered": sorted({o for r in members for o in r["offered"]})})
+    return out
+
+
+def negotiate_bloc(state: dict[str, Any], bill_id: str, bloc: str, offer: str) -> dict[str, Any]:
+    """Negocia em pacote com um bloco: o líder fecha pelos aliados (cada partido ganha parte da relação) e o custo cresce com o tamanho do bloco."""
+    bill = next((b for b in state["legislative_calendar"]["pending_bills"] if b["id"] == bill_id and b.get("process")), None)
+    if bill is None:
+        raise ValueError("Projeto não encontrado ou já votado.")
+    if offer not in OFFERS:
+        raise ValueError("Oferta desconhecida.")
+    group = next((b for b in blocs(state, bill) if b["id"] == bloc), None)
+    if group is None:
+        raise ValueError("Bloco desconhecido ou vazio para este projeto.")
+    negotiated = bill["process"]["negotiated"]
+    pending = [p for p in group["parties"] if offer not in negotiated.get(p, [])]
+    if not pending:
+        raise PermissionError("Essa oferta já foi feita a todo o bloco neste projeto.")
+    spec = OFFERS[offer]
+    delta = state.setdefault("relation_delta", {})
+    for party in pending:
+        share = 1.0 if party == group["leader"] else BLOC_PACKAGE_RELATION
+        delta[party] = round(delta.get(party, 0.0) + spec["relation"] * share, 3)
+        negotiated.setdefault(party, []).append(offer)
+    cost_factor = 1 + BLOC_PACKAGE_COST_PER_EXTRA_PARTY * (len(pending) - 1)
+    if spec.get("primary"):
+        from .fiscal import record_policy_balance_delta
+        record_policy_balance_delta(state, spec["primary"] * cost_factor)
+    if spec.get("integrity"):
+        m = state.setdefault("metrics", {})
+        m["integrity"] = round(max(0.0, float(m.get("integrity", 70)) + spec["integrity"] * cost_factor), 2)
+    if spec.get("dilution"):
+        bill["process"]["dilution"] = round(max(0.6, bill["process"]["dilution"] * spec["dilution"]), 3)
+    bill["process"]["log"].append({"date": state["date"], "text": f"{spec['label']} em pacote ao {group['label']} (líder: {group['leader']}; {len(pending)} partido(s))."})
+    return {"bill": bill_id, "bloc": bloc, "offer": offer, "parties": pending, "leader": group["leader"], "cost_factor": round(cost_factor, 2), "dilution": bill["process"]["dilution"]}
+
+
 def negotiate(state: dict[str, Any], bill_id: str, party: str, offer: str) -> dict[str, Any]:
     bill = next((b for b in state["legislative_calendar"]["pending_bills"] if b["id"] == bill_id and b.get("process")), None)
     if bill is None:
@@ -241,7 +300,7 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
         proc = b["process"]
         bills.append({"id": b["id"], "title": b["title"], "instrument": b["instrument"], "decision_date": b["decision_date"], "stages": proc["stages"], "relator": proc["relator"],
                       "dilution": proc["dilution"], "urgency": proc["urgency"], "log": proc["log"][-6:], "committee_chance_pct": round(committee_chance(state, b) * 100),
-                      "can_urgency": _kind(b) == "pl" and not proc["urgency"], "outlook": party_outlook(state, b), "lean": _lean(b)})
+                      "can_urgency": _kind(b) == "pl" and not proc["urgency"], "outlook": party_outlook(state, b), "blocs": blocs(state, b), "lean": _lean(b)})
     local = [{"id": b["id"], "title": b["title"], "chamber": b["chamber"], "decision_date": b["decision_date"], "status": b["status"], "relator": b["relator"], "stages": b["stages"],
               "chance_pct": round(b["chance"] * 100)} for b in state.get("local_bills", [])[-8:]]
     return {"bills": bills, "local_bills": list(reversed(local)), "offers": [{"key": k, **{kk: vv for kk, vv in v.items() if kk in {"label", "text"}}} for k, v in OFFERS.items()],

@@ -20,6 +20,13 @@ export default function CongressProcessPanel({ request, state, onState, onNotice
       onNotice?.(`Negociação com ${party} registrada${r.dilution < 1 ? `; texto com ${Math.round(r.dilution * 100)}% dos efeitos` : ''}.`);
     } catch (e) { onNotice?.(e.message); }
   }
+  async function negotiateBloc(bill, bloc, offer) {
+    try {
+      const r = await request('/api/congress/negotiate-bloc', { method: 'POST', body: JSON.stringify({ bill: bill.id, bloc: bloc.id, offer }) });
+      setData(r.overview); if (r.state) onState?.(r.state);
+      onNotice?.(`Pacote fechado com o ${bloc.label} (líder: ${r.leader}, ${r.parties.length} ${r.parties.length === 1 ? 'partido' : 'partidos'}); o custo foi ${String(r.cost_factor).replace('.', ',')}× o de um partido só.`);
+    } catch (e) { onNotice?.(e.message); }
+  }
   async function urgency(bill) {
     try {
       const r = await request('/api/congress/urgency', { method: 'POST', body: JSON.stringify({ bill: bill.id }) });
@@ -58,6 +65,11 @@ export default function CongressProcessPanel({ request, state, onState, onNotice
         {b.can_urgency && <button className="secondary-button" onClick={() => urgency(b)}>Pedir urgência (art. 64)</button>}
         <button className="quiet-button" onClick={() => setOpen({ ...open, [b.id]: !open[b.id] })}>{open[b.id] ? 'Ocultar bancadas' : 'Negociar com as bancadas'}</button>
       </div>
+      {open[b.id] && b.blocs?.length > 0 && <div className="bloc-grid" aria-label="Negociar por bloco">{b.blocs.map((bl) => <article key={bl.id} className={`bloc-card bloc-${bl.id}`}>
+        <header><b>{bl.label}</b><span>{bl.seats} cadeiras · apoio previsto {bl.support_pct}%</span></header>
+        <small>Líder: <b>{bl.leader}</b> · {bl.parties.join(', ')}</small>
+        <div>{data.offers.map((o) => <button key={o.key} className="quiet-button" disabled={bl.parties.every((p) => b.outlook.find((x) => x.party === p)?.offered.includes(o.key))} title={`${o.text} Em pacote, cada partido do bloco recebe parte do efeito e o custo cresce com o tamanho do bloco.`} onClick={() => negotiateBloc(b, bl, o.key)}>{o.label.split(' ')[0]} (pacote)</button>)}</div>
+      </article>)}</div>}
       {open[b.id] && <div className="territory-table-wrap"><table className="territory-table"><thead><tr><th>Partido</th><th>Cadeiras</th><th>Espectro</th><th>Apoio previsto</th><th>Relação</th><th>Oferecer</th></tr></thead>
         <tbody>{b.outlook.map((p) => <tr key={p.party}><td>{p.party}</td><td>{p.seats}</td><td>{p.spectrum}</td><td>{p.support_pct}%</td><td>{p.relation}</td>
           <td>{data.offers.map((o) => <button key={o.key} className="quiet-button" disabled={p.offered.includes(o.key)} title={o.text} onClick={() => negotiate(b, p.party, o.key)}>{o.label.split(' ')[0]}</button>)}</td></tr>)}</tbody></table></div>}
