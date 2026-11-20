@@ -31,6 +31,7 @@ from .engine.appointments import appointments_overview, appoint_minister, nomina
 from .engine.communications import require_inaugural_address, submit_inaugural_address
 from .engine.ministries import ministry_catalog, INVESTMENT_AREAS
 from .engine.difficulty import DIFFICULTIES
+from .engine import fiscal_levers
 from .engine.fiscal import fiscal_overview, refresh_fiscal_metrics
 from .engine.diplomacy import diplomacy_overview, visit_country, attend_international_event
 from .engine.works import start_work, resolve_work_issue, refresh_work_finance, works_overview
@@ -656,7 +657,8 @@ def budget_overview() -> dict[str, Any]:
     return {"annual_investment_bi": budget["annual_investment_bi"], "allocations": budget["allocations"],
             "areas": INVESTMENT_AREAS, "pipeline": budget["pipeline"], "outcomes": budget["outcomes"],
             "last_reallocation": budget.get("last_reallocation"), "days_until_reallocation": max(0, 30 - ((date.fromisoformat(state["date"]) - date.fromisoformat(budget["last_reallocation"])).days if budget.get("last_reallocation") else 30)),
-            "operating": operating_budget_summary(state), "fiscal": fiscal_overview(state), "works": works}
+            "operating": operating_budget_summary(state), "fiscal": fiscal_overview(state), "works": works,
+            "levers": fiscal_levers.catalog(state), "levers_history": (state.get("fiscal_levers") or {}).get("history", [])[:5]}
 
 
 @app.post("/api/budget/works/start")
@@ -712,6 +714,27 @@ def operating_budget_summary(state: dict[str, Any]) -> dict[str, Any]:
             "last_review": last, "nominal_gdp_bi": FISCAL_REFERENCE_GDP_BI,
             "travel_spent_bi": round(travel_spent, 4), "travel_remaining_bi": round(max(0.0, travel_available - travel_spent), 4),
             "note": "Estimativas ficticias do simulador; cortes reduzem a despesa primaria anual e desaceleram a trajetoria da divida."}
+
+
+class FiscalLeverRequest(BaseModel):
+    lever: str = Field(min_length=3, max_length=30)
+    option: str = Field(min_length=1, max_length=20)
+
+
+@app.post("/api/budget/lever")
+def use_fiscal_lever(request: FiscalLeverRequest) -> dict[str, Any]:
+    state = game_state()
+    require_presidential_authority(state, "Usar uma alavanca fiscal")
+    if state.get("office_status") in {"former_president", "detained_after_failed_rupture"}:
+        raise HTTPException(status_code=409, detail="Você não está no Executivo.")
+    try:
+        result = fiscal_levers.apply(state, request.lever, request.option)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    save_state(state)
+    record_action(state["date"], "orçamento", result["title"], "", {"lever": request.lever, "option": request.option},
+                  [{"label": "Resultado primário (p.p. do PIB)", "value_pct_gdp": result["primary_balance_delta_pct_gdp"]}])
+    return {"state": public_state(state), "budget": budget_overview(), "result": result}
 
 
 @app.post("/api/budget/operating")

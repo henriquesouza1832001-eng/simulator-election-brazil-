@@ -7,6 +7,7 @@ import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 import { CookieStorage } from 'aws-amplify/utils';
 import DiplomacyPanel from './DiplomacyPanel';
 import FiscalPanel from './FiscalPanel';
+import FiscalLevers from './FiscalLevers.jsx';
 import CampaignPanel from './CampaignPanel';
 import CareerPanel from './CareerPanel';
 import GovernmentAppointments from './GovernmentAppointments';
@@ -404,6 +405,15 @@ export default function App() {
     } catch (e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
+  async function useFiscalLever(lever, option, label) {
+    if (!window.confirm(`Aplicar: ${label}? A decisão entra em vigor agora e não pode ser desfeita.`)) return;
+    setBusy(true);
+    try {
+      const data = await request('/api/budget/lever', { method: 'POST', body: JSON.stringify({ lever, option }) });
+      setBudgetView(data.budget); setState(data.state); setNotice(data.result.message);
+    } catch (e) { setNotice(e.message); } finally { setBusy(false); }
+  }
+
   if (!authReady || (authUser && !state)) return <main className="loading"><img className="brand-mark" src="/assets/brand/civiciclo-marca.png" alt="" aria-hidden="true"/><p>Preparando o gabinete…</p>{notice && <p>{notice}</p>}</main>;
   if (authConfig?.enabled && !authUser) return showAuthPanel
     ? <AuthPanel onAuthenticated={(user) => { setState(null); setShowGameMenu(true); setAuthUser(user); setShowAuthPanel(false); }} onCancel={() => setShowAuthPanel(false)} notice={notice} setNotice={setNotice} />
@@ -633,12 +643,13 @@ export default function App() {
       {activeTab === 'Orçamento' && <section className="panel agenda-page">
         <div className="eyebrow">EXECUTIVO FEDERAL · DESPESAS E INVESTIMENTOS</div>
         <h2>Orçamento do governo</h2>
-        <p className="page-description">Viagens oficiais e manutenção das residências entram nas despesas do governo. Reduza essas rubricas para melhorar o resultado primário; os valores são estimativas fictícias do simulador.</p>
+        <p className="page-description">Viagens oficiais e manutenção das residências entram nas despesas do governo. Para mexer de verdade no resultado primário, use as alavancas fiscais; cortes de viagens e residências rendem pouco.</p>
         {budgetView ? <>
           <div className="budget-subnav" role="tablist" aria-label="Seções do orçamento">{['Contas públicas', 'Investimentos', 'Obras'].map((section) => <button key={section} role="tab" aria-selected={budgetSection === section} className={budgetSection === section ? 'active' : ''} onClick={() => setBudgetSection(section)}>{section}</button>)}</div>
           {notice && <div className="notice">{notice}</div>}
           {budgetSection === 'Contas públicas' && <>
           <FiscalPanel data={budgetView.fiscal} />
+          <FiscalLevers levers={budgetView.levers} history={budgetView.levers_history} busy={busy} onUse={useFiscalLever} />
           <div className="operating-budget">
             <div className="operating-heading">
               <div><span className="eyebrow">DESPESAS DE FUNCIONAMENTO</span><h3>Viagens e moradia oficial</h3><p>Revisão a cada 30 dias. O corte afeta o gasto anual e a trajetória fiscal.</p></div>

@@ -667,3 +667,17 @@ aside.career-rules { align-self: start; }
 .ds-despacho .ds-meter { height: 8px; background: var(--ds-line, #232b36); overflow: hidden; }
 .ds-despacho .ds-meter i { display: block; height: 100%; background: var(--ds-accent, #c9a540); }
 .ds-balanco p { margin: 0; }
+
+.fiscal-levers { margin: 18px 0; }
+.lever-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 12px; }
+.lever-card { border: 1px solid var(--ds-line-2, #2a3340); background: var(--ds-surface, transparent); padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.lever-card h4 { margin: 0; font-size: 1rem; }
+.lever-card p { margin: 0; opacity: .8; font-size: .88rem; line-height: 1.45; }
+.lever-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lever-card li { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding-top: 10px; border-top: 1px solid var(--ds-line, #232b36); }
+.lever-card li.blocked { opacity: .6; }
+.lever-card li div { display: grid; gap: 4px; }
+.lever-card li small { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .78rem; }
+.lever-card li small .good { color: #4cb985; }
+.lever-card li small .bad { color: #e0826f; }
+.lever-card li em { font-style: normal; font-size: .78rem; color: #d6a85a; }

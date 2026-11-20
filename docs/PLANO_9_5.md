@@ -69,3 +69,7 @@ Resposta guardada em `docs/revisoes/GEMINI_RODADA_3.md`. Notas: média 6,0 (roda
 
 **Próximo (do plano dele, que concordo)**
 E1.3 alavancas fiscais reais e LRF subnacional · E1.4 coalizões, líderes e STF · E1.5 coligações, TV, debate e 2º turno · E1.6 voz em crises, entrevistas e debates · E1.7 bots por perfil e primeira partida humana · depois E2.1 fatiar `App.jsx` e `CareerPanel.jsx`.
+
+## Andamento (20 nov. 2026)
+- **E1.3 alavancas fiscais feito:** `engine/fiscal_levers.py` (contingenciamento de 5, 10 ou 15%, revisão de subsídios e dividendos extraordinários), rota `POST /api/budget/lever`, catálogo em `GET /api/budget` e cartões em Orçamento > Contas públicas com a previsão do motor antes de confirmar. Cada uma move o resultado primário em 0,07 a 0,24% do PIB (antes viagens e residência movia 0,000%), reage no mercado, na imprensa e no livro-razão, aparece em "Por que mudou?" e cobra preço em PIB, aprovação ou Congresso. Intervalo de 60 dias entre alavancas, limite anual para subsídios e dividendos, teto de 15% acumulado no contingenciamento. Testes: `test_alavancas_fiscais.py` (8).
+- **Próximo:** E1.4 coalizões, líderes de bancada e STF.
