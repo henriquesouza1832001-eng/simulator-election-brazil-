@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Select from './Choice.jsx';
-import { br, dataBr } from './format';
+import { br, dataBr, roundHalfUp } from './format';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
 import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
@@ -76,7 +76,7 @@ function formatIndicator(value, key) {
       maximumFractionDigits: precision.maximumFractionDigits,
     }));
   }
-  const out = indicatorFormatters.get(formatKey).format(numericValue);
+  const out = indicatorFormatters.get(formatKey).format(roundHalfUp(numericValue, precision.maximumFractionDigits));
   // evita "-0" quando o valor é pequeno e negativo: mostra duas casas
   if (/^[-−]0(,0+)?$/.test(out) && numericValue !== 0) return numericValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
   return out;
@@ -135,11 +135,11 @@ const detailedIndicatorGroups = [
     { label: 'Investimento público anual', key: 'annual_investment_bi', unit: 'R$ bi', source: 'budget', detail: 'Dotação anual simulada para investimentos federais.' },
   ] },
   { title: 'Apoio e capacidade de governar', items: [
-    { label: 'Aprovação', key: 'approval', unit: '%', source: 'metric', detail: 'Apoio nacional simulado ao governo.' },
+    { label: 'Aprovação', key: 'approval', unit: '%', source: 'metric', detail: 'Apoio nacional ao governo.' },
     { label: 'Governabilidade', key: 'governability', unit: '/100', source: 'metric', detail: 'Capacidade de sustentar decisões e formar maioria.' },
     { label: 'Apoio no Congresso', key: 'congress_support', unit: '%', source: 'metric', detail: 'Apoio parlamentar agregado no cenário.' },
     { label: 'Confiança institucional', key: 'institutional_trust', unit: '/100', source: 'metric', detail: 'Confiança geral nas instituições.' },
-    { label: 'Integridade', key: 'integrity', unit: '/100', source: 'metric', detail: 'Indicador simulado de transparência e exposição a escândalos.' },
+    { label: 'Integridade', key: 'integrity', unit: '/100', source: 'metric', detail: 'Transparência pública e exposição a escândalos.' },
   ] },
   { title: 'Instituições e estabilidade', items: [
     { label: 'Lealdade militar à Constituição', key: 'military_loyalty', unit: '/100', source: 'institution', detail: 'Relação institucional das Forças Armadas com a ordem constitucional.' },
@@ -152,7 +152,7 @@ const detailedIndicatorGroups = [
     { label: 'Saúde', key: 'health', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em saúde.' },
     { label: 'Segurança pública', key: 'security', unit: '/100', source: 'outcome', detail: 'Resultado acumulado dos investimentos em segurança.' },
     { label: 'Infraestrutura', key: 'infrastructure', unit: '/100', source: 'outcome', detail: 'Entrega agregada de infraestrutura financiada.' },
-    { label: 'Produtividade', key: 'productivity', unit: '/100', source: 'outcome', detail: 'Efeito simulado de investimentos produtivos.' },
+    { label: 'Produtividade', key: 'productivity', unit: '/100', source: 'outcome', detail: 'Efeito dos investimentos produtivos.' },
     { label: 'Resiliência rural', key: 'rural_resilience', unit: '/100', source: 'outcome', detail: 'Capacidade de adaptação rural a choques climáticos.' },
   ] },
   { title: 'Diplomacia e regiões', items: [
@@ -451,7 +451,7 @@ export default function App() {
     { label: 'Intenção de voto', value: careerOverview.vote_intent ?? careerOverview.poll_support, unit: '%', detail: `Projeção para a eleição em ${careerOverview.campaign_territory || 'seu território'}`, tone: 'green' },
     ...(careerOverview.rivals?.length ? [(() => { const top = [...careerOverview.rivals].sort((a, b) => b.support - a.support)[0]; return { label: 'Maior rival', value: top.support, unit: '%', detail: `${top.party} · foco: ${top.issue_focus_label || '—'}`, tone: 'amber' } })()] : []),
     { label: 'Reputação', value: careerOverview.reputation, unit: '/100', detail: 'Construída na militância e no mandato' },
-    { label: 'Fundo de campanha', value: careerOverview.campaign_fund_mi, unit: ' mi', detail: 'Recurso fictício disponível', tone: 'amber' },
+    { label: 'Fundo de campanha', value: careerOverview.campaign_fund_mi, unit: ' mi', detail: 'Recurso disponível para a campanha', tone: 'amber' },
     { label: 'Embalo', value: careerOverview.momentum, unit: '', detail: 'Tendência recente da campanha' },
     { label: 'Compromissos pendentes', value: careerOverview.pending_campaign_promises, unit: '', detail: 'Promessas que podem ser cobradas' },
   ] : [];
@@ -670,7 +670,7 @@ export default function App() {
           </section>}
         </> : <div className="empty-state">Carregando o orçamento...</div>}
       </section>}
-      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">EVENTOS FICTÍCIOS · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} {Number(event.days_active) === 1 ? 'dia' : 'dias'} · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {br(option.cost_bi, 1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <ul className="ds-timeline">{Object.values(state.simulated_news.reduce((acc, item) => { const g = acc[item.title] || { ...item, count: 0 }; g.count += 1; acc[item.title] = g; return acc; }, {})).slice(0, 8).map((item) => <li key={item.id}><time dateTime={item.date}>{item.date.split('-').reverse().join('/')}</time><b>{item.title}{item.count > 1 && <span className="ds-muted"> · {item.count} {Number(item.count) === 1 ? 'vez' : 'vezes'}</span>}</b><p className="ds-muted">{item.description}</p></li>)}</ul> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
+      {activeTab === 'Crises' && <section className="panel agenda-page"><div className="eyebrow">CRISES · CONSEQUÊNCIAS NO MOTOR</div><h2>Crises e respostas</h2><p className="page-description">Os eventos são simulados. Enquanto uma crise estiver ativa, seus efeitos continuam; cada resposta altera orçamento, atividade e apoio.</p>{state.active_crises?.length ? state.active_crises.map((event) => <article className="crisis-card" key={event.id}><div className="crisis-heading"><div><span className="simulated-tag">SIMULAÇÃO</span><h3>{event.title}</h3></div><b>Gravidade {event.severity}/3</b></div><p>{event.description}</p><small>Ativa há {event.days_active} {Number(event.days_active) === 1 ? 'dia' : 'dias'} · impacto contínuo no PIB, infraestrutura e aprovação.</small><div className="crisis-actions">{event.options?.map((option) => <button key={option.id} className="secondary-button" disabled={busy} onClick={() => respondEvent(event.id, option.id)}><b>{option.label}</b><small>Custo R$ {br(option.cost_bi, 1)} bi · PIB {option.forecast?.gdp_pp >= 0 ? '+' : ''}{option.forecast?.gdp_pp ?? 0} p.p. · apoio {option.forecast?.approval_pp >= 0 ? '+' : ''}{option.forecast?.approval_pp ?? 0} p.p.</small><small>{option.forecast?.summary || 'O efeito aparece após registrar a resposta.'}</small><small className="forecast-later">{option.forecast?.future || 'Os efeitos mensais da crise ativa param após a resposta.'}</small></button>)}</div></article>) : <div className="empty-state">Nenhuma crise ativa. Eventos futuros podem surgir conforme o calendário e a dificuldade.</div>}<h3 className="subheading">Noticiário simulado recente</h3>{state.simulated_news?.length ? <ul className="ds-timeline">{Object.values(state.simulated_news.reduce((acc, item) => { const g = acc[item.title] || { ...item, count: 0 }; g.count += 1; acc[item.title] = g; return acc; }, {})).slice(0, 8).map((item) => <li key={item.id}><time dateTime={item.date}>{item.date.split('-').reverse().join('/')}</time><b>{item.title}{item.count > 1 && <span className="ds-muted"> · {item.count} {Number(item.count) === 1 ? 'vez' : 'vezes'}</span>}</b><p className="ds-muted">{item.description}</p></li>)}</ul> : <p className="empty-state">Ainda não há notícia simulada registrada.</p>}</section>}
 
       {activeTab === 'Eleição' && <CampaignPanel state={state} request={request} onState={setState} busy={busy} setBusy={setBusy} onNotice={setNotice} />}
       {['Carreira', 'Mandato'].includes(activeTab) && <CareerPanel state={state} request={request} onState={setState} onNotice={setNotice} busy={busy} setBusy={setBusy} standaloneMandate={activeTab === 'Mandato'} />}
@@ -685,6 +685,5 @@ export default function App() {
     {state.communications?.inauguration?.required && <InauguralAddress request={request} onState={setState} onNotice={setNotice} onChooseCareer={() => setActiveTab('Carreira')} busy={busy} setBusy={setBusy} />}
     {showAccountPanel && <AccountPanel onClose={() => setShowAccountPanel(false)} />}
     {gameGuideOpen && <GameGuide groups={tabGroups} activeTab={activeTab} onGo={setActiveTab} onClose={() => setGameGuideOpen(false)} />}
-    {!gameGuideOpen && <button type="button" className="ds-guide-fab" aria-label="Abrir o guia do jogo" title="Guia do jogo" onClick={() => setGameGuideOpen(true)}>?</button>}
   </div>;
 }

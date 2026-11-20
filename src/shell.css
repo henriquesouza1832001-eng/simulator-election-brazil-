@@ -663,7 +663,7 @@ aside.career-rules { align-self: start; }
 .ds-despacho li small { opacity: .75; }
 @media (max-width: 640px) { .ds-despacho li { grid-template-columns: 1fr; } }
 
-.ds-despacho + .ds-despacho { margin-top: 12px; }
+.ds-despacho + .ds-despacho { margin-top: 20px; }
 .ds-despacho .ds-meter { height: 8px; background: var(--ds-line, #232b36); overflow: hidden; }
 .ds-despacho .ds-meter i { display: block; height: 100%; background: var(--ds-accent, #c9a540); }
 .ds-balanco p { margin: 0; }

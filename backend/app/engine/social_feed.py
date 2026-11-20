@@ -250,5 +250,10 @@ def build(state: dict[str, Any], limit: int = 24) -> dict[str, Any]:
         for kind in order[:4 if fact["tmpl"].startswith("rotina") else 3]:
             posts.append(_post(state, fact, kind, fact["tmpl"], **fact["fmt"]))
     posts.sort(key=lambda p: (p["date"], p["reach"]), reverse=True)
+    for i in range(1, len(posts)):   # o mesmo perfil nunca aparece em dois posts seguidos: troca com o próximo de outro perfil
+        if posts[i]["handle"] == posts[i - 1]["handle"]:
+            j = next((k for k in range(i + 1, len(posts)) if posts[k]["handle"] != posts[i - 1]["handle"]), None)
+            if j is not None:
+                posts[i], posts[j] = posts[j], posts[i]
     return {"posts": posts[:limit], "total": len(posts), "platforms": [{"key": k, "label": p["label"], "about": p["about"]} for k, p in PLATFORMS.items()],
             "note": "Perfis e frases são fictícios e satíricos. O alcance é estimado pelo motor a partir do caixa de campanha, do momentum e do tipo de perfil."}

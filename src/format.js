@@ -13,4 +13,6 @@ export function effectText(effects) {
 // Número no formato brasileiro (vírgula decimal e ponto de milhar); usar no lugar de toFixed em textos para o jogador.
 // 2029-09-17 -> 17/09/2029 (as datas do motor chegam em ISO)
 export const dataBr = (s) => (typeof s === 'string' ? s.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1') : s);
-export const br = (v, d = 1) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');
+// Arredonda "meio para cima" sem erro de ponto flutuante: 47,65 vira 47,7 em qualquer tela (Intl arredonda 47,65 para 47,6 por causa do binário).
+export const roundHalfUp = (v, d = 1) => { const n = Number(v); if (!Number.isFinite(n)) return n; return Number(`${Math.round(Number(`${n.toFixed(6)}e${d}`))}e-${d}`); };
+export const br = (v, d = 1) => (Number.isFinite(Number(v)) ? roundHalfUp(v, d).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');

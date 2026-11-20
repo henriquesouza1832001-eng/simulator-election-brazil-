@@ -221,4 +221,15 @@ def _record_public_poll(state: dict[str, Any], career: dict[str, Any], field_dat
     }
     polls.append(record)
     career["public_polls"] = polls[-12:]
+    try:   # a imprensa noticia cada pesquisa publicada (a tela de Imprensa nunca fica vazia em campanha)
+        from . import voice
+        from .consequences import _book, _post
+        top = max(opponents, key=lambda o: o["support"], default=None)
+        if top and career.get("phase") in {"campaign", "runoff_campaign"}:
+            leading = candidate_support >= top["support"]
+            _post(_book(state), state, {"id": f"poll-{field_date.isoformat()}", "kind": "imprensa", "tone": "positivo" if leading else "negativo",
+                  "headline": f"Pesquisa {institute['name']}: {str(career.get('candidate_name') or 'você')} tem {candidate_support:.1f}% e {top['party']} tem {top['support']:.1f}% (±{margin:.1f})".replace(".", ","),
+                  "body": voice.pick(voice.POLL_LEAD if leading else voice.POLL_TRAIL, f"{career.get('seed', 1)}:{field_date.isoformat()}")})
+    except Exception:  # noqa: BLE001 - a notícia é acessória
+        pass
     return record

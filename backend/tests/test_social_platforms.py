@@ -73,3 +73,14 @@ class FeedNuncaVazioTests(unittest.TestCase):
         s["career"] = {"mode": True, "office": "prefeito", "phase": "campaign", "municipality": "Cidade Teste"}
         textos = " ".join(p["text"] for p in social_feed.build(s)["posts"])
         self.assertIn("Cidade Teste", textos)
+
+
+class SemPerfilRepetidoSeguidoTests(unittest.TestCase):
+    def test_mesmo_perfil_nunca_aparece_em_dois_posts_seguidos(self):
+        from app.engine.state import advance_state, new_game
+        s = new_game()
+        for _ in range(3):
+            s, _m = advance_state(s, 30)
+        posts = social_feed.build(s)["posts"]
+        for anterior, atual in zip(posts, posts[1:]):
+            self.assertNotEqual(anterior["handle"], atual["handle"])

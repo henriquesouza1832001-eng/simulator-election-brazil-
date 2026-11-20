@@ -92,7 +92,10 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
         m = state.setdefault("metrics", {})
         if overridden:
             consequences._apply(state, _scale(spec["sancao"], 1.0))
-            m["congress_support"] = round(max(0.0, float(m.get("congress_support", 50)) - 0.6), 2)
+            before_support = float(m.get("congress_support", 50))
+            m["congress_support"] = round(max(0.0, before_support - 0.6), 2)
+            from . import drivers
+            drivers.note(state, "congress_support", m["congress_support"] - before_support, "Congresso derruba veto do governo")
             text = f"O Congresso derrubou o veto: {spec['title']} (votos na Câmara: {result['camara']['sim']} de {result['camara']['necessarios']} necessários). A lei entrou em vigor."
         else:
             text = f"O veto foi mantido: {spec['title']} (votos na Câmara: {result['camara']['sim']} de {result['camara']['necessarios']} necessários)."

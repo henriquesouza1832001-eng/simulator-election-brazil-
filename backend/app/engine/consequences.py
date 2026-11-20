@@ -134,7 +134,7 @@ def _apply(state: dict[str, Any], effects: dict[str, float]) -> None:
 
 
 def _post(book: dict[str, Any], state: dict[str, Any], item: dict[str, Any]) -> None:
-    book["feed"].insert(0, {k: item[k] for k in ("id", "kind", "headline", "body", "tone", "action_id") if k in item} | {"date": state["date"]})
+    book["feed"].insert(0, {k: item[k] for k in ("id", "kind", "headline", "body", "tone", "action_id") if k in item} | {"date": item.get("date") or state["date"]})
     del book["feed"][FEED_LIMIT:]
 
 

@@ -108,6 +108,8 @@ class PesquisaComInstitutoTests(unittest.TestCase):
         self.assertGreaterEqual(len(institutos), 2)
         self.assertTrue(all("margin_of_error" in p for p in ov["public_polls"]))
         self.assertIn("rival_events", ov)
+        feed = state.get("consequences", {}).get("feed", [])
+        self.assertTrue(any(str(item.get("headline", "")).startswith("Pesquisa ") for item in feed))   # a imprensa noticia as pesquisas
 
 
 if __name__ == "__main__":

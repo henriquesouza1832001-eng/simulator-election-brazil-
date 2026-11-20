@@ -48,3 +48,24 @@ Decisões do criador: manter nomes reais com aviso de sátira, congelar novos si
 - **Próximo (M1/M2):** perfilar o mandato de 48 meses (hoje ~70 s), dividir `career.py`, guia de voz e reescrita dos textos mais frequentes, "Por que mudou?" nos cargos locais.
 - **Desempenho medido (19/11):** o mandato de 48 meses leva ~7 s pela API (146 ms por avanço, cerca de 65 a 90 ms dentro do processo), não 70 s como constava no briefing. Ajustes: exposição das crises em cache e `synchronous=NORMAL` no SQLite. A meta "menos de 5 s" não foi atingida pela API; o motor sozinho gasta ~1 a 3 s. Trava de regressão em `test_desempenho_mandato.py`.
 - **`career.py` dividido:** de 2.006 linhas em fachada de 133 linhas + 11 módulos `career_*.py` (maior: 457 antes, `career_election` 280 e `career_calendar` 176 depois da última divisão). Teste `test_career_modulos.py` garante a fachada e o limite de 450 linhas.
+
+## Rodada 3 com o Gemini — triagem (20 nov. 2026)
+Resposta guardada em `docs/revisoes/GEMINI_RODADA_3.md`. Notas: média 6,0 (rodada 2: ~5,4); todos os arquivos e testes que ele citou existem.
+
+**Aceito e corrigido na hora**
+- D1 Aprovação 47,7 × 47,6 e deltas 4,8 × 4,9: causa era arredondamento de valores no meio (`47,65`) em formatadores diferentes. Agora um só arredondamento "meio para cima" (`roundHalfUp` em `format.js`, usado por `fmt`, `br` e `formatIndicator`).
+- D2 "dia 30 de 100" × "DIA 31": o cenário passa a contar o primeiro dia como dia 1, igual ao cabeçalho.
+- D3 botão "?" sobrepondo conteúdo: removido (o botão "Guia" do cabeçalho faz o mesmo).
+- D4 mesmo perfil em dois posts seguidos: regra no `social_feed.py`, com teste.
+- D5 caixas coladas no cenário: espaçamento maior.
+- "Tendência" na Base no Congresso: dois fatores nomeados (volta ao equilíbrio; veto derrubado).
+- Imprensa vazia na campanha: cada pesquisa publicada vira notícia, e os movimentos dos rivais saem com data própria e três variantes de texto cada (antes repetiam).
+- "Avaliação simulada" no pronunciamento de posse e rótulos "simulado/fictício" em cartões e na tela de Crises: reescritos.
+
+**Não aceito, com motivo**
+- "(fictício)" nos nomes de veículos (Jornal da Manhã (fictício)): fica, como proteção contra confusão com marcas reais.
+- Falta de "Movimentos recentes" em `pref.md`: a partida usada nas capturas tinha sido criada antes dessa função; a tela mostra os movimentos quando existem.
+- Limite de 450 linhas para `App.jsx` e `CareerPanel.jsx`: o problema desses arquivos é tamanho em KB (linhas muito longas), então o teste deve medir KB.
+
+**Próximo (do plano dele, que concordo)**
+E1.3 alavancas fiscais reais e LRF subnacional · E1.4 coalizões, líderes e STF · E1.5 coligações, TV, debate e 2º turno · E1.6 voz em crises, entrevistas e debates · E1.7 bots por perfil e primeira partida humana · depois E2.1 fatiar `App.jsx` e `CareerPanel.jsx`.

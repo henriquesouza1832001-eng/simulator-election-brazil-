@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { roundHalfUp } from './format.js';
 
 // Componentes do sistema de design (0.4). Usam só as classes `ds-` de design.css.
 
-export const fmt = (v, d = 1) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');
+export const fmt = (v, d = 1) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? roundHalfUp(v, d).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');
 
 export function Page({ title, lead, actions, children }) {
   return <section className="ds-page">

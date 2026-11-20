@@ -41,6 +41,14 @@ MARKET_BY_DECISION = [
     "A Faria Lima faz as contas da medida e, por enquanto, muda de ideia só no dólar.",
     "O mercado digere a decisão com a calma de quem tem cinco planilhas abertas.",
 ]
+POLL_LEAD = [
+    "A pesquisa saiu e os comitês já a leem como querem: quem lidera chama de tendência, quem perde chama de retrato.",
+    "Novo levantamento mexe com a cidade; a margem de erro foi citada em todos os discursos, menos nos de quem está na frente.",
+]
+POLL_TRAIL = [
+    "O levantamento acende o alerta no comitê; ninguém assume, mas a reunião de segunda ficou mais comprida.",
+    "A pesquisa não agradou: a campanha promete reagir e a margem de erro vira assunto de primeira hora.",
+]
 EXPIRED_PAUTA = "O prazo de 15 dias úteis terminou sem decisão; vale a sanção tácita: o silêncio também assina."
 EXPIRED_CRISIS = "O prazo passou, ninguém respondeu e a crise tomou a vaga do governo na pauta."
 MARKET_DESC = [

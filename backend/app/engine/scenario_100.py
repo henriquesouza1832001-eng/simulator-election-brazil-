@@ -78,4 +78,5 @@ def public(state: dict[str, Any]) -> dict[str, Any] | None:
         return None
     start, end = date.fromisoformat(sc["start"]), date.fromisoformat(sc["end"])
     today = date.fromisoformat(str(state["date"]))
-    return {**sc, "days_left": max(0, (end - today).days), "day": min(DAYS, max(0, (today - start).days)), "goals": goals(state)}
+    day = min(DAYS, max(0, (today - start).days) + 1)   # mesma contagem do cabeçalho: o primeiro dia é o dia 1
+    return {**sc, "days_left": max(0, (end - today).days), "day": day, "goals": goals(state)}

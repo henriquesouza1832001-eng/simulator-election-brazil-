@@ -60,7 +60,7 @@ def submit_inaugural_address(state: dict[str, Any], text: str) -> dict[str, Any]
     state.setdefault("simulated_news", []).insert(0, {
         "id": f"inaugural-address-{state['date']}", "date": state["date"],
         "title": "Pronunciamento de posse", "region": "Nacional",
-        "description": f"O novo governo fez seu primeiro pronunciamento. Avaliação simulada: {score}/12.",
+        "description": f"O novo governo fez seu primeiro pronunciamento. Nota do pronunciamento: {score}/12.",
         "simulated": True,
     })
     state["simulated_news"] = state["simulated_news"][:20]

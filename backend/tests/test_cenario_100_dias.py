@@ -18,7 +18,7 @@ class CenarioCemDiasTests(unittest.TestCase):
         view = scenario_100.public(s)
         self.assertEqual(len(view["goals"]), 5)
         self.assertEqual(view["status"], "em_andamento")
-        self.assertEqual(view["day"], 0)
+        self.assertEqual(view["day"], 1)   # primeiro dia = dia 1, como no cabeçalho "DIA 1 DE 1461"
         self.assertFalse(view["goals"][0]["done"])   # aprovação 44 < 50
 
     def test_meta_de_inflacao_usa_virgula_e_reage_ao_estado(self):

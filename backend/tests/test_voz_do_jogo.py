@@ -22,7 +22,7 @@ class VozDoJogoTests(unittest.TestCase):
             self.assertIn(sinal(risco), texto)
 
     def test_nada_diegetico_cita_simulacao(self):
-        todos = voice.PRESS_UP + voice.PRESS_DOWN + voice.OPPOSITION + voice.SUPPORT + voice.MARKET_BY_DECISION + voice.MARKET_DESC + [voice.EXPIRED_PAUTA, voice.EXPIRED_CRISIS]
+        todos = voice.PRESS_UP + voice.PRESS_DOWN + voice.OPPOSITION + voice.SUPPORT + voice.MARKET_BY_DECISION + voice.MARKET_DESC + voice.POLL_LEAD + voice.POLL_TRAIL + [voice.EXPIRED_PAUTA, voice.EXPIRED_CRISIS]
         for texto in todos:
             self.assertIsNone(re.search(r"simula", texto, re.I), texto)
 

@@ -147,6 +147,8 @@ def tick(state: dict[str, Any], before: date, after: date) -> list[str]:
         elapsed = max(0, (after - before).days)
         cs = float(metrics["congress_support"])
         metrics["congress_support"] = round(cs + (50.0 - cs) * min(1.0, 0.03 * elapsed / 30), 2)
+        from . import drivers
+        drivers.note(state, "congress_support", metrics["congress_support"] - cs, "A base volta ao equilíbrio: reações passam e alianças se refazem")
     calendar = state.get("legislative_calendar", {})
     keep = []
     for bill in calendar.get("pending_bills", []):
